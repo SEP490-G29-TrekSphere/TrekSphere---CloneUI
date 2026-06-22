@@ -57,8 +57,13 @@ To avoid conflicts with default HTML tags and to clearly distinguish internal Co
 
 ## 4. Quality Control (Linting & Formatting)
 
-- The project integrates **ESLint** and **Prettier** along with **Husky** (`pre-commit` hook).
-- Before committing, the system will automatically run checks. If the code has formatting errors or violates ESLint standards (like using `any` or unused variables), the commit will be **aborted**.
+- The project uses **Biome** (an opinionated linter + formatter) managed by **Lefthook** git hooks.
+- **Biome** runs on pre-commit for staged files, replacing ESLint and Prettier with a single unified tool.
+- Available scripts:
+  - `pnpm lint` — check code quality (lints + format)
+  - `pnpm lint:fix` — check and auto-fix code quality issues
+  - `pnpm format` — format all files
+  - `pnpm format:check` — verify formatting without modifying files
 - Please ensure the code is "clean" before pushing to the shared branch.
 
 ## 5. Commit Standards

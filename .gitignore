@@ -34,8 +34,9 @@ coverage/
 .env.test.local
 .env.production.local
 
-# ESLint cache
-.eslintcache
+# Lefthook
+ lefthook.log
+ lefthook-mutex.lock
 
 # Vite cache
 vite.config.ts.timestamp-*

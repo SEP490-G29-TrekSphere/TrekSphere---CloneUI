@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json.schemastore.org/lefthook.json",
+  "min_version": "1.0.0",
+  "pre-commit": {
+    "parallel": true,
+    "commands": {
+      "biome:check": {
+        "run": "pnpm biome check --staged --no-errors-on-unmatched"
+      },
+      "biome:format": {
+        "run": "pnpm biome format --write --staged"
+      }
+    }
+  },
+  "commit-msg": {
+    "commands": {
+      "commitlint": {
+        "run": "pnpm commitlint --edit {1}"
+      }
+    }
+  }
+}
