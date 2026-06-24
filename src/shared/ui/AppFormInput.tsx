@@ -1,11 +1,9 @@
-import { Controller, type Control, type FieldValues, type Path } from 'react-hook-form';
+import { type Control, Controller, type FieldValues, type Path } from 'react-hook-form';
 import { AppInput, type AppInputProps } from './AppInput';
 import { AppLabel } from './AppLabel';
 
-export interface AppFormInputProps<TFieldValues extends FieldValues> extends Omit<
-  AppInputProps,
-  'name'
-> {
+export interface AppFormInputProps<TFieldValues extends FieldValues>
+  extends Omit<AppInputProps, 'name'> {
   name: Path<TFieldValues>;
   control: Control<TFieldValues>;
   label?: string;

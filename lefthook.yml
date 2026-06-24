@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/lefthook.json",
   "min_version": "1.0.0",
   "pre-commit": {
-    "parallel": true,
+    "parallel": false,
     "commands": {
       "biome:check": {
         "run": "pnpm biome check --staged --no-errors-on-unmatched"
@@ -16,6 +16,13 @@
     "commands": {
       "commitlint": {
         "run": "pnpm commitlint --edit {1}"
+      }
+    }
+  },
+  "pre-push": {
+    "commands": {
+      "typecheck": {
+        "run": "pnpm typecheck"
       }
     }
   }
