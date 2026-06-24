@@ -1,17 +1,18 @@
 import type * as React from 'react';
 
-export type AppBadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline';
+export type AppBadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline' | 'accent';
 
 export interface AppBadgeProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: AppBadgeVariant;
 }
 
 const variantStyles: Record<AppBadgeVariant, string> = {
-  default: 'border-transparent bg-primary text-primary-foreground hover:bg-primary/80',
-  secondary: 'border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80',
+  default: 'border-transparent bg-primary text-white hover:bg-primary/80',
+  secondary: 'border-transparent bg-accent text-primary hover:bg-accent/80 font-semibold',
   destructive:
     'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
   outline: 'text-foreground',
+  accent: 'border-transparent bg-accent text-primary hover:bg-accent/80 font-semibold',
 };
 
 const baseStyles =
