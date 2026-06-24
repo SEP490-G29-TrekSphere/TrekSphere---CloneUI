@@ -8,7 +8,7 @@
         "run": "pnpm biome check --staged --no-errors-on-unmatched"
       },
       "biome:format": {
-        "run": "pnpm biome format --write --staged"
+        "run": "pnpm biome format --write --staged --no-errors-on-unmatched"
       }
     }
   },
