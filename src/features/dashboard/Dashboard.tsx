@@ -1,21 +1,21 @@
-import React from 'react';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-
+import EmptyIcon from '@/assets/icons/empty.svg?react';
+import { AppBadge } from '@/shared/ui/AppBadge';
 import { AppButton } from '@/shared/ui/AppButton';
 import {
   AppCard,
+  AppCardContent,
+  AppCardDescription,
+  AppCardFooter,
   AppCardHeader,
   AppCardTitle,
-  AppCardDescription,
-  AppCardContent,
-  AppCardFooter,
 } from '@/shared/ui/AppCard';
-import { AppBadge } from '@/shared/ui/AppBadge';
-import { AppSpinner } from '@/shared/ui/AppSpinner';
-import { toast } from '@/store/useToastStore';
 import { AppEmptyState } from '@/shared/ui/AppEmptyState';
+import { AppFormInput } from '@/shared/ui/AppFormInput';
+import { AppIcon } from '@/shared/ui/AppIcon';
+import { AppSpinner } from '@/shared/ui/AppSpinner';
 import {
   AppTable,
   AppTableBody,
@@ -24,10 +24,8 @@ import {
   AppTableHeader,
   AppTableRow,
 } from '@/shared/ui/AppTable';
-import { AppFormInput } from '@/shared/ui/AppFormInput';
 import { useAppStore } from '@/store/useAppStore';
-import { AppIcon } from '@/shared/ui/AppIcon';
-import EmptyIcon from '@/assets/icons/empty.svg?react';
+import { toast } from '@/store/useToastStore';
 
 const invoices = [
   {

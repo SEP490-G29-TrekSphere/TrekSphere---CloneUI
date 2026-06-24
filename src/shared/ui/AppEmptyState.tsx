@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import EmptyIcon from '@/assets/icons/empty.svg?react';
 import { AppIcon } from '@/shared/ui/AppIcon';
 

@@ -1,10 +1,9 @@
-import React from 'react';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
 import { AppButton } from '@/shared/ui/AppButton';
 import { AppFormInput } from '@/shared/ui/AppFormInput';
 import { useAppStore } from '@/store/useAppStore';
-import { loginSchema, type LoginFormValues } from '@/validations/auth.schema';
+import { type LoginFormValues, loginSchema } from '@/validations/auth.schema';
 
 export default function Login() {
   const setUser = useAppStore((state) => state.setUser);
