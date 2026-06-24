@@ -87,11 +87,11 @@ AppTableCaption.displayName = 'AppTableCaption';
 
 export {
   AppTable,
-  AppTableHeader,
   AppTableBody,
+  AppTableCaption,
+  AppTableCell,
   AppTableFooter,
   AppTableHead,
+  AppTableHeader,
   AppTableRow,
-  AppTableCell,
-  AppTableCaption,
 };

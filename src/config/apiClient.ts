@@ -1,4 +1,4 @@
-import axios, { type AxiosInstance, type AxiosResponse, type AxiosError } from 'axios';
+import axios, { type AxiosError, type AxiosInstance, type AxiosResponse } from 'axios';
 import { storage } from '@/utils/storage';
 
 // Configuring Axios instance

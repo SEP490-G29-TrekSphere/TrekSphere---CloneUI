@@ -1,5 +1,4 @@
-import React from 'react';
-import { useToastStore, type ToastMessage } from '@/store/useToastStore';
+import { type ToastMessage, useToastStore } from '@/store/useToastStore';
 
 const toastStyles: Record<ToastMessage['type'], string> = {
   success: 'bg-green-50 text-green-900 border-green-200',
@@ -21,6 +20,7 @@ function ToastItem({ toast }: { toast: ToastMessage }) {
     >
       <div className="flex-1 text-sm font-medium">{toast.message}</div>
       <button
+        type="button"
         onClick={() => removeToast(toast.id)}
         className="inline-flex shrink-0 rounded-md p-1.5 opacity-50 hover:opacity-100 focus:outline-none focus:ring-2"
         aria-label="Close"
