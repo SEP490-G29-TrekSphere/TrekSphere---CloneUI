@@ -1,37 +1,154 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @theme {
   /* System Colors */
-  --color-background: #ffffff;
-  --color-foreground: #09090b;
+  --color-background: #faf8f1;
+  --color-foreground: #1f3933;
 
-  --color-muted: #f4f4f5;
-  --color-muted-foreground: #71717a;
+  --color-muted: #f0eee1;
+  --color-muted-foreground: #6f7b75;
 
-  /* Primary Palette */
-  --color-primary: #3b82f6; /* Blue 500 */
+  /* Primary Palette — TrekSphere Deep Green */
+  --color-primary: #1f3933;
+  --color-primary-light: #2a5048;
+  --color-primary-dark: #162c28;
   --color-primary-foreground: #ffffff;
+  --color-primary-hover: #2a5048;
 
   /* Secondary Palette */
-  --color-secondary: #f1f5f9; /* Slate 100 */
-  --color-secondary-foreground: #0f172a; /* Slate 900 */
+  --color-secondary: #a2ebd2;
+  --color-secondary-foreground: #1f3933;
+
+  /* Accent — Mint */
+  --color-accent: #a2ebd2;
+  --color-accent-foreground: #1f3933;
 
   /* Destructive (Error) Palette */
-  --color-destructive: #ef4444; /* Red 500 */
+  --color-destructive: #ef4444;
   --color-destructive-foreground: #ffffff;
 
   /* Border & Input */
-  --color-border: #e4e4e7;
-  --color-input: #e4e4e7;
-  --color-ring: #3b82f6;
+  --color-border: #e6e2d1;
+  --color-input: #e6e2d1;
+  --color-ring: #1f3933;
 
   /* Border Radius */
   --radius-sm: calc(0.5rem - 4px);
   --radius-md: calc(0.5rem - 2px);
-  --radius-lg: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
 }
 
-body {
-  @apply antialiased bg-background text-foreground;
-  /* To set a default global font later, add: font-family: 'Inter', sans-serif; */
+@layer base {
+  body {
+    @apply antialiased;
+    background-color: #faf8f1;
+    color: #1f3933;
+    font-family: "Inter", sans-serif;
+    font-size: 16px;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #f0eee1;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #a2ebd2;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #1f3933;
+  }
+}
+
+@layer components {
+  .heading-display {
+    font-family: "Inter", sans-serif;
+  }
+
+  .heading-section {
+    font-family: "Inter", sans-serif;
+  }
+
+  .text-body {
+    font-family: "Inter", sans-serif;
+  }
+
+  /* Slider — hide native scrollbar */
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* ── Popular Destinations ── */
+  .destination-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .destination-image-container {
+    width: 160px;
+    height: 160px;
+    border-radius: 50% !important;
+    overflow: hidden !important;
+    border: 2px solid #06261d;
+    display: block;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .destination-image-container img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    object-position: center !important;
+    border-radius: 50%;
+  }
+
+  /* ── Featured Tours ── */
+  .tour-card {
+    background-color: #f0eee1;
+    border-radius: 16px !important;
+    overflow: hidden !important;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+
+  .tour-image-wrapper {
+    width: 100% !important;
+    height: 240px;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .tour-image-wrapper img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+  }
+
+  .tour-content-wrapper {
+    padding: 20px !important;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+  }
 }

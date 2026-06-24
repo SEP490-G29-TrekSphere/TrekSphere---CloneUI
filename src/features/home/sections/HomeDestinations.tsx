@@ -1,0 +1,30 @@
+import Slider from '@/shared/ui/Slider';
+import { popularDestinations } from '../data/destinations';
+
+export default function HomeDestinations() {
+  return (
+    <section className="py-20" style={{ backgroundColor: '#FAF8F1' }}>
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
+        <h2 className="text-3xl md:text-4xl font-bold text-center" style={{ color: '#1F3933' }}>
+          Điểm đến phổ biến
+        </h2>
+
+        <div className="mt-12">
+          <Slider slidesPerView={4} autoplayInterval={3000}>
+            {popularDestinations.map((d) => (
+              <div key={d.id} className="destination-item">
+                {/* Circular image wrapper */}
+                <div className="destination-image-container group cursor-pointer transition-transform group-hover:scale-105">
+                  <img src={d.image} alt={d.name} />
+                </div>
+                <span className="mt-3 text-sm font-medium text-center" style={{ color: '#6F7B75' }}>
+                  {d.name}
+                </span>
+              </div>
+            ))}
+          </Slider>
+        </div>
+      </div>
+    </section>
+  );
+}

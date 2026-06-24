@@ -1,5 +1,5 @@
 import { ApiService } from '@/config/apiClient';
-import type { LoginFormValues } from '@/validations/auth.schema';
+import type { LoginFormValues, RegisterFormValues } from '@/validations/auth.schema';
 
 // Khai báo kiểu dữ liệu trả về từ Backend
 export interface AuthResponse {
@@ -34,5 +34,16 @@ export const authService = {
    */
   refreshToken: async (token: string) => {
     return ApiService<AuthResponse>('/auth/refresh', 'POST', { refreshToken: token });
+  },
+
+  /**
+   * Đăng ký tài khoản mới
+   */
+  register: async (data: RegisterFormValues) => {
+    return ApiService<AuthResponse>('/auth/register', 'POST', {
+      name: data.fullName,
+      email: data.email,
+      password: data.password,
+    });
   },
 };

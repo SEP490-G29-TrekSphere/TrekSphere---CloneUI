@@ -6,7 +6,8 @@ export type AppButtonVariant =
   | 'outline'
   | 'secondary'
   | 'ghost'
-  | 'link';
+  | 'link'
+  | 'accent';
 export type AppButtonSize = 'default' | 'sm' | 'lg' | 'icon';
 
 export interface AppButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -15,12 +16,13 @@ export interface AppButtonProps extends React.ButtonHTMLAttributes<HTMLButtonEle
 }
 
 const variantStyles: Record<AppButtonVariant, string> = {
-  default: 'bg-primary text-primary-foreground hover:bg-primary/90',
+  default: 'bg-primary text-white hover:bg-primary-hover shadow-sm',
   destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
-  outline: 'border border-input bg-background hover:bg-muted hover:text-foreground',
-  secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+  outline: 'border-2 border-primary text-primary bg-transparent hover:bg-primary/5 font-semibold',
+  secondary: 'bg-accent text-primary hover:bg-accent/80 font-semibold',
   ghost: 'hover:bg-muted hover:text-foreground',
   link: 'text-primary underline-offset-4 hover:underline',
+  accent: 'bg-accent text-primary hover:bg-accent/80 font-semibold',
 };
 
 const sizeStyles: Record<AppButtonSize, string> = {
