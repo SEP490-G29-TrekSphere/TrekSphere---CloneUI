@@ -1,15 +1,20 @@
 /**
  * User roles trong hệ thống TrekSphere.
  *
- * Mỗi role sẽ có một nhóm features riêng trong src/features/<role>/.
- * Khi thêm role mới, thêm giá trị ở đây + tạo folder features/<role>/.
+ * 5 actor chính:
+ * - GUEST       : duyệt tour không cần đăng nhập
+ * - TREKKER     : đặt tour, review, group matchmaking, blog
+ * - VENDOR_STAFF: nhà cung cấp - tạo tour, lịch khởi hành, voucher
+ * - VENDOR_MANAGER: duyệt tour trước khi hiển thị cho trekker
+ * - ADMIN       : quản lý toàn bộ platform
+ *
+ * Khi thêm role mới: thêm giá trị ở đây + tạo folder features/<role>/.
  */
 export const ROLES = {
   GUEST: 'guest',
-  CUSTOMER: 'customer',
-  TOUR_GUIDE: 'tour_guide',
-  PARTNER: 'partner',
-  STAFF: 'staff',
+  TREKKER: 'trekker',
+  VENDOR_STAFF: 'vendor_staff',
+  VENDOR_MANAGER: 'vendor_manager',
   ADMIN: 'admin',
 } as const;
 
@@ -21,11 +26,10 @@ export type Role = (typeof ROLES)[keyof typeof ROLES];
  */
 export const ROLE_PROTECTED_ROUTES: Record<Role, readonly string[]> = {
   [ROLES.GUEST]: [],
-  [ROLES.CUSTOMER]: ['/dashboard', '/my-tours', '/community'],
-  [ROLES.TOUR_GUIDE]: ['/guide'],
-  [ROLES.PARTNER]: ['/partner'],
-  [ROLES.STAFF]: ['/staff'],
-  [ROLES.ADMIN]: ['/admin', '/dashboard'],
+  [ROLES.TREKKER]: ['/dashboard', '/my-tours', '/community'],
+  [ROLES.VENDOR_STAFF]: ['/partner'],
+  [ROLES.VENDOR_MANAGER]: ['/vendor-manager'],
+  [ROLES.ADMIN]: ['/admin'],
 };
 
 /**
