@@ -8,7 +8,7 @@
   --color-muted: #f0eee1;
   --color-muted-foreground: #6f7b75;
 
-  /* Primary Palette â€” TrekSphere Deep Green */
+  /* Primary Palette — TrekSphere Deep Green */
   --color-primary: #1f3933;
   --color-primary-light: #2a5048;
   --color-primary-dark: #162c28;
@@ -19,7 +19,7 @@
   --color-secondary: #a2ebd2;
   --color-secondary-foreground: #1f3933;
 
-  /* Accent â€” Mint */
+  /* Accent — Mint */
   --color-accent: #a2ebd2;
   --color-accent-foreground: #1f3933;
 
@@ -79,7 +79,7 @@
     font-family: "Inter", sans-serif;
   }
 
-  /* Slider â€” hide native scrollbar */
+  /* Slider — hide native scrollbar */
   .hide-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -88,7 +88,7 @@
     display: none;
   }
 
-  /* â”€â”€ Popular Destinations â”€â”€ */
+  /* ── Popular Destinations ── */
   .destination-item {
     display: flex;
     flex-direction: column;
@@ -116,7 +116,7 @@
     border-radius: 50%;
   }
 
-  /* â”€â”€ Featured Tours â”€â”€ */
+  /* ── Featured Tours ── */
   .tour-card {
     background-color: #f0eee1;
     border-radius: 16px !important;

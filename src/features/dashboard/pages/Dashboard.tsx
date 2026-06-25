@@ -49,8 +49,8 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 /**
- * Dashboard â€” showcase cÃ¡c shared UI components.
- * Sau nÃ y sáº½ lÃ  trang chÃ­nh cá»§a customer/admin sau khi Ä‘Äƒng nháº­p.
+ * Dashboard — showcase các shared UI components.
+ * Sau này sẽ là trang chính của customer/admin sau khi đăng nhập.
  */
 export default function Dashboard() {
   const setLoading = useAppStore((state) => state.setLoading);

@@ -2,15 +2,15 @@ import { Link, useLocation } from 'react-router-dom';
 import { PATHS } from '@/constants';
 
 const NAV_ITEMS = [
-  { label: 'KhÃ¡m phÃ¡', path: PATHS.HOME },
-  { label: 'Tour cá»§a tÃ´i', path: PATHS.MY_TOURS },
-  { label: 'Cá»™ng Ä‘á»“ng', path: PATHS.COMMUNITY },
-  { label: 'Tin tá»©c', path: PATHS.NEWS },
+  { label: 'Khám phá', path: PATHS.HOME },
+  { label: 'Tour của tôi', path: PATHS.MY_TOURS },
+  { label: 'Cộng đồng', path: PATHS.COMMUNITY },
+  { label: 'Tin tức', path: PATHS.NEWS },
 ];
 
 /**
- * PublicHeader â€” header cho landing page (guest).
- * Sau nÃ y má»—i actor cÃ³ header riÃªng, file nÃ y chá»‰ dÃ¹ng cho trang public.
+ * PublicHeader — header cho landing page (guest).
+ * Sau này mỗi actor có header riêng, file này chỉ dùng cho trang public.
  */
 export default function PublicHeader() {
   const location = useLocation();

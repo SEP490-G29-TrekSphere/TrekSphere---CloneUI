@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 
 /**
- * Debounce má»™t giÃ¡ trá»‹ â€” chá»‰ update sau khi ngá»«ng thay Ä‘á»•i trong `delay` ms.
+ * Debounce một giá trị — chỉ update sau khi ngừng thay đổi trong `delay` ms.
  *
- * Há»¯u Ã­ch cho search input, validation realtime, ...
+ * Hữu ích cho search input, validation realtime, ...
  *
  * @example
  *   const debounced = useDebounce(searchTerm, 300);
