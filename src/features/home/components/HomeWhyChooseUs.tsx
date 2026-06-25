@@ -42,9 +42,9 @@ const FEATURES = [
 
 export default function HomeWhyChooseUs() {
   return (
-    <section className="py-20" style={{ backgroundColor: '#FAF8F1' }}>
+    <section className="py-20 bg-background">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
-        <h2 className="text-3xl md:text-4xl font-bold text-center" style={{ color: '#1F3933' }}>
+        <h2 className="text-3xl md:text-4xl font-bold text-center text-primary">
           Tại sao chọn TrekSphere?
         </h2>
 
@@ -52,10 +52,8 @@ export default function HomeWhyChooseUs() {
           {FEATURES.map((f) => (
             <div key={f.title} className="flex flex-col items-center text-center">
               <div className="mb-5">{f.icon}</div>
-              <h3 className="text-lg font-bold" style={{ color: '#1F3933' }}>
-                {f.title}
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed max-w-xs" style={{ color: '#6F7B75' }}>
+              <h3 className="text-lg font-bold text-primary">{f.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed max-w-xs text-muted-foreground">
                 {f.description}
               </p>
             </div>

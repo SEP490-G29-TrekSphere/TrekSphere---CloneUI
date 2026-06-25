@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 export interface SliderProps {
   children: React.ReactNode[];
@@ -72,12 +72,7 @@ export default function Slider({
     };
   }, [autoplayInterval, children.length, scrollToIndex, getCurrentIndex]);
 
-  const getKey = (child: React.ReactNode, index: number) => {
-    if (React.isValidElement(child) && child.key != null) {
-      return String(child.key);
-    }
-    return `fallback-${index}`;
-  };
+  const getKey = (_child: React.ReactNode, index: number) => `slider-${index}`;
 
   return (
     <section className={`relative group ${className}`} aria-label="slider">

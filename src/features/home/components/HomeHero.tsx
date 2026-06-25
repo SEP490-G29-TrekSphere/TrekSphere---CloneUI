@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { PATHS } from '@/constants';
+import { AppButton } from '@/shared/ui';
 
 export default function HomeHero() {
   const [destination, setDestination] = useState('');
@@ -15,36 +18,26 @@ export default function HomeHero() {
       }}
     >
       <div className="max-w-[1200px] w-full px-4 sm:px-6 text-center">
-        <h1
-          className="text-4xl md:text-6xl font-bold text-white leading-tight tracking-tight"
-          style={{ maxWidth: '900px', margin: '0 auto' }}
-        >
+        <h1 className="text-4xl md:text-6xl font-bold text-white leading-tight tracking-tight max-w-[900px] mx-auto">
           Chinh phục những đỉnh cao mới cùng TrekSphere
         </h1>
 
-        <p
-          className="mt-5 text-white/90 text-base md:text-lg leading-relaxed"
-          style={{ maxWidth: '720px', margin: '20px auto 0' }}
-        >
+        <p className="mt-5 text-white/90 text-base md:text-lg leading-relaxed max-w-[720px] mx-auto">
           Trải nghiệm trekking chuyên nghiệp, an toàn và bền vững cùng đội ngũ chuyên gia hàng đầu.
           Khám phá vẻ đẹp hùng vĩ của núi rừng Việt Nam qua những hành trình độc bản.
         </p>
 
-        <button
-          type="button"
-          className="mt-8 inline-flex items-center justify-center px-6 py-2.5 rounded-full border border-white/80 text-white text-sm font-semibold hover:bg-white hover:text-[#1F3933] transition-colors backdrop-blur-sm"
-        >
-          Khám phá ngay
-        </button>
-
-        <div
-          className="mt-10 mx-auto flex items-center max-w-[760px] w-full rounded-full shadow-lg"
-          style={{ backgroundColor: '#FAF8F1' }}
-        >
-          <div
-            className="flex-1 flex items-center gap-2 px-5 py-3 border-r"
-            style={{ borderColor: '#E6E2D1' }}
+        <Link to={PATHS.TOURS}>
+          <AppButton
+            type="button"
+            className="mt-8 px-6 py-2.5 rounded-full border border-white/80 text-white text-sm font-semibold hover:bg-white hover:text-primary transition-colors backdrop-blur-sm"
           >
+            Khám phá ngay
+          </AppButton>
+        </Link>
+
+        <div className="mt-10 mx-auto flex items-center max-w-[760px] w-full rounded-full shadow-lg bg-background">
+          <div className="flex-1 flex items-center gap-2 px-5 py-3 border-r border-border">
             <svg
               className="w-5 h-5 shrink-0"
               fill="none"
@@ -68,8 +61,7 @@ export default function HomeHero() {
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
               placeholder="Bạn muốn đi đâu?"
-              className="w-full bg-transparent text-sm outline-none placeholder:text-[#6F7B75]"
-              style={{ color: '#1F3933' }}
+              className="w-full bg-transparent text-sm outline-none text-primary placeholder:text-muted-foreground"
             />
           </div>
 
@@ -92,15 +84,14 @@ export default function HomeHero() {
               value={time}
               onChange={(e) => setTime(e.target.value)}
               placeholder="Thời gian"
-              className="w-full bg-transparent text-sm outline-none placeholder:text-[#6F7B75]"
-              style={{ color: '#1F3933' }}
+              className="w-full bg-transparent text-sm outline-none text-primary placeholder:text-muted-foreground"
             />
           </div>
 
-          <button
+          <AppButton
             type="button"
-            className="m-1.5 flex items-center justify-center w-11 h-11 rounded-full shrink-0 transition-colors"
-            style={{ backgroundColor: '#1F3933' }}
+            size="icon"
+            className="m-1.5 shrink-0 bg-primary hover:bg-primary-hover"
             aria-label="Tìm kiếm"
           >
             <svg
@@ -116,7 +107,7 @@ export default function HomeHero() {
                 d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
               />
             </svg>
-          </button>
+          </AppButton>
         </div>
       </div>
     </section>

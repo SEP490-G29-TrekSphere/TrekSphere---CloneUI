@@ -1,23 +1,22 @@
-import { Slider } from '@/shared/ui';
+import { Link } from 'react-router-dom';
+import { PATHS } from '@/constants';
+import { AppButton, Slider } from '@/shared/ui';
 import { featuredTours } from '../data/tours';
 
 export default function HomeTours() {
   return (
-    <section className="py-20" style={{ backgroundColor: '#FAF8F1' }}>
+    <section className="py-20 bg-background">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
         <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-4">
           <div>
-            <h2 className="text-3xl md:text-4xl font-bold" style={{ color: '#1F3933' }}>
-              Tour nổi bật
-            </h2>
-            <p className="mt-2 text-base" style={{ color: '#6F7B75' }}>
+            <h2 className="text-3xl md:text-4xl font-bold text-primary">Tour nổi bật</h2>
+            <p className="mt-2 text-base text-muted-foreground">
               Lựa chọn những hành trình được yêu thích nhất
             </p>
           </div>
-          <a
-            href="/tours"
-            className="inline-flex items-center gap-1 text-sm font-semibold transition-opacity hover:opacity-70"
-            style={{ color: '#1F3933' }}
+          <Link
+            to={PATHS.TOURS}
+            className="inline-flex items-center gap-1 text-sm font-semibold transition-opacity hover:opacity-70 text-primary"
           >
             Xem tất cả
             <svg
@@ -33,7 +32,7 @@ export default function HomeTours() {
                 d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
               />
             </svg>
-          </a>
+          </Link>
         </div>
 
         <div className="mt-10">
@@ -43,35 +42,23 @@ export default function HomeTours() {
                 <div className="tour-image-wrapper">
                   <img src={tour.image} alt={tour.name} />
                   {tour.badge && (
-                    <span
-                      className="absolute px-3 py-1 rounded-full text-xs font-semibold"
-                      style={{
-                        backgroundColor: '#A2EBD2',
-                        color: '#1F3933',
-                        top: '12px',
-                        left: '12px',
-                      }}
-                    >
+                    <span className="absolute px-3 py-1 rounded-full text-xs font-semibold bg-secondary text-primary top-3 left-3">
                       {tour.badge}
                     </span>
                   )}
                 </div>
 
                 <div className="tour-content-wrapper">
-                  <h3 className="text-lg font-bold leading-snug" style={{ color: '#1F3933' }}>
-                    {tour.name}
-                  </h3>
+                  <h3 className="text-lg font-bold leading-snug text-primary">{tour.name}</h3>
 
                   <div className="flex items-center gap-1.5">
                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="#F59E0B">
                       <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                     </svg>
-                    <span className="text-sm font-semibold" style={{ color: '#1F3933' }}>
-                      {tour.rating}
-                    </span>
+                    <span className="text-sm font-semibold text-primary">{tour.rating}</span>
                   </div>
 
-                  <div className="flex items-center gap-4 text-xs" style={{ color: '#6F7B75' }}>
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1.5">
                       <svg
                         className="w-4 h-4"
@@ -107,16 +94,13 @@ export default function HomeTours() {
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-xl font-bold" style={{ color: '#1F3933' }}>
-                      {tour.price}
-                    </span>
-                    <button
+                    <span className="text-xl font-bold text-primary">{tour.price}</span>
+                    <AppButton
                       type="button"
-                      className="px-5 py-2 rounded-full text-sm font-semibold text-white transition-colors hover:opacity-90"
-                      style={{ backgroundColor: '#1F3933' }}
+                      className="px-5 py-2 rounded-full text-sm font-semibold text-white hover:opacity-90 bg-primary"
                     >
                       Chi tiết
-                    </button>
+                    </AppButton>
                   </div>
                 </div>
               </article>

@@ -13,13 +13,11 @@ const FOOTER_LINKS = [
  */
 export default function PublicFooter() {
   return (
-    <footer style={{ backgroundColor: '#1F3933' }}>
+    <footer className="bg-primary">
       <div className="mx-auto max-w-[1200px] px-4 sm:px-6 py-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <Link to={PATHS.HOME} className="flex items-center shrink-0">
-            <span className="text-xl font-bold" style={{ color: '#A2EBD2' }}>
-              TrekSphere
-            </span>
+            <span className="text-xl font-bold text-secondary">TrekSphere</span>
           </Link>
 
           <nav className="flex flex-wrap items-center justify-center gap-6">
@@ -27,15 +25,14 @@ export default function PublicFooter() {
               <Link
                 key={link.to}
                 to={link.to}
-                className="text-sm transition-opacity hover:opacity-80"
-                style={{ color: '#A2EBD2' }}
+                className="text-sm transition-opacity hover:opacity-80 text-secondary"
               >
                 {link.label}
               </Link>
             ))}
           </nav>
 
-          <p className="text-sm shrink-0" style={{ color: '#A2EBD2' }}>
+          <p className="text-sm shrink-0 text-secondary">
             &copy; 2024 TrekSphere. All rights reserved.
           </p>
         </div>

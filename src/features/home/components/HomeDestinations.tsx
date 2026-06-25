@@ -3,9 +3,9 @@ import { popularDestinations } from '../data/destinations';
 
 export default function HomeDestinations() {
   return (
-    <section className="py-20" style={{ backgroundColor: '#FAF8F1' }}>
+    <section className="py-20 bg-background">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
-        <h2 className="text-3xl md:text-4xl font-bold text-center" style={{ color: '#1F3933' }}>
+        <h2 className="text-3xl md:text-4xl font-bold text-center text-primary">
           Điểm đến phổ biến
         </h2>
 
@@ -16,7 +16,7 @@ export default function HomeDestinations() {
                 <div className="destination-image-container group cursor-pointer transition-transform group-hover:scale-105">
                   <img src={d.image} alt={d.name} />
                 </div>
-                <span className="mt-3 text-sm font-medium text-center" style={{ color: '#6F7B75' }}>
+                <span className="mt-3 text-sm font-medium text-center text-muted-foreground">
                   {d.name}
                 </span>
               </div>

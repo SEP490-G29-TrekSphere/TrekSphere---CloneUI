@@ -2,11 +2,9 @@ import { stories } from '../data/stories';
 
 export default function HomeStories() {
   return (
-    <section className="py-20" style={{ backgroundColor: '#FAF8F1' }}>
+    <section className="py-20 bg-background">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
-        <h2 className="text-3xl md:text-4xl font-bold" style={{ color: '#1F3933' }}>
-          Câu chuyện hành trình
-        </h2>
+        <h2 className="text-3xl md:text-4xl font-bold text-primary">Câu chuyện hành trình</h2>
 
         <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
           {stories.map((story) => (
