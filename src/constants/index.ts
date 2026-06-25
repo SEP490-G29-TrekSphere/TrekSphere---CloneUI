@@ -1,5 +1,5 @@
 /**
- * Barrel export cho tất cả constants.
+ * Barrel export cho táº¥t cáº£ constants.
  *
  *   import { PATHS, ROLES } from '@/constants';
  */

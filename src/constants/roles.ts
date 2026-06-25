@@ -1,14 +1,14 @@
 /**
- * User roles trong hệ thống TrekSphere.
+ * User roles trong há»‡ thá»‘ng TrekSphere.
  *
- * 5 actor chính:
- * - GUEST       : duyệt tour không cần đăng nhập
- * - TREKKER     : đặt tour, review, group matchmaking, blog
- * - VENDOR_STAFF: nhà cung cấp - tạo tour, lịch khởi hành, voucher
- * - VENDOR_MANAGER: duyệt tour trước khi hiển thị cho trekker
- * - ADMIN       : quản lý toàn bộ platform
+ * 5 actor chÃ­nh:
+ * - GUEST       : duyá»‡t tour khÃ´ng cáº§n Ä‘Äƒng nháº­p
+ * - TREKKER     : Ä‘áº·t tour, review, group matchmaking, blog
+ * - VENDOR_STAFF: nhÃ  cung cáº¥p - táº¡o tour, lá»‹ch khá»Ÿi hÃ nh, voucher
+ * - VENDOR_MANAGER: duyá»‡t tour trÆ°á»›c khi hiá»ƒn thá»‹ cho trekker
+ * - ADMIN       : quáº£n lÃ½ toÃ n bá»™ platform
  *
- * Khi thêm role mới: thêm giá trị ở đây + tạo folder features/<role>/.
+ * Khi thÃªm role má»›i: thÃªm giÃ¡ trá»‹ á»Ÿ Ä‘Ã¢y + táº¡o folder features/<role>/.
  */
 export const ROLES = {
   GUEST: 'guest',
@@ -21,8 +21,8 @@ export const ROLES = {
 export type Role = (typeof ROLES)[keyof typeof ROLES];
 
 /**
- * Routes dành riêng cho từng role.
- * Route nào có trong array này thì RequireRole sẽ cho phép.
+ * Routes dÃ nh riÃªng cho tá»«ng role.
+ * Route nÃ o cÃ³ trong array nÃ y thÃ¬ RequireRole sáº½ cho phÃ©p.
  */
 export const ROLE_PROTECTED_ROUTES: Record<Role, readonly string[]> = {
   [ROLES.GUEST]: [],
@@ -33,7 +33,7 @@ export const ROLE_PROTECTED_ROUTES: Record<Role, readonly string[]> = {
 };
 
 /**
- * Helper: kiểm tra role có quyền truy cập path không.
+ * Helper: kiá»ƒm tra role cÃ³ quyá»n truy cáº­p path khÃ´ng.
  */
 export function canAccessPath(role: Role | null, pathname: string): boolean {
   if (!role) return false;

@@ -3,11 +3,18 @@ import * as React from 'react';
 export interface AppCheckboxProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
   label?: string;
+  checked?: boolean;
+  onCheckedChange?: (checked: boolean) => void;
 }
 
 const AppCheckbox = React.forwardRef<HTMLInputElement, AppCheckboxProps>(
-  ({ className, label, id, ...props }, ref) => {
+  ({ className, label, id, checked, onCheckedChange, onChange, ...props }, ref) => {
     const inputId = id || `checkbox-${Math.random().toString(36).substring(2, 9)}`;
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      onChange?.(e);
+      onCheckedChange?.(e.target.checked);
+    };
 
     return (
       <label
@@ -15,7 +22,15 @@ const AppCheckbox = React.forwardRef<HTMLInputElement, AppCheckboxProps>(
         className="inline-flex items-center gap-2 cursor-pointer select-none group"
       >
         <div className="relative">
-          <input ref={ref} type="checkbox" id={inputId} className="peer sr-only" {...props} />
+          <input
+            ref={ref}
+            type="checkbox"
+            id={inputId}
+            checked={checked}
+            onChange={handleChange}
+            className="peer sr-only"
+            {...props}
+          />
           <div
             className="h-4 w-4 rounded border border-border bg-background
             peer-checked:bg-primary peer-checked:border-primary

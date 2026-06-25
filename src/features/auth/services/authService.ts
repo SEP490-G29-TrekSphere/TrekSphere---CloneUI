@@ -4,13 +4,13 @@ import type { LoginFormValues, RegisterFormValues } from '../validations/auth.sc
 
 export const authService = {
   /**
-   * Đăng nhập hệ thống.
+   * ÄÄƒng nháº­p há»‡ thá»‘ng.
    */
   login: (data: LoginFormValues) =>
     ApiService<AuthResponse>('/auth/login', 'POST', data as unknown as LoginPayload),
 
   /**
-   * Đăng ký tài khoản mới.
+   * ÄÄƒng kÃ½ tÃ i khoáº£n má»›i.
    */
   register: (data: RegisterFormValues) => {
     const payload: RegisterPayload = {
@@ -22,12 +22,12 @@ export const authService = {
   },
 
   /**
-   * Đăng xuất khỏi hệ thống.
+   * ÄÄƒng xuáº¥t khá»i há»‡ thá»‘ng.
    */
   logout: () => ApiService('/auth/logout', 'POST'),
 
   /**
-   * Làm mới token khi hết hạn.
+   * LÃ m má»›i token khi háº¿t háº¡n.
    */
   refreshToken: (token: string) =>
     ApiService<AuthResponse>('/auth/refresh', 'POST', { refreshToken: token }),

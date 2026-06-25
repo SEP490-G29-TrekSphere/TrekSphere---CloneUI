@@ -30,7 +30,9 @@ export default function HomeHero() {
         <Link to={PATHS.TOURS}>
           <AppButton
             type="button"
-            className="mt-8 px-6 py-2.5 rounded-full border border-white/80 text-white text-sm font-semibold hover:bg-white hover:text-primary transition-colors backdrop-blur-sm"
+            className="mt-8 px-6 py-2.5 rounded-full border border-white/80 text-white
+              text-sm font-semibold hover:bg-white hover:text-primary
+              transition-colors backdrop-blur-sm"
           >
             Khám phá ngay
           </AppButton>
@@ -61,7 +63,8 @@ export default function HomeHero() {
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
               placeholder="Bạn muốn đi đâu?"
-              className="w-full bg-transparent text-sm outline-none text-primary placeholder:text-muted-foreground"
+              className="w-full bg-transparent text-sm outline-none text-primary
+                placeholder:text-muted-foreground"
             />
           </div>
 
@@ -84,7 +87,8 @@ export default function HomeHero() {
               value={time}
               onChange={(e) => setTime(e.target.value)}
               placeholder="Thời gian"
-              className="w-full bg-transparent text-sm outline-none text-primary placeholder:text-muted-foreground"
+              className="w-full bg-transparent text-sm outline-none text-primary
+                placeholder:text-muted-foreground"
             />
           </div>
 

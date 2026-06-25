@@ -9,8 +9,8 @@ import PublicFooter from '../components/PublicFooter';
 import PublicHeader from '../components/PublicHeader';
 
 /**
- * Home — landing page cho guest (không cần đăng nhập).
- * Trang này thuộc feature 'public/home' (khách vãng lai).
+ * Home â€” landing page cho guest (khÃ´ng cáº§n Ä‘Äƒng nháº­p).
+ * Trang nÃ y thuá»™c feature 'public/home' (khÃ¡ch vÃ£ng lai).
  */
 export default function Home() {
   return (

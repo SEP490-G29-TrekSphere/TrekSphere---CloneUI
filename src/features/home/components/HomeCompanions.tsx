@@ -16,12 +16,13 @@ export default function HomeCompanions() {
           <div className="flex-1 text-white">
             <h2 className="text-3xl md:text-4xl font-bold leading-tight">Tìm bạn đồng hành</h2>
             <p className="mt-4 text-white/85 text-base leading-relaxed max-w-xl">
-              Đừng để hành trình đơn độc. Kết nối với hàng ngàn trekker có cùng đam mê, chia sẻ kinh
+              Đừng để hành trình đơn độc. Kết nối với hàng ngàn trekker cùng đam mê, chia sẻ kinh
               nghiệm và cùng nhau chinh phục những đỉnh cao.
             </p>
             <AppButton
               type="button"
-              className="mt-8 px-6 py-3 rounded-full font-semibold text-sm text-primary bg-secondary hover:bg-secondary/80"
+              className="mt-8 px-6 py-3 rounded-full font-semibold text-sm
+                text-primary bg-secondary hover:bg-secondary/80"
             >
               Tham gia nhóm ngay
             </AppButton>

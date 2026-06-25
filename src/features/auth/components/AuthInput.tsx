@@ -73,7 +73,7 @@ const AuthInput = forwardRef<HTMLInputElement, AuthInputProps<FieldValues, strin
                   onClick={() => setShowPassword((v) => !v)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1F3933] hover:opacity-70 transition-opacity"
                   tabIndex={-1}
-                  aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                  aria-label={showPassword ? 'áº¨n máº­t kháº©u' : 'Hiá»‡n máº­t kháº©u'}
                 >
                   {showPassword ? (
                     <svg

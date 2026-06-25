@@ -1,13 +1,13 @@
 /**
  * Centralized route paths.
  *
- * Mục đích:
- * - Tránh hard-code string '/login', '/dashboard' rải rác trong code.
- * - Khi đổi path chỉ cần sửa 1 chỗ.
+ * Má»¥c Ä‘Ã­ch:
+ * - TrÃ¡nh hard-code string '/login', '/dashboard' ráº£i rÃ¡c trong code.
+ * - Khi Ä‘á»•i path chá»‰ cáº§n sá»­a 1 chá»—.
  *
- * Quy ước:
- * - Tên hằng số: PATH_<TÊN_VIẾT_HOA>
- * - Giá trị: bắt đầu bằng '/' và không có trailing slash.
+ * Quy Æ°á»›c:
+ * - TÃªn háº±ng sá»‘: PATH_<TÃŠN_VIáº¾T_HOA>
+ * - GiÃ¡ trá»‹: báº¯t Ä‘áº§u báº±ng '/' vÃ  khÃ´ng cÃ³ trailing slash.
  */
 export const PATHS = {
   // Public
@@ -20,7 +20,7 @@ export const PATHS = {
   PRIVACY: '/privacy',
   CONTACT: '/contact',
 
-  // Customer (đăng nhập mới thấy)
+  // Customer (Ä‘Äƒng nháº­p má»›i tháº¥y)
   DASHBOARD: '/dashboard',
   TOURS: '/tours',
   MY_TOURS: '/my-tours',

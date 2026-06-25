@@ -14,7 +14,7 @@ export default function HomeNewsletter() {
         <div className="rounded-3xl px-8 py-14 md:px-16 md:py-16 text-center bg-muted">
           <p className="text-sm font-medium text-muted-foreground">Đăng ký nhận tin</p>
           <h2 className="mt-3 text-2xl md:text-3xl font-bold text-primary">
-            Nhận ngay thông tin về các tour mới nhất và ưu đãi đặc quyền dành riêng cho bạn.
+            Nhận ngay thông tin về các tour mới nhất và ưu đãi dành riêng cho bạn.
           </h2>
 
           <form
@@ -26,11 +26,13 @@ export default function HomeNewsletter() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email của bạn"
-              className="flex-1 px-6 py-3.5 bg-transparent text-sm outline-none text-primary placeholder:text-muted-foreground"
+              className="flex-1 px-6 py-3.5 bg-transparent text-sm outline-none
+                text-primary placeholder:text-muted-foreground"
             />
             <AppButton
               type="submit"
-              className="m-1.5 px-6 py-2.5 rounded-full text-sm font-semibold text-white bg-primary hover:bg-primary-hover"
+              className="m-1.5 px-6 py-2.5 rounded-full text-sm font-semibold
+                text-white bg-primary hover:bg-primary-hover"
             >
               Đăng ký
             </AppButton>

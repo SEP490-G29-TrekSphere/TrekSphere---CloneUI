@@ -6,7 +6,7 @@ export default function HomeDestinations() {
     <section className="py-20 bg-background">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
         <h2 className="text-3xl md:text-4xl font-bold text-center text-primary">
-          Điểm đến phổ biến
+          Äiá»ƒm Ä‘áº¿n phá»• biáº¿n
         </h2>
 
         <div className="mt-12">

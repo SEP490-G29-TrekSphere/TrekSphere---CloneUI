@@ -2,7 +2,7 @@ import * as z from 'zod';
 
 /**
  * Zod schemas cho form login/register.
- * Mỗi schema đi kèm type `*FormValues` để dùng với react-hook-form.
+ * Má»—i schema Ä‘i kÃ¨m type `*FormValues` Ä‘á»ƒ dÃ¹ng vá»›i react-hook-form.
  */
 
 export const loginSchema = z.object({

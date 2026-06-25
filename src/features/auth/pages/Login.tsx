@@ -99,7 +99,8 @@ export default function Login() {
           <AppButton
             type="submit"
             disabled={isSubmitting}
-            className="w-full h-12 rounded-full text-white font-semibold text-sm bg-[#06261D] hover:bg-[#06261D]/90 disabled:opacity-60"
+            className="w-full h-12 rounded-full text-white font-semibold text-sm
+              bg-[#06261D] hover:bg-[#06261D]/90 disabled:opacity-60"
           >
             {isSubmitting ? (
               <>

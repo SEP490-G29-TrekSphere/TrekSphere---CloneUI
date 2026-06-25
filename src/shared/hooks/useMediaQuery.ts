@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 /**
- * Theo dõi kích thước viewport, trả về boolean có khớp với media query không.
+ * Theo dÃµi kÃ­ch thÆ°á»›c viewport, tráº£ vá» boolean cÃ³ khá»›p vá»›i media query khÃ´ng.
  *
  * @example
  *   const isMobile = useMediaQuery('(max-width: 768px)');
