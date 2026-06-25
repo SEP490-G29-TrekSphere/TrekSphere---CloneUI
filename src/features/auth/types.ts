@@ -1,6 +1,6 @@
 /**
- * Types riÃªng cho feature auth.
- * Chá»‰ nhá»¯ng type thuá»™c vá» login/register/forgot-password má»›i Ä‘áº·t á»Ÿ Ä‘Ã¢y.
+ * Types riêng cho feature auth.
+ * Chỉ những type thuộc về login/register/forgot-password mới đặt ở đây.
  */
 import type { Role } from '@/constants';
 

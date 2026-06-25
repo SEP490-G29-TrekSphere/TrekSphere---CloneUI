@@ -21,12 +21,12 @@ const BADGE_TEXT: Record<AuthLayoutVariant, string> = {
 
 const HEADING_TEXT: Record<AuthLayoutVariant, { heading: string; desc: string }> = {
   login: {
-    heading: 'Chinh phá»¥c Ä‘á»‰nh cao cÃ¹ng TrekSphere',
-    desc: 'KhÃ¡m phÃ¡ nhá»¯ng cung Ä‘Æ°á»ng trekking tuyá»‡t vá»i nháº¥t táº¡i Viá»‡t Nam vÃ  káº¿t ná»‘i vá»›i cá»™ng Ä‘á»“ng yÃªu thiÃªn nhiÃªn.',
+    heading: 'Chinh phục đỉnh cao cùng TrekSphere',
+    desc: 'Khám phá những cung đường trekking tuyệt vời nhất tại Việt Nam và kết nối với cộng đồng yêu thiên nhiên.',
   },
   register: {
-    heading: 'Chinh phá»¥c nhá»¯ng Ä‘á»‰nh cao má»›i cÃ¹ng TrekSphere.',
-    desc: 'Tham gia máº¡ng lÆ°á»›i nhá»¯ng ngÆ°á»i yÃªu thÃ­ch leo nÃºi vÃ  khÃ¡m phÃ¡ thiÃªn nhiÃªn hoang dÃ£ lá»›n nháº¥t Viá»‡t Nam.',
+    heading: 'Chinh phục những đỉnh cao mới cùng TrekSphere.',
+    desc: 'Tham gia mạng lưới những người yêu thích leo núi và khám phá thiên nhiên hoang dã lớn nhất Việt Nam.',
   },
 };
 
@@ -46,7 +46,7 @@ export default function AuthLayout({
 
   return (
     <div className="flex min-h-screen">
-      {/* Left â€” Banner Panel */}
+      {/* Left — Banner Panel */}
       <div className={`hidden lg:flex lg:w-1/2 relative overflow-hidden ${isRegister ? ' ' : ''}`}>
         <img
           src={image}
@@ -77,7 +77,7 @@ export default function AuthLayout({
         </div>
       </div>
 
-      {/* Right â€” Form Panel */}
+      {/* Right — Form Panel */}
       <div
         className={`flex flex-1 flex-col justify-center px-6 py-12 sm:px-8 lg:w-1/2 ${
           isRegister ? 'lg:rounded-[2rem] lg:m-4 lg:bg-white' : ''

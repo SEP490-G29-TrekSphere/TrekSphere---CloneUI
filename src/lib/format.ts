@@ -1,7 +1,7 @@
 /**
- * Helper utilities thuáº§n (khÃ´ng phá»¥ thuá»™c React).
+ * Helper utilities thuần (không phụ thuộc React).
  *
- * Format, convert, sanitize, slugify â€” nhá»¯ng hÃ m dÃ¹ng Ä‘Æ°á»£c á»Ÿ má»i nÆ¡i.
+ * Format, convert, sanitize, slugify — những hàm dùng được ở mọi nơi.
  */
 
 export function formatDate(date: Date | string, locale = 'vi-VN'): string {
@@ -22,6 +22,6 @@ export function slugify(input: string): string {
     .replace(/(^-|-$)+/g, '');
 }
 
-export function truncate(text: string, max = 100, suffix = 'â€¦'): string {
+export function truncate(text: string, max = 100, suffix = '…'): string {
   return text.length > max ? `${text.slice(0, max).trim()}${suffix}` : text;
 }
