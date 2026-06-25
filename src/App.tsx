@@ -1,8 +1,7 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './config/queryClient';
 import AppRoutes from './routes/AppRoutes';
-import { AppGlobalLoadingSpinner } from './shared/ui/AppGlobalLoadingSpinner';
-import { AppGlobalToast } from './shared/ui/AppToast';
+import { AppGlobalLoadingSpinner, AppGlobalToast } from './shared/ui';
 
 export default function App() {
   return (

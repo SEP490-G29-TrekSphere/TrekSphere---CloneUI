@@ -1,18 +1,18 @@
 import { lazy, Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
+import { PATHS } from '@/constants';
 import MainLayout from '@/shared/layout/MainLayout';
 
-// Lazy loading features
-const Home = lazy(() => import('@/features/home/Home'));
-const Login = lazy(() => import('@/features/auth/Login'));
-const Register = lazy(() => import('@/features/auth/Register'));
-const Dashboard = lazy(() => import('@/features/dashboard/Dashboard'));
+// Lazy loading features (code-splitting theo route)
+const Home = lazy(() => import('@/features/home/pages/Home'));
+const Login = lazy(() => import('@/features/auth/pages/Login'));
+const Register = lazy(() => import('@/features/auth/pages/Register'));
+const Dashboard = lazy(() => import('@/features/dashboard/pages/Dashboard'));
 
-// Basic loading fallback
 function PageLoader() {
   return (
     <div className="flex h-screen w-full items-center justify-center">
-      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
     </div>
   );
 }
@@ -22,13 +22,13 @@ export default function AppRoutes() {
     <Suspense fallback={<PageLoader />}>
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route path={PATHS.HOME} element={<Home />} />
+        <Route path={PATHS.LOGIN} element={<Login />} />
+        <Route path={PATHS.REGISTER} element={<Register />} />
 
-        {/* Private/Layout Routes */}
+        {/* Protected/Layout Routes */}
         <Route element={<MainLayout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path={PATHS.DASHBOARD} element={<Dashboard />} />
         </Route>
       </Routes>
     </Suspense>
