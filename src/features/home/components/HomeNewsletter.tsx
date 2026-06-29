@@ -19,19 +19,19 @@ export default function HomeNewsletter() {
 
           <form
             onSubmit={handleSubmit}
-            className="mt-8 mx-auto flex items-center max-w-xl w-full bg-white rounded-full shadow-sm overflow-hidden"
+            className="mt-8 mx-auto flex items-center max-w-xl w-full bg-white rounded-full shadow-sm overflow-hidden h-14"
           >
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email của bạn"
-              className="flex-1 px-6 py-3.5 bg-transparent text-sm outline-none
+              className="flex-1 h-full px-6 bg-transparent text-sm outline-none
                 text-primary placeholder:text-muted-foreground"
             />
             <AppButton
               type="submit"
-              className="m-1.5 px-6 py-2.5 rounded-full text-sm font-semibold
+              className="shrink-0 whitespace-nowrap h-full px-7 rounded-full text-sm font-semibold
                 text-white bg-primary hover:bg-primary-hover"
             >
               Đăng ký

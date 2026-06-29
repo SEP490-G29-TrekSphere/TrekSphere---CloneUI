@@ -11,7 +11,7 @@ export default function HomeTours() {
           <div>
             <h2 className="text-3xl md:text-4xl font-bold text-primary">Tour nổi bật</h2>
             <p className="mt-2 text-base text-muted-foreground">
-              Lựa chọn những hành trình được yêu thích nhất
+              Lựa chọn những hành trình được yêu thích nhất.
             </p>
           </div>
           <Link

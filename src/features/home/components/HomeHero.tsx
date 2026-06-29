@@ -38,14 +38,22 @@ export default function HomeHero() {
           </AppButton>
         </Link>
 
-        <div className="mt-10 mx-auto flex items-center max-w-[760px] w-full rounded-full shadow-lg bg-background">
-          <div className="flex-1 flex items-center gap-2 px-5 py-3 border-r border-border">
+        <form
+          onSubmit={(e) => e.preventDefault()}
+          className="mt-10 mx-auto grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] items-center
+            max-w-[760px] w-full rounded-2xl md:rounded-full shadow-lg bg-background overflow-hidden"
+        >
+          <label
+            className="flex items-center gap-2 px-5 py-3 border-b md:border-b-0 md:border-r border-border
+              focus-within:bg-muted/40 transition-colors"
+          >
             <svg
               className="w-5 h-5 shrink-0"
               fill="none"
               viewBox="0 0 24 24"
               stroke="#6F7B75"
               strokeWidth={2}
+              aria-hidden="true"
             >
               <path
                 strokeLinecap="round"
@@ -63,18 +71,23 @@ export default function HomeHero() {
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
               placeholder="Bạn muốn đi đâu?"
+              aria-label="Điểm đến"
               className="w-full bg-transparent text-sm outline-none text-primary
                 placeholder:text-muted-foreground"
             />
-          </div>
+          </label>
 
-          <div className="flex-1 flex items-center gap-2 px-5 py-3">
+          <label
+            className="flex items-center gap-2 px-5 py-3 border-b md:border-b-0 border-border
+              focus-within:bg-muted/40 transition-colors"
+          >
             <svg
               className="w-5 h-5 shrink-0"
               fill="none"
               viewBox="0 0 24 24"
               stroke="#6F7B75"
               strokeWidth={2}
+              aria-hidden="true"
             >
               <path
                 strokeLinecap="round"
@@ -87,23 +100,28 @@ export default function HomeHero() {
               value={time}
               onChange={(e) => setTime(e.target.value)}
               placeholder="Thời gian"
+              aria-label="Thời gian"
               className="w-full bg-transparent text-sm outline-none text-primary
                 placeholder:text-muted-foreground"
             />
-          </div>
+          </label>
 
-          <AppButton
-            type="button"
-            size="icon"
-            className="m-1.5 shrink-0 bg-primary hover:bg-primary-hover"
+          <button
+            type="submit"
             aria-label="Tìm kiếm"
+            className="flex items-center justify-center gap-2 px-6 py-3 md:py-0 md:h-full
+              text-primary hover:text-primary-hover transition-colors
+              border-t md:border-t-0 border-border
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
+            <span className="text-sm font-semibold md:hidden">Tìm kiếm</span>
             <svg
-              className="w-5 h-5 text-white"
+              className="w-5 h-5 shrink-0"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
               strokeWidth={2.5}
+              aria-hidden="true"
             >
               <path
                 strokeLinecap="round"
@@ -111,8 +129,8 @@ export default function HomeHero() {
                 d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
               />
             </svg>
-          </AppButton>
-        </div>
+          </button>
+        </form>
       </div>
     </section>
   );

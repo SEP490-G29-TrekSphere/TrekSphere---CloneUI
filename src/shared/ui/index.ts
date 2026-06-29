@@ -52,4 +52,12 @@ export { AppCheckbox, type AppCheckboxProps } from './primitives/AppCheckbox';
 export { AppIcon, type AppIconProps, type AppIconSize } from './primitives/AppIcon';
 export { AppInput, type AppInputProps } from './primitives/AppInput';
 export { AppLabel, type AppLabelProps } from './primitives/AppLabel';
+// Logo
+export {
+  AppLogo,
+  TrekSphereLogo,
+  type TrekSphereLogoProps,
+  type TrekSphereLogoTone,
+  type TrekSphereLogoVariant,
+} from './primitives/AppLogo';
 export { default as Slider, type SliderProps } from './primitives/Slider';

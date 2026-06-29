@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { PATHS } from '@/constants';
+import { AppLogo } from '@/shared/ui';
 
 const NAV_ITEMS = [
   { label: 'Khám phá', path: PATHS.HOME },
@@ -18,9 +19,7 @@ export default function PublicHeader() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b bg-background border-border">
       <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-4 sm:px-6">
-        <Link to={PATHS.HOME} className="flex items-center gap-2 shrink-0">
-          <span className="text-xl font-bold text-primary">TrekSphere</span>
-        </Link>
+        <AppLogo height={40} to={PATHS.HOME} />
 
         <nav className="hidden md:flex items-center gap-8">
           {NAV_ITEMS.map((item) => {

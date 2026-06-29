@@ -17,7 +17,7 @@ export const stories: Story[] = [
   {
     id: '2',
     category: 'Cảm hứng',
-    title: 'Đêm ngàn sao trên đỉnh Tà Chí Nhù',
+    title: 'Đêm ngàn sao trên đỉnh Tà Chì Nhù',
     image: 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&q=80',
     slug: 'dem-ngan-sao-ta-chi-nhu',
   },

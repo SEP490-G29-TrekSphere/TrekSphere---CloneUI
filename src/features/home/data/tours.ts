@@ -24,7 +24,7 @@ export const featuredTours: Tour[] = [
   },
   {
     id: '2',
-    name: 'Tà Năng Phan Dũng - Cung đường đẹp',
+    name: 'Tà Năng - Phan Dũng',
     duration: '3 ngày 2 đêm',
     level: 'Khó',
     price: '3.200.000đ',
@@ -67,12 +67,12 @@ export const featuredTours: Tour[] = [
   },
   {
     id: '6',
-    name: 'Côn Đảo - Hòn Hải Đảo',
+    name: 'Côn Đảo - Hòn Bảy Đảo',
     duration: '5 ngày 4 đêm',
     level: 'Khám phá',
     price: '5.800.000đ',
     rating: 4.9,
     image: 'https://images.unsplash.com/photo-1559128010-7c1ad6e1b6a5?w=800&q=80',
-    slug: 'con-dao-hon-hai-dao',
+    slug: 'con-dao-hon-bay-dao',
   },
 ];
