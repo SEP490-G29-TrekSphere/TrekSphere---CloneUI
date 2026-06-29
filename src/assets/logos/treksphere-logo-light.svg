@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 64" width="320" height="64" role="img" aria-label="TrekSphere">
+  <defs>
+    <linearGradient id="tsFullLightGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#FFFFFF" />
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(0, 0)">
+    <circle cx="32" cy="32" r="31" fill="none" stroke="#FFFFFF" stroke-width="4" />
+
+    <circle cx="44.8" cy="20.48" r="6.4" fill="#A2EBD2" />
+
+    <path d="M 20.48 39.68 L 35.2 17.92 L 49.92 39.68 Z" fill="#FFFFFF" opacity="0.55" />
+
+    <path d="M 11.52 46.08 L 28.8 21.76 L 46.08 46.08 Z" fill="url(#tsFullLightGradient)" />
+
+    <path d="M 24.32 29.44 L 28.8 21.76 L 33.28 29.44 L 31.36 30.72 L 28.8 28.16 L 26.24 30.72 Z" fill="#1F3933" opacity="0.95" />
+
+    <circle cx="20.48" cy="52.48" r="1.6" fill="#FFFFFF" opacity="0.6" />
+    <circle cx="32" cy="54.4" r="1.6" fill="#FFFFFF" opacity="0.6" />
+    <circle cx="43.52" cy="52.48" r="1.6" fill="#FFFFFF" opacity="0.6" />
+  </g>
+
+  <g font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-weight="800" font-size="40" letter-spacing="-1">
+    <text x="80" y="44" fill="#FFFFFF" textLength="92" lengthAdjust="spacingAndGlyphs">Trek</text>
+    <text x="178" y="44" fill="#A2EBD2" textLength="135" lengthAdjust="spacingAndGlyphs">Sphere</text>
+  </g>
+
+  <rect x="178" y="50" width="135" height="3.5" rx="1.75" fill="#A2EBD2" />
+</svg>

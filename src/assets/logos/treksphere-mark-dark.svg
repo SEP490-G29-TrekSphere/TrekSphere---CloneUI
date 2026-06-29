@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="TrekSphere">
+  <defs>
+    <linearGradient id="tsMarkDarkGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1F3933" />
+      <stop offset="100%" stop-color="#2A5048" />
+    </linearGradient>
+  </defs>
+
+  <circle cx="32" cy="32" r="31" fill="none" stroke="#1F3933" stroke-width="4" />
+
+  <circle cx="44.8" cy="20.48" r="6.4" fill="#A2EBD2" />
+
+  <path d="M 20.48 39.68 L 35.2 17.92 L 49.92 39.68 Z" fill="#2A5048" opacity="0.85" />
+
+  <path d="M 11.52 46.08 L 28.8 21.76 L 46.08 46.08 Z" fill="url(#tsMarkDarkGradient)" />
+
+  <path d="M 24.32 29.44 L 28.8 21.76 L 33.28 29.44 L 31.36 30.72 L 28.8 28.16 L 26.24 30.72 Z" fill="#FFFFFF" opacity="0.95" />
+
+  <circle cx="20.48" cy="52.48" r="1.6" fill="#1F3933" opacity="0.5" />
+  <circle cx="32" cy="54.4" r="1.6" fill="#1F3933" opacity="0.5" />
+  <circle cx="43.52" cy="52.48" r="1.6" fill="#1F3933" opacity="0.5" />
+</svg>

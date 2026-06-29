@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { PATHS } from '@/constants';
+import { AppLogo } from '@/shared/ui';
 
 const FOOTER_LINKS = [
   { label: 'Vá» chÃºng tÃ´i', to: PATHS.ABOUT },
@@ -16,9 +17,7 @@ export default function PublicFooter() {
     <footer className="bg-primary">
       <div className="mx-auto max-w-[1200px] px-4 sm:px-6 py-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          <Link to={PATHS.HOME} className="flex items-center shrink-0">
-            <span className="text-xl font-bold text-secondary">TrekSphere</span>
-          </Link>
+          <AppLogo height={40} to={PATHS.HOME} tone="light" />
 
           <nav className="flex flex-wrap items-center justify-center gap-6">
             {FOOTER_LINKS.map((link) => (

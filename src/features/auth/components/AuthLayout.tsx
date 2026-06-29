@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { AppLogo } from '@/shared/ui';
 
 export type AuthLayoutVariant = 'login' | 'register';
 
@@ -86,11 +87,7 @@ export default function AuthLayout({
       >
         <div className="mx-auto w-full max-w-md space-y-6">
           {/* Mobile logo */}
-          <Link to="/" className="flex items-center gap-2 lg:hidden mb-2">
-            <span className="text-xl font-bold" style={{ color: '#1F3933' }}>
-              TrekSphere
-            </span>
-          </Link>
+          <AppLogo height={32} to="/" className="lg:hidden mb-2" />
 
           {/* Heading */}
           <div className="space-y-1">

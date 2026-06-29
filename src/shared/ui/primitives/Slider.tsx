@@ -115,7 +115,7 @@ export default function Slider({
           aria-label="Previous slide"
           style={{
             position: 'absolute',
-            left: '0',
+            left: '-60px',
             top: '50%',
             transform: 'translateY(-50%) translateX(-12px)',
             zIndex: 10,
@@ -159,7 +159,7 @@ export default function Slider({
           aria-label="Next slide"
           style={{
             position: 'absolute',
-            right: '0',
+            right: '-60px',
             top: '50%',
             transform: 'translateY(-50%) translateX(12px)',
             zIndex: 10,
