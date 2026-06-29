@@ -3,10 +3,10 @@ import { PATHS } from '@/constants';
 import { AppLogo } from '@/shared/ui';
 
 const FOOTER_LINKS = [
-  { label: 'Vá» chÃºng tÃ´i', to: PATHS.ABOUT },
-  { label: 'Äiá»u khoáº£n sá»­ dá»¥ng', to: PATHS.TERMS },
-  { label: 'ChÃ­nh sÃ¡ch báº£o máº­t', to: PATHS.PRIVACY },
-  { label: 'LiÃªn há»‡', to: PATHS.CONTACT },
+  { label: 'Về chúng tôi', to: PATHS.ABOUT },
+  { label: 'Điều khoản sử dụng', to: PATHS.TERMS },
+  { label: 'Chính sách bảo mật', to: PATHS.PRIVACY },
+  { label: 'Liên hệ', to: PATHS.CONTACT },
 ];
 
 /**
