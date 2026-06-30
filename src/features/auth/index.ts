@@ -5,6 +5,8 @@
  *   import { authService } from '@/features/auth/services';
  *   import { loginSchema } from '@/features/auth/validations/auth.schema';
  */
+
+export { default as ForgotPassword } from './pages/ForgotPassword';
 export { default as Login } from './pages/Login';
 export { default as Register } from './pages/Register';
 export { authService } from './services/authService';

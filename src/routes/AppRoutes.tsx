@@ -7,6 +7,7 @@ import MainLayout from '@/shared/layout/MainLayout';
 const Home = lazy(() => import('@/features/home/pages/Home'));
 const Login = lazy(() => import('@/features/auth/pages/Login'));
 const Register = lazy(() => import('@/features/auth/pages/Register'));
+const ForgotPassword = lazy(() => import('@/features/auth/pages/ForgotPassword'));
 const Dashboard = lazy(() => import('@/features/dashboard/pages/Dashboard'));
 
 function PageLoader() {
@@ -25,6 +26,7 @@ export default function AppRoutes() {
         <Route path={PATHS.HOME} element={<Home />} />
         <Route path={PATHS.LOGIN} element={<Login />} />
         <Route path={PATHS.REGISTER} element={<Register />} />
+        <Route path={PATHS.FORGOT_PASSWORD} element={<ForgotPassword />} />
 
         {/* Protected/Layout Routes */}
         <Route element={<MainLayout />}>

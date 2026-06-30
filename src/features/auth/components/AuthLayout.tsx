@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { AppLogo } from '@/shared/ui';
 
-export type AuthLayoutVariant = 'login' | 'register';
+export type AuthLayoutVariant = 'login' | 'register' | 'forgot-password';
 
 interface AuthLayoutProps {
   children: ReactNode;
@@ -18,6 +18,7 @@ interface AuthLayoutProps {
 const BADGE_TEXT: Record<AuthLayoutVariant, string> = {
   login: '',
   register: '',
+  'forgot-password': '',
 };
 
 const HEADING_TEXT: Record<AuthLayoutVariant, { heading: string; desc: string }> = {
@@ -28,6 +29,10 @@ const HEADING_TEXT: Record<AuthLayoutVariant, { heading: string; desc: string }>
   register: {
     heading: 'Chinh phục những đỉnh cao mới cùng TrekSphere.',
     desc: 'Tham gia mạng lưới những người yêu thích leo núi và khám phá thiên nhiên hoang dã lớn nhất Việt Nam.',
+  },
+  'forgot-password': {
+    heading: 'Hành trình bắt đầu từ chính bạn.',
+    desc: 'Tìm lại quyền truy cập để tiếp tục chuyến phiêu lưu kỳ thú cùng cộng đồng TrekSphere.',
   },
 };
 export default function AuthLayout({
