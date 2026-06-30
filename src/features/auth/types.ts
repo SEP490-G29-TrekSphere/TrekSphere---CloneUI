@@ -15,6 +15,10 @@ export interface RegisterPayload {
   password: string;
 }
 
+export interface ForgotPasswordResponse {
+  message: string;
+}
+
 export interface AuthResponse {
   accessToken: string;
   refreshToken: string;

@@ -22,6 +22,11 @@ export const authService = {
   },
 
   /**
+   * Gửi yêu cầu khôi phục mật khẩu.
+   */
+  forgotPassword: (email: string) => ApiService('/auth/forgot-password', 'POST', { email }),
+
+  /**
    * Đăng xuất khỏi hệ thống.
    */
   logout: () => ApiService('/auth/logout', 'POST'),
