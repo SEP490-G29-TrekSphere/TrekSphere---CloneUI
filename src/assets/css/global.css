@@ -126,6 +126,14 @@
     width: 100%;
     height: 100%;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition:
+      transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 0.3s ease;
+  }
+
+  .tour-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(31, 57, 51, 0.18);
   }
 
   .tour-image-wrapper {
@@ -150,5 +158,35 @@
     flex-direction: column;
     gap: 12px;
     flex: 1;
+  }
+
+  /* ─── Journey Stories ─── */
+  .story-card-hover {
+    transition:
+      transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 0.3s ease;
+  }
+
+  .story-card-hover:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(31, 57, 51, 0.18);
+  }
+
+  /* ─── Popular Destinations ─── */
+  .destination-hover {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .destination-hover:hover {
+    transform: translateY(-8px) scale(1.05);
+  }
+
+  /* ─── Why Choose Us ─── */
+  .feature-card-hover {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .feature-card-hover:hover {
+    transform: translateY(-8px);
   }
 }

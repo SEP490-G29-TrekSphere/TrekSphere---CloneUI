@@ -14,6 +14,14 @@
  *   import { AppButton } from '@/shared/ui/primitives/AppButton';
  */
 
+// Scroll reveal
+export {
+  default as ScrollReveal,
+  type ScrollRevealOptions,
+  type ScrollRevealProps,
+  type ScrollRevealVariant,
+  useScrollReveal,
+} from './components/ScrollReveal';
 // Data display
 export {
   AppCard,
