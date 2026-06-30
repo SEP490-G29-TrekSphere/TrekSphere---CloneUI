@@ -1,3 +1,5 @@
+import { ScrollReveal } from '@/shared/ui';
+
 const FEATURES = [
   {
     title: 'Hướng dẫn viên chuyên nghiệp',
@@ -44,19 +46,26 @@ export default function HomeWhyChooseUs() {
   return (
     <section className="py-20 bg-background">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
-        <h2 className="text-3xl md:text-4xl font-bold text-center text-primary">
-          Tại sao chọn TrekSphere?
-        </h2>
+        <ScrollReveal variant="fade-up">
+          <h2 className="text-3xl md:text-4xl font-bold text-center text-primary">
+            Tại sao chọn TrekSphere?
+          </h2>
+        </ScrollReveal>
 
         <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-10">
-          {FEATURES.map((f) => (
-            <div key={f.title} className="flex flex-col items-center text-center">
+          {FEATURES.map((f, idx) => (
+            <ScrollReveal
+              key={f.title}
+              variant="fade-up"
+              scrollOptions={{ delay: idx * 120 }}
+              className="flex flex-col items-center text-center feature-card-hover"
+            >
               <div className="mb-5">{f.icon}</div>
               <h3 className="text-lg font-bold text-primary">{f.title}</h3>
               <p className="mt-2 text-sm leading-relaxed max-w-xs text-muted-foreground">
                 {f.description}
               </p>
-            </div>
+            </ScrollReveal>
           ))}
         </div>
       </div>
