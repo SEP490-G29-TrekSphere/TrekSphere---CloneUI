@@ -30,7 +30,7 @@ export default function Sidebar() {
               <Link
                 key={item.name}
                 to={item.path}
-                className={`flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                   isActive
                     ? 'bg-primary text-primary-foreground shadow-sm'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'

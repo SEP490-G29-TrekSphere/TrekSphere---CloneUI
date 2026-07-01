@@ -9,6 +9,7 @@ const Login = lazy(() => import('@/features/auth/pages/Login'));
 const Register = lazy(() => import('@/features/auth/pages/Register'));
 const ForgotPassword = lazy(() => import('@/features/auth/pages/ForgotPassword'));
 const Dashboard = lazy(() => import('@/features/dashboard/pages/Dashboard'));
+const Notifications = lazy(() => import('@/features/notifications/pages/Notifications'));
 
 function PageLoader() {
   return (
@@ -27,6 +28,7 @@ export default function AppRoutes() {
         <Route path={PATHS.LOGIN} element={<Login />} />
         <Route path={PATHS.REGISTER} element={<Register />} />
         <Route path={PATHS.FORGOT_PASSWORD} element={<ForgotPassword />} />
+        <Route path={PATHS.NOTIFICATIONS} element={<Notifications />} />
 
         {/* Protected/Layout Routes */}
         <Route element={<MainLayout />}>

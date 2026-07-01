@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Dark mode variant — use @custom-variant for class-based dark mode */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   /* System Colors */
   --color-background: #faf8f1;
@@ -32,6 +35,17 @@
   --color-input: #e6e2d1;
   --color-ring: #1f3933;
 
+  /* Card */
+  --color-card: #ffffff;
+  --color-card-foreground: #1f3933;
+
+  /* Popover */
+  --color-popover: #ffffff;
+  --color-popover-foreground: #1f3933;
+
+  /* Ring offset */
+  --color-ring-offset: #ffffff;
+
   /* Border Radius */
   --radius-sm: calc(0.5rem - 4px);
   --radius-md: calc(0.5rem - 2px);
@@ -39,13 +53,140 @@
   --radius-xl: 1rem;
   --radius-2xl: 1.5rem;
   --radius-full: 9999px;
+
+  /* Animation tokens */
+  --animate-fade-in: fade-in 0.2s ease-out;
+  --animate-fade-out: fade-out 0.2s ease-in;
+  --animate-slide-in: slide-in 0.3s ease-out;
+  --animate-slide-out: slide-out 0.3s ease-in;
+  --animate-scale-in: scale-in 0.2s ease-out;
+  --animate-spin: spin 1s linear infinite;
+  --animate-pulse: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-bounce: bounce 1s infinite;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes slide-in {
+    from {
+      transform: translateY(-0.5rem);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slide-out {
+    from {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateY(-0.5rem);
+      opacity: 0;
+    }
+  }
+
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes pulse {
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  @keyframes bounce {
+    0%,
+    100% {
+      transform: translateY(-25%);
+      animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+    }
+    50% {
+      transform: translateY(0);
+      animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+    }
+  }
+}
+
+/* Dark mode theme overrides */
+.dark {
+  --color-background: #0d1f1a;
+  --color-foreground: #f0ede3;
+
+  --color-muted: #1a332c;
+  --color-muted-foreground: #a2c4b8;
+
+  --color-primary: #2a5048;
+  --color-primary-light: #3a6a5e;
+  --color-primary-dark: #1f3933;
+  --color-primary-foreground: #f0ede3;
+  --color-primary-hover: #3a6a5e;
+
+  --color-secondary: #1a332c;
+  --color-secondary-foreground: #f0ede3;
+
+  --color-accent: #1a332c;
+  --color-accent-foreground: #a2ebd2;
+
+  --color-destructive: #f87171;
+  --color-destructive-foreground: #0d1f1a;
+
+  --color-border: #2a4a3e;
+  --color-input: #2a4a3e;
+  --color-ring: #a2ebd2;
+
+  --color-card: #162c28;
+  --color-card-foreground: #f0ede3;
+
+  --color-popover: #162c28;
+  --color-popover-foreground: #f0ede3;
+
+  --color-ring-offset: #0d1f1a;
 }
 
 @layer base {
+  *,
+  *::before,
+  *::after {
+    border-color: var(--color-border);
+  }
+
   body {
     @apply antialiased;
-    background-color: #faf8f1;
-    color: #1f3933;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
     font-family: "Inter", sans-serif;
     font-size: 16px;
   }
@@ -55,14 +196,14 @@
     width: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: #f0eee1;
+    background: var(--color-muted);
   }
   ::-webkit-scrollbar-thumb {
-    background: #a2ebd2;
+    background: var(--color-secondary);
     border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #1f3933;
+    background: var(--color-primary);
   }
 }
 
@@ -102,7 +243,7 @@
     height: 160px;
     border-radius: 50% !important;
     overflow: hidden !important;
-    border: 2px solid #06261d;
+    border: 2px solid var(--color-primary-dark, var(--color-primary));
     display: block;
     position: relative;
     flex-shrink: 0;
@@ -118,14 +259,14 @@
 
   /* ── Featured Tours ── */
   .tour-card {
-    background-color: #f0eee1;
+    background-color: var(--color-muted);
     border-radius: 16px !important;
     overflow: hidden !important;
     display: flex;
     flex-direction: column;
     width: 100%;
     height: 100%;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 12px oklch(0% 0 0 / 0.05);
     transition:
       transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
       box-shadow 0.3s ease;
@@ -133,7 +274,7 @@
 
   .tour-card:hover {
     transform: translateY(-10px) scale(1.02);
-    box-shadow: 0 20px 40px rgba(31, 57, 51, 0.18);
+    box-shadow: 0 20px 40px color-mix(in oklch, var(--color-primary) 18%, transparent);
   }
 
   .tour-image-wrapper {
@@ -169,7 +310,7 @@
 
   .story-card-hover:hover {
     transform: translateY(-10px) scale(1.02);
-    box-shadow: 0 20px 40px rgba(31, 57, 51, 0.18);
+    box-shadow: 0 20px 40px color-mix(in oklch, var(--color-primary) 18%, transparent);
   }
 
   /* ─── Popular Destinations ─── */

@@ -26,6 +26,7 @@ export const PATHS = {
   MY_TOURS: '/my-tours',
   COMMUNITY: '/community',
   NEWS: '/news',
+  NOTIFICATIONS: '/notifications',
 } as const;
 
 export type AppPath = (typeof PATHS)[keyof typeof PATHS];

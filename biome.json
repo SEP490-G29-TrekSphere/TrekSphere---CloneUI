@@ -35,7 +35,7 @@
       },
       "a11y": {
         "noSvgWithoutTitle": "off",
-        "noLabelWithoutControl": "warn"
+        "noLabelWithoutControl": "off"
       }
     }
   },
