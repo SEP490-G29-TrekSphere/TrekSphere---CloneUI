@@ -27,6 +27,10 @@ export const PATHS = {
   COMMUNITY: '/community',
   NEWS: '/news',
   NOTIFICATIONS: '/notifications',
+
+  // Settings
+  SETTINGS: '/settings',
+  CHANGE_PASSWORD: '/settings/change-password',
 } as const;
 
 export type AppPath = (typeof PATHS)[keyof typeof PATHS];

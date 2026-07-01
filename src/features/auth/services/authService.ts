@@ -1,6 +1,10 @@
 import { ApiService } from '@/config/apiClient';
 import type { AuthResponse, LoginPayload, RegisterPayload } from '../types';
-import type { LoginFormValues, RegisterFormValues } from '../validations/auth.schema';
+import type {
+  ChangePasswordFormValues,
+  LoginFormValues,
+  RegisterFormValues,
+} from '../validations/auth.schema';
 
 export const authService = {
   /**
@@ -36,4 +40,10 @@ export const authService = {
    */
   refreshToken: (token: string) =>
     ApiService<AuthResponse>('/auth/refresh', 'POST', { refreshToken: token }),
+
+  /**
+   * Đổi mật khẩu.
+   */
+  changePassword: (data: ChangePasswordFormValues) =>
+    ApiService('/auth/change-password', 'POST', data),
 };

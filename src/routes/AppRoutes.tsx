@@ -8,6 +8,7 @@ const Home = lazy(() => import('@/features/home/pages/Home'));
 const Login = lazy(() => import('@/features/auth/pages/Login'));
 const Register = lazy(() => import('@/features/auth/pages/Register'));
 const ForgotPassword = lazy(() => import('@/features/auth/pages/ForgotPassword'));
+const ChangePassword = lazy(() => import('@/features/auth/pages/ChangePassword'));
 const Dashboard = lazy(() => import('@/features/dashboard/pages/Dashboard'));
 const Notifications = lazy(() => import('@/features/notifications/pages/Notifications'));
 
@@ -29,6 +30,7 @@ export default function AppRoutes() {
         <Route path={PATHS.REGISTER} element={<Register />} />
         <Route path={PATHS.FORGOT_PASSWORD} element={<ForgotPassword />} />
         <Route path={PATHS.NOTIFICATIONS} element={<Notifications />} />
+        <Route path={PATHS.CHANGE_PASSWORD} element={<ChangePassword />} />
 
         {/* Protected/Layout Routes */}
         <Route element={<MainLayout />}>
