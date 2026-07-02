@@ -11,6 +11,7 @@ const ForgotPassword = lazy(() => import('@/features/auth/pages/ForgotPassword')
 const ChangePassword = lazy(() => import('@/features/auth/pages/ChangePassword'));
 const Dashboard = lazy(() => import('@/features/dashboard/pages/Dashboard'));
 const Notifications = lazy(() => import('@/features/notifications/pages/Notifications'));
+const ListTours = lazy(() => import('@/features/tours/pages/ListTours'));
 
 function PageLoader() {
   return (
@@ -31,6 +32,7 @@ export default function AppRoutes() {
         <Route path={PATHS.FORGOT_PASSWORD} element={<ForgotPassword />} />
         <Route path={PATHS.NOTIFICATIONS} element={<Notifications />} />
         <Route path={PATHS.CHANGE_PASSWORD} element={<ChangePassword />} />
+        <Route path={PATHS.TOURS} element={<ListTours />} />
 
         {/* Protected/Layout Routes */}
         <Route element={<MainLayout />}>
