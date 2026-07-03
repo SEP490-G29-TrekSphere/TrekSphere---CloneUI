@@ -62,3 +62,23 @@ export const changePasswordSchema = z
   });
 
 export type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
+
+/**
+ * Schema cho form chỉnh sửa hồ sơ.
+ * Email bị loại ra khỏi schema vì là field readonly.
+ */
+export const updateProfileSchema = z.object({
+  name: z.string().min(2, 'Họ tên phải có ít nhất 2 ký tự').max(100, 'Họ tên quá dài'),
+  phone: z
+    .string()
+    .regex(/^[0-9+\-\s()]*$/, 'Số điện thoại không hợp lệ')
+    .optional()
+    .or(z.literal('')),
+  gender: z.enum(['male', 'female', 'other']).optional(),
+  dateOfBirth: z.string().optional().or(z.literal('')),
+  address: z.string().max(200, 'Địa chỉ quá dài').optional().or(z.literal('')),
+  bio: z.string().max(500, 'Giới thiệu tối đa 500 ký tự').optional().or(z.literal('')),
+  interests: z.array(z.string()).optional(),
+});
+
+export type UpdateProfileFormValues = z.infer<typeof updateProfileSchema>;

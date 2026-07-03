@@ -1,5 +1,11 @@
 import { ApiService } from '@/config/apiClient';
-import type { AuthResponse, LoginPayload, RegisterPayload } from '../types';
+import type {
+  AuthResponse,
+  LoginPayload,
+  RegisterPayload,
+  UpdateProfilePayload,
+  UserProfile,
+} from '../types';
 import type {
   ChangePasswordFormValues,
   LoginFormValues,
@@ -46,4 +52,15 @@ export const authService = {
    */
   changePassword: (data: ChangePasswordFormValues) =>
     ApiService('/auth/change-password', 'POST', data),
+
+  /**
+   * Lấy thông tin hồ sơ của user đang đăng nhập.
+   */
+  getProfile: () => ApiService<UserProfile>('/users/profile', 'GET'),
+
+  /**
+   * Cập nhật hồ sơ của user đang đăng nhập.
+   */
+  updateProfile: (data: UpdateProfilePayload) =>
+    ApiService<UserProfile>('/users/profile', 'PUT', data),
 };
