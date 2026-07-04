@@ -10,8 +10,6 @@ changelog:
       - invalid
       - wontfix
       - question
-    authors:
-      - dependabot
   categories:
     - title: "🚀 Features"
       labels:
