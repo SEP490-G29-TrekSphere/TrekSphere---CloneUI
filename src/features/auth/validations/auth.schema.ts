@@ -78,7 +78,7 @@ export const updateProfileSchema = z.object({
   dateOfBirth: z.string().optional().or(z.literal('')),
   address: z.string().max(200, 'Địa chỉ quá dài').optional().or(z.literal('')),
   bio: z.string().max(500, 'Giới thiệu tối đa 500 ký tự').optional().or(z.literal('')),
-  interests: z.array(z.string()).optional(),
+  interests: z.array(z.object({ value: z.string() })).optional(),
 });
 
 export type UpdateProfileFormValues = z.infer<typeof updateProfileSchema>;
