@@ -372,6 +372,24 @@ pnpm install
 
 ---
 
+## Release Process
+
+This repo uses a manual tag-and-release workflow. No automated GitHub Actions release job is required — the project is private and Vercel-deployed.
+
+### Steps
+
+1. **Pre-flight**: run `pnpm check` and `pnpm typecheck`; both must pass before proceeding.
+2. **Sanitization gate** (first release or after adding new tooling): verify the `LICENSE` is standard MIT, the README License section matches, `.gitignore` covers `node_modules`, `.env`, and `dist/`, and run `pnpm audit --audit-level=high` — log any outstanding vulnerabilities in the release notes.
+3. **Bump `package.json` version**: change `"version": "X.Y.Z"` on a feature branch (e.g. `0.0.0` → `0.0.1`).
+4. **Commit & push the bump**: `git commit -m "chore: prepare release vX.Y.Z"` then `git push origin <branch>`.
+5. **Tag & push**: `git tag -a vX.Y.Z -m "Release vX.Y.Z"` then `git push origin --tags` (push the branch first if not already pushed).
+6. **Generate release notes**: `git log --oneline --no-merges $(git describe --tags --abbrev=0)..HEAD` (or a full recent log if no prior tag exists).
+7. **Create the GitHub release**: `gh release create vX.Y.Z --title "Release vX.Y.Z" --notes "<notes>"`.
+8. **`.github/release.yml`**: this file maps label names to changelog categories. It only references labels that currently exist in the repo. When you add a new label (e.g. `breaking`, `refactor`, `test`, `revert`), update both the repo labels and this file's `categories` block.
+9. **Version bump ↔ release coupling**: the version bump commit and the tag **must be on the same branch** and the bump must be committed before tagging. A release with a missing or mismatched version bump (or a tag without a corresponding commit) is invalid.
+
+---
+
 ## Additional Resources
 
 - [GUIDELINES.md](./GUIDELINES.md) — Detailed coding standards and FSD documentation

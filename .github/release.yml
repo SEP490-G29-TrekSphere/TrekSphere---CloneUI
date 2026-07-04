@@ -1,0 +1,27 @@
+# Release notes configuration for GitHub auto-generated changelogs.
+# IMPORTANT: only references label names that currently exist in the repo.
+# When the team adopts additional labels (e.g. `breaking`, `refactor`, `test`,
+# `revert`), extend the lists below accordingly.
+
+changelog:
+  exclude:
+    labels:
+      - duplicate
+      - invalid
+      - wontfix
+      - question
+  categories:
+    - title: "🚀 Features"
+      labels:
+        - enhancement
+    - title: "🐛 Bug Fixes"
+      labels:
+        - bug
+    - title: "📝 Documentation"
+      labels:
+        - documentation
+    - title: "🧰 Maintenance"
+      labels:
+        - ci
+        - dependencies
+        - npm
