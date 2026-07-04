@@ -65,7 +65,7 @@ export default function EditProfile() {
       dateOfBirth: profile.dateOfBirth ?? '',
       address: profile.address ?? '',
       bio: profile.bio ?? '',
-      interests: profile.interests ?? [],
+      interests: profile.interests?.map((v: string) => ({ value: v })) ?? [],
     },
   });
 
@@ -78,7 +78,7 @@ export default function EditProfile() {
   } = methods;
 
   // Field array cho interests (tag có thể thêm/xoá)
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove } = useFieldArray<UpdateProfileFormValues, 'interests', 'value'>({
     control,
     name: 'interests',
   });
@@ -92,13 +92,17 @@ export default function EditProfile() {
       dateOfBirth: profile.dateOfBirth ?? '',
       address: profile.address ?? '',
       bio: profile.bio ?? '',
-      interests: profile.interests ?? [],
+      interests: profile.interests?.map((v: string) => ({ value: v })) ?? [],
     });
   }, [profile, reset]);
 
   // Mutation lưu thay đổi
   const updateMutation = useMutation({
-    mutationFn: (data: UpdateProfileFormValues) => profileService.updateProfile(data),
+    mutationFn: (data: UpdateProfileFormValues) =>
+      profileService.updateProfile({
+        ...data,
+        interests: data.interests?.map((i) => i.value),
+      }),
     onSuccess: (res) => {
       if (res.error || (res.status && res.status >= 400)) {
         toast.error(res.error || 'Cập nhật thất bại. Vui lòng thử lại.');
@@ -315,7 +319,7 @@ export default function EditProfile() {
                 <div className="flex flex-wrap gap-2">
                   {fields.map((field, index) => (
                     <div
-                      key={field.id}
+                      key={field.value}
                       className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-3 py-1.5 text-xs font-semibold text-primary"
                     >
                       <span>{field.value}</span>
@@ -334,7 +338,7 @@ export default function EditProfile() {
                   type="button"
                   onClick={() => {
                     const next = window.prompt('Nhập sở thích mới:')?.trim();
-                    if (next) append(next);
+                    if (next) append({ value: next });
                   }}
                   className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-dashed border-primary/40 bg-transparent px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-accent/40"
                 >
