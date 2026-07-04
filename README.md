@@ -38,3 +38,7 @@ Please carefully read the [GUIDELINES.md](./GUIDELINES.md) document to understan
 
 - The API Base URL is currently configured via the `VITE_API_URL` environment variable (default: `http://localhost:3000/api`).
 - The API communication layer uses `Axios` with pre-configured interceptors at `src/config/apiClient.ts`.
+
+## License
+
+This project is licensed under the [MIT License](./LICENSE).
