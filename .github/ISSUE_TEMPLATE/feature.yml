@@ -1,0 +1,49 @@
+# .github/ISSUE_TEMPLATE/feature.yml
+# Feature request form. Forces the reporter to articulate user value and the
+# smallest viable slice — protects maintainers from impossible-to-implement asks.
+name: ✨ Feature Request
+description: Propose a new feature or a meaningful enhancement to TrekSphere Frontend.
+title: "[Feature]: "
+labels: ["enhancement"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before opening this request, please confirm you have read the project's
+        [Code of Conduct](https://github.com/SEP490-G29-TrekSphere/TrekSphere_FE/blob/main/CODE_OF_CONDUCT.md).
+        Keep the proposal focused on the user problem — not the implementation.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: "What user problem does this solve? Who has it, and how often?"
+      placeholder: "TrekSphere travelers currently cannot X, which blocks them from Y..."
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: "Briefly describe the behavior you want. Skip API/code details."
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: "What other approaches did you consider, and why is this one better?"
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Approximate scope
+      options:
+        - "Small — single component or route"
+        - "Medium — feature slice + service layer + types"
+        - "Large — multiple slices or new architectural layer"
+    validations:
+      required: true
+  - type: textarea
+    id: mocks
+    attributes:
+      label: Wireframes / mockups / screenshots (optional)

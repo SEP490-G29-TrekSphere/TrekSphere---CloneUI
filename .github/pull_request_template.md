@@ -1,3 +1,5 @@
+> By opening this PR, you confirm you have read and agree to follow the project's [Code of Conduct](../CODE_OF_CONDUCT.md). Reviewers will enforce it; the bar for review feedback is "professional, on-topic, kind".
+
 ## Summary
 
 <!-- Briefly describe what this PR does and why. 1-3 sentences. -->
@@ -60,7 +62,7 @@ Closes #
 
 ### Code Quality
 
-- [ ] My code follows the project's [GUIDELINES.md](./GUIDELINES.md) (FSD layout, `App`-prefixed UI components, function declarations, RHF + Zod, Tailwind utilities, etc.)
+- [ ] My code follows the project's [AGENTS.md](../AGENTS.md) (FSD layout, `App`-prefixed UI components, function declarations, RHF + Zod, Tailwind utilities, etc.)
 - [ ] I have performed a self-review of my code
 - [ ] I have commented my code, especially in non-obvious areas
 - [ ] No new Biome warnings or errors (`pnpm check`)
@@ -69,7 +71,7 @@ Closes #
 ### Commits & Branch
 
 - [ ] My commits follow [Conventional Commits](https://www.conventionalcommits.org/) (e.g. `feat:`, `fix:`, `chore(deps):`)
-- [ ] Commit headers are ≤ 100 characters
+- [ ] Commit headers are ≤ 200 characters (matches `commitlint.config.js`)
 - [ ] My branch is up to date with the target branch (rebased or merged)
 - [ ] Lefthook pre-commit / pre-push hooks pass locally
 
@@ -81,7 +83,11 @@ Closes #
 
 ### Documentation
 
-- [ ] I have updated relevant documentation (README, GUIDELINES, JSDoc, Storybook, etc.)
+- [ ] I have updated relevant documentation (README, AGENTS.md, JSDoc, Storybook, etc.)
+
+### Conduct
+
+- [ ] I have read and agree to follow the [Code of Conduct](../CODE_OF_CONDUCT.md)
 
 ### Deployment & Breaking Changes
 

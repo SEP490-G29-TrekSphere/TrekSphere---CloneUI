@@ -1,0 +1,43 @@
+# .github/ISSUE_TEMPLATE/docs.yml
+# Documentation-only change. Keeps typos, README fixes, AGENTS.md / design docs
+# edits out of the feature/bug queues so they get reviewed quickly.
+name: 📝 Documentation
+description: Propose a change to README, AGENTS.md, JSDoc, or other docs.
+title: "[Docs]: "
+labels: ["documentation"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before opening this issue, please confirm you have read the project's
+        [Code of Conduct](https://github.com/SEP490-G29-TrekSphere/TrekSphere_FE/blob/main/CODE_OF_CONDUCT.md).
+  - type: input
+    id: target
+    attributes:
+      label: Document / location
+      description: "e.g. `README.md`, `AGENTS.md`, `src/features/auth/README.md`"
+      placeholder: "path/to/file.md or section heading"
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Type of doc change
+      options:
+        - "Typo / grammar"
+        - "Outdated instructions (synced with code)"
+        - "Missing documentation (new feature, new guideline)"
+        - "Structural / reorganisation"
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: Current content
+      placeholder: "Quote or summarize what is there now."
+  - type: textarea
+    id: proposed
+    attributes:
+      label: Proposed content
+      placeholder: "Paste the replacement text or a sketch of the new section."

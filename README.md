@@ -28,16 +28,26 @@ Frontend project for the TrekSphere platform, built with React 19, TypeScript, a
 
 ## Guidelines & Standards
 
-Please carefully read the [GUIDELINES.md](./GUIDELINES.md) document to understand:
+Please carefully read the [AGENTS.md](./AGENTS.md) document to understand:
 
 - The FSD directory structure.
 - Component naming conventions (Function Declarations, `App` prefix).
 - Commit code standards (Conventional Commits).
 
+Want to contribute? Start with [CONTRIBUTING.md](./CONTRIBUTING.md) — it is the single entry point for issues, PRs, setup, and review flow.
+
 ## API Integration
 
 - The API Base URL is currently configured via the `VITE_API_URL` environment variable (default: `http://localhost:3000/api`).
 - The API communication layer uses `Axios` with pre-configured interceptors at `src/config/apiClient.ts`.
+
+## Security
+
+Please report vulnerabilities privately — see [SECURITY.md](./SECURITY.md). Do not file a public GitHub issue for security bugs.
+
+## Code of Conduct
+
+This project follows a [Contributor Covenant Code of Conduct](./CODE_OF_CONDUCT.md). By participating, you agree to uphold it. Report unacceptable behavior to the contacts listed in the CoC.
 
 ## License
 

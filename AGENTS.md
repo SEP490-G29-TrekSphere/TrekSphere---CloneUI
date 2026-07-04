@@ -392,6 +392,6 @@ This repo uses a manual tag-and-release workflow. No automated GitHub Actions re
 
 ## Additional Resources
 
-- [GUIDELINES.md](./GUIDELINES.md) — Detailed coding standards and FSD documentation
+- [AGENTS.md](./AGENTS.md) — Detailed coding standards and FSD documentation
 - [README.md](./README.md) — Project overview and setup instructions
 - [DESIGN.md](./DESIGN.md) — Design system and color palette

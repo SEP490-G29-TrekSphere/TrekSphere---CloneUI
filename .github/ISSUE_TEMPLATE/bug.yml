@@ -1,0 +1,71 @@
+# .github/ISSUE_TEMPLATE/bug.yml
+# Bug report form. Intentionally lightweight — the issue body pre-filled by
+# GitHub is the minimum context a maintainer needs to reproduce.
+name: 🐛 Bug Report
+description: Report something broken or behaving incorrectly in TrekSphere Frontend.
+title: "[Bug]: "
+labels: ["bug"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before opening this bug, please confirm you have read the project's
+        [Code of Conduct](https://github.com/SEP490-G29-TrekSphere/TrekSphere_FE/blob/main/CODE_OF_CONDUCT.md).
+        Be respectful in the report — others will read it.
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: How broken is it?
+      options:
+        - "Critical — blocks a core user flow (login, booking, payment)"
+        - "High — major feature unusable but workaround exists"
+        - "Medium — feature works with a noticeable bug"
+        - "Low — cosmetic / polish"
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      description: "e.g. Chrome 126 / macOS 14, Node 22 / pnpm 11.9, production vs local"
+      placeholder: "browser + OS, or node + pnpm versions"
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Minimal, exact steps from a fresh state.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Scroll down to '...'
+        4. See error
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      placeholder: "What did you expect to happen?"
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      placeholder: "What actually happened? Paste console / network errors."
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots / Recordings
+      description: "Drag-and-drop images here, or paste links."
+  - type: input
+    id: suspected
+    attributes:
+      label: Possible cause (optional)
+      description: File path, component, route, or store slice you suspect. Skip if unsure.

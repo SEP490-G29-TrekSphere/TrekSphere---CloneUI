@@ -1,0 +1,66 @@
+# .github/ISSUE_TEMPLATE/security.yml
+# SECURITY-adjacent report form. For real vulnerabilities we still require
+# GitHub's private Advisory / SECURITY.md flow — this form is the funnel
+# only for "is this a vuln?" style triage questions.
+name: 🔒 Security Report
+description: Report a suspected security issue. For vulnerabilities, use GitHub's private Security Advisory instead.
+title: "[Security]: "
+labels: ["security"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Disclosing security issues publicly can put users at risk. Before opening
+        this issue, please read `SECURITY.md`:
+        <https://github.com/SEP490-G29-TrekSphere/TrekSphere_FE/blob/main/SECURITY.md>.
+        For genuine vulnerabilities, use a private
+        [GitHub Security Advisory](https://github.com/SEP490-G29-TrekSphere/TrekSphere_FE/security/advisories/new)
+        so the team can triage before details are public.
+        Before posting, please confirm you have read the project's
+        [Code of Conduct](https://github.com/SEP490-G29-TrekSphere/TrekSphere_FE/blob/main/CODE_OF_CONDUCT.md).
+  - type: dropdown
+    id: disclosure
+    attributes:
+      label: Has this been disclosed publicly yet?
+      description: "If yes, paste the public URL in the next field."
+      options:
+        - "No — not disclosed"
+        - "Yes — disclosed publicly"
+    validations:
+      required: true
+  - type: input
+    id: public_link
+    attributes:
+      label: Link to public disclosure
+      description: "Required only if you chose 'Yes — disclosed publicly' above. Paste the public URL (commit, PR, blog, advisory)."
+    validations:
+      required: false
+  - type: textarea
+    id: summary
+    attributes:
+      label: Vulnerability summary
+      description: "One-paragraph description: what is affected and the impact."
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps
+      description: "Steps to reproduce, including any preconditions."
+      placeholder: |
+        1. Set up ... with ...
+        2. Trigger ... by sending ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: "Likely worst-case outcome, who is affected, any prerequisites."
+  - type: input
+    id: researcher
+    attributes:
+      label: Your name / handle (optional)
+      description: "So we can credit you in the fix / advisory, if you want."
