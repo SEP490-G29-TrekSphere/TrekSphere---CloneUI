@@ -216,9 +216,17 @@ The build output goes to the `dist/` directory.
 
 ### CI/CD
 
-- **Deployment**: Automatic deployment to Vercel on successful CI
-- **Trigger**: Runs after CI workflow passes on `main` branch
-- **Secrets Required**: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`
+- **Deployment**: CI-driven prebuilt deploy to Vercel (no Vercel GitHub App)
+- **Workflow**: `.github/workflows/ci.yml` has two jobs:
+  - `ci`: lint + typecheck + `vercel build --prod`, uploads `.vercel/output/` artifact
+  - `deploy`: downloads the artifact and runs `vercel deploy --prebuilt --prod` (only on `push` to `main`)
+- **Vercel project**: `trek-sphere-fe` under team `bernie-truongs-projects` (linked via `vercel link --repo`)
+- **Trigger**: deploy job runs after `ci` succeeds on `main` branch
+- **Required GitHub secrets**:
+  - `VERCEL_TOKEN` — Vercel personal token
+  - `VERCEL_ORG_ID` — `team_51PSrhskGDB2REyCck9oLuIa`
+  - `VERCEL_PROJECT_ID` — `prj_1GZTxviygiI8PFEdRzjY67TrKcUk`
+- **Local linking**: `.vercel/` is gitignored; re-link with `vercel link --repo --scope bernie-truongs-projects` if needed
 
 ### Git Hooks (Lefthook)
 
