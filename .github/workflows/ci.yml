@@ -6,7 +6,9 @@ on:
   push:
     branches:
       - main
-
+  workflow_dispatch:
+# Cancel superseded runs on the same ref, but keep main-branch deploy runs
+# safe by skipping cancel-in-progress for pushes to main.
 # Cancel superseded runs on the same ref, but keep main-branch deploy runs
 # safe by skipping cancel-in-progress for pushes to main.
 concurrency:
