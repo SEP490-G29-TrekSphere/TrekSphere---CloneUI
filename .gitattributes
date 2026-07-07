@@ -7,7 +7,7 @@
 # and the committed file would still fail biome's lineEnding rule in CI.
 # Per-file entries below can still override the EOL (shell scripts stay LF,
 # batch scripts stay CRLF).
-*          eol=crlf
+*            text eol=crlf
 
 #
 # The above will handle all files NOT found below
@@ -65,7 +65,7 @@
 *.ps1      text eol=crlf
 
 # Serialisation
-*.json     text
+*.json     text -diff
 *.toml     text
 *.xml      text
 *.yaml     text
