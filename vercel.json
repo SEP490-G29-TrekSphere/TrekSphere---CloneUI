@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://treksphere-api.onrender.com/api/v1/:splat"
+      "destination": "https://treksphere-api.onrender.com/api/v1/$1"
     },
     {
       "source": "/((?!api|_next|_vercel|.*\\..*).*)",
