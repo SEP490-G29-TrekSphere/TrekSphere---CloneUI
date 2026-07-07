@@ -1,4 +1,5 @@
-import { ApiService } from '@/config/apiClient';
+import axios from 'axios';
+import { type ApiResponse, ApiService } from '@/config/apiClient';
 import type {
   AuthResponse,
   AuthUser,
@@ -72,10 +73,30 @@ export const authService = {
 
   /**
    * Xác thực email qua token từ link trong mail.
-   * BE: GET /api/v1/auth/verify?token=xxx → chuyển về login nếu thành công.
+   * Dùng axios trực tiếp (không qua interceptors) để tránh gắn accessToken
+   * vào verify request — token verify ≠ access token.
+   * BE: GET /api/v1/auth/verify?token=xxx → trả về 200 JSON body.
    */
-  verifyEmail: (token: string) =>
-    ApiService<{ success: boolean; message: string }>(`/auth/verify?token=${token}`, 'GET'),
+  verifyEmail: async (
+    token: string
+  ): Promise<ApiResponse<{ success: boolean; message: string }>> => {
+    const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+    try {
+      const response = await axios.get<{ success: boolean; message: string }>(
+        `${baseURL}/auth/verify?token=${token}`,
+        { timeout: 60_000 }
+      );
+      return { data: response.data, status: response.status };
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        return {
+          error: (err.response?.data as { message?: string })?.message || err.message,
+          status: err.response?.status,
+        };
+      }
+      return { error: 'An unknown error occurred' };
+    }
+  },
 };
 
 /** Helper chuyển user từ BE (snake_case) sang shape mà `useAppStore` đang lưu. */

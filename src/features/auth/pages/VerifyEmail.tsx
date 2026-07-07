@@ -27,16 +27,23 @@ export default function VerifyEmail() {
       setStatus('loading');
       try {
         const result = await authService.verifyEmail(token);
-        if (result.status === 302 || result.status === 301) {
-          navigate(PATHS.LOGIN);
-          return;
-        }
-        if (result.error || (result.status && result.status >= 400)) {
+
+        if (result.error && (result.status === 401 || result.status === 400)) {
           setStatus('error');
-          setErrorMessage(result.error || 'Xác thực thất bại. Liên kết có thể đã hết hạn.');
+          setErrorMessage(result.error || 'Token không hợp lệ hoặc đã hết hạn.');
           return;
         }
-        navigate(PATHS.LOGIN);
+
+        if (result.error) {
+          setStatus('error');
+          setErrorMessage(result.error || 'Xác thực thất bại. Vui lòng thử lại.');
+          return;
+        }
+
+        setStatus('success');
+        setTimeout(() => {
+          navigate(PATHS.LOGIN);
+        }, 2000);
       } catch {
         setStatus('error');
         setErrorMessage('Đã xảy ra lỗi khi xác thực. Vui lòng thử lại sau.');
