@@ -28,9 +28,7 @@ export const authService = {
    * BE: POST /api/v1/auth/register → chỉ trả về `{ userId, email, fullName }`,
    * KHÔNG kèm token — FE phải gọi tiếp /auth/login nếu muốn vào hệ thống luôn.
    */
-  register: (
-    data: RegisterFormValues
-  ): Promise<{ data?: RegisterResponseData } & Record<string, unknown>> =>
+  register: (data: RegisterFormValues): Promise<ApiResponse<RegisterResponseData>> =>
     ApiService<RegisterResponseData>('/auth/register', 'POST', {
       fullName: data.fullName,
       email: data.email,
