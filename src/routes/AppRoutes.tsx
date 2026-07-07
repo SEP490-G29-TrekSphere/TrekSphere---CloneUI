@@ -9,6 +9,7 @@ import PublicLayout from '@/shared/layout/PublicLayout';
 const Home = lazy(() => import('@/features/home/pages/Home'));
 const Login = lazy(() => import('@/features/auth/pages/Login'));
 const Register = lazy(() => import('@/features/auth/pages/Register'));
+const VerifyEmail = lazy(() => import('@/features/auth/pages/VerifyEmail'));
 const ForgotPassword = lazy(() => import('@/features/auth/pages/ForgotPassword'));
 const ChangePassword = lazy(() => import('@/features/auth/pages/ChangePassword'));
 const Dashboard = lazy(() => import('@/features/dashboard/pages/Dashboard'));
@@ -35,6 +36,7 @@ export default function AppRoutes() {
         {/* Standalone routes — không qua layout chung (auth flow, notifications) */}
         <Route path={PATHS.LOGIN} element={<Login />} />
         <Route path={PATHS.REGISTER} element={<Register />} />
+        <Route path={PATHS.VERIFY_EMAIL} element={<VerifyEmail />} />
         <Route path={PATHS.FORGOT_PASSWORD} element={<ForgotPassword />} />
         <Route path={PATHS.CHANGE_PASSWORD} element={<ChangePassword />} />
         <Route path={PATHS.NOTIFICATIONS} element={<Notifications />} />

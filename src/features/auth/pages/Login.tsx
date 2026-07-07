@@ -1,9 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { PATHS } from '@/constants';
-import { authService } from '@/features/auth';
+import { authService, toAppStoreUser } from '@/features/auth';
 import { AppButton, AppCheckbox, AppFormInput, AppSpinner } from '@/shared/ui';
 import { useAppStore } from '@/store/useAppStore';
 import { toast } from '@/store/useToastStore';
@@ -15,16 +15,26 @@ const LOGIN_IMAGE = 'https://images.unsplash.com/photo-1506905925346-21bda4d32df
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const setUser = useAppStore((state) => state.setUser);
   const [rememberMe, setRememberMe] = useState(false);
+  // Nếu user vừa đăng ký xong, Register sẽ navigate sang kèm state.registeredEmail.
+  const registeredEmail =
+    (location.state as { registeredEmail?: string } | null)?.registeredEmail ?? '';
 
   const methods = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
+      email: registeredEmail,
       password: '',
     },
   });
+
+  useEffect(() => {
+    if (registeredEmail) {
+      methods.setValue('email', registeredEmail);
+    }
+  }, [registeredEmail, methods.setValue]);
 
   const {
     handleSubmit,
@@ -44,11 +54,11 @@ export default function Login() {
       return;
     }
 
-    const { accessToken, refreshToken, user } = result.data;
-    storage.set('accessToken', accessToken);
-    storage.set('refreshToken', refreshToken);
-    setUser(user);
-    toast.success(`Chào mừng quay trở lại, ${user.name}!`);
+    const { access_token, refresh_token, user } = result.data;
+    storage.set('accessToken', access_token);
+    storage.set('refreshToken', refresh_token);
+    setUser(toAppStoreUser(user));
+    toast.success(`Chào mừng quay trở lại, ${user.fullName}!`);
     navigate(PATHS.HOME);
   };
 

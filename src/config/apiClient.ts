@@ -2,7 +2,7 @@ import axios, { type AxiosError, type AxiosInstance, type AxiosResponse } from '
 import { storage } from '@/utils/storage';
 
 // Configuring Axios instance
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
 const TIME_OUT = 60000;
 
 const apiClient: AxiosInstance = axios.create({
@@ -71,8 +71,15 @@ const handleResponse = <T>(response: AxiosResponse<unknown>): ApiResponse<T> => 
 // Error handling
 const handleError = (error: unknown): ApiResponse<never> => {
   if (axios.isAxiosError(error)) {
+    const responseData = error.response?.data as
+      | { message?: string; errors?: Array<{ field?: string; message?: string }> }
+      | undefined;
+    const fieldErrors = responseData?.errors
+      ?.map((e) => (e.field ? `${e.field}: ${e.message}` : e.message))
+      .filter(Boolean)
+      .join('; ');
     return {
-      error: error.response?.data?.message || error.message,
+      error: fieldErrors || responseData?.message || error.message,
       status: error.response?.status || 500,
     };
   }
