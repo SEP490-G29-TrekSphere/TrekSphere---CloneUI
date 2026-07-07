@@ -1,10 +1,18 @@
 import { create } from 'zustand';
 
+export interface AppUser {
+  id: string;
+  name: string;
+  email?: string;
+  avatarUrl?: string;
+  roles?: string[];
+}
+
 interface AppState {
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
-  user: { id: string; name: string } | null;
-  setUser: (user: AppState['user']) => void;
+  user: AppUser | null;
+  setUser: (user: AppUser | null) => void;
   isLoading: boolean;
   setLoading: (isLoading: boolean) => void;
 }

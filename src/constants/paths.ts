@@ -10,6 +10,9 @@
  * - Giá trị: bắt đầu bằng '/' và không có trailing slash.
  */
 export const PATHS = {
+  // Auth
+  VERIFY_EMAIL: '/verify',
+
   // Public
   HOME: '/',
   LOGIN: '/login',

@@ -4,9 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { PATHS } from '@/constants';
 import { authService } from '@/features/auth';
 import { AppButton, AppFormInput, AppSpinner } from '@/shared/ui';
-import { useAppStore } from '@/store/useAppStore';
 import { toast } from '@/store/useToastStore';
-import { storage } from '@/utils/storage';
 import AuthLayout from '../components/AuthLayout';
 import { type RegisterFormValues, registerSchema } from '../validations/auth.schema';
 
@@ -14,7 +12,8 @@ const REGISTER_IMAGE = 'https://images.unsplash.com/photo-1469474968028-56623f02
 
 export default function Register() {
   const navigate = useNavigate();
-  const setUser = useAppStore((state) => state.setUser);
+  // Dùng để khởi tạo defaultValues cho form Login khi redirect.
+  // (Hiện tại navigate truyền state, không cần thiết phải đụng store ở đây.)
 
   const methods = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -44,12 +43,10 @@ export default function Register() {
       return;
     }
 
-    const { accessToken, refreshToken, user } = result.data;
-    storage.set('accessToken', accessToken);
-    storage.set('refreshToken', refreshToken);
-    setUser(user);
-    toast.success('Tài khoản đã được tạo! Chào mừng bạn đến với TrekSphere.');
-    navigate(PATHS.HOME);
+    // BE register không trả token — chỉ trả `{ userId, email, fullName }`.
+    // Điều hướng sang trang login kèm email vừa đăng ký để người dùng đăng nhập luôn.
+    toast.success('Đăng ký thành công! Vui lòng đăng nhập để tiếp tục.');
+    navigate(PATHS.LOGIN, { state: { registeredEmail: data.email } });
   };
 
   return (
