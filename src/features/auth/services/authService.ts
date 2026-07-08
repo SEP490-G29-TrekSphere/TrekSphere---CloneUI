@@ -78,7 +78,7 @@ export const authService = {
   verifyEmail: async (
     token: string
   ): Promise<ApiResponse<{ success: boolean; message: string }>> => {
-    const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+    const baseURL = import.meta.env.VITE_API_URL || 'https://api.treksphere.io.vn/api/v1';
     try {
       const response = await axios.get<{ success: boolean; message: string }>(
         `${baseURL}/auth/verify?token=${token}`,
