@@ -1,161 +1,271 @@
-import { useMemo, useState } from 'react';
-import { TourCard, TourFilters, ToursHeader } from '@/features/tours';
-import { tours } from '@/features/tours/data/tours';
-import type { TourFilter } from '@/features/tours/types';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  TourCard,
+  TourFilters,
+  TourPagination,
+  TourSearchBar,
+  type TourSearchValues,
+  ToursHero,
+} from '@/features/tours';
+import { useTours } from '@/features/tours/hooks/useTours';
+import type { ApiSortDir, ApiSortField, TourFilter, TourListParams } from '@/features/tours/types';
+import { useDebounce } from '@/shared/hooks';
 import { AppButton } from '@/shared/ui';
 
-type ViewMode = 'list' | 'grid';
+/**
+ * Map the UI sort key to the (sortBy, sortDir) pair the backend expects.
+ * `popular` and `newest` both map to `createdAt desc` because the backend
+ * has no "popularity" field; the UI label still conveys intent.
+ */
+function resolveSort(sortBy: TourFilter['sortBy']): { sortBy: ApiSortField; sortDir: ApiSortDir } {
+  switch (sortBy) {
+    case 'price-asc':
+      return { sortBy: 'basePrice', sortDir: 'asc' };
+    case 'price-desc':
+      return { sortBy: 'basePrice', sortDir: 'desc' };
+    case 'rating':
+      return { sortBy: 'averageRating', sortDir: 'desc' };
+    case 'newest':
+      return { sortBy: 'createdAt', sortDir: 'desc' };
+    case 'duration-asc':
+      return { sortBy: 'durationDays', sortDir: 'asc' };
+    case 'duration-desc':
+      return { sortBy: 'durationDays', sortDir: 'desc' };
+    case 'name-asc':
+      return { sortBy: 'tourName', sortDir: 'asc' };
+    default:
+      return { sortBy: 'createdAt', sortDir: 'desc' };
+  }
+}
 
+const PAGE_SIZE = 6;
+
+/**
+ * ListTours page.
+ *
+ * State architecture:
+ *   - `draft`    — text inputs bound to the search bar, updated on every keystroke
+ *   - `filters`  — committed filter object sent to the API (debounced keyword/location)
+ *   - `page`     — 0-indexed page number
+ *
+ * The draft → filters copy happens via a debounced effect on the keyword and
+ * a direct copy for the location (location is rarely typed char-by-char, so
+ * we accept the submit-driven update).
+ *
+ * All server-side filtering/sorting is delegated to the API. The previous
+ * client-side `useMemo` filter/sort block is gone — see `useTours`.
+ */
 export default function ListTours() {
-  const [filters, setFilters] = useState<TourFilter>({
-    sortBy: 'popular',
+  const [draft, setDraft] = useState<TourSearchValues>({
+    keyword: '',
+    location: '',
+    departureDate: '',
+    budget: '',
   });
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
 
-  const filteredTours = useMemo(() => {
-    let result = [...tours];
+  const [filters, setFilters] = useState<TourFilter>({
+    sortBy: 'newest',
+  });
+  const [page, setPage] = useState(0);
 
-    if (filters.category) {
-      result = result.filter((tour) => tour.category === filters.category);
+  const debouncedKeyword = useDebounce(draft.keyword, 400);
+
+  useEffect(() => {
+    setFilters((prev) => {
+      if (prev.keyword === debouncedKeyword) return prev;
+      return { ...prev, keyword: debouncedKeyword };
+    });
+    setPage(0);
+  }, [debouncedKeyword]);
+
+  const handleSearch = (values: TourSearchValues) => {
+    setDraft(values);
+    setFilters((prev) => ({
+      ...prev,
+      keyword: values.keyword,
+      location: values.location,
+    }));
+    setPage(0);
+  };
+
+  const handleFilterChange = (next: TourFilter) => {
+    setFilters(next);
+    setDraft({
+      keyword: next.keyword || '',
+      location: next.location || '',
+      departureDate: '',
+      budget: '',
+    });
+    setPage(0);
+  };
+
+  const handlePageChange = (next: number) => {
+    setPage(next);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  };
 
-    if (filters.level) {
-      result = result.filter((tour) => tour.level === filters.level);
-    }
+  const { sortBy, sortDir } = resolveSort(filters.sortBy);
 
-    if (filters.priceRange) {
-      result = result.filter((tour) => {
-        const price = parseInt(tour.price.replace(/\D/g, ''), 10);
-        return price >= filters.priceRange![0] && price <= filters.priceRange![1];
-      });
-    }
+  const queryParams = useMemo<TourListParams>(
+    () => ({
+      keyword: filters.keyword,
+      location: filters.location,
+      difficulty: filters.difficulty,
+      page,
+      size: PAGE_SIZE,
+      sortBy,
+      sortDir,
+    }),
+    [filters.keyword, filters.location, filters.difficulty, page, sortBy, sortDir]
+  );
 
-    switch (filters.sortBy) {
-      case 'price-asc':
-        result.sort((a, b) => {
-          const priceA = parseInt(a.price.replace(/\D/g, ''), 10);
-          const priceB = parseInt(b.price.replace(/\D/g, ''), 10);
-          return priceA - priceB;
-        });
-        break;
-      case 'price-desc':
-        result.sort((a, b) => {
-          const priceA = parseInt(a.price.replace(/\D/g, ''), 10);
-          const priceB = parseInt(b.price.replace(/\D/g, ''), 10);
-          return priceB - priceA;
-        });
-        break;
-      case 'rating':
-        result.sort((a, b) => b.rating - a.rating);
-        break;
-      case 'newest':
-        result = result.filter((tour) => tour.isNew).concat(result.filter((tour) => !tour.isNew));
-        break;
-      default:
-        result = result
-          .filter((tour) => tour.isPopular)
-          .concat(result.filter((tour) => !tour.isPopular));
-        break;
-    }
-
-    return result;
-  }, [filters]);
+  const { tours, totalElements, totalPages, pageNumber, isLoading, error, refetch } =
+    useTours(queryParams);
 
   return (
-    <div className="min-h-screen bg-background">
-      <ToursHeader />
+    <div className="min-h-screen bg-background pt-16">
+      <ToursHero />
 
-      <main className="mx-auto max-w-[1200px] px-4 py-8 sm:px-6 sm:py-10 lg:py-12">
-        <TourFilters
-          filters={filters}
-          onFilterChange={setFilters}
-          totalResults={filteredTours.length}
-        />
+      <div className="relative z-10">
+        <div className="mx-auto max-w-[1200px] px-4 sm:px-6">
+          <TourSearchBar onSearch={handleSearch} initialValues={draft} />
 
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <AppButton
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
-              size="icon"
-              onClick={() => setViewMode('list')}
-              className="h-9 w-9 rounded-full"
-              aria-label="List view"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.5}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
-                />
-              </svg>
-            </AppButton>
-            <AppButton
-              variant={viewMode === 'grid' ? 'default' : 'ghost'}
-              size="icon"
-              onClick={() => setViewMode('grid')}
-              className="h-9 w-9 rounded-full"
-              aria-label="Grid view"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.5}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"
-                />
-              </svg>
-            </AppButton>
+          <div className="mt-10 sm:mt-14">
+            {isLoading ? (
+              <FeaturedToursSkeleton />
+            ) : error ? (
+              <FeaturedToursError onRetry={() => refetch()} />
+            ) : tours.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="h-8 w-8"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="mb-2 text-lg font-semibold text-primary">Không tìm thấy tour</h3>
+                <p className="mb-6 max-w-sm text-sm text-muted-foreground">
+                  Không có tour nào phù hợp với bộ lọc của bạn. Thử thay đổi các tiêu chí tìm kiếm.
+                </p>
+                <AppButton onClick={() => handleFilterChange({ sortBy: 'newest' })}>
+                  Xóa tất cả
+                </AppButton>
+              </div>
+            ) : (
+              <FeaturedToursList
+                tours={tours}
+                filters={filters}
+                onFilterChange={handleFilterChange}
+                totalElements={totalElements}
+              />
+            )}
+
+            <div className="mt-8">
+              <TourPagination
+                pageNumber={pageNumber}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            </div>
           </div>
         </div>
 
-        {filteredTours.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-muted">
-              <svg
-                className="w-10 h-10 text-muted-foreground"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.5}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
-                />
-              </svg>
+        <div className="h-16 sm:h-24" />
+      </div>
+    </div>
+  );
+}
+
+interface FeaturedToursListProps {
+  tours: ReturnType<typeof useTours>['tours'];
+  filters: TourFilter;
+  onFilterChange: (f: TourFilter) => void;
+  totalElements: number;
+}
+
+function FeaturedToursList({
+  tours,
+  filters,
+  onFilterChange,
+  totalElements,
+}: FeaturedToursListProps) {
+  return (
+    <div className="flex flex-col gap-4 sm:gap-5">
+      <TourFilters
+        filters={filters}
+        onFilterChange={onFilterChange}
+        totalResults={totalElements}
+        className="mb-1"
+      />
+
+      {tours.map((tour) => (
+        <TourCard key={tour.id} tour={tour} />
+      ))}
+    </div>
+  );
+}
+
+function FeaturedToursSkeleton() {
+  return (
+    <div className="flex flex-col gap-5">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div
+          // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length placeholder list, index is stable
+          key={`featured-tour-skeleton-${i}`}
+          className="flex gap-4 rounded-2xl bg-white p-3 shadow-sm ring-1 ring-black/5 sm:p-4"
+        >
+          <div className="h-44 w-full shrink-0 animate-pulse rounded-xl bg-muted sm:h-auto sm:w-[200px] lg:w-[220px]" />
+          <div className="flex flex-1 flex-col justify-between gap-2 py-1">
+            <div className="flex flex-col gap-2">
+              <div className="h-5 w-2/3 animate-pulse rounded bg-muted" />
+              <div className="h-3 w-1/3 animate-pulse rounded bg-muted" />
+              <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
             </div>
-            <h3 className="mb-2 text-lg font-semibold text-primary">Không tìm thấy tour</h3>
-            <p className="mb-6 max-w-sm text-sm text-muted-foreground">
-              Không có tour nào phù hợp với bộ lọc của bạn. Thử thay đổi các tiêu chí tìm kiếm.
-            </p>
-            <AppButton onClick={() => setFilters({ sortBy: 'popular' })}>Xóa bộ lọc</AppButton>
+            <div className="h-7 w-32 animate-pulse rounded-full bg-muted" />
           </div>
-        ) : viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredTours.map((tour) => (
-              <TourCard key={tour.id} tour={tour} variant="grid" />
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col gap-3 sm:gap-4">
-            {filteredTours.map((tour) => (
-              <TourCard key={tour.id} tour={tour} variant="list" />
-            ))}
-          </div>
-        )}
-      </main>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function FeaturedToursError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-destructive/10">
+        <svg
+          className="h-10 w-10 text-destructive"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={1.5}
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
+          />
+        </svg>
+      </div>
+      <h3 className="mb-2 text-lg font-semibold text-primary">Đã xảy ra lỗi</h3>
+      <p className="mb-6 max-w-sm text-sm text-muted-foreground">
+        Không thể tải danh sách tour. Vui lòng thử lại.
+      </p>
+      <AppButton onClick={onRetry}>Thử lại</AppButton>
     </div>
   );
 }

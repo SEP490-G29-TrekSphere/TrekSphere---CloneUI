@@ -1,4 +1,4 @@
-import type { Tour, TourCategory, TourDetail } from '../types';
+import type { Tour, TourDetail } from '../types';
 
 /**
  * Detailed mock data for tour detail pages
@@ -622,44 +622,13 @@ export const tours: Tour[] = [
   },
 ];
 
-export const tourCategories: TourCategory[] = [
-  { id: 'all', name: 'Tất cả', icon: '🌍', count: tours.length },
-  {
-    id: 'leonui',
-    name: 'Leo núi',
-    icon: '⛰️',
-    count: tours.filter((t) => t.category === 'leonui').length,
-  },
-  {
-    id: 'trekking',
-    name: 'Trekking',
-    icon: '🥾',
-    count: tours.filter((t) => t.category === 'trekking').length,
-  },
-  {
-    id: 'motorbike',
-    name: 'Motorbike',
-    icon: '🏍️',
-    count: tours.filter((t) => t.category === 'motorbike').length,
-  },
-  {
-    id: 'culture',
-    name: 'Văn hóa',
-    icon: '🏛️',
-    count: tours.filter((t) => t.category === 'culture').length,
-  },
-  {
-    id: 'beach',
-    name: 'Biển đảo',
-    icon: '🏝️',
-    count: tours.filter((t) => t.category === 'beach').length,
-  },
-];
-
 export const popularFilters = [
   { id: 'popular', label: 'Phổ biến nhất' },
   { id: 'newest', label: 'Mới nhất' },
   { id: 'price-asc', label: 'Giá: Thấp → Cao' },
   { id: 'price-desc', label: 'Giá: Cao → Thấp' },
+  { id: 'duration-asc', label: 'Thời gian: Ngắn nhất' },
+  { id: 'duration-desc', label: 'Thời gian: Dài nhất' },
+  { id: 'name-asc', label: 'Tên: A → Z' },
   { id: 'rating', label: 'Đánh giá cao' },
 ];

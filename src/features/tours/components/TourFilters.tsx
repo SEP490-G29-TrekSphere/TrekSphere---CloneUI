@@ -1,92 +1,77 @@
-import { useState } from 'react';
-import type { TourFilter } from '@/features/tours/types';
-import { AppButton } from '@/shared/ui';
-import { tourCategories } from '../data/tours';
+import type { ApiDifficulty, TourFilter } from '@/features/tours/types';
 
 interface TourFiltersProps {
   filters: TourFilter;
   onFilterChange: (filters: TourFilter) => void;
   totalResults: number;
+  className?: string;
 }
 
-const sortOptions = [
-  { value: 'popular', label: 'Phổ biến nhất' },
+const sortOptions: { value: NonNullable<TourFilter['sortBy']>; label: string }[] = [
+  { value: 'newest', label: 'Mới nhất' },
   { value: 'price-asc', label: 'Giá: Thấp → Cao' },
   { value: 'price-desc', label: 'Giá: Cao → Thấp' },
-  { value: 'rating', label: 'Đánh giá cao' },
-  { value: 'newest', label: 'Mới nhất' },
+  { value: 'duration-asc', label: 'Thời gian: Ngắn nhất' },
+  { value: 'duration-desc', label: 'Thời gian: Dài nhất' },
+  { value: 'name-asc', label: 'Tên: A → Z' },
 ];
 
-const levelOptions = [
-  { value: 'all', label: 'Tất cả mức độ' },
-  { value: 'Dễ', label: 'Dễ' },
-  { value: 'Trung bình', label: 'Trung bình' },
-  { value: 'Khám phá', label: 'Khám phá' },
-  { value: 'Khó', label: 'Khó' },
+const difficultyOptions: { value: ApiDifficulty; label: string }[] = [
+  { value: 'EASY', label: 'Dễ' },
+  { value: 'MODERATE', label: 'Trung bình' },
+  { value: 'HARD', label: 'Khó' },
+  { value: 'EXPERT', label: 'Chuyên gia' },
 ];
 
-export default function TourFilters({ filters, onFilterChange, totalResults }: TourFiltersProps) {
-  const [showMobileFilters, setShowMobileFilters] = useState(false);
-
-  const handleCategoryChange = (categoryId: string) => {
-    onFilterChange({
-      ...filters,
-      category: categoryId === 'all' ? undefined : categoryId,
-    });
-  };
-
+/**
+ * Result count + sort + difficulty selector row for the List Tours page.
+ *
+ * Sits below the search bar and category row. Drives:
+ *   - filters.sortBy    → forwarded to the API as (sortBy, sortDir)
+ *   - filters.difficulty → forwarded to the API as the `difficulty` param
+ */
+export default function TourFilters({
+  filters,
+  onFilterChange,
+  totalResults,
+  className = '',
+}: TourFiltersProps) {
   const handleSortChange = (sortBy: TourFilter['sortBy']) => {
     onFilterChange({ ...filters, sortBy });
   };
 
-  const handleLevelChange = (level: string) => {
-    onFilterChange({
-      ...filters,
-      level: level === 'all' ? undefined : (level as TourFilter['level']),
-    });
+  const handleDifficultyChange = (difficulty: ApiDifficulty | undefined) => {
+    onFilterChange({ ...filters, difficulty });
   };
 
-  const clearFilters = () => {
-    onFilterChange({ sortBy: 'popular' });
+  const handleClear = () => {
+    onFilterChange({ sortBy: 'newest' });
   };
 
-  const hasActiveFilters = filters.category || filters.level;
+  const hasActiveFilters =
+    Boolean(filters.keyword) ||
+    Boolean(filters.location) ||
+    Boolean(filters.difficulty) ||
+    (filters.sortBy !== undefined && filters.sortBy !== 'newest');
 
   return (
-    <div className="mb-6">
+    <div className={`flex flex-col gap-3 ${className}`}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          {tourCategories.map((category) => (
-            <button
-              key={category.id}
-              type="button"
-              onClick={() => handleCategoryChange(category.id)}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all ${
-                filters.category === category.id || (!filters.category && category.id === 'all')
-                  ? 'bg-primary text-white shadow-sm'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
-              }`}
-            >
-              <span>{category.icon}</span>
-              <span>{category.name}</span>
-              <span className="text-xs opacity-70">({category.count})</span>
-            </button>
-          ))}
+        <div>
+          <span className="text-sm font-semibold text-primary">Danh sách tour</span>
+          <span className="ml-2 text-xs text-muted-foreground">
+            (Hiển thị {totalResults} hành trình)
+          </span>
         </div>
 
-        <div className="flex items-center gap-3">
-          {hasActiveFilters && (
-            <AppButton variant="ghost" size="sm" onClick={clearFilters} className="text-xs">
-              Xóa lọc
-            </AppButton>
-          )}
-
+        <div className="flex items-center gap-2">
+          <span className="hidden text-xs text-muted-foreground sm:inline">Sắp xếp:</span>
           <select
-            value={filters.sortBy || 'popular'}
+            value={filters.sortBy || 'newest'}
             onChange={(e) => handleSortChange(e.target.value as TourFilter['sortBy'])}
-            className="h-10 rounded-full border border-input bg-white px-4 pr-8 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer appearance-none"
+            className="h-10 cursor-pointer appearance-none rounded-full border border-input bg-white pl-4 pr-9 text-sm font-semibold text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236F7E72'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%231f3933'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
               backgroundRepeat: 'no-repeat',
               backgroundPosition: 'right 0.75rem center',
               backgroundSize: '1rem',
@@ -101,69 +86,47 @@ export default function TourFilters({ filters, onFilterChange, totalResults }: T
         </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-3">
-        <select
-          value={filters.level || 'all'}
-          onChange={(e) => handleLevelChange(e.target.value)}
-          className="h-9 rounded-full border border-input bg-white px-3 pr-8 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer appearance-none"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236F7E72'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-            backgroundRepeat: 'no-repeat',
-            backgroundPosition: 'right 0.5rem center',
-            backgroundSize: '0.875rem',
-          }}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs font-semibold text-muted-foreground">Độ khó:</span>
+        <button
+          type="button"
+          onClick={() => handleDifficultyChange(undefined)}
+          className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
+            !filters.difficulty
+              ? 'border-primary bg-primary text-white'
+              : 'border-border bg-white text-foreground hover:border-primary/50'
+          }`}
         >
-          {levelOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          Tất cả
+        </button>
+        {difficultyOptions.map((opt) => {
+          const isActive = filters.difficulty === opt.value;
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => handleDifficultyChange(opt.value)}
+              className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
+                isActive
+                  ? 'border-primary bg-primary text-white'
+                  : 'border-border bg-white text-foreground hover:border-primary/50'
+              }`}
+            >
+              {opt.label}
+            </button>
+          );
+        })}
 
-        <span className="text-sm text-muted-foreground">{totalResults} tour được tìm thấy</span>
-      </div>
-
-      {showMobileFilters && (
-        // eslint-disable-next-line jsx-a11y/noStaticElementInteractions
-        <div
-          className="fixed inset-0 z-50 bg-black/50 lg:hidden"
-          onClick={() => setShowMobileFilters(false)}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') {
-              setShowMobileFilters(false);
-            }
-          }}
-          role="dialog"
-          aria-modal="true"
-        >
-          {/* eslint-disable-next-line jsx-a11y/noStaticElementInteractions */}
-          <div
-            className="absolute bottom-0 left-0 right-0 max-h-[80vh] overflow-y-auto rounded-t-2xl bg-white p-6"
-            onClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => e.stopPropagation()}
-            role="document"
+        {hasActiveFilters && (
+          <button
+            type="button"
+            onClick={handleClear}
+            className="ml-auto rounded-full px-3 py-1 text-xs font-semibold text-primary underline-offset-4 hover:underline"
           >
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-primary">Bộ lọc</h3>
-              <button
-                type="button"
-                onClick={() => setShowMobileFilters(false)}
-                className="p-2"
-                aria-label="Đóng bộ lọc"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            Xóa tất cả
+          </button>
+        )}
+      </div>
     </div>
   );
 }
