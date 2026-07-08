@@ -3,7 +3,6 @@
  * Re-exports all tour detail page sub-components
  */
 
-export { RelatedTours } from './RelatedTours';
 export { TourBookingCard } from './TourBookingCard';
 export { TourGallery } from './TourGallery';
 export { TourHero } from './TourHero';

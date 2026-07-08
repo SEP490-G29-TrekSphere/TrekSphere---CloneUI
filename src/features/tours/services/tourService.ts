@@ -1,5 +1,9 @@
-import { ApiService } from '@/config/apiClient';
-import type { TourListApiResponse, TourListParams } from '@/features/tours/types';
+import { type ApiResponse, ApiService } from '@/config/apiClient';
+import type {
+  TourDetailFromApi,
+  TourListApiResponse,
+  TourListParams,
+} from '@/features/tours/types';
 
 export interface TourListResponse {
   content: TourListApiResponse['content'];
@@ -43,28 +47,36 @@ function buildQuery(params: TourListParams): string {
   return search.toString();
 }
 
+function unwrapResponse<T>(response: ApiResponse<T>): T {
+  if (response.error) {
+    throw new Error(response.error);
+  }
+  if (!response.data) {
+    throw new Error('No data received from API');
+  }
+  return response.data;
+}
+
 export const tourService = {
   async getTours(params: TourListParams = {}): Promise<TourListResponse> {
     const queryString = buildQuery(params);
     const path = queryString ? `/tours?${queryString}` : '/tours';
 
     const response = await ApiService<TourListApiResponse>(path, 'GET');
-
-    if (response.error) {
-      throw new Error(response.error);
-    }
-
-    if (!response.data) {
-      throw new Error('No data received from API');
-    }
+    const data = unwrapResponse(response);
 
     return {
-      content: response.data.content,
-      totalElements: response.data.totalElements,
-      totalPages: response.data.totalPages,
-      pageNumber: response.data.pageNumber,
-      pageSize: response.data.pageSize,
-      last: response.data.last,
+      content: data.content,
+      totalElements: data.totalElements,
+      totalPages: data.totalPages,
+      pageNumber: data.pageNumber,
+      pageSize: data.pageSize,
+      last: data.last,
     };
+  },
+
+  async getTourById(tourId: string): Promise<TourDetailFromApi> {
+    const response = await ApiService<TourDetailFromApi>(`/tours/${tourId}`, 'GET');
+    return unwrapResponse(response);
   },
 };

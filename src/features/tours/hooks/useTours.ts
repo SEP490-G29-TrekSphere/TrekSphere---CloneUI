@@ -22,6 +22,7 @@ function mapApiItemToTour(item: TourApiItem): Tour {
     duration: `${item.durationDays} ngày`,
     level: DIFFICULTY_MAP[item.difficulty],
     price: formatPrice(item.basePrice),
+    basePrice: item.basePrice,
     rating: item.averageRating ?? 0,
     reviewCount: item.totalReviews,
     image: item.coverImageUrl,

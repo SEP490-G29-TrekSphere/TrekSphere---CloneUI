@@ -7,6 +7,7 @@ export interface Tour {
   duration: string;
   level: TourLevel;
   price: string;
+  basePrice?: number;
   originalPrice?: string;
   rating: number;
   reviewCount: number;
@@ -265,4 +266,71 @@ export interface TourListApiResponse {
   totalElements: number;
   totalPages: number;
   last: boolean;
+}
+
+// ============================================================
+// API Types for Tour Detail (GET /api/v1/tours/{tourId})
+// ============================================================
+
+/**
+ * Image object from the tour detail API response
+ */
+export interface TourDetailImageApi {
+  imageId: string;
+  imageUrl: string;
+  sortOrder: number;
+  caption: string | null;
+}
+
+/**
+ * Schedule object from the tour detail API response
+ */
+export interface TourDetailScheduleApi {
+  scheduleId: string;
+  departureDate: string;
+  returnDate: string;
+  availableSlots: number;
+  bookedSlots: number;
+  price: number;
+  status: 'OPEN' | 'CLOSED' | 'FULL';
+}
+
+/**
+ * Full tour detail from the API endpoint: GET /api/v1/tours/{tourId}
+ *
+ * This mirrors the `data` field inside the standard envelope
+ * `{ success, code, message, data, timestamp }`.
+ */
+export interface TourDetailFromApi {
+  tourId: string;
+  tourName: string;
+  description: string;
+  difficulty: ApiDifficulty;
+  location: string;
+  durationDays: number;
+  basePrice: number;
+  maxCapacity: number;
+  highlights: string | null;
+  includes: string | null;
+  excludes: string | null;
+  coverImageUrl: string | null;
+  status: ApiStatus;
+  createdAt: string;
+  updatedAt: string | null;
+  vendorId: string;
+  vendorName: string;
+  vendorLogoUrl: string | null;
+  vendorContactEmail: string | null;
+  vendorContactPhone: string | null;
+  images: TourDetailImageApi[];
+  schedules: TourDetailScheduleApi[];
+  averageRating: number | null;
+  totalReviews: number;
+}
+
+export interface TourSearchValues {
+  keyword: string;
+  location: string;
+  departureDate: string;
+  budget: string;
 }
