@@ -7,7 +7,7 @@ import svgr from 'vite-plugin-svgr';
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const apiTarget = env.VITE_API_URL ?? 'http://localhost:3000';
+  const apiTarget = env.VITE_API_URL ?? 'https://api.treksphere.io.vn';
 
   return {
     plugins: [react(), tailwindcss(), svgr()],
@@ -17,6 +17,8 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
+      port: 3000,
+      strictPort: true,
       proxy: {
         '/api': {
           target: apiTarget,

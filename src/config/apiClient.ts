@@ -2,7 +2,7 @@ import axios, { type AxiosError, type AxiosInstance, type AxiosResponse } from '
 import { storage } from '@/utils/storage';
 
 // Configuring Axios instance
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+const baseURL = import.meta.env.VITE_API_URL || 'https://api.treksphere.io.vn/api/v1';
 const TIME_OUT = 60000;
 
 const apiClient: AxiosInstance = axios.create({
