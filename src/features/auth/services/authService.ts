@@ -1,13 +1,16 @@
 import axios from 'axios';
 import { type ApiResponse, ApiService } from '@/config/apiClient';
 import type {
+  AuthActionResponse,
   AuthResponse,
   AuthUser,
   LoginPayload,
   RegisterPayload,
   RegisterResponseData,
+  ResetPasswordPayload,
   UpdateProfilePayload,
   UserProfile,
+  VerifyEmailResponse,
 } from '../types';
 import type {
   ChangePasswordFormValues,
@@ -17,16 +20,16 @@ import type {
 
 export const authService = {
   /**
-   * Đăng nhập hệ thống.
-   * BE: POST /api/v1/auth/login → trả về `{ user, access_token, refresh_token }`.
+   * Log in to the system.
+   * BE: POST /api/v1/auth/login -> returns `{ user, access_token, refresh_token }`.
    */
   login: (data: LoginFormValues) =>
     ApiService<AuthResponse>('/auth/login', 'POST', data as unknown as LoginPayload),
 
   /**
-   * Đăng ký tài khoản mới.
-   * BE: POST /api/v1/auth/register → chỉ trả về `{ userId, email, fullName }`,
-   * KHÔNG kèm token — FE phải gọi tiếp /auth/login nếu muốn vào hệ thống luôn.
+   * Register a new user account.
+   * BE: POST /api/v1/auth/register -> only returns `{ userId, email, fullName }`,
+   * NO token included - FE must then call /auth/login if they want to enter the system immediately.
    */
   register: (data: RegisterFormValues): Promise<ApiResponse<RegisterResponseData>> =>
     ApiService<RegisterResponseData>('/auth/register', 'POST', {
@@ -37,53 +40,51 @@ export const authService = {
     } as unknown as RegisterPayload),
 
   /**
-   * Gửi yêu cầu khôi phục mật khẩu.
+   * Send a password reset request.
    */
   forgotPassword: (email: string) => ApiService('/auth/forgot-password', 'POST', { email }),
 
   /**
-   * Đăng xuất khỏi hệ thống.
+   * Reset the password using a verification token.
+   */
+  resetPassword: (data: ResetPasswordPayload) =>
+    ApiService<AuthActionResponse>('/auth/reset-password', 'POST', data),
+
+  /**
+   * Log out of the system.
    */
   logout: () => ApiService('/auth/logout', 'POST'),
 
   /**
-   * Làm mới token khi hết hạn.
+   * Refresh the token when expired.
    */
   refreshToken: (token: string) =>
     ApiService<AuthResponse>('/auth/refresh', 'POST', { refreshToken: token }),
 
   /**
-   * Đổi mật khẩu.
+   * Change the current password.
    */
   changePassword: (data: ChangePasswordFormValues) =>
     ApiService('/auth/change-password', 'POST', data),
 
   /**
-   * Lấy thông tin hồ sơ của user đang đăng nhập.
-   * Endpoint: GET /api/v1/users/me
+   * Get the profile of the currently logged-in user.
    */
   getProfile: () => ApiService<UserProfile>('/users/me', 'GET'),
 
   /**
-   * Cập nhật hồ sơ của user đang đăng nhập.
+   * Update the profile of the currently logged-in user.
    */
   updateProfile: (data: UpdateProfilePayload) =>
     ApiService<UserProfile>('/users/profile', 'PUT', data),
 
   /**
-   * Xác thực email qua token từ link trong mail.
-   * Dùng axios trực tiếp (không qua interceptors) để tránh gắn accessToken
-   * vào verify request — token verify ≠ access token.
-   * BE: GET /api/v1/auth/verify?token=xxx → trả về cùng shape với /auth/login:
-   *      { user, access_token, refresh_token } để FE đăng nhập thẳng vào Home.
-   *      Nếu BE chỉ trả `{ success, message }` thì vẫn chấp nhận — FE xử lý fallback
-   *      trong component (chỉ show success, đi user phải login lại).
+   * Verify email via the token from the email link.
+   * Uses axios directly (without interceptors) to avoid attaching accessToken
+   * to verify request - token verify !== access token.
+   * BE: GET /api/v1/auth/verify?token=xxx -> returns 200 JSON body.
    */
-  verifyEmail: async (
-    token: string
-  ): Promise<ApiResponse<Partial<AuthResponse> & { success?: boolean; message?: string }>> => {
-    // Dev dùng relative path để qua Vite proxy (same-origin → cookie work).
-    // Prod dùng absolute URL (cross-origin → BE cần CORS allow).
+  verifyEmail: async (token: string): Promise<ApiResponse<VerifyEmailResponse>> => {
     const isDev = import.meta.env.DEV;
     const verifyURL = isDev
       ? `/api/v1/auth/verify?token=${token}`
@@ -91,9 +92,7 @@ export const authService = {
           import.meta.env.VITE_API_URL ?? 'https://api.treksphere.io.vn/api/v1'
         }/auth/verify?token=${token}`;
     try {
-      const response = await axios.get<
-        Partial<AuthResponse> & { success?: boolean; message?: string }
-      >(verifyURL, {
+      const response = await axios.get<VerifyEmailResponse>(verifyURL, {
         timeout: 60_000,
         // Bỏ qua interceptor để không gắn accessToken vào verify request
         __skipAuth: true,
@@ -112,7 +111,7 @@ export const authService = {
   },
 };
 
-/** Helper chuyển user từ BE (snake_case) sang shape mà `useAppStore` đang lưu. */
+/** Helper to convert user from BE (snake_case) to the shape stored in `useAppStore`. */
 export function toAppStoreUser(user: AuthUser): {
   id: string;
   name: string;

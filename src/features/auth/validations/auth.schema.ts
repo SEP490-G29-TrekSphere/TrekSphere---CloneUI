@@ -42,17 +42,38 @@ export const forgotPasswordSchema = z.object({
 
 export type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 
+export const newPasswordRules = z
+  .string()
+  .min(8, 'Mật khẩu phải có ít nhất 8 ký tự')
+  .max(100, 'Mật khẩu không được vượt quá 100 ký tự')
+  .regex(/[A-Z]/, 'Mật khẩu phải chứa ít nhất một chữ cái viết hoa')
+  .regex(/[a-z]/, 'Mật khẩu phải chứa ít nhất một chữ cái viết thường')
+  .regex(/[0-9]/, 'Mật khẩu phải chứa ít nhất một chữ số')
+  .regex(/[!@#$%^&*()_\-+=~`[\]{}|;:'",.<>/?]/, 'Mật khẩu phải chứa ít nhất một ký tự đặc biệt');
+
+export const checkPasswordsMatch = (data: { newPassword: string; confirmPassword: string }) =>
+  data.newPassword === data.confirmPassword;
+
+export const resetPasswordSchema = z
+  .object({
+    token: z.string().min(1, 'Token không được để trống'),
+    newPassword: newPasswordRules,
+    confirmPassword: z.string().min(1, 'Vui lòng xác nhận mật khẩu mới'),
+  })
+  .refine(checkPasswordsMatch, {
+    message: 'Mật khẩu xác nhận không khớp',
+    path: ['confirmPassword'],
+  });
+
+export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
+
 export const changePasswordSchema = z
   .object({
     currentPassword: z.string().min(1, 'Vui lòng nhập mật khẩu hiện tại'),
-    newPassword: z
-      .string()
-      .min(8, 'Mật khẩu phải có ít nhất 8 ký tự')
-      .regex(/[A-Za-z]/, 'Mật khẩu phải bao gồm chữ cái')
-      .regex(/[0-9]/, 'Mật khẩu phải bao gồm số'),
+    newPassword: newPasswordRules,
     confirmPassword: z.string().min(1, 'Vui lòng xác nhận mật khẩu mới'),
   })
-  .refine((data) => data.newPassword === data.confirmPassword, {
+  .refine(checkPasswordsMatch, {
     message: 'Mật khẩu xác nhận không khớp',
     path: ['confirmPassword'],
   })
