@@ -57,7 +57,7 @@ export default function Login() {
         }
 
         // Lưu tokens vào storage
-        const raw = result.data as Record<string, unknown>;
+        const raw = result.data as unknown as Record<string, unknown>;
         // `handleResponse` ở apiClient đã unwrap đúng cấu trúc (có thể phẳng
         // hoặc có 1-2 lớp envelope). Ở đây `raw` luôn là object đã unwrap —
         // chứa `user`, `access_token`, `refresh_token` ở cùng cấp.

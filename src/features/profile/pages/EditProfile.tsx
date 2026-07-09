@@ -100,7 +100,7 @@ export default function EditProfile() {
           id: updatedUser.id,
           name: updatedUser.name,
           email: updatedUser.email,
-          avatarUrl: updatedUser.avatarUrl ?? updatedUser.avatar,
+          avatarUrl: updatedUser.avatar,
           roles: updatedUser.roles,
         });
       }

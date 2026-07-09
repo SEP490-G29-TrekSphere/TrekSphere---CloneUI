@@ -83,7 +83,7 @@ export function useProfile() {
       }
       const raw = res.data;
       if (!raw || typeof raw !== 'object') return null;
-      return normalizeProfile(raw as Record<string, unknown>);
+      return normalizeProfile(raw as unknown as Record<string, unknown>);
     },
     staleTime: 60 * 1000,
     retry: (failureCount, error) => {

@@ -1,4 +1,9 @@
-import axios, { type AxiosError, type AxiosInstance, type AxiosResponse } from 'axios';
+import axios, {
+  type AxiosError,
+  type AxiosInstance,
+  type AxiosProgressEvent,
+  type AxiosResponse,
+} from 'axios';
 import { storage } from '@/utils/storage';
 
 /**
@@ -322,7 +327,7 @@ const handleError = (error: unknown): ApiResponse<never> => {
 export const ApiUpload = async <T>(
   path: string,
   formData: FormData,
-  onUploadProgress?: (progressEvent: AxiosError['progressEvent']) => void
+  onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
 ): Promise<ApiResponse<T>> => {
   try {
     const response = await apiClient.request({
