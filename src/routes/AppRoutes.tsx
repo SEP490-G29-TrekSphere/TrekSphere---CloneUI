@@ -42,7 +42,14 @@ export default function AppRoutes() {
         <Route path={PATHS.VERIFY_EMAIL} element={<VerifyEmail />} />
         <Route path={PATHS.FORGOT_PASSWORD} element={<ForgotPassword />} />
         <Route path={PATHS.RESET_PASSWORD} element={<ResetPassword />} />
-        <Route path={PATHS.CHANGE_PASSWORD} element={<ChangePassword />} />
+        <Route
+          path={PATHS.CHANGE_PASSWORD}
+          element={
+            <ProtectedRoute>
+              <ChangePassword />
+            </ProtectedRoute>
+          }
+        />
         <Route path={PATHS.NOTIFICATIONS} element={<Notifications />} />
 
         {/* Public routes — chung khung Header + Footer qua PublicLayout */}

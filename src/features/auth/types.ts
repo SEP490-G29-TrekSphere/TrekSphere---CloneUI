@@ -1,3 +1,5 @@
+import type { ChangePasswordFormValues } from './validations/auth.schema';
+
 /**
  * Types specific to the auth feature.
  * Only types related to login, register, forgot-password, and reset-password are defined here.
@@ -39,6 +41,12 @@ export interface ResetPasswordPayload {
   token: string;
   newPassword: string;
 }
+
+/** Payload sent to the /auth/change-password endpoint. */
+export type ChangePasswordPayload = Pick<
+  ChangePasswordFormValues,
+  'currentPassword' | 'newPassword'
+>;
 
 /** User object returned in the BE response (snake_case, uses `fullName`/`avatarUrl`/`roles[]`). */
 export interface AuthUser {

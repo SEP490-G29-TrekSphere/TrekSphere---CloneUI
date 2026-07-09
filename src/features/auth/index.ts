@@ -6,6 +6,9 @@
  *   import { loginSchema } from '@/features/auth/validations/auth.schema';
  */
 
+export { PasswordStrengthField } from './components/PasswordStrengthField';
+export { PasswordStrengthMeter } from './components/PasswordStrengthMeter';
+export { type StrengthScore, usePasswordStrength } from './hooks/usePasswordStrength';
 export { default as ChangePassword } from './pages/ChangePassword';
 export { default as ForgotPassword } from './pages/ForgotPassword';
 export { default as Login } from './pages/Login';

@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { FormProvider, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { PATHS } from '@/constants';
-import { authService } from '@/features/auth';
+import { authService, PasswordStrengthField } from '@/features/auth';
 import { AppButton, AppFormInput, AppSpinner } from '@/shared/ui';
 import { toast } from '@/store/useToastStore';
 import AuthLayout from '../components/AuthLayout';
@@ -96,6 +96,11 @@ export default function Register() {
               control={methods.control}
             />
           </div>
+
+          <PasswordStrengthField
+            passwordFieldName="password"
+            userInputFieldNames={['fullName', 'email']}
+          />
 
           <AppButton
             type="submit"

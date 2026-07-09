@@ -4,6 +4,7 @@ import type {
   AuthActionResponse,
   AuthResponse,
   AuthUser,
+  ChangePasswordPayload,
   LoginPayload,
   RegisterPayload,
   RegisterResponseData,
@@ -12,11 +13,7 @@ import type {
   UserProfile,
   VerifyEmailResponse,
 } from '../types';
-import type {
-  ChangePasswordFormValues,
-  LoginFormValues,
-  RegisterFormValues,
-} from '../validations/auth.schema';
+import type { LoginFormValues, RegisterFormValues } from '../validations/auth.schema';
 
 export const authService = {
   /**
@@ -64,8 +61,9 @@ export const authService = {
   /**
    * Change the current password.
    */
-  changePassword: (data: ChangePasswordFormValues) =>
-    ApiService('/auth/change-password', 'POST', data),
+  changePassword: (data: ChangePasswordPayload) => {
+    return ApiService('/auth/change-password', 'POST', data);
+  },
 
   /**
    * Get the profile of the currently logged-in user.

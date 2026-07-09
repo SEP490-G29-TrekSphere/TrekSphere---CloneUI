@@ -1,7 +1,0 @@
-fix(auth): email verification — use direct axios call and handle success/error states
-
-- verifyEmail() now uses axios directly instead of ApiService to avoid
-  Authorization header being injected into verify requests
-- VerifyEmail page properly sets success/error status and shows
-  user-facing messages instead of silently navigating away
-- Auto-redirect to login after 2s on successful verification

@@ -4,14 +4,17 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import heroImage from '@/assets/hero.png';
 import { PATHS } from '@/constants';
-import AuthLayout from '@/features/auth/components/AuthLayout';
-import { authService } from '@/features/auth/services/authService';
 import {
+  authService,
+  PasswordStrengthField,
   type ResetPasswordFormValues,
   resetPasswordSchema,
-} from '@/features/auth/validations/auth.schema';
+} from '@/features/auth';
+import AuthLayout from '@/features/auth/components/AuthLayout';
 import { AppButton, AppFormInput, AppSpinner } from '@/shared/ui';
 import { toast } from '@/store/useToastStore';
+
+const RESET_PASSWORD_IMAGE = heroImage;
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -85,7 +88,7 @@ export default function ResetPassword() {
       }
       footerText={token ? 'Nhớ mật khẩu rồi?' : undefined}
       footerLink={token ? { label: 'Đăng nhập', to: PATHS.LOGIN } : undefined}
-      image={heroImage}
+      image={RESET_PASSWORD_IMAGE}
       variant="reset-password"
     >
       {!token ? (
@@ -143,6 +146,8 @@ export default function ResetPassword() {
               autoComplete="new-password"
               control={methods.control}
             />
+
+            <PasswordStrengthField passwordFieldName="newPassword" />
 
             <AppFormInput
               name="confirmPassword"

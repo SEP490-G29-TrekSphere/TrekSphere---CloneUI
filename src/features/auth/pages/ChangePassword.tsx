@@ -4,10 +4,11 @@ import { useMemo, useState } from 'react';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { PATHS } from '@/constants';
-import { authService } from '@/features/auth';
+import { authService, PasswordStrengthField } from '@/features/auth';
 import PublicHeader from '@/features/home/components/PublicHeader';
 import { cn } from '@/lib/utils';
 import { AppButton, AppSpinner } from '@/shared/ui';
+import { useAppStore } from '@/store/useAppStore';
 import { toast } from '@/store/useToastStore';
 import { type ChangePasswordFormValues, changePasswordSchema } from '../validations/auth.schema';
 
@@ -73,39 +74,6 @@ function PasswordField({
   );
 }
 
-type StrengthScore = 0 | 1 | 2 | 3;
-
-function getStrength(pwd: string): { score: StrengthScore; label: string } {
-  let score = 0;
-  if (pwd.length >= 8) score++;
-  if (/[A-Za-z]/.test(pwd)) score++;
-  if (/[0-9]/.test(pwd)) score++;
-  if (/[^A-Za-z0-9]/.test(pwd)) score++;
-
-  const tier: StrengthScore = score === 0 ? 0 : score <= 2 ? 1 : score === 3 ? 2 : 3;
-  const labels: readonly ['Yếu', 'Yếu', 'Trung bình', 'Mạnh'] = [
-    'Yếu',
-    'Yếu',
-    'Trung bình',
-    'Mạnh',
-  ];
-  return { score: tier, label: labels[tier] };
-}
-
-const strengthBarColor: Record<StrengthScore, string> = {
-  0: 'bg-muted-foreground/40',
-  1: 'bg-amber-500',
-  2: 'bg-emerald-500',
-  3: 'bg-primary',
-};
-
-const strengthBarWidth: Record<StrengthScore, string> = {
-  0: '25%',
-  1: '50%',
-  2: '75%',
-  3: '100%',
-};
-
 export default function ChangePassword() {
   const methods = useForm<ChangePasswordFormValues>({
     resolver: zodResolver(changePasswordSchema),
@@ -120,15 +88,22 @@ export default function ChangePassword() {
   const {
     handleSubmit,
     control,
-    watch,
     formState: { isSubmitting },
   } = methods;
 
-  const newPassword = watch('newPassword') ?? '';
-  const strength = useMemo(() => getStrength(newPassword), [newPassword]);
+  const user = useAppStore((state) => state.user);
+  const userInputs = useMemo(() => {
+    const inputs: string[] = [];
+    if (user?.name) inputs.push(user.name);
+    if (user?.email) inputs.push(user.email);
+    return inputs;
+  }, [user]);
 
   const onSubmit = async (data: ChangePasswordFormValues) => {
-    const result = await authService.changePassword(data);
+    const result = await authService.changePassword({
+      currentPassword: data.currentPassword,
+      newPassword: data.newPassword,
+    });
 
     if (result.error || (result.status && result.status >= 400)) {
       toast.error(result.error || 'Đổi mật khẩu thất bại. Vui lòng thử lại.');
@@ -200,19 +175,10 @@ export default function ChangePassword() {
                 />
 
                 {/* Strength meter */}
-                {newPassword.length > 0 && (
-                  <div className="pt-2 space-y-1.5">
-                    <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
-                      <div
-                        className={`h-full rounded-full transition-all duration-300 ${strengthBarColor[strength.score]}`}
-                        style={{ width: strengthBarWidth[strength.score] }}
-                      />
-                    </div>
-                    <p className="text-xs" style={{ color: '#6F7B75' }}>
-                      Sử dụng ít nhất 8 ký tự, bao gồm chữ cái và số.
-                    </p>
-                  </div>
-                )}
+                <PasswordStrengthField
+                  passwordFieldName="newPassword"
+                  additionalUserInputs={userInputs}
+                />
               </div>
 
               <Controller
