@@ -1,8 +1,10 @@
 import { LogOut, User } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { queryClient } from '@/config/queryClient';
 import { PATHS } from '@/constants';
 import { authService } from '@/features/auth';
+import { profileKeys } from '@/features/profile/hooks/useProfile';
 import { AppLogo } from '@/shared/ui';
 import { useAppStore } from '@/store/useAppStore';
 import { toast } from '@/store/useToastStore';
@@ -43,6 +45,7 @@ export default function PublicHeader() {
     storage.remove('accessToken');
     storage.remove('refreshToken');
     setUser(null);
+    queryClient.removeQueries({ queryKey: profileKeys.all });
     toast.success('Đã đăng xuất.');
     setDropdownOpen(false);
   };
