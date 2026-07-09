@@ -4,6 +4,7 @@ import { PATHS } from '@/constants';
 import ProtectedRoute from '@/routes/ProtectedRoute';
 import MainLayout from '@/shared/layout/MainLayout';
 import PublicLayout from '@/shared/layout/PublicLayout';
+import { ScrollManager } from '@/shared/ui/ScrollManager';
 
 // Lazy loading features (code-splitting theo route)
 const Home = lazy(() => import('@/features/home/pages/Home'));
@@ -32,6 +33,7 @@ function PageLoader() {
 export default function AppRoutes() {
   return (
     <Suspense fallback={<PageLoader />}>
+      <ScrollManager />
       <Routes>
         {/* Standalone routes — không qua layout chung (auth flow, notifications) */}
         <Route path={PATHS.LOGIN} element={<Login />} />
