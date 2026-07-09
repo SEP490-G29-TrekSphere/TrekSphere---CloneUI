@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PATHS } from '@/constants';
-import { authService } from '@/features/auth';
+import { authService, toAppStoreUser } from '@/features/auth';
 import { AppButton, AppSpinner } from '@/shared/ui';
+import { useAppStore } from '@/store/useAppStore';
+import { storage } from '@/utils/storage';
 import AuthLayout from '../components/AuthLayout';
 
 const VERIFY_IMAGE = 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&q=80';
@@ -15,6 +17,17 @@ export default function VerifyEmail() {
   const token = searchParams.get('token');
   const [status, setStatus] = useState<VerifyStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  // Lưu lại timeout id để huỷ nếu user unmount/click nút trước thời hạn.
+  const redirectTimeoutRef = useRef<number | null>(null);
+
+  // Lưu / huỷ timeout khi component unmount.
+  useEffect(() => {
+    return () => {
+      if (redirectTimeoutRef.current !== null) {
+        window.clearTimeout(redirectTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!token) {
@@ -40,10 +53,27 @@ export default function VerifyEmail() {
           return;
         }
 
+        // ── Luồng mới: hiển thị success → nếu BE trả token thì lưu + về Home,
+        // nếu không thì về Login như flow cũ (fallback).
+        const data = result.data;
+        const accessToken = data?.access_token;
+        const refreshToken = data?.refresh_token;
+        const verifiedUser = data?.user;
+
+        // Lưu token + set user vào store nếu BE có trả về.
+        if (accessToken) {
+          storage.set('accessToken', accessToken);
+        }
+        if (refreshToken) {
+          storage.set('refreshToken', refreshToken);
+        }
+
+        if (verifiedUser) {
+          useAppStore.getState().setUser(toAppStoreUser(verifiedUser));
+        }
+
+        // Render UI success — KHÔNG navigate ngay để user kịp đọc.
         setStatus('success');
-        setTimeout(() => {
-          navigate(PATHS.LOGIN);
-        }, 2000);
       } catch {
         setStatus('error');
         setErrorMessage('Đã xảy ra lỗi khi xác thực. Vui lòng thử lại sau.');
@@ -51,7 +81,41 @@ export default function VerifyEmail() {
     };
 
     verify();
-  }, [token, navigate]);
+  }, [token]);
+
+  // Hàm điều hướng dùng chung cho cả auto-redirect và nút bấm.
+  const goToHomeOrLogin = useCallback(() => {
+    const hasToken = Boolean(storage.get<string>('accessToken'));
+    if (hasToken) {
+      // TREKKER (mặc định) → Home như một user đã đăng nhập.
+      navigate(PATHS.HOME, { replace: true });
+    } else {
+      // BE verify không trả token → fallback về Login.
+      navigate(PATHS.LOGIN, { replace: true });
+    }
+  }, [navigate]);
+
+  // Auto-redirect sau khi success (3 giây, đủ để user đọc thông báo).
+  useEffect(() => {
+    if (status !== 'success') return;
+    redirectTimeoutRef.current = window.setTimeout(() => {
+      goToHomeOrLogin();
+    }, 3000);
+    return () => {
+      if (redirectTimeoutRef.current !== null) {
+        window.clearTimeout(redirectTimeoutRef.current);
+        redirectTimeoutRef.current = null;
+      }
+    };
+  }, [status, goToHomeOrLogin]);
+
+  const handleSuccessAction = () => {
+    if (redirectTimeoutRef.current !== null) {
+      window.clearTimeout(redirectTimeoutRef.current);
+      redirectTimeoutRef.current = null;
+    }
+    goToHomeOrLogin();
+  };
 
   return (
     <AuthLayout
@@ -92,18 +156,15 @@ export default function VerifyEmail() {
                 Xác thực thành công!
               </h3>
               <p className="mt-2 text-sm" style={{ color: '#6F7B75' }}>
-                Email của bạn đã được xác thực. Bây giờ bạn có thể đăng nhập và trải nghiệm
-                TrekSphere.
+                Email của bạn đã được xác thực. Đang đưa bạn về trang chủ...
               </p>
             </div>
             <AppButton
-              onClick={() => {
-                window.location.href = PATHS.LOGIN;
-              }}
+              onClick={handleSuccessAction}
               className="w-full h-12 rounded-full text-white font-semibold text-sm
                 bg-[#06261D] hover:bg-[#06261D]/90"
             >
-              Đăng nhập ngay
+              Vào trang chủ ngay
             </AppButton>
           </>
         ) : (
@@ -131,7 +192,7 @@ export default function VerifyEmail() {
             </div>
             <AppButton
               onClick={() => {
-                window.location.href = PATHS.LOGIN;
+                navigate(PATHS.LOGIN);
               }}
               className="w-full h-12 rounded-full text-white font-semibold text-sm
                 bg-[#06261D] hover:bg-[#06261D]/90"

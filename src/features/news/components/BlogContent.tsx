@@ -1,36 +1,40 @@
-import type { BlogBlock, BlogPost } from '../types';
-
-function getBlockKey(block: BlogBlock): string {
-  switch (block.type) {
-    case 'h2':
-    case 'p':
-    case 'quote':
-      return `${block.type}-${block.text.slice(0, 32)}`;
-    case 'image':
-      return `image-${block.src}`;
-    case 'list':
-      return `list-${block.items.join('|').slice(0, 32)}`;
-    default:
-      return `block-${Math.random()}`;
-  }
-}
+import type { BlogPostDetail } from '../types';
 
 interface BlogContentProps {
-  post: BlogPost;
+  post: BlogPostDetail;
 }
 
 /**
- * Render nội dung bài viết từ các khối (paragraph, h2, image, quote, list).
+ * Render nội dung bài viết.
+ *
+ * BE hiện trả `content` dưới dạng chuỗi thuần / markdown (KHÔNG trả `content_blocks` nữa).
+ * Cách render an toàn:
+ *   - Render từng đoạn (split theo \n\n) thành `<p>` — không dùng `dangerouslySetInnerHTML`
+ *     để tránh XSS (khi BE chưa sanitize).
+ *   - Nếu sau này BE chuyển sang markdown HTML đã sanitize, có thể bật `dangerouslySetInnerHTML`.
  */
 export function BlogContent({ post }: BlogContentProps) {
+  const content = post.content ?? '';
+  // Tách theo 1 hoặc nhiều dòng trống để giữ cấu trúc đoạn văn.
+  const paragraphs = content
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+
   return (
-    <article className="flex flex-col gap-6 text-base leading-relaxed text-primary/90 md:text-lg">
-      {post.blocks.map((block) => (
-        <RenderBlock key={getBlockKey(block)} block={block} />
-      ))}
+    <article className="flex flex-col gap-5 text-base leading-relaxed text-primary/90 md:text-lg">
+      {paragraphs.length === 0 ? (
+        <p className="italic text-muted-foreground">Nội dung đang được cập nhật.</p>
+      ) : (
+        paragraphs.map((p, idx) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: content thuần không có stable id
+          <p key={`p-${idx}`}>{p}</p>
+        ))
+      )}
+
       {/* Tags ở cuối bài */}
-      {post.tags.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-2">
+      {post.tags?.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-2">
           {post.tags.map((tag) => (
             <span
               key={tag}
@@ -43,50 +47,4 @@ export function BlogContent({ post }: BlogContentProps) {
       )}
     </article>
   );
-}
-
-function RenderBlock({ block }: { block: BlogBlock }) {
-  switch (block.type) {
-    case 'h2':
-      return <h2 className="mt-4 text-xl font-bold text-primary md:text-2xl">{block.text}</h2>;
-    case 'p':
-      return <p>{block.text}</p>;
-    case 'image':
-      return (
-        <figure className="my-2">
-          <img
-            src={block.src}
-            alt={block.alt}
-            loading="lazy"
-            className="w-full rounded-2xl object-cover"
-          />
-          {block.caption && (
-            <figcaption className="mt-2 text-center text-xs text-muted-foreground md:text-sm">
-              {block.caption}
-            </figcaption>
-          )}
-        </figure>
-      );
-    case 'quote':
-      return (
-        <blockquote className="rounded-2xl bg-muted px-6 py-5 text-italic text-base italic text-primary md:text-lg">
-          <p>“{block.text}”</p>
-          {block.author && (
-            <footer className="mt-2 text-sm font-medium text-muted-foreground not-italic">
-              — {block.author}
-            </footer>
-          )}
-        </blockquote>
-      );
-    case 'list':
-      return (
-        <ul className="ml-5 list-disc space-y-2 marker:text-primary">
-          {block.items.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
-      );
-    default:
-      return null;
-  }
 }

@@ -60,8 +60,9 @@ export const authService = {
 
   /**
    * Lấy thông tin hồ sơ của user đang đăng nhập.
+   * Endpoint: GET /api/v1/users/me
    */
-  getProfile: () => ApiService<UserProfile>('/users/profile', 'GET'),
+  getProfile: () => ApiService<UserProfile>('/users/me', 'GET'),
 
   /**
    * Cập nhật hồ sơ của user đang đăng nhập.
@@ -73,17 +74,31 @@ export const authService = {
    * Xác thực email qua token từ link trong mail.
    * Dùng axios trực tiếp (không qua interceptors) để tránh gắn accessToken
    * vào verify request — token verify ≠ access token.
-   * BE: GET /api/v1/auth/verify?token=xxx → trả về 200 JSON body.
+   * BE: GET /api/v1/auth/verify?token=xxx → trả về cùng shape với /auth/login:
+   *      { user, access_token, refresh_token } để FE đăng nhập thẳng vào Home.
+   *      Nếu BE chỉ trả `{ success, message }` thì vẫn chấp nhận — FE xử lý fallback
+   *      trong component (chỉ show success, đi user phải login lại).
    */
   verifyEmail: async (
     token: string
-  ): Promise<ApiResponse<{ success: boolean; message: string }>> => {
-    const baseURL = import.meta.env.VITE_API_URL || 'https://api.treksphere.io.vn/api/v1';
+  ): Promise<ApiResponse<Partial<AuthResponse> & { success?: boolean; message?: string }>> => {
+    // Dev dùng relative path để qua Vite proxy (same-origin → cookie work).
+    // Prod dùng absolute URL (cross-origin → BE cần CORS allow).
+    const isDev = import.meta.env.DEV;
+    const verifyURL = isDev
+      ? `/api/v1/auth/verify?token=${token}`
+      : `${
+          import.meta.env.VITE_API_URL ?? 'https://api.treksphere.io.vn/api/v1'
+        }/auth/verify?token=${token}`;
     try {
-      const response = await axios.get<{ success: boolean; message: string }>(
-        `${baseURL}/auth/verify?token=${token}`,
-        { timeout: 60_000 }
-      );
+      const response = await axios.get<
+        Partial<AuthResponse> & { success?: boolean; message?: string }
+      >(verifyURL, {
+        timeout: 60_000,
+        // Bỏ qua interceptor để không gắn accessToken vào verify request
+        __skipAuth: true,
+        __skipRefresh: true,
+      } as never);
       return { data: response.data, status: response.status };
     } catch (err) {
       if (axios.isAxiosError(err)) {

@@ -10,8 +10,6 @@ interface ProfileSidebarProps {
   mode?: 'view' | 'edit';
   /** Khi user bấm "Thay đổi ảnh" — handler nhận file vừa chọn. */
   onAvatarChange?: (file: File) => void;
-  /** Đang upload avatar. */
-  isUploadingAvatar?: boolean;
 }
 
 const DEFAULT_AVATAR =
@@ -35,7 +33,6 @@ export default function ProfileSidebar({
   profile,
   mode = 'view',
   onAvatarChange,
-  isUploadingAvatar = false,
 }: ProfileSidebarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -62,7 +59,7 @@ export default function ProfileSidebar({
       {/* Avatar */}
       <div className="relative">
         <div
-          className="h-[120px] w-[120px] overflow-hidden rounded-full ring-4 ring-muted"
+          className="group relative h-[120px] w-[120px] overflow-hidden rounded-full ring-4 ring-muted"
           style={{ backgroundColor: 'var(--color-muted)' }}
         >
           <img
@@ -71,27 +68,28 @@ export default function ProfileSidebar({
             className="h-full w-full object-cover"
             loading="lazy"
           />
-        </div>
 
-        {mode === 'edit' && (
-          <>
+          {mode === 'edit' && (
             <button
               type="button"
               onClick={handleClickUpload}
-              disabled={isUploadingAvatar}
-              className="absolute -bottom-1 left-1/2 -translate-x-1/2 translate-y-1/2 inline-flex items-center gap-1.5 rounded-full border border-border bg-accent px-3 py-1.5 text-xs font-medium text-primary shadow-sm transition-opacity hover:opacity-90 disabled:opacity-60"
+              className="absolute inset-0 flex flex-col items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+              aria-label="Thay đổi ảnh đại diện"
             >
-              <Camera className="h-3.5 w-3.5" />
-              <span>{isUploadingAvatar ? 'Đang tải lên...' : 'Thay đổi ảnh'}</span>
+              <Camera className="h-8 w-8 text-white" />
+              <span className="mt-1.5 text-xs font-medium text-white">Đổi ảnh</span>
             </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleFileSelected}
-            />
-          </>
+          )}
+        </div>
+
+        {mode === 'edit' && (
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileSelected}
+          />
         )}
       </div>
 

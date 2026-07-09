@@ -41,25 +41,84 @@ export default function Login() {
     formState: { isSubmitting },
   } = methods;
 
-  const onSubmit = async (data: LoginFormValues) => {
-    const result = await authService.login(data);
+  const onSubmit = (data: LoginFormValues) => {
+    void (async () => {
+      try {
+        const result = await authService.login(data);
 
-    if (result.error || (result.status && result.status >= 400)) {
-      toast.error(result.error || 'Đăng nhập thất bại. Vui lòng thử lại.');
-      return;
-    }
+        if (result.error || (result.status && result.status >= 400)) {
+          toast.error(result.error || 'Đăng nhập thất bại. Vui lòng thử lại.');
+          return;
+        }
 
-    if (!result.data) {
-      toast.error('Đăng nhập thất bại. Vui lòng thử lại.');
-      return;
-    }
+        if (!result.data) {
+          toast.error('Đăng nhập thất bại. Vui lòng thử lại.');
+          return;
+        }
 
-    const { access_token, refresh_token, user } = result.data;
-    storage.set('accessToken', access_token);
-    storage.set('refreshToken', refresh_token);
-    setUser(toAppStoreUser(user));
-    toast.success(`Chào mừng quay trở lại, ${user.fullName}!`);
-    navigate(PATHS.HOME);
+        // Lưu tokens vào storage
+        const raw = result.data as Record<string, unknown>;
+        // `handleResponse` ở apiClient đã unwrap đúng cấu trúc (có thể phẳng
+        // hoặc có 1-2 lớp envelope). Ở đây `raw` luôn là object đã unwrap —
+        // chứa `user`, `access_token`, `refresh_token` ở cùng cấp.
+        const responseData = raw;
+        console.log('[Login] response keys:', Object.keys(responseData));
+        const accessToken =
+          (responseData.accessToken as string | undefined) ??
+          (responseData.access_token as string | undefined) ??
+          '';
+        // QUAN TRỌNG: KHÔNG fallback refreshToken = accessToken.
+        // Nếu BE không trả `refresh_token` riêng → để trống để API refresh biết
+        // mà fail thay vì âm thầm dùng lại expired accessToken.
+        const refreshToken =
+          (responseData.refreshToken as string | undefined) ??
+          (responseData.refresh_token as string | undefined) ??
+          '';
+
+        console.log(
+          '[Login] accessToken length:',
+          accessToken.length,
+          'preview:',
+          accessToken.slice(0, 30)
+        );
+        console.log(
+          '[Login] refreshToken present:',
+          refreshToken.length > 0,
+          'length:',
+          refreshToken.length
+        );
+        storage.set('accessToken', accessToken);
+        storage.set('refreshToken', refreshToken);
+        console.log('[Login] token saved. Verify:', storage.get('accessToken') ? 'OK' : 'MISSING');
+
+        // Lấy thông tin user từ login response
+        // Backend trả về user info cùng với tokens
+        const userData = (responseData.user ?? responseData) as Record<string, unknown>;
+        const user = {
+          id: (userData.id as string | undefined) ?? '',
+          email: (userData.email as string | undefined) ?? data.email,
+          fullName:
+            (userData.fullName as string | undefined) ??
+            (userData.name as string | undefined) ??
+            data.email.split('@')[0],
+          avatarUrl:
+            (userData.avatar as string | undefined) ?? (userData.avatarUrl as string | undefined),
+          roles: (userData.roles as string[] | undefined) ?? ['TREKKER'],
+        };
+
+        if (!user.id) {
+          toast.error('Đăng nhập thất bại. Vui lòng thử lại.');
+          return;
+        }
+
+        setUser(toAppStoreUser(user));
+        toast.success(`Chào mừng quay trở lại, ${user.fullName}!`);
+        navigate(PATHS.HOME);
+      } catch (err) {
+        console.error('Login error:', err);
+        toast.error('Đăng nhập thất bại. Vui lòng thử lại.');
+      }
+    })();
   };
 
   return (

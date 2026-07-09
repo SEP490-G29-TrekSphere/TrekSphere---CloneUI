@@ -1,6 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { PATHS } from '@/constants';
-import { useAppStore } from '@/store/useAppStore';
+import { useAuthCheck } from '@/shared/hooks/useAuthCheck';
+import { AppSpinner } from '@/shared/ui';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -9,17 +10,22 @@ interface ProtectedRouteProps {
 /**
  * Bọc các route cần đăng nhập.
  * - Chưa login → redirect về /login, lưu lại "from" để sau khi login có thể quay lại.
+ * - Đợi store hydrated xong trước khi check auth (tránh race condition khi F5).
  */
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const user = useAppStore((state) => state.user);
+  const { isAuthenticated, isLoading } = useAuthCheck();
   const location = useLocation();
 
-  // Cho phép truy cập khi có user trong store HOẶC vẫn còn accessToken trong localStorage
-  // (trường hợp F5 trang khi đã login trước đó, store bị reset nhưng token còn).
-  const hasToken =
-    typeof window !== 'undefined' ? Boolean(localStorage.getItem('accessToken')) : false;
+  // Đang loading (store chưa hydrated) → hiển thị spinner, không redirect
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <AppSpinner size="lg" className="text-primary" />
+      </div>
+    );
+  }
 
-  if (!user && !hasToken) {
+  if (!isAuthenticated) {
     return <Navigate to={PATHS.LOGIN} state={{ from: location }} replace />;
   }
 

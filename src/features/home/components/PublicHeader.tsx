@@ -1,4 +1,4 @@
-import { LogOut, Settings, User } from 'lucide-react';
+import { LogOut, User } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { PATHS } from '@/constants';
@@ -18,7 +18,7 @@ const NAV_ITEMS = [
 /**
  * PublicHeader — header cho landing page.
  * - Chưa login: hiển thị "Sign in / Sign up".
- * - Đã login: hiển thị avatar + dropdown menu (Profile, Edit Profile, Đăng xuất).
+ * - Đã login: hiển thị avatar + dropdown menu (Hồ sơ, Đăng xuất).
  */
 export default function PublicHeader() {
   const location = useLocation();
@@ -81,10 +81,26 @@ export default function PublicHeader() {
               <button
                 type="button"
                 onClick={() => setDropdownOpen((prev) => !prev)}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
+                className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-primary text-sm font-bold text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
                 aria-label="Mở menu cá nhân"
               >
-                {initial}
+                {user.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.name ?? 'User'}
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      target.style.display = 'none';
+                      const span = document.createElement('span');
+                      span.textContent = initial;
+                      span.className = 'text-sm font-bold text-primary-foreground';
+                      target.parentElement?.appendChild(span);
+                    }}
+                  />
+                ) : (
+                  <span>{initial}</span>
+                )}
               </button>
 
               {dropdownOpen && (
@@ -101,14 +117,6 @@ export default function PublicHeader() {
                   >
                     <User className="h-4 w-4" />
                     Hồ sơ
-                  </Link>
-                  <Link
-                    to={PATHS.EDIT_PROFILE}
-                    onClick={() => setDropdownOpen(false)}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                  >
-                    <Settings className="h-4 w-4" />
-                    Chỉnh sửa hồ sơ
                   </Link>
                   <div className="my-1 h-px bg-border" />
                   <button
