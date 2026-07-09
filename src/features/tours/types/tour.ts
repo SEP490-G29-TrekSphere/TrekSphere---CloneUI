@@ -7,6 +7,7 @@ export interface Tour {
   duration: string;
   level: TourLevel;
   price: string;
+  basePrice?: number;
   originalPrice?: string;
   rating: number;
   reviewCount: number;
@@ -143,12 +144,193 @@ export interface TourCategory {
   name: string;
   icon: string;
   count: number;
+  /** Optional cover image used by the circular category pills on the List Tours page. */
+  image?: string;
 }
 
+/**
+ * UI-facing filter shape owned by the List Tours page.
+ *
+ * Mirrors {@link TourListParams} for the fields the API supports, plus
+ * category for client-side UI display (the category chips don't drive a
+ * query because the backend doesn't filter on category yet — see
+ * `features/tours/pages/ListTours.tsx` for the note).
+ */
 export interface TourFilter {
+  /** Free-text keyword sent as the `keyword` query param. */
+  keyword?: string;
+  /** Destination/location sent as the `location` query param. */
+  location?: string;
+  /** Difficulty enum sent as the `difficulty` query param. */
+  difficulty?: ApiDifficulty;
+  /**
+   * Map-friendly UI sort key. Each value translates to a (sortBy, sortDir)
+   * pair sent to the API.
+   */
+  sortBy?:
+    | 'price-asc'
+    | 'price-desc'
+    | 'rating'
+    | 'newest'
+    | 'duration-asc'
+    | 'duration-desc'
+    | 'name-asc';
+}
+
+// ============================================================
+// API Types for List Tours
+// ============================================================
+
+/**
+ * Difficulty levels from the API
+ */
+export type ApiDifficulty = 'HARD' | 'MODERATE' | 'EXPERT' | 'EASY' | 'BEGINNER';
+
+/**
+ * Status values from the API
+ */
+export type ApiStatus = 'DRAFT' | 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'HIDDEN';
+
+/**
+ * Allowed sort directions from the API
+ */
+export type ApiSortDir = 'asc' | 'desc';
+
+/**
+ * Allowed sort fields. The API defaults to `createdAt`; other useful
+ * fields exposed in the schema (averageRating, basePrice, etc.) are
+ * surfaced as UI options below.
+ */
+export type ApiSortField =
+  | 'createdAt'
+  | 'averageRating'
+  | 'basePrice'
+  | 'durationDays'
+  | 'tourName';
+
+/**
+ * Query params for fetching tours list.
+ *
+ * Source of truth: Swagger screenshots for `/api/v1/tours`. The backend
+ * currently accepts:
+ *   - keyword       (string, free-text search)
+ *   - location      (string, exact-match location filter)
+ *   - difficulty    (string, one of ApiDifficulty)
+ *   - page          (integer, default 0)
+ *   - size          (integer, default 10)
+ *   - sortBy        (string, default 'createdAt')
+ *   - sortDir       (string, default 'desc')
+ *
+ * Future server-side filters (price min/max, duration range, rating,
+ * date range, category, status) are intentionally NOT typed here so
+ * the FE never sends params the BE ignores. Add them once the BE
+ * supports them.
+ */
+export interface TourListParams {
+  keyword?: string;
+  location?: string;
+  difficulty?: ApiDifficulty;
+  page?: number;
+  size?: number;
+  sortBy?: ApiSortField;
+  sortDir?: ApiSortDir;
+}
+
+/**
+ * Individual tour item from API response
+ */
+export interface TourApiItem {
+  tourId: string;
+  tourName: string;
+  location: string;
+  durationDays: number;
+  basePrice: number;
+  difficulty: ApiDifficulty;
+  status: ApiStatus;
+  coverImageUrl: string;
+  vendorId: string;
+  vendorName: string;
+  averageRating: number | null;
+  totalReviews: number;
+  createdAt: string;
   category?: string;
-  level?: string;
-  priceRange?: [number, number];
-  duration?: string;
-  sortBy?: 'popular' | 'price-asc' | 'price-desc' | 'rating' | 'newest';
+}
+
+/**
+ * Paginated response from tours API
+ */
+export interface TourListApiResponse {
+  content: TourApiItem[];
+  pageNumber: number;
+  pageSize: number;
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
+}
+
+// ============================================================
+// API Types for Tour Detail (GET /api/v1/tours/{tourId})
+// ============================================================
+
+/**
+ * Image object from the tour detail API response
+ */
+export interface TourDetailImageApi {
+  imageId: string;
+  imageUrl: string;
+  sortOrder: number;
+  caption: string | null;
+}
+
+/**
+ * Schedule object from the tour detail API response
+ */
+export interface TourDetailScheduleApi {
+  scheduleId: string;
+  departureDate: string;
+  returnDate: string;
+  availableSlots: number;
+  bookedSlots: number;
+  price: number;
+  status: 'OPEN' | 'CLOSED' | 'FULL';
+}
+
+/**
+ * Full tour detail from the API endpoint: GET /api/v1/tours/{tourId}
+ *
+ * This mirrors the `data` field inside the standard envelope
+ * `{ success, code, message, data, timestamp }`.
+ */
+export interface TourDetailFromApi {
+  tourId: string;
+  tourName: string;
+  description: string;
+  difficulty: ApiDifficulty;
+  location: string;
+  durationDays: number;
+  basePrice: number;
+  maxCapacity: number;
+  highlights: string | null;
+  includes: string | null;
+  excludes: string | null;
+  coverImageUrl: string | null;
+  status: ApiStatus;
+  createdAt: string;
+  updatedAt: string | null;
+  vendorId: string;
+  vendorName: string;
+  vendorLogoUrl: string | null;
+  vendorContactEmail: string | null;
+  vendorContactPhone: string | null;
+  images: TourDetailImageApi[];
+  schedules: TourDetailScheduleApi[];
+  averageRating: number | null;
+  totalReviews: number;
+}
+
+export interface TourSearchValues {
+  keyword: string;
+  location: string;
+  departureDate: string;
+  budget: string;
 }

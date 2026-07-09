@@ -26,7 +26,7 @@ export const PATHS = {
   // Customer (đăng nhập mới thấy)
   DASHBOARD: '/dashboard',
   TOURS: '/tours',
-  TOUR_DETAIL: '/tours/:slug',
+  TOUR_DETAIL: '/tours/:id',
   MY_TOURS: '/my-tours',
   COMMUNITY: '/community',
   NEWS: '/news',
