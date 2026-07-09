@@ -30,7 +30,7 @@ export const PATHS = {
   MY_TOURS: '/my-tours',
   COMMUNITY: '/community',
   NEWS: '/news',
-  NEWS_DETAIL: '/news/:slug',
+  NEWS_DETAIL: '/news/:blogId',
   NOTIFICATIONS: '/notifications',
 
   // Settings

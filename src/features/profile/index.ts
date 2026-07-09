@@ -3,6 +3,7 @@
  */
 
 export * from './components/ProfileSidebar';
+export * from './hooks/useProfile';
 export { default as EditProfile } from './pages/EditProfile';
 export { default as ViewProfile } from './pages/ViewProfile';
 export { profileService } from './services/profileService';

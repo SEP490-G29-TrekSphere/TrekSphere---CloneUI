@@ -46,27 +46,29 @@ export interface RegisterResponseData {
 
 /**
  * Hồ sơ người dùng chi tiết (dùng cho màn hình View/Edit profile).
- * Giữ nguyên cấu trúc cũ để không vỡ các feature khác.
+ * Chỉ có các trường mà BE trả về: userID, email, fullName, phone, dateOfBirth, gender, avatarUrl, status, emailVerified, roles.
  */
 export interface UserProfile {
   id: string;
-  name: string;
   email: string;
+  name: string;
   phone?: string;
   avatar?: string;
   username?: string;
   gender?: 'male' | 'female' | 'other';
   dateOfBirth?: string;
-  address?: string;
-  bio?: string;
-  interests?: string[];
+  /** Thời gian tạo tài khoản (API trả về `createdAt`). */
+  joinedAt?: string;
+  /** Vai trò người dùng (API trả về `roles` là array). */
+  roles: string[];
+  /** Vai trò chính (lấy từ roles[0]). Dùng cho các check hiển thị. */
+  role: string;
+  /** Stats cho sidebar profile (FE tự tính hoặc mock). */
   stats?: {
     toursCount: number;
     postsCount: number;
     followersCount: number;
   };
-  joinedAt?: string;
-  role: string;
 }
 
 /**

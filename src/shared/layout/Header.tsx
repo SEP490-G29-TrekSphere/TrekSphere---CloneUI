@@ -1,4 +1,4 @@
-import { Bell, LogOut, Settings, User } from 'lucide-react';
+import { Bell, LogOut, User } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { PATHS } from '@/constants';
@@ -34,7 +34,9 @@ export default function Header() {
     navigate(PATHS.HOME);
   };
 
+  const avatarUrl = user?.avatarUrl;
   const initial = user?.name?.charAt(0).toUpperCase() ?? 'A';
+  const showAvatar = Boolean(avatarUrl);
 
   return (
     <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b bg-background px-4 shadow-sm md:px-6">
@@ -55,10 +57,26 @@ export default function Header() {
           <button
             type="button"
             onClick={() => setDropdownOpen((prev) => !prev)}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
+            className="flex size-9 items-center justify-center overflow-hidden rounded-full bg-primary text-sm font-bold text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
             aria-label="Mở menu cá nhân"
           >
-            {initial}
+            {showAvatar ? (
+              <img
+                src={avatarUrl}
+                alt={user?.name ?? 'User'}
+                className="h-full w-full object-cover"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  target.style.display = 'none';
+                  const span = document.createElement('span');
+                  span.textContent = initial;
+                  span.className = 'text-sm font-bold text-primary-foreground';
+                  target.parentElement?.appendChild(span);
+                }}
+              />
+            ) : (
+              <span>{initial}</span>
+            )}
           </button>
 
           {dropdownOpen && (
@@ -75,14 +93,6 @@ export default function Header() {
               >
                 <User className="h-4 w-4" />
                 Hồ sơ
-              </Link>
-              <Link
-                to={PATHS.EDIT_PROFILE}
-                onClick={() => setDropdownOpen(false)}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                <Settings className="h-4 w-4" />
-                Chỉnh sửa hồ sơ
               </Link>
               <div className="my-1 h-px bg-border" />
               <button

@@ -1,27 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { PATHS } from '@/constants';
-import { AppSpinner } from '@/shared/ui';
+import { AppButton, AppSpinner } from '@/shared/ui';
+import { storage } from '@/utils/storage';
 import ProfileSidebar from '../components/ProfileSidebar';
-import { profileService } from '../services/profileService';
+import { useProfile } from '../hooks/useProfile';
 import { GENDER_LABELS } from '../types';
-
-// Dữ liệu mẫu dùng khi BE chưa sẵn sàng — fallback nếu API trả về rỗng.
-const MOCK_PROFILE = {
-  id: 'user-001',
-  name: 'Nguyễn Văn A',
-  email: 'nguyenvana@email.com',
-  phone: '0912 345 678',
-  avatar: '',
-  username: '@vanna_trek',
-  gender: 'male' as const,
-  dateOfBirth: '1998-05-15',
-  address: 'Hà Nội, Việt Nam',
-  bio: 'Đam mê trekking, leo núi và khám phá những cung đường mới lạ tại Việt Nam. Đang hướng tới mục tiêu chinh phục trọn vẹn các đỉnh núi cao trên 3000m tại Tây Bắc.',
-  interests: ['Trekking', 'Leo núi', 'Cắm trại', 'Chụp ảnh thiên nhiên', 'Khám phá văn hóa'],
-  stats: { toursCount: 5, postsCount: 12, followersCount: 1200 },
-  joinedAt: '2025-09-01T00:00:00Z',
-  role: 'trekker' as const,
-};
 
 interface InfoCellProps {
   label: string;
@@ -44,16 +27,9 @@ function InfoCell({ label, value }: InfoCellProps) {
  * - Responsive: dưới lg sẽ xếp chồng 1 cột dọc.
  */
 export default function ViewProfile() {
-  const {
-    data: response,
-    isLoading,
-    isError,
-  } = useQuery({
-    queryKey: ['profile', 'me'],
-    queryFn: () => profileService.getProfile(),
-    // Nếu BE chưa sẵn sàng, fallback sang mock để dev tiếp tục làm UI.
-    placeholderData: { data: MOCK_PROFILE, status: 200 },
-  });
+  const { data: profile, isLoading, isError, error, refetch } = useProfile();
+  const queryClient = useQueryClient();
+  const errorMessage = error instanceof Error ? error.message : null;
 
   if (isLoading) {
     return (
@@ -63,10 +39,41 @@ export default function ViewProfile() {
     );
   }
 
-  const profile = response?.data ?? MOCK_PROFILE;
+  if (isError || !profile) {
+    return (
+      <div className="mx-auto w-full max-w-6xl space-y-6 pb-8">
+        <header className="space-y-1">
+          <h1 className="text-2xl font-bold text-primary md:text-3xl">Hồ sơ của tôi</h1>
+          <p className="text-sm text-muted-foreground">Xem và quản lý thông tin cá nhân của bạn</p>
+        </header>
+        <div className="space-y-4 rounded-2xl bg-destructive/10 p-6 text-center">
+          <p className="text-sm text-destructive">
+            {errorMessage || 'Không thể tải hồ sơ. Vui lòng đăng nhập hoặc thử lại sau.'}
+          </p>
+          <div className="flex items-center justify-center gap-3">
+            <AppButton
+              type="button"
+              variant="outline"
+              onClick={() => {
+                queryClient.invalidateQueries({ queryKey: ['profile'] });
+                void refetch();
+              }}
+            >
+              Thử lại
+            </AppButton>
+            {!storage.get<string>('accessToken') && (
+              <AppButton type="button" onClick={() => (window.location.href = PATHS.LOGIN)}>
+                Đăng nhập lại
+              </AppButton>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  const displayGender = profile.gender ? GENDER_LABELS[profile.gender] : '—';
-  const displayDob = profile.dateOfBirth || '—';
+  const displayGender = profile?.gender ? GENDER_LABELS[profile.gender] : '—';
+  const displayDob = profile?.dateOfBirth || '—';
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 pb-8">
@@ -94,42 +101,8 @@ export default function ViewProfile() {
               <InfoCell label="Email" value={profile.email} />
               <InfoCell label="Ngày sinh" value={displayDob} />
               <InfoCell label="Giới tính" value={displayGender} />
-              <InfoCell label="Địa chỉ" value={profile.address} />
             </div>
           </section>
-
-          {/* Phần 2: Tiểu sử */}
-          <section className="rounded-2xl bg-card p-6 shadow-sm">
-            <h2 className="mb-3 text-lg font-bold text-primary">Tiểu sử / Giới thiệu</h2>
-            <p className="rounded-xl bg-muted p-4 text-sm leading-relaxed text-primary">
-              {profile.bio || '—'}
-            </p>
-          </section>
-
-          {/* Phần 3: Sở thích */}
-          <section className="rounded-2xl bg-card p-6 shadow-sm">
-            <h2 className="mb-4 text-lg font-bold text-primary">Sở thích</h2>
-            {profile.interests && profile.interests.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {profile.interests.map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center rounded-full border border-border bg-muted px-3.5 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-accent/40"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">Chưa cập nhật sở thích.</p>
-            )}
-          </section>
-
-          {isError && (
-            <p className="text-center text-xs text-muted-foreground">
-              * Đang hiển thị dữ liệu mẫu. Backend sẽ sớm được kết nối.
-            </p>
-          )}
         </div>
       </div>
     </div>

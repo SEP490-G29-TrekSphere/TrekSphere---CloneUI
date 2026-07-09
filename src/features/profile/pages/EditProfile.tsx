@@ -1,8 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Camera, X } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { FormProvider, useFieldArray, useForm } from 'react-hook-form';
+import { FormProvider, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { PATHS } from '@/constants';
 import type { UserProfile } from '@/features/auth';
@@ -14,107 +13,98 @@ import { AppButton, AppSpinner } from '@/shared/ui';
 import { useAppStore } from '@/store/useAppStore';
 import { toast } from '@/store/useToastStore';
 import ProfileSidebar from '../components/ProfileSidebar';
+import { profileKeys, useProfile } from '../hooks/useProfile';
 import { profileService } from '../services/profileService';
-
-const MOCK_PROFILE: UserProfile = {
-  id: 'user-001',
-  name: 'Nguyễn Văn A',
-  email: 'nguyenvana@email.com',
-  phone: '0912345678',
-  avatar: '',
-  username: '@vanna_trek',
-  gender: 'male',
-  dateOfBirth: '1998-05-15',
-  address: 'Hà Nội, Việt Nam',
-  bio: 'Đam mê trekking, leo núi và khám phá những cung đường mới lạ tại Việt Nam. Đang hướng tới mục tiêu chinh phục trọn vẹn các đỉnh núi cao trên 3000m tại Tây Bắc.',
-  interests: ['Trekking', 'Leo núi', 'Cắm trại'],
-  stats: { toursCount: 5, postsCount: 12, followersCount: 1200 },
-  joinedAt: '2025-09-01T00:00:00Z',
-  role: 'trekker',
-};
 
 /**
  * Màn hình 2: Chỉnh sửa hồ sơ.
  * - Cột trái (30%): Sidebar y hệt màn View nhưng mode="edit" (có nút "Thay đổi ảnh").
  * - Cột phải (70%): Form chỉnh sửa với input có nền xám ngà, focus viền xanh rêu.
  * - Cụm nút "Hủy" + "Lưu thay đổi" ở góc dưới bên phải form.
+ *
+ * Avatar flow đơn giản:
+ * 1. User chọn ảnh → preview ngay bằng URL.createObjectURL
+ * 2. User bấm "Lưu thay đổi" → tạo FormData với file + các fields khác → gửi 1 lần qua PUT /users/me
+ * 3. Nếu user không đổi ảnh → không gửi field avatar
  */
 export default function EditProfile() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const setUser = useAppStore((state) => state.setUser);
 
-  // Avatar preview khi user chọn file mới (chưa upload lên server)
+  // File object của avatar mới (null = không đổi ảnh)
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
+  // Preview local để hiển thị ngay khi user vừa chọn file
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
-  // Load profile hiện tại
-  const { data: response, isLoading } = useQuery({
-    queryKey: ['profile', 'me'],
-    queryFn: () => profileService.getProfile(),
-    placeholderData: { data: MOCK_PROFILE, status: 200 },
-  });
-  const profile = response?.data ?? MOCK_PROFILE;
+  // Load profile hiện tại qua hook
+  const { data: profile, isLoading } = useProfile();
 
-  // Form
+  // Form — dùng empty object fallback để tránh crash khi profile đang null
   const methods = useForm<UpdateProfileFormValues>({
     resolver: zodResolver(updateProfileSchema),
     defaultValues: {
-      name: profile.name,
-      phone: profile.phone ?? '',
-      gender: profile.gender,
-      dateOfBirth: profile.dateOfBirth ?? '',
-      address: profile.address ?? '',
-      bio: profile.bio ?? '',
-      interests: profile.interests?.map((v: string) => ({ value: v })) ?? [],
+      name: profile?.name ?? '',
+      phone: profile?.phone ?? '',
+      gender: profile?.gender,
+      dateOfBirth: profile?.dateOfBirth ?? '',
     },
   });
 
   const {
     register,
     handleSubmit,
-    control,
     reset,
     formState: { errors, isSubmitting },
   } = methods;
 
-  // Field array cho interests (tag có thể thêm/xoá)
-  const { fields, append, remove } = useFieldArray<UpdateProfileFormValues, 'interests', 'value'>({
-    control,
-    name: 'interests',
-  });
-
   // Reset form khi load xong data
   useEffect(() => {
+    if (!profile) return;
     reset({
-      name: profile.name,
+      name: profile.name ?? '',
       phone: profile.phone ?? '',
       gender: profile.gender,
       dateOfBirth: profile.dateOfBirth ?? '',
-      address: profile.address ?? '',
-      bio: profile.bio ?? '',
-      interests: profile.interests?.map((v: string) => ({ value: v })) ?? [],
     });
   }, [profile, reset]);
 
-  // Mutation lưu thay đổi
+  // Mutation lưu thay đổi - gửi multipart/form-data
   const updateMutation = useMutation({
-    mutationFn: (data: UpdateProfileFormValues) =>
-      profileService.updateProfile({
-        ...data,
-        interests: data.interests?.map((i) => i.value),
-      }),
+    mutationFn: (data: UpdateProfileFormValues) => {
+      // Tạo FormData theo yêu cầu API PUT /users/me (multipart/form-data)
+      const formData = new FormData();
+      formData.append('fullName', data.name);
+      if (data.phone) formData.append('phone', data.phone);
+      if (data.dateOfBirth) formData.append('dateOfBirth', data.dateOfBirth);
+      if (data.gender) formData.append('gender', data.gender.toUpperCase());
+
+      // Chỉ append avatar khi user đổi ảnh
+      if (selectedAvatarFile) {
+        formData.append('avatar', selectedAvatarFile);
+      }
+
+      return profileService.updateProfile(formData);
+    },
     onSuccess: (res) => {
       if (res.error || (res.status && res.status >= 400)) {
-        toast.error(res.error || 'Cập nhật thất bại. Vui lòng thử lại.');
+        toast.error(res.message || res.error || 'Cập nhật thất bại. Vui lòng thử lại.');
         return;
       }
       toast.success('Cập nhật hồ sơ thành công!');
 
-      // Đồng bộ user trong store (chỉ phần name — store hiện chỉ lưu id+name)
+      // Cập nhật user trong store bằng data từ response
       if (res.data) {
-        setUser({ id: res.data.id, name: res.data.name });
+        const updatedUser = res.data as UserProfile;
+        setUser({
+          id: updatedUser.id,
+          name: updatedUser.name,
+          email: updatedUser.email,
+          avatarUrl: updatedUser.avatar,
+          roles: updatedUser.roles,
+        });
       }
-      queryClient.invalidateQueries({ queryKey: ['profile', 'me'] });
+      queryClient.invalidateQueries({ queryKey: profileKeys.me() });
       navigate(PATHS.PROFILE);
     },
     onError: () => {
@@ -123,7 +113,6 @@ export default function EditProfile() {
   });
 
   const onSubmit = (data: UpdateProfileFormValues) => {
-    // Nếu BE chưa sẵn sàng, vẫn cho submit để dev test flow UI
     updateMutation.mutate(data);
   };
 
@@ -131,17 +120,20 @@ export default function EditProfile() {
     navigate(PATHS.PROFILE);
   };
 
-  // Xử lý upload avatar (chỉ preview local, BE sẽ làm phần upload thật)
+  // Chọn avatar: preview ngay bằng createObjectURL, lưu file để gửi cùng form
   const handleAvatarChange = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result;
-      if (typeof result === 'string') {
-        setAvatarPreview(result);
-        toast.info('Tính năng upload avatar sẽ kết nối BE sau.');
-      }
-    };
-    reader.readAsDataURL(file);
+    if (!file.type.startsWith('image/')) {
+      toast.error('Vui lòng chọn file ảnh.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Ảnh tối đa 5MB.');
+      return;
+    }
+    // Tạo preview URL
+    const previewUrl = URL.createObjectURL(file);
+    setAvatarPreview(previewUrl);
+    setSelectedAvatarFile(file);
   };
 
   // Render
@@ -154,8 +146,18 @@ export default function EditProfile() {
   }
 
   const previewProfile: UserProfile = {
-    ...profile,
-    avatar: avatarPreview || profile.avatar,
+    id: profile?.id ?? '',
+    name: profile?.name ?? '',
+    email: profile?.email ?? '',
+    phone: profile?.phone,
+    avatar: avatarPreview || profile?.avatar,
+    username: profile?.username,
+    gender: profile?.gender,
+    dateOfBirth: profile?.dateOfBirth,
+    stats: profile?.stats,
+    joinedAt: profile?.joinedAt,
+    roles: profile?.roles ?? [],
+    role: profile?.role ?? '',
   };
 
   return (
@@ -236,7 +238,7 @@ export default function EditProfile() {
                     <input
                       id="email"
                       type="email"
-                      value={profile.email}
+                      value={profile?.email ?? ''}
                       readOnly
                       disabled
                       className="h-11 w-full cursor-not-allowed rounded-xl border border-transparent bg-muted px-3.5 text-sm font-semibold text-muted-foreground outline-none"
@@ -279,72 +281,7 @@ export default function EditProfile() {
                       <option value="other">Khác</option>
                     </select>
                   </div>
-
-                  {/* Địa chỉ */}
-                  <div>
-                    <label
-                      htmlFor="address"
-                      className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-                    >
-                      Địa chỉ
-                    </label>
-                    <input
-                      id="address"
-                      type="text"
-                      autoComplete="street-address"
-                      {...register('address')}
-                      className="h-11 w-full rounded-xl border border-transparent bg-muted px-3.5 text-sm font-semibold text-primary outline-none transition-colors focus:border-primary focus:bg-muted"
-                    />
-                  </div>
                 </div>
-              </section>
-
-              {/* Tiểu sử */}
-              <section className="rounded-2xl bg-card p-6 shadow-sm">
-                <h2 className="mb-3 text-lg font-bold text-primary">Tiểu sử / Giới thiệu</h2>
-                <textarea
-                  rows={4}
-                  placeholder="Hãy viết vài dòng giới thiệu về bản thân..."
-                  {...register('bio')}
-                  className="w-full resize-y rounded-xl border border-transparent bg-muted px-3.5 py-2.5 text-sm text-primary outline-none transition-colors focus:border-primary focus:bg-muted"
-                />
-                {errors.bio && (
-                  <p className="mt-1 text-xs text-destructive">{errors.bio.message}</p>
-                )}
-              </section>
-
-              {/* Sở thích */}
-              <section className="rounded-2xl bg-card p-6 shadow-sm">
-                <h2 className="mb-3 text-lg font-bold text-primary">Sở thích</h2>
-                <div className="flex flex-wrap gap-2">
-                  {fields.map((field, index) => (
-                    <div
-                      key={field.value}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-3 py-1.5 text-xs font-semibold text-primary"
-                    >
-                      <span>{field.value}</span>
-                      <button
-                        type="button"
-                        onClick={() => remove(index)}
-                        className="text-muted-foreground transition-colors hover:text-destructive"
-                        aria-label="Xoá sở thích"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const next = window.prompt('Nhập sở thích mới:')?.trim();
-                    if (next) append({ value: next });
-                  }}
-                  className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-dashed border-primary/40 bg-transparent px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-accent/40"
-                >
-                  <Camera className="h-3.5 w-3.5" />
-                  Thêm sở thích
-                </button>
               </section>
 
               {/* Cụm nút hành động — góc dưới bên phải */}

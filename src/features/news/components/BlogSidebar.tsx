@@ -1,14 +1,15 @@
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { PATHS } from '@/constants';
-import type { BlogPost } from '../types';
+import type { BlogListItem } from '../types';
 
 interface BlogSidebarProps {
-  relatedPosts: BlogPost[];
+  relatedPosts: BlogListItem[];
 }
 
 const formatDate = (iso: string): string => {
   const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
   return d.toLocaleDateString('vi-VN', {
     day: '2-digit',
     month: 'short',
@@ -18,6 +19,9 @@ const formatDate = (iso: string): string => {
 
 /**
  * Sidebar phải: 3 khối xếp dọc — Related / CTA / Newsletter.
+ *
+ * BE hiện không trả `related_blogs` trong detail → `relatedPosts` thường rỗng
+ * hoặc được fill từ hook (xem useBlogRelated). Khi rỗng sẽ fallback text.
  */
 export function BlogSidebar({ relatedPosts }: BlogSidebarProps) {
   return (
@@ -31,13 +35,13 @@ export function BlogSidebar({ relatedPosts }: BlogSidebarProps) {
         ) : (
           <ul className="flex flex-col gap-4">
             {relatedPosts.slice(0, 4).map((p) => (
-              <li key={p.id}>
+              <li key={p.blogId}>
                 <Link
-                  to={PATHS.NEWS_DETAIL.replace(':slug', p.slug)}
+                  to={PATHS.NEWS_DETAIL.replace(':blogId', p.blogId)}
                   className="flex items-start gap-3 group"
                 >
                   <img
-                    src={p.coverImage}
+                    src={p.coverImageUrl}
                     alt={p.title}
                     loading="lazy"
                     className="h-16 w-16 shrink-0 rounded-xl object-cover"
