@@ -1,19 +1,18 @@
 # Common settings that generally should always be used with your language specific settings
 
 # Force CRLF for all text files to match biome.json (lineEnding: "crlf")
-# and .editorconfig (end_of_line = crlf). We intentionally omit the `text`
-# attribute on the catch-all so git does NOT strip CRLF on `git add` —
-# otherwise the clean filter would normalize CRLF→LF before storing the blob,
-# and the committed file would still fail biome's lineEnding rule in CI.
+# and .editorconfig (end_of_line = crlf). We explicitly use `text eol=crlf`
+# on the catch-all to enable text normalization and ensure CRLF line endings
+# are enforced on checkout in the working tree.
 # Per-file entries below can still override the EOL (shell scripts stay LF,
 # batch scripts stay CRLF).
-*            text eol=crlf
+*          text eol=crlf
 
 #
 # The above will handle all files NOT found below
 #
 
-# Documents
+# Documents`
 *.bibtex   text diff=bibtex
 *.doc      diff=astextplain
 *.DOC      diff=astextplain

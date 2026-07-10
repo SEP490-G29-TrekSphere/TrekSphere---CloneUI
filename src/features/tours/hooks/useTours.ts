@@ -67,7 +67,7 @@ export function useTours(params: TourListParams = {}): UseToursResult {
   });
 
   return {
-    tours: data?.content.map(mapApiItemToTour) ?? [],
+    tours: data?.content?.map(mapApiItemToTour) ?? [],
     totalElements: data?.totalElements ?? 0,
     totalPages: data?.totalPages ?? 0,
     pageNumber: data?.pageNumber ?? 0,

@@ -23,10 +23,31 @@ import { storage } from '@/utils/storage';
  * CORS). Mặc định bật.
  */
 const isDev = import.meta.env.DEV;
-const baseURL = isDev
-  ? '/api/v1'
-  : (import.meta.env.VITE_API_URL ?? 'https://api.treksphere.io.vn/api/v1');
+const envApiUrl = import.meta.env.VITE_API_URL;
 
+const deriveApiUrl = (rawUrl?: string): string => {
+  const url = rawUrl || 'https://api.treksphere.io.vn';
+  const cleanUrl = url.replace(/\/+$/, '');
+
+  if (cleanUrl.endsWith('/api/v1')) {
+    return cleanUrl;
+  }
+  if (cleanUrl.endsWith('/api')) {
+    return `${cleanUrl}/v1`;
+  }
+  return `${cleanUrl}/api/v1`;
+};
+
+// Trong môi trường dev, dùng relative path `/api/v1` để đi qua Vite proxy.
+// Trong môi trường prod, dùng full URL trỏ thẳng BE.
+const getBaseURL = () => {
+  if (isDev) {
+    return '/api/v1';
+  }
+  return deriveApiUrl(envApiUrl);
+};
+
+const baseURL = getBaseURL();
 const withCredentialsEnv = import.meta.env.VITE_API_WITH_CREDENTIALS;
 const withCredentials = withCredentialsEnv !== 'false'; // default true
 
@@ -71,13 +92,9 @@ const onRefreshFailed = (): void => {
   refreshSubscribers = [];
 };
 
-/**
- * Build URL tuyệt đối để gọi `/auth/refresh` mà KHÔNG đi qua lại interceptor.
- * Dùng absolute URL vì `axios.post` gọi thẳng sẽ không qua Vite proxy.
- */
 function buildAbsoluteBaseURL(): string {
   if (isDev) {
-    return import.meta.env.VITE_API_URL ?? 'https://api.treksphere.io.vn/api/v1';
+    return deriveApiUrl(envApiUrl);
   }
   return baseURL;
 }
@@ -237,7 +254,7 @@ apiClient.interceptors.response.use(
 
       onTokenRefreshed(newToken);
       // Retry request hiện tại với token mới
-      originalConfig.headers = originalConfig.headers ?? {};
+      originalConfig.headers = originalConfig.headers ?? new axios.AxiosHeaders();
       originalConfig.headers.Authorization = `Bearer ${newToken}`;
       return apiClient.request(originalConfig);
     }
@@ -245,7 +262,7 @@ apiClient.interceptors.response.use(
     // Đang refresh rồi → đợi token mới rồi retry
     return new Promise<AxiosResponse>((resolve, reject) => {
       subscribeTokenRefresh((token) => {
-        originalConfig.headers = originalConfig.headers ?? {};
+        originalConfig.headers = originalConfig.headers ?? new axios.AxiosHeaders();
         originalConfig.headers.Authorization = `Bearer ${token}`;
         apiClient.request(originalConfig).then(resolve).catch(reject);
       });
