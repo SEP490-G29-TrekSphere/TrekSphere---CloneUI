@@ -117,7 +117,7 @@ async function performRefresh(): Promise<string | null> {
     );
   }
 
-  const absoluteURL = `${buildAbsoluteBaseURL()}/auth/refresh`;
+  const absoluteURL = `${buildAbsoluteBaseURL()}/auth/refresh-token`;
   // Thử từng shape body phổ biến; cái nào BE accept thì lấy token từ đó.
   const bodyCandidates: Array<Record<string, unknown> | null> = [
     refreshToken ? { refreshToken } : null,
@@ -222,11 +222,11 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Endpoint /auth/refresh tự nó cũng có thể 401 khi refresh token hết hạn —
+    // Endpoint /auth/refresh-token tự nó cũng có thể 401 khi refresh token hết hạn —
     // trong trường hợp đó axios.post trong `performRefresh` đã xử lý rồi, không
-    // cần chạy vào flow này. Cờ __skipRefresh được set cho request /auth/refresh
+    // cần chạy vào flow này. Cờ __skipRefresh được set cho request /auth/refresh-token
     // qua `performRefresh` rồi, nên logic ở đây an toàn.
-    if (originalConfig.url?.includes('/auth/refresh')) {
+    if (originalConfig.url?.includes('/auth/refresh-token')) {
       return Promise.reject(error);
     }
 
