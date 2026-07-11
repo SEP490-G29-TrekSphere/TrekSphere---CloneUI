@@ -41,6 +41,20 @@ export default function VerifyEmail() {
       try {
         const result = await authService.verifyEmail(token);
 
+        // ── Debug-only summary ở caller ────────────────────────────────────────
+        // eslint-disable-next-line no-console
+        console.group('[VerifyEmail] verify result');
+        // eslint-disable-next-line no-console
+        console.log('status:', result.status);
+        // eslint-disable-next-line no-console
+        console.log('error:', result.error);
+        // eslint-disable-next-line no-console
+        console.log('message:', result.message);
+        // eslint-disable-next-line no-console
+        console.log('data:', result.data);
+        // eslint-disable-next-line no-console
+        console.groupEnd();
+
         if (result.error && (result.status === 401 || result.status === 400)) {
           setStatus('error');
           setErrorMessage(result.error || 'Token không hợp lệ hoặc đã hết hạn.');
@@ -53,14 +67,17 @@ export default function VerifyEmail() {
           return;
         }
 
-        // ── Luồng mới: hiển thị success → nếu BE trả token thì lưu + về Home,
-        // nếu không thì về Login như flow cũ (fallback).
+        // ── Luồng sau verify (theo đúng BE spec) ───────────────────────────────
+        // BE /auth/verify CHỈ xác nhận email đã verified (trả `data: "Email verified
+        // successfully"`). BE KHÔNG cấp token trong body. User phải đăng nhập lại
+        // để lấy access/refresh token. Tuy nhiên nếu sau này BE thêm token thì
+        // logic dưới vẫn hoạt động backward-compat.
         const data = result.data;
         const accessToken = data?.access_token;
         const refreshToken = data?.refresh_token;
         const verifiedUser = data?.user;
 
-        // Lưu token + set user vào store nếu BE có trả về.
+        // Lưu token + set user vào store nếu BE có trả về (backward-compat).
         if (accessToken) {
           storage.set('accessToken', accessToken);
         }
@@ -74,7 +91,9 @@ export default function VerifyEmail() {
 
         // Render UI success — KHÔNG navigate ngay để user kịp đọc.
         setStatus('success');
-      } catch {
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('[VerifyEmail] verify threw:', err);
         setStatus('error');
         setErrorMessage('Đã xảy ra lỗi khi xác thực. Vui lòng thử lại sau.');
       }
@@ -84,22 +103,19 @@ export default function VerifyEmail() {
   }, [token]);
 
   // Hàm điều hướng dùng chung cho cả auto-redirect và nút bấm.
-  const goToHomeOrLogin = useCallback(() => {
-    const hasToken = Boolean(storage.get<string>('accessToken'));
-    if (hasToken) {
-      // TREKKER (mặc định) → Home như một user đã đăng nhập.
-      navigate(PATHS.HOME, { replace: true });
-    } else {
-      // BE verify không trả token → fallback về Login.
-      navigate(PATHS.LOGIN, { replace: true });
-    }
+  //
+  // Theo BE spec: /auth/verify KHÔNG cấp token. User cần login lại để lấy
+  // access/refresh token (token được set qua HttpOnly cookie bởi Spring Security).
+  // Flow này navigate về /login sau verify thành công — KHÔNG vào Home.
+  const goToLogin = useCallback(() => {
+    navigate(PATHS.LOGIN, { replace: true });
   }, [navigate]);
 
   // Auto-redirect sau khi success (3 giây, đủ để user đọc thông báo).
   useEffect(() => {
     if (status !== 'success') return;
     redirectTimeoutRef.current = window.setTimeout(() => {
-      goToHomeOrLogin();
+      goToLogin();
     }, 3000);
     return () => {
       if (redirectTimeoutRef.current !== null) {
@@ -107,14 +123,14 @@ export default function VerifyEmail() {
         redirectTimeoutRef.current = null;
       }
     };
-  }, [status, goToHomeOrLogin]);
+  }, [status, goToLogin]);
 
   const handleSuccessAction = () => {
     if (redirectTimeoutRef.current !== null) {
       window.clearTimeout(redirectTimeoutRef.current);
       redirectTimeoutRef.current = null;
     }
-    goToHomeOrLogin();
+    goToLogin();
   };
 
   return (
@@ -156,7 +172,7 @@ export default function VerifyEmail() {
                 Xác thực thành công!
               </h3>
               <p className="mt-2 text-sm" style={{ color: '#6F7B75' }}>
-                Email của bạn đã được xác thực. Đang đưa bạn về trang chủ...
+                Email của bạn đã được xác thực. Đang đưa bạn về trang đăng nhập...
               </p>
             </div>
             <AppButton
@@ -164,7 +180,7 @@ export default function VerifyEmail() {
               className="w-full h-12 rounded-full text-white font-semibold text-sm
                 bg-[#06261D] hover:bg-[#06261D]/90"
             >
-              Vào trang chủ ngay
+              Đăng nhập ngay
             </AppButton>
           </>
         ) : (

@@ -54,9 +54,11 @@ export const authService = {
 
   /**
    * Refresh the token when expired.
+   * BE: POST /api/v1/auth/refresh-token -> returns envelope `{ success, code, message, data: UserResponse }`.
+   * Trong TH token nằm trong HttpOnly cookie thì body có thể rỗng.
    */
   refreshToken: (token: string) =>
-    ApiService<AuthResponse>('/auth/refresh', 'POST', { refreshToken: token }),
+    ApiService<AuthResponse>('/auth/refresh-token', 'POST', { refreshToken: token }),
 
   /**
    * Change the current password.
@@ -77,52 +79,135 @@ export const authService = {
     ApiService<UserProfile>('/users/profile', 'PUT', data),
 
   /**
-   * Verify email via the token from the email link.
-   * Uses axios directly (without interceptors) to avoid attaching accessToken
-   * to verify request - token verify !== access token.
+   * Verify email qua token từ link trong email.
+   * Dùng `axios` trực tiếp (không qua `ApiService`) để bypass interceptors.
    *
-   * BE: GET /api/v1/auth/verify?token=xxx -> returns envelope:
+   * BE spec thật (theo swagger):
+   *   GET /api/v1/auth/verify?token=xxx
+   *   -> 200:
    *   {
-   *     statusCode: 200,
-   *     message: "Email verified successfully",
-   *     data: { user, access_token, refresh_token }
+   *     success: boolean,
+   *     code: number,
+   *     message: string,
+   *     data: string,   // CHỈ STRING (vd "Email verified successfully"),
+   *                     // KHÔNG chứa user/access_token/refresh_token ở đây.
+   *     errors: FieldErrorDetail[],
+   *     timestamp: string
    *   }
    *
-   * Lưu ý: Dùng axios trực tiếp (không qua ApiService) để bypass interceptor
-   * gắn Authorization header — token verify là query string, KHÔNG phải access token.
-   * Sau đó tự unwrap envelope 1 lớp (`data.data`) cho khớp với ApiService.
+   * Lưu ý quan trọng:
+   *   1. Token trong query string KHÁC accessToken — KHÔNG gắn Bearer ở đây.
+   *   2. BE verify xong không cấp token trong body — user phải /auth/login lại
+   *      (token thường được set qua HttpOnly cookie bởi Spring Security).
+   *   3. Giữ các field optional (`access_token`, `refresh_token`, `user`) để
+   *      backward-compat nếu sau này BE có thay đổi; đồng thời nếu BE trả
+   *      `code !== 200` thì vẫn coi là failure.
    */
   verifyEmail: async (token: string): Promise<ApiResponse<VerifyEmailResponse>> => {
     const apiBase = import.meta.env.VITE_API_URL ?? 'https://api.treksphere.io.vn/api/v1';
-    const verifyURL = `${apiBase.replace(/\/+$/, '')}/auth/verify?token=${encodeURIComponent(token)}`;
+    const cleanBase = apiBase.replace(/\/+$/, '');
+    const verifyURL = `${cleanBase}/auth/verify?token=${encodeURIComponent(token)}`;
+
+    // ── Debug-only logging (giúp truy response shape thật của BE) ─────────────
+    // Có thể tắt sau khi đã ổn định bằng cách đổi flag này về false.
+    const DEBUG = true;
+    if (DEBUG) {
+      // eslint-disable-next-line no-console
+      console.group('[verifyEmail] Request');
+      // eslint-disable-next-line no-console
+      console.log('URL:', verifyURL);
+      // eslint-disable-next-line no-console
+      console.log('token (preview):', `${token.slice(0, 20)}...`);
+      // eslint-disable-next-line no-console
+      console.log('VITE_API_URL env:', import.meta.env.VITE_API_URL ?? '(using fallback)');
+      // eslint-disable-next-line no-console
+      console.groupEnd();
+    }
+
     try {
       const response = await axios.get<unknown>(verifyURL, {
         timeout: 60_000,
-        // Bỏ qua interceptor để không gắn accessToken vào verify request
+        // Dùng raw axios (không qua apiClient), nên không có interceptor để skip.
+        // Giữ 2 cờ này để dễ hiểu ý đồ cho người đọc.
         __skipAuth: true,
         __skipRefresh: true,
       } as never);
 
-      // BE trả envelope 1 lớp: { statusCode, message, data: <VerifyEmailResponse> }.
-      // Unwrap ở đây để caller nhận đúng `VerifyEmailResponse` (user, access_token, ...).
-      const raw = response.data as {
-        statusCode?: number;
+      if (DEBUG) {
+        // eslint-disable-next-line no-console
+        console.group('[verifyEmail] Response');
+        // eslint-disable-next-line no-console
+        console.log('HTTP status:', response.status);
+        // eslint-disable-next-line no-console
+        console.log('Raw body:', JSON.stringify(response.data, null, 2));
+        // eslint-disable-next-line no-console
+        console.groupEnd();
+      }
+
+      // ── Unwrap envelope theo đúng spec ApiResponseString ───────────────────
+      // BE trả { success, code, message, data: <unknown>, errors, timestamp }.
+      // Field `data` thường là string (vd "Email verified successfully") hoặc
+      // có thể là object tùy BE. Ta cố gắng unwrap robust:
+      const envelope = response.data as {
+        success?: boolean;
+        code?: number;
         message?: string;
-        data?: VerifyEmailResponse;
+        data?: unknown;
+        errors?: Array<{ field?: string; message?: string }>;
       } | null;
 
-      // Trường hợp đặc biệt: BE trả phẳng (không envelope) — fallback giữ nguyên raw.
-      const unwrapped: VerifyEmailResponse =
-        raw && typeof raw === 'object' && 'data' in raw && raw.data && typeof raw.data === 'object'
-          ? raw.data
-          : (raw as unknown as VerifyEmailResponse);
+      // Trường hợp BE trả phẳng (không envelope, hiếm gặp) — fallback.
+      const innerData = envelope && typeof envelope === 'object' ? envelope.data : undefined;
+
+      // Thử parse innerData thành VerifyEmailResponse (nếu là object có user+token).
+      // Nếu innerData là string → unwrapped = { message: <string>, success: true }.
+      let unwrapped: VerifyEmailResponse;
+      if (innerData && typeof innerData === 'object') {
+        unwrapped = innerData as VerifyEmailResponse;
+      } else if (typeof innerData === 'string') {
+        unwrapped = { message: innerData, success: true };
+      } else {
+        unwrapped = {};
+      }
+
+      // Quy ước "thành công":
+      //   1. HTTP 200-299
+      //   2. envelope.success !== false (mặc định true nếu BE không set)
+      //   3. envelope.code không ở trạng thái error (mặc định 200)
+      const httpOk = response.status >= 200 && response.status < 300;
+      const apiSuccess = envelope?.success !== false;
+      const codeOk = !envelope?.code || envelope.code >= 200;
+      const isOk = httpOk && apiSuccess && codeOk;
+
+      if (!isOk) {
+        return {
+          error: envelope?.message || 'Xác thực thất bại. Vui lòng thử lại.',
+          message: envelope?.message,
+          status: response.status,
+        };
+      }
 
       return {
         data: unwrapped,
         status: response.status,
-        message: raw?.message ?? unwrapped.message,
+        message: envelope?.message ?? unwrapped.message,
       };
     } catch (err) {
+      if (DEBUG) {
+        // eslint-disable-next-line no-console
+        console.group('[verifyEmail] Error');
+        // eslint-disable-next-line no-console
+        console.error('AxiosError:', err);
+        // eslint-disable-next-line no-console
+        console.error(
+          'Response body:',
+          axios.isAxiosError(err) ? JSON.stringify(err.response?.data, null, 2) : '(no axios err)'
+        );
+        // eslint-disable-next-line no-console
+        console.error('HTTP status:', axios.isAxiosError(err) ? err.response?.status : '(n/a)');
+        // eslint-disable-next-line no-console
+        console.groupEnd();
+      }
       if (axios.isAxiosError(err)) {
         const responseData = err.response?.data as { message?: string; error?: string } | undefined;
         return {
