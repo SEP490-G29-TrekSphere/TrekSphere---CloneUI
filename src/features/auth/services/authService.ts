@@ -104,7 +104,10 @@ export const authService = {
    *      `code !== 200` thì vẫn coi là failure.
    */
   verifyEmail: async (token: string): Promise<ApiResponse<VerifyEmailResponse>> => {
-    const apiBase = import.meta.env.VITE_API_URL ?? 'https://api.treksphere.io.vn/api/v1';
+    // Luôn có fallback cứng: không để env rỗng/undefined/blank làm hỏng URL.
+    // Dùng trim() để catch cả trường hợp VITE_API_URL chỉ chứa khoảng trắng.
+    const rawApiUrl = import.meta.env.VITE_API_URL;
+    const apiBase = rawApiUrl?.trim() ? rawApiUrl.trim() : 'https://api.treksphere.io.vn/api/v1';
     const cleanBase = apiBase.replace(/\/+$/, '');
     const verifyURL = `${cleanBase}/auth/verify?token=${encodeURIComponent(token)}`;
 
