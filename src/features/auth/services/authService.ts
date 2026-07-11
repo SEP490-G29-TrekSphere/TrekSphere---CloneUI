@@ -80,31 +80,58 @@ export const authService = {
    * Verify email via the token from the email link.
    * Uses axios directly (without interceptors) to avoid attaching accessToken
    * to verify request - token verify !== access token.
-   * BE: GET /api/v1/auth/verify?token=xxx -> returns 200 JSON body.
+   *
+   * BE: GET /api/v1/auth/verify?token=xxx -> returns envelope:
+   *   {
+   *     statusCode: 200,
+   *     message: "Email verified successfully",
+   *     data: { user, access_token, refresh_token }
+   *   }
+   *
+   * Lưu ý: Dùng axios trực tiếp (không qua ApiService) để bypass interceptor
+   * gắn Authorization header — token verify là query string, KHÔNG phải access token.
+   * Sau đó tự unwrap envelope 1 lớp (`data.data`) cho khớp với ApiService.
    */
   verifyEmail: async (token: string): Promise<ApiResponse<VerifyEmailResponse>> => {
-    const isDev = import.meta.env.DEV;
-    const verifyURL = isDev
-      ? `/api/v1/auth/verify?token=${token}`
-      : `${
-          import.meta.env.VITE_API_URL ?? 'https://api.treksphere.io.vn/api/v1'
-        }/auth/verify?token=${token}`;
+    const apiBase = import.meta.env.VITE_API_URL ?? 'https://api.treksphere.io.vn/api/v1';
+    const verifyURL = `${apiBase.replace(/\/+$/, '')}/auth/verify?token=${encodeURIComponent(token)}`;
     try {
-      const response = await axios.get<VerifyEmailResponse>(verifyURL, {
+      const response = await axios.get<unknown>(verifyURL, {
         timeout: 60_000,
         // Bỏ qua interceptor để không gắn accessToken vào verify request
         __skipAuth: true,
         __skipRefresh: true,
       } as never);
-      return { data: response.data, status: response.status };
+
+      // BE trả envelope 1 lớp: { statusCode, message, data: <VerifyEmailResponse> }.
+      // Unwrap ở đây để caller nhận đúng `VerifyEmailResponse` (user, access_token, ...).
+      const raw = response.data as {
+        statusCode?: number;
+        message?: string;
+        data?: VerifyEmailResponse;
+      } | null;
+
+      // Trường hợp đặc biệt: BE trả phẳng (không envelope) — fallback giữ nguyên raw.
+      const unwrapped: VerifyEmailResponse =
+        raw && typeof raw === 'object' && 'data' in raw && raw.data && typeof raw.data === 'object'
+          ? raw.data
+          : (raw as unknown as VerifyEmailResponse);
+
+      return {
+        data: unwrapped,
+        status: response.status,
+        message: raw?.message ?? unwrapped.message,
+      };
     } catch (err) {
       if (axios.isAxiosError(err)) {
+        const responseData = err.response?.data as { message?: string; error?: string } | undefined;
         return {
-          error: (err.response?.data as { message?: string })?.message || err.message,
+          error: responseData?.message || responseData?.error || err.message,
+          message: responseData?.message || err.message,
           status: err.response?.status,
         };
       }
-      return { error: 'An unknown error occurred' };
+      return { error: 'An unknown error occurred', message: 'An unknown error occurred' };
     }
   },
 };
