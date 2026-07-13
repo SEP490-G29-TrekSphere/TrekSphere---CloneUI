@@ -13,7 +13,7 @@ import { storage } from '@/utils/storage';
 const NAV_ITEMS = [
   { label: 'Khám phá', path: PATHS.HOME },
   { label: 'Tour của tôi', path: PATHS.MY_TOURS },
-  { label: 'Cộng đồng', path: PATHS.COMMUNITY },
+  { label: 'Bài viết', path: PATHS.COMMUNITY },
   { label: 'Tin tức', path: PATHS.NEWS },
 ];
 

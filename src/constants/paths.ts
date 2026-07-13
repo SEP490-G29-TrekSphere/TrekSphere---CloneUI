@@ -41,6 +41,14 @@ export const PATHS = {
   // Profile
   PROFILE: '/profile',
   EDIT_PROFILE: '/profile/edit',
+
+  // Admin
+  ADMIN: '/admin',
+  ADMIN_DASHBOARD: '/admin/dashboard',
+  ADMIN_ACCOUNTS: '/admin/accounts',
+  ADMIN_TOURS: '/admin/tours',
+  ADMIN_DATA: '/admin/data',
+  ADMIN_SETTINGS: '/admin/settings',
 } as const;
 
 export type AppPath = (typeof PATHS)[keyof typeof PATHS];
