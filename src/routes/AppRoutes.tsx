@@ -23,6 +23,9 @@ const BlogDetails = lazy(() => import('@/features/news/pages/BlogDetails'));
 const ViewProfile = lazy(() => import('@/features/profile/pages/ViewProfile'));
 const EditProfile = lazy(() => import('@/features/profile/pages/EditProfile'));
 const ChatList = lazy(() => import('@/features/chat/pages/ChatList'));
+const AdminLayout = lazy(() => import('@/shared/layout/AdminLayout'));
+const Applications = lazy(() => import('@/features/admin/pages/Applications'));
+const ApplicationDetails = lazy(() => import('@/features/admin/pages/ApplicationDetails'));
 
 function PageLoader() {
   return (
@@ -81,6 +84,19 @@ export default function AppRoutes() {
           <Route path={PATHS.DASHBOARD} element={<Dashboard />} />
           <Route path={PATHS.PROFILE} element={<ViewProfile />} />
           <Route path={PATHS.EDIT_PROFILE} element={<EditProfile />} />
+        </Route>
+
+        {/* Admin routes — yêu cầu đăng nhập, dùng AdminLayout có Custom Sidebar */}
+        <Route
+          element={
+            // <ProtectedRoute requiredRole={ROLES.ADMIN}>
+            <ProtectedRoute>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path={PATHS.ADMIN_APPLICATIONS} element={<Applications />} />
+          <Route path={PATHS.ADMIN_APPLICATION_DETAIL} element={<ApplicationDetails />} />
         </Route>
       </Routes>
     </Suspense>
