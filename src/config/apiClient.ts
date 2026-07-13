@@ -109,8 +109,6 @@ function buildAbsoluteBaseURL(): string {
  */
 async function performRefresh(): Promise<string | null> {
   const refreshToken = storage.get<string>('refreshToken');
-  // Nếu không có refresh token trong storage mà BE có thể dùng cookie → vẫn thử gọi
-  // với body rỗng. Nếu cả 2 đều không có → không gọi.
   if (!refreshToken) {
     console.warn(
       '[apiClient] performRefresh: no refreshToken in storage — trying cookie-based refresh'
@@ -118,15 +116,14 @@ async function performRefresh(): Promise<string | null> {
   }
 
   const absoluteURL = `${buildAbsoluteBaseURL()}/auth/refresh-token`;
-  // Thử từng shape body phổ biến; cái nào BE accept thì lấy token từ đó.
   const bodyCandidates: Array<Record<string, unknown> | null> = [
     refreshToken ? { refreshToken } : null,
     refreshToken ? { refresh_token: refreshToken } : null,
     refreshToken ? { token: refreshToken } : null,
-    null, // Không body — phụ thuộc vào cookie
+    null,
   ];
 
-  for (const body of bodyCandidates) {
+  for (const _body of bodyCandidates) {
     try {
       const response = await axios.post<{
         access_token?: string;
@@ -141,7 +138,7 @@ async function performRefresh(): Promise<string | null> {
           refresh_token?: string;
           refreshToken?: string;
         };
-      }>(absoluteURL, body ?? {}, { timeout: TIME_OUT, withCredentials });
+      }>(absoluteURL, _body ?? {}, { timeout: TIME_OUT, withCredentials });
 
       const root = response.data as Record<string, unknown>;
       const inner = (root.data as Record<string, unknown> | undefined) ?? {};
