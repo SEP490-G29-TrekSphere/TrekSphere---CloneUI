@@ -105,7 +105,7 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 export function usePasswordStrength(password: string, userInputs?: string[]) {
-  const [zxcvbn, setZxcvbn] = useState<{ fn: ZxcvbnFunction } | null>(null);
+  const [zxcvbn, setZxcvbn] = useState(null as { fn: ZxcvbnFunction } | null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 

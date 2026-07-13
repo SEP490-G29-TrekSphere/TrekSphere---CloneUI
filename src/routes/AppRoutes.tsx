@@ -25,6 +25,7 @@ const BlogDetails = lazy(() => import('@/features/news/pages/BlogDetails'));
 const ViewProfile = lazy(() => import('@/features/profile/pages/ViewProfile'));
 const EditProfile = lazy(() => import('@/features/profile/pages/EditProfile'));
 const MyBlogList = lazy(() => import('@/features/trekker-community/pages/MyBlogList'));
+const ChatList = lazy(() => import('@/features/chat/pages/ChatList'));
 
 function PageLoader() {
   return (
@@ -54,6 +55,14 @@ export default function AppRoutes() {
           }
         />
         <Route path={PATHS.NOTIFICATIONS} element={<Notifications />} />
+        <Route
+          path={PATHS.CHAT}
+          element={
+            <ProtectedRoute>
+              <ChatList />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Public routes — chung khung Header + Footer qua PublicLayout */}
         <Route element={<PublicLayout />}>

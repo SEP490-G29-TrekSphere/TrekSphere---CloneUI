@@ -33,6 +33,7 @@ export const PATHS = {
   NEWS: '/news',
   NEWS_DETAIL: '/news/:blogId',
   NOTIFICATIONS: '/notifications',
+  CHAT: '/chat',
 
   // Settings
   SETTINGS: '/settings',
