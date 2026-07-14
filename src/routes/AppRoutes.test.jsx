@@ -28,6 +28,11 @@ jest.mock('./ProtectedRoute', () => {
   };
 });
 
+jest.mock('./RequireRole', () => ({
+  __esModule: true,
+  default: ({ children }) => <div data-testid="require-role">{children}</div>,
+}));
+
 jest.mock('../shared/layout/MainLayout', () => ({
   __esModule: true,
   default: ({ children }) => <div data-testid="main-layout">{children}</div>,
@@ -40,6 +45,93 @@ jest.mock('../shared/layout/PublicLayout', () => ({
 
 jest.mock('../shared/ui/ScrollManager', () => ({
   ScrollManager: () => null,
+}));
+
+// Mock feature barrel exports — these are static imports of AppRoutes.tsx
+// but we only test the route configuration, not the page implementations.
+jest.mock('@/features/admin', () => ({
+  __esModule: true,
+  AccountDetail: () => null,
+  AccountList: () => null,
+  AdminLayout: ({ children }) => children,
+  AdminSidebar: () => null,
+  AdminTopbar: () => null,
+  AdminDashboard: () => null,
+  ApplicationDetails: () => null,
+  Applications: () => null,
+}));
+
+jest.mock('@/features/home/pages/Home', () => ({
+  __esModule: true,
+  default: () => null,
+}));
+jest.mock('@/features/auth/pages/Login', () => ({
+  __esModule: true,
+  default: () => null,
+}));
+jest.mock('@/features/auth/pages/Register', () => ({
+  __esModule: true,
+  default: () => null,
+}));
+jest.mock('@/features/auth/pages/VerifyEmail', () => ({
+  __esModule: true,
+  default: () => null,
+}));
+jest.mock('@/features/auth/pages/ForgotPassword', () => ({
+  __esModule: true,
+  default: () => null,
+}));
+jest.mock('@/features/auth/pages/ResetPassword', () => ({
+  __esModule: true,
+  default: () => null,
+}));
+jest.mock('@/features/auth/pages/ChangePassword', () => ({
+  __esModule: true,
+  default: () => null,
+}));
+jest.mock('@/features/dashboard/pages/Dashboard', () => ({
+  __esModule: true,
+  default: () => null,
+}));
+jest.mock('@/features/notifications/pages/Notifications', () => ({
+  __esModule: true,
+  default: () => null,
+}));
+jest.mock('@/features/tours/pages/ListTours', () => ({
+  __esModule: true,
+  default: () => null,
+}));
+jest.mock('@/features/tours/pages/TourDetails', () => ({
+  __esModule: true,
+  default: () => null,
+}));
+jest.mock('@/features/news/pages/BlogList', () => ({
+  __esModule: true,
+  default: () => null,
+}));
+jest.mock('@/features/news/pages/BlogDetails', () => ({
+  __esModule: true,
+  default: () => null,
+}));
+jest.mock('@/features/profile/pages/ViewProfile', () => ({
+  __esModule: true,
+  default: () => null,
+}));
+jest.mock('@/features/profile/pages/EditProfile', () => ({
+  __esModule: true,
+  default: () => null,
+}));
+jest.mock('@/features/trekker-community/pages/MyBlogList', () => ({
+  __esModule: true,
+  default: () => null,
+}));
+jest.mock('@/features/chat/pages/ChatList', () => ({
+  __esModule: true,
+  default: () => null,
+}));
+jest.mock('@/shared/layout/AdminLayout', () => ({
+  __esModule: true,
+  default: ({ children }) => children,
 }));
 
 // Recursive search helper to find a Route element by its path configuration
