@@ -14,3 +14,4 @@ export { default as AdminTopbar } from './components/AdminTopbar';
 export { default as AdminDashboard } from './dashboard/pages/AdminDashboard';
 export { default as ApplicationDetails } from './pages/ApplicationDetails';
 export { default as Applications } from './pages/Applications';
+export { default as SystemSettings } from './pages/SystemSettings';
