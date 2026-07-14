@@ -7,6 +7,7 @@ import {
   Search,
   Settings,
   Ticket,
+  User,
 } from 'lucide-react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { PATHS } from '@/constants';
@@ -14,6 +15,7 @@ import { useAppStore } from '@/store/useAppStore';
 
 const adminNavItems = [
   { name: 'Dashboard', path: PATHS.ADMIN_DASHBOARD, icon: LayoutGrid, disabled: true },
+  { name: 'Account', path: PATHS.ADMIN_ACCOUNTS, icon: User },
   { name: 'Tour Approval', path: PATHS.ADMIN_APPLICATIONS, icon: ClipboardCheck },
   { name: 'Data Management', path: PATHS.ADMIN_DATA, icon: Database, disabled: true },
   { name: 'Voucher Approval', path: PATHS.ADMIN_VOUCHERS, icon: Ticket, disabled: true },
@@ -43,6 +45,11 @@ export default function AdminLayout() {
 
   const adminName = user?.name || 'Admin User';
   const adminInitial = adminName.charAt(0).toUpperCase();
+
+  // Trang Quản lý tài khoản dùng placeholder riêng cho ô search
+  // ("Tìm kiếm tài khoản...") thay vì "Tìm kiếm hồ sơ...". Các icon
+  // bên phải (chuông / cài đặt / ngày tháng) hiển thị giống các trang admin khác.
+  const isAccountPage = location.pathname.startsWith(PATHS.ADMIN_ACCOUNTS);
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#F4F4F2]">
@@ -77,7 +84,9 @@ export default function AdminLayout() {
               const isActive =
                 location.pathname === item.path ||
                 (item.path === PATHS.ADMIN_APPLICATIONS &&
-                  location.pathname.startsWith(PATHS.ADMIN_APPLICATIONS));
+                  location.pathname.startsWith(PATHS.ADMIN_APPLICATIONS)) ||
+                (item.path === PATHS.ADMIN_ACCOUNTS &&
+                  location.pathname.startsWith(PATHS.ADMIN_ACCOUNTS));
               return (
                 <Link
                   key={item.name}
@@ -139,8 +148,8 @@ export default function AdminLayout() {
             </span>
             <input
               type="text"
-              placeholder="Tìm kiếm hồ sơ..."
-              aria-label="Tìm kiếm hồ sơ"
+              placeholder={isAccountPage ? 'Tìm kiếm tài khoản...' : 'Tìm kiếm hồ sơ...'}
+              aria-label={isAccountPage ? 'Tìm kiếm tài khoản' : 'Tìm kiếm hồ sơ'}
               className="w-full pl-10 pr-4 py-2 text-sm rounded-full bg-[#F4F4F2] border-none focus:outline-none focus:ring-1 focus:ring-[#0B3025] text-zinc-800 placeholder-zinc-400 transition-all font-medium"
             />
           </div>

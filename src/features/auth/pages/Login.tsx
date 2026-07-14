@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { PATHS } from '@/constants';
+import { extractRoles, getPostLoginRoute } from '@/constants/roles';
 import { authService, toAppStoreUser } from '@/features/auth';
 import { AppButton, AppCheckbox, AppFormInput, AppSpinner } from '@/shared/ui';
 import { useAppStore } from '@/store/useAppStore';
@@ -91,9 +92,18 @@ export default function Login() {
         storage.set('refreshToken', refreshToken);
         console.log('[Login] token saved. Verify:', storage.get('accessToken') ? 'OK' : 'MISSING');
 
-        // Lấy thông tin user từ login response
-        // Backend trả về user info cùng với tokens
+        // Lấy thông tin user từ login response.
+        // BE `POST /auth/login` thường unwrap trả về `{ user, accessToken }` ở
+        // top-level (handleResponse trong apiClient đã unwrap envelope).
+        // Tuy nhiên một số môi trường BE trả phẳng (không có `user` key) nên
+        // fallback responseData để vẫn đọc được.
         const userData = (responseData.user ?? responseData) as Record<string, unknown>;
+
+        // Dùng `extractRoles` để chuẩn hoá roles về lowercase + bỏ prefix
+        // `role_`. Cờ `ROLES.ADMIN = 'admin'` được khai báo lowercase, nên nếu
+        // giữ nguyên `["ADMIN"]` từ BE thì RequireRole sẽ từ chối truy cập.
+        const normalizedRoles = extractRoles(userData);
+
         const user = {
           id: (userData.id as string | undefined) ?? '',
           email: (userData.email as string | undefined) ?? data.email,
@@ -103,8 +113,15 @@ export default function Login() {
             data.email.split('@')[0],
           avatarUrl:
             (userData.avatar as string | undefined) ?? (userData.avatarUrl as string | undefined),
-          roles: (userData.roles as string[] | undefined) ?? ['TREKKER'],
+          roles: normalizedRoles,
         };
+
+        console.log('[Login] user (after normalize):', {
+          id: user.id,
+          email: user.email,
+          fullName: user.fullName,
+          roles: user.roles,
+        });
 
         if (!user.id) {
           toast.error('Đăng nhập thất bại. Vui lòng thử lại.');
@@ -113,7 +130,9 @@ export default function Login() {
 
         setUser(toAppStoreUser(user));
         toast.success(`Chào mừng quay trở lại, ${user.fullName}!`);
-        navigate(PATHS.HOME);
+
+        // Điều hướng theo role (roles đã được normalize ở trên).
+        navigate(getPostLoginRoute(user.roles));
       } catch (err) {
         console.error('Login error:', err);
         toast.error('Đăng nhập thất bại. Vui lòng thử lại.');

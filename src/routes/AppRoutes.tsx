@@ -1,7 +1,9 @@
 import { lazy, Suspense } from 'react';
-import { Route, Routes } from 'react-router-dom';
-import { PATHS } from '@/constants';
+import { Navigate, Route, Routes } from 'react-router-dom';
+import { PATHS, ROLES } from '@/constants';
+import { AccountDetail, AccountList, AdminDashboard } from '@/features/admin';
 import ProtectedRoute from '@/routes/ProtectedRoute';
+import RequireRole from '@/routes/RequireRole';
 import MainLayout from '@/shared/layout/MainLayout';
 import PublicLayout from '@/shared/layout/PublicLayout';
 import { ScrollManager } from '@/shared/ui/ScrollManager';
@@ -22,6 +24,7 @@ const BlogList = lazy(() => import('@/features/news/pages/BlogList'));
 const BlogDetails = lazy(() => import('@/features/news/pages/BlogDetails'));
 const ViewProfile = lazy(() => import('@/features/profile/pages/ViewProfile'));
 const EditProfile = lazy(() => import('@/features/profile/pages/EditProfile'));
+const MyBlogList = lazy(() => import('@/features/trekker-community/pages/MyBlogList'));
 const ChatList = lazy(() => import('@/features/chat/pages/ChatList'));
 const AdminLayout = lazy(() => import('@/shared/layout/AdminLayout'));
 const Applications = lazy(() => import('@/features/admin/pages/Applications'));
@@ -72,6 +75,7 @@ export default function AppRoutes() {
           <Route path={PATHS.TOUR_DETAIL} element={<TourDetails />} />
           <Route path={PATHS.NEWS} element={<BlogList />} />
           <Route path={PATHS.NEWS_DETAIL} element={<BlogDetails />} />
+          <Route path={PATHS.COMMUNITY} element={<MyBlogList />} />
         </Route>
 
         {/* Protected routes — yêu cầu đăng nhập, dùng MainLayout có Header/Sidebar */}
@@ -87,15 +91,22 @@ export default function AppRoutes() {
           <Route path={PATHS.EDIT_PROFILE} element={<EditProfile />} />
         </Route>
 
-        {/* Admin routes — yêu cầu đăng nhập, dùng AdminLayout có Custom Sidebar */}
+        {/* Admin routes — yêu cầu role admin, dùng AdminLayout với sidebar riêng */}
         <Route
+          path={PATHS.ADMIN}
           element={
-            // <ProtectedRoute requiredRole={ROLES.ADMIN}>
-            <ProtectedRoute>
+            <RequireRole allowedRoles={[ROLES.ADMIN]}>
               <AdminLayout />
-            </ProtectedRoute>
+            </RequireRole>
           }
         >
+          <Route index element={<Navigate to={PATHS.ADMIN_ACCOUNTS} replace />} />
+          <Route path={PATHS.ADMIN_DASHBOARD} element={<AdminDashboard />} />
+          <Route path={PATHS.ADMIN_ACCOUNTS} element={<AccountList />} />
+          <Route path={PATHS.ADMIN_ACCOUNT_DETAIL} element={<AccountDetail />} />
+          <Route path={PATHS.ADMIN_TOURS} element={<AdminDashboard />} />
+          <Route path={PATHS.ADMIN_DATA} element={<AdminDashboard />} />
+          <Route path={PATHS.ADMIN_SETTINGS} element={<AdminDashboard />} />
           <Route path={PATHS.ADMIN_APPLICATIONS} element={<Applications />} />
           <Route path={PATHS.ADMIN_APPLICATION_DETAIL} element={<ApplicationDetails />} />
           <Route path={PATHS.ADMIN_SETTINGS} element={<SystemSettings />} />
