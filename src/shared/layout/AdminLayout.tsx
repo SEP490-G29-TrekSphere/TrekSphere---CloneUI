@@ -17,7 +17,7 @@ const adminNavItems = [
   { name: 'Tour Approval', path: PATHS.ADMIN_APPLICATIONS, icon: ClipboardCheck },
   { name: 'Data Management', path: PATHS.ADMIN_DATA, icon: Database, disabled: true },
   { name: 'Voucher Approval', path: PATHS.ADMIN_VOUCHERS, icon: Ticket, disabled: true },
-  { name: 'Settings', path: PATHS.ADMIN_SETTINGS, icon: Settings, disabled: true },
+  { name: 'Settings', path: PATHS.ADMIN_SETTINGS, icon: Settings },
 ];
 
 export default function AdminLayout() {
