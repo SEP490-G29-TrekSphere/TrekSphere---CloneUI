@@ -12,3 +12,5 @@ export { default as AdminLayout } from './components/AdminLayout';
 export { default as AdminSidebar } from './components/AdminSidebar';
 export { default as AdminTopbar } from './components/AdminTopbar';
 export { default as AdminDashboard } from './dashboard/pages/AdminDashboard';
+export { default as ApplicationDetails } from './pages/ApplicationDetails';
+export { default as Applications } from './pages/Applications';

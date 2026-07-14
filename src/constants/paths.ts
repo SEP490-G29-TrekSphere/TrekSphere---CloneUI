@@ -47,8 +47,12 @@ export const PATHS = {
   ADMIN: '/admin',
   ADMIN_DASHBOARD: '/admin/dashboard',
   ADMIN_ACCOUNTS: '/admin/accounts',
+  ADMIN_ACCOUNT_DETAIL: '/admin/accounts/:id',
   ADMIN_TOURS: '/admin/tours',
   ADMIN_DATA: '/admin/data',
+  ADMIN_APPLICATIONS: '/admin/applications',
+  ADMIN_APPLICATION_DETAIL: '/admin/applications/:id',
+  ADMIN_VOUCHERS: '/admin/vouchers',
   ADMIN_SETTINGS: '/admin/settings',
 } as const;
 

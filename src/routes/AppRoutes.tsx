@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { PATHS, ROLES } from '@/constants';
-import { AccountDetail, AccountList, AdminDashboard, AdminLayout } from '@/features/admin';
+import { AccountDetail, AccountList, AdminDashboard } from '@/features/admin';
 import ProtectedRoute from '@/routes/ProtectedRoute';
 import RequireRole from '@/routes/RequireRole';
 import MainLayout from '@/shared/layout/MainLayout';
@@ -26,6 +26,9 @@ const ViewProfile = lazy(() => import('@/features/profile/pages/ViewProfile'));
 const EditProfile = lazy(() => import('@/features/profile/pages/EditProfile'));
 const MyBlogList = lazy(() => import('@/features/trekker-community/pages/MyBlogList'));
 const ChatList = lazy(() => import('@/features/chat/pages/ChatList'));
+const AdminLayout = lazy(() => import('@/shared/layout/AdminLayout'));
+const Applications = lazy(() => import('@/features/admin/pages/Applications'));
+const ApplicationDetails = lazy(() => import('@/features/admin/pages/ApplicationDetails'));
 
 function PageLoader() {
   return (
@@ -97,12 +100,14 @@ export default function AppRoutes() {
           }
         >
           <Route index element={<Navigate to={PATHS.ADMIN_ACCOUNTS} replace />} />
-          <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="accounts" element={<AccountList />} />
-          <Route path="accounts/:id" element={<AccountDetail />} />
-          <Route path="tours" element={<AdminDashboard />} />
-          <Route path="data" element={<AdminDashboard />} />
-          <Route path="settings" element={<AdminDashboard />} />
+          <Route path={PATHS.ADMIN_DASHBOARD} element={<AdminDashboard />} />
+          <Route path={PATHS.ADMIN_ACCOUNTS} element={<AccountList />} />
+          <Route path={PATHS.ADMIN_ACCOUNT_DETAIL} element={<AccountDetail />} />
+          <Route path={PATHS.ADMIN_TOURS} element={<AdminDashboard />} />
+          <Route path={PATHS.ADMIN_DATA} element={<AdminDashboard />} />
+          <Route path={PATHS.ADMIN_SETTINGS} element={<AdminDashboard />} />
+          <Route path={PATHS.ADMIN_APPLICATIONS} element={<Applications />} />
+          <Route path={PATHS.ADMIN_APPLICATION_DETAIL} element={<ApplicationDetails />} />
         </Route>
       </Routes>
     </Suspense>
