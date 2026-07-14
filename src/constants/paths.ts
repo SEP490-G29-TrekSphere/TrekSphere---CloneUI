@@ -28,7 +28,10 @@ export const PATHS = {
   DASHBOARD: '/dashboard',
   TOURS: '/tours',
   TOUR_DETAIL: '/tours/:id',
+  BOOK_TOUR: '/tours/:id/book',
   MY_TOURS: '/my-tours',
+  BOOKING_DETAIL: '/my-tours/:bookingId',
+  BOOKING_PAYMENT: '/my-tours/:bookingId/pay',
   COMMUNITY: '/community',
   NEWS: '/news',
   NEWS_DETAIL: '/news/:blogId',
@@ -57,3 +60,9 @@ export const PATHS = {
 } as const;
 
 export type AppPath = (typeof PATHS)[keyof typeof PATHS];
+
+export const getBookTourPath = (id: string) => PATHS.BOOK_TOUR.replace(':id', id);
+export const getBookingDetailPath = (bookingId: string) =>
+  PATHS.BOOKING_DETAIL.replace(':bookingId', bookingId);
+export const getBookingPaymentPath = (bookingId: string) =>
+  PATHS.BOOKING_PAYMENT.replace(':bookingId', bookingId);
