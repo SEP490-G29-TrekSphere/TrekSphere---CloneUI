@@ -1,6 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { getBookTourPath, PATHS } from '@/constants';
 import { cn } from '@/lib/utils';
+import { useAppStore } from '@/store/useAppStore';
 import type { BookingFormState, TourDetail } from '../../types';
 
 interface TourBookingCardProps {
@@ -13,12 +16,14 @@ interface TourBookingCardProps {
  * Fixed on desktop, bottom sheet potential on mobile
  */
 export function TourBookingCard({ tour, className }: TourBookingCardProps) {
+  const navigate = useNavigate();
+  const user = useAppStore((s) => s.user);
+
   const [state, setState] = useState<BookingFormState>({
     selectedDate: null,
     participants: 1,
     totalPrice: 0,
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Parse price to number
   const pricePerPerson = useMemo(() => {
@@ -46,16 +51,19 @@ export function TourBookingCard({ tour, className }: TourBookingCardProps) {
   }, []);
 
   const handleBooking = useCallback(() => {
-    setIsSubmitting(true);
-    // Simulate booking API call
-    setTimeout(() => {
-      setIsSubmitting(false);
-      // In real app, redirect to booking flow
-      alert(
-        `Đặt tour thành công!\n\nTour: ${tour.name}\nNgày: ${state.selectedDate?.toLocaleDateString('vi-VN') || 'Chưa chọn'}\nSố người: ${state.participants}\nTổng: ${totalPrice.toLocaleString('vi-VN')}đ`
-      );
-    }, 1000);
-  }, [state, tour.name, totalPrice]);
+    if (!user) {
+      navigate(PATHS.LOGIN);
+      return;
+    }
+    const params = new URLSearchParams();
+    params.set('participants', String(state.participants));
+    if (state.selectedDate) {
+      const dateStr = state.selectedDate.toISOString().split('T')[0];
+      params.set('date', dateStr);
+      params.set('scheduleId', `sched-${dateStr}`);
+    }
+    navigate(`${getBookTourPath(tour.id)}?${params.toString()}`);
+  }, [user, navigate, tour.id, state.participants, state.selectedDate]);
 
   // Generate available dates (mock)
   const availableDates = useMemo(() => {
@@ -214,45 +222,20 @@ export function TourBookingCard({ tour, className }: TourBookingCardProps) {
           </div>
         </div>
 
-        {/* Book button */}
         <Button
           onClick={handleBooking}
-          disabled={isSubmitting}
           className="h-12 w-full text-base font-semibold"
           variant="default"
         >
-          {isSubmitting ? (
-            <span className="flex items-center gap-2">
-              <svg className="size-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                />
-              </svg>
-              Đang xử lý...
-            </span>
-          ) : (
-            <>
-              <svg className="mr-2 size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-              Đặt ngay
-            </>
-          )}
+          <svg className="mr-2 size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
+          </svg>
+          Đặt ngay
         </Button>
 
         {/* Trust badges */}
