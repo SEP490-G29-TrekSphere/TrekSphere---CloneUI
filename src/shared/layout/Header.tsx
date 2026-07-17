@@ -102,40 +102,6 @@ export default function Header() {
             {mobileMenuOpen ? <X className="size-6" /> : <Menu className="size-6" />}
           </button>
 
-          {dropdownOpen && (
-            <div className="absolute right-0 top-full mt-2 w-52 rounded-xl border bg-popover p-1 shadow-lg">
-              <div className="px-3 py-2">
-                <p className="truncate text-sm font-semibold">{user?.name}</p>
-                <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
-              </div>
-              <div className="my-1 h-px bg-border" />
-              <Link
-                to={PATHS.PROFILE}
-                onClick={() => setDropdownOpen(false)}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                <User className="h-4 w-4" />
-                Hồ sơ
-              </Link>
-              <Link
-                to={PATHS.CHANGE_PASSWORD}
-                onClick={() => setDropdownOpen(false)}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                <Key className="h-4 w-4" />
-                Đổi mật khẩu
-              </Link>
-              <div className="my-1 h-px bg-border" />
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10"
-              >
-                <LogOut className="h-4 w-4" />
-                Đăng xuất
-              </button>
-            </div>
-          )}
           <AppLogo height={40} to={PATHS.HOME} />
         </div>
 
