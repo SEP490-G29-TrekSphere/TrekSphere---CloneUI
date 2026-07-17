@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { getMockBlogList, MOCK_STATS } from '../data/mockBlogs';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { getMockBlogList, MOCK_STATS, toggleMockBlogVisibility } from '../data/mockBlogs';
 import type { TrekkerBlogListParams, TrekkerBlogListResponse, TrekkerBlogStats } from '../types';
 
 /** Query key factory cho trekker community. */
@@ -34,5 +34,28 @@ export function useTrekkerBlogStats() {
       return MOCK_STATS;
     },
     staleTime: 1000 * 60 * 2,
+  });
+}
+
+/**
+ * Hook toggle visibility (ẩn/hiện) bài viết using mock data.
+ * - isHidden=true  → chuyển sang DRAFT (ẩn)
+ * - isHidden=false → chuyển sang PUBLISHED (hiện)
+ */
+export function useToggleBlogVisibility() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ blogId }: { blogId: string; isHidden?: boolean }) => {
+      // Simulate API delay
+      await new Promise((r) => setTimeout(r, 300));
+      // Use mock toggle function
+      return toggleMockBlogVisibility(blogId);
+    },
+    onSuccess: () => {
+      // Invalidate list queries to refresh table
+      queryClient.invalidateQueries({ queryKey: trekkerBlogKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: trekkerBlogKeys.stats() });
+    },
   });
 }

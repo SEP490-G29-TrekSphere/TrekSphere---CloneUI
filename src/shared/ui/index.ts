@@ -48,6 +48,12 @@ export { AppSpinner, type AppSpinnerProps, type AppSpinnerSize } from './feedbac
 export { AppGlobalToast } from './feedback/AppToast';
 // Form
 export { AppFormInput, type AppFormInputProps } from './form/AppFormInput';
+export {
+  AppFormPasswordInput,
+  type AppFormPasswordInputProps,
+  AppPasswordInput,
+  type AppPasswordInputProps,
+} from './form/AppFormPasswordInput';
 // Primitives
 export { AppBadge, type AppBadgeProps, type AppBadgeVariant } from './primitives/AppBadge';
 export {

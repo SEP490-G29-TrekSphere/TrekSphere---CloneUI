@@ -25,6 +25,7 @@ const BlogDetails = lazy(() => import('@/features/news/pages/BlogDetails'));
 const ViewProfile = lazy(() => import('@/features/profile/pages/ViewProfile'));
 const EditProfile = lazy(() => import('@/features/profile/pages/EditProfile'));
 const MyBlogList = lazy(() => import('@/features/trekker-community/pages/MyBlogList'));
+const CreateBlogPost = lazy(() => import('@/features/trekker-community/pages/CreateBlogPost'));
 const ChatList = lazy(() => import('@/features/chat/pages/ChatList'));
 const AdminLayout = lazy(() => import('@/shared/layout/AdminLayout'));
 const Applications = lazy(() => import('@/features/admin/pages/Applications'));
@@ -89,6 +90,9 @@ export default function AppRoutes() {
           <Route path={PATHS.DASHBOARD} element={<Dashboard />} />
           <Route path={PATHS.PROFILE} element={<ViewProfile />} />
           <Route path={PATHS.EDIT_PROFILE} element={<EditProfile />} />
+          <Route path={PATHS.BLOG_LIST} element={<MyBlogList />} />
+          <Route path={PATHS.BLOG_CREATE} element={<CreateBlogPost />} />
+          <Route path={PATHS.BLOG_EDIT} element={<CreateBlogPost editMode />} />
         </Route>
 
         {/* Admin routes — yêu cầu role admin, dùng AdminLayout với sidebar riêng */}

@@ -1,78 +1,18 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Eye, EyeOff, RefreshCw } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { Controller, FormProvider, useForm } from 'react-hook-form';
-import { Link } from 'react-router-dom';
-import { PATHS } from '@/constants';
+import { RefreshCw } from 'lucide-react';
+import { useMemo } from 'react';
+import { FormProvider, useForm } from 'react-hook-form';
 import { authService, PasswordStrengthField } from '@/features/auth';
 import PublicHeader from '@/features/home/components/PublicHeader';
-import { cn } from '@/lib/utils';
-import { AppButton, AppSpinner } from '@/shared/ui';
+import { AppButton, AppFormPasswordInput, AppSpinner } from '@/shared/ui';
 import { useAppStore } from '@/store/useAppStore';
 import { toast } from '@/store/useToastStore';
 import { type ChangePasswordFormValues, changePasswordSchema } from '../validations/auth.schema';
 
-interface PasswordFieldProps {
-  id: string;
-  label: string;
-  placeholder: string;
-  value: string;
-  onChange: (value: string) => void;
-  onBlur: () => void;
-  error?: string;
-  autoComplete: string;
-}
-
-function PasswordField({
-  id,
-  label,
-  placeholder,
-  value,
-  onChange,
-  onBlur,
-  error,
-  autoComplete,
-}: PasswordFieldProps) {
-  const [visible, setVisible] = useState(false);
-
-  return (
-    <div className="space-y-2">
-      <label htmlFor={id} className="text-sm font-semibold" style={{ color: '#1F3933' }}>
-        {label}
-      </label>
-      <div className="relative">
-        <input
-          id={id}
-          type={visible ? 'text' : 'password'}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onBlur={onBlur}
-          placeholder={placeholder}
-          autoComplete={autoComplete}
-          aria-invalid={!!error}
-          className={cn(
-            'h-12 w-full border-0 border-b bg-transparent px-0 pr-10 text-sm',
-            'placeholder:text-muted-foreground',
-            'focus:outline-none focus-visible:outline-none',
-            'disabled:opacity-50',
-            error ? 'border-destructive' : 'border-input focus:border-primary'
-          )}
-          style={{ color: '#1F3933' }}
-        />
-        <button
-          type="button"
-          tabIndex={-1}
-          aria-label={visible ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-          onClick={() => setVisible((v) => !v)}
-          className="absolute right-0 top-1/2 -translate-y-1/2 p-1.5 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-        >
-          {visible ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
-        </button>
-      </div>
-      {error && <p className="text-xs text-destructive">{error}</p>}
-    </div>
-  );
-}
+// Borderless underline style — override hoàn toàn classes mặc định của input
+// (inputClassName thay thế PASSWORD_INPUT_CLASSES bên trong component).
+const UNDERLINE_INPUT =
+  'h-12 w-full border-0 border-b bg-transparent px-0 pr-10 text-sm placeholder:text-muted-foreground focus:outline-none focus-visible:outline-none disabled:opacity-50 rounded-none';
 
 export default function ChangePassword() {
   const methods = useForm<ChangePasswordFormValues>({
@@ -87,7 +27,6 @@ export default function ChangePassword() {
 
   const {
     handleSubmit,
-    control,
     formState: { isSubmitting },
   } = methods;
 
@@ -139,39 +78,25 @@ export default function ChangePassword() {
           {/* Form */}
           <FormProvider {...methods}>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
-              <Controller
+              <AppFormPasswordInput
                 name="currentPassword"
-                control={control}
-                render={({ field, fieldState }) => (
-                  <PasswordField
-                    id="currentPassword"
-                    label="Mật khẩu hiện tại"
-                    placeholder="Nhập mật khẩu hiện tại"
-                    value={field.value}
-                    onChange={field.onChange}
-                    onBlur={field.onBlur}
-                    error={fieldState.error?.message}
-                    autoComplete="current-password"
-                  />
-                )}
+                control={methods.control}
+                label="Mật khẩu hiện tại"
+                placeholder="Nhập mật khẩu hiện tại"
+                autoComplete="current-password"
+                inputClassName={UNDERLINE_INPUT}
+                style={{ color: '#1F3933' }}
               />
 
               <div className="space-y-2">
-                <Controller
+                <AppFormPasswordInput
                   name="newPassword"
-                  control={control}
-                  render={({ field, fieldState }) => (
-                    <PasswordField
-                      id="newPassword"
-                      label="Mật khẩu mới"
-                      placeholder="Nhập mật khẩu mới"
-                      value={field.value}
-                      onChange={field.onChange}
-                      onBlur={field.onBlur}
-                      error={fieldState.error?.message}
-                      autoComplete="new-password"
-                    />
-                  )}
+                  control={methods.control}
+                  label="Mật khẩu mới"
+                  placeholder="Nhập mật khẩu mới"
+                  autoComplete="new-password"
+                  inputClassName={UNDERLINE_INPUT}
+                  style={{ color: '#1F3933' }}
                 />
 
                 {/* Strength meter */}
@@ -181,21 +106,14 @@ export default function ChangePassword() {
                 />
               </div>
 
-              <Controller
+              <AppFormPasswordInput
                 name="confirmPassword"
-                control={control}
-                render={({ field, fieldState }) => (
-                  <PasswordField
-                    id="confirmPassword"
-                    label="Xác nhận mật khẩu mới"
-                    placeholder="Nhập lại mật khẩu mới"
-                    value={field.value}
-                    onChange={field.onChange}
-                    onBlur={field.onBlur}
-                    error={fieldState.error?.message}
-                    autoComplete="new-password"
-                  />
-                )}
+                control={methods.control}
+                label="Xác nhận mật khẩu mới"
+                placeholder="Nhập lại mật khẩu mới"
+                autoComplete="new-password"
+                inputClassName={UNDERLINE_INPUT}
+                style={{ color: '#1F3933' }}
               />
 
               <AppButton
@@ -213,16 +131,6 @@ export default function ChangePassword() {
                   <>Lưu mật khẩu</>
                 )}
               </AppButton>
-
-              <div className="flex justify-center pt-1">
-                <Link
-                  to={PATHS.FORGOT_PASSWORD}
-                  className="text-sm font-semibold transition-opacity hover:opacity-70"
-                  style={{ color: '#1F3933' }}
-                >
-                  Quên mật khẩu?
-                </Link>
-              </div>
             </form>
           </FormProvider>
         </div>

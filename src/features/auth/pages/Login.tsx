@@ -1,11 +1,18 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useState } from 'react';
+import { type CredentialResponse, GoogleLogin } from '@react-oauth/google';
+import { useEffect, useRef, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { PATHS } from '@/constants';
 import { extractRoles, getPostLoginRoute } from '@/constants/roles';
 import { authService, toAppStoreUser } from '@/features/auth';
-import { AppButton, AppCheckbox, AppFormInput, AppSpinner } from '@/shared/ui';
+import {
+  AppButton,
+  AppCheckbox,
+  AppFormInput,
+  AppFormPasswordInput,
+  AppSpinner,
+} from '@/shared/ui';
 import { useAppStore } from '@/store/useAppStore';
 import { toast } from '@/store/useToastStore';
 import { storage } from '@/utils/storage';
@@ -41,6 +48,92 @@ export default function Login() {
     handleSubmit,
     formState: { isSubmitting },
   } = methods;
+
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  const googleButtonWrapperRef = useRef<HTMLDivElement>(null);
+
+  const handleGoogleSuccess = (credentialResponse: CredentialResponse) => {
+    void (async () => {
+      const idToken = credentialResponse.credential;
+
+      if (!idToken) {
+        toast.error('Đăng nhập Google thất bại. Vui lòng thử lại.');
+        return;
+      }
+
+      setIsGoogleLoading(true);
+      try {
+        const result = await authService.googleLogin(idToken);
+
+        if (result.error || (result.status && result.status >= 400)) {
+          toast.error(result.error || 'Đăng nhập Google thất bại. Vui lòng thử lại.');
+          return;
+        }
+
+        if (!result.data) {
+          toast.error('Đăng nhập Google thất bại. Vui lòng thử lại.');
+          return;
+        }
+
+        const raw = result.data as unknown as Record<string, unknown>;
+        const responseData = raw;
+        const accessToken =
+          (responseData.accessToken as string | undefined) ??
+          (responseData.access_token as string | undefined) ??
+          '';
+        const refreshToken =
+          (responseData.refreshToken as string | undefined) ??
+          (responseData.refresh_token as string | undefined) ??
+          '';
+
+        storage.set('accessToken', accessToken);
+        storage.set('refreshToken', refreshToken);
+
+        const userData = (responseData.user ?? responseData) as Record<string, unknown>;
+        const normalizedRoles = extractRoles(userData);
+
+        const user = {
+          id: (userData.id as string | undefined) ?? '',
+          email: (userData.email as string | undefined) ?? '',
+          fullName:
+            (userData.fullName as string | undefined) ??
+            (userData.name as string | undefined) ??
+            '',
+          avatarUrl:
+            (userData.avatar as string | undefined) ?? (userData.avatarUrl as string | undefined),
+          roles: normalizedRoles,
+        };
+
+        if (!user.id) {
+          toast.error('Đăng nhập Google thất bại. Vui lòng thử lại.');
+          return;
+        }
+
+        setUser(toAppStoreUser(user));
+        toast.success(`Chào mừng, ${user.fullName}!`);
+
+        navigate(getPostLoginRoute(user.roles));
+      } catch (err) {
+        console.error('Google login error:', err);
+        toast.error('Đăng nhập Google thất bại. Vui lòng thử lại.');
+      } finally {
+        setIsGoogleLoading(false);
+      }
+    })();
+  };
+
+  const handleGoogleError = () => {
+    toast.error('Đăng nhập Google bị hủy hoặc thất bại.');
+  };
+
+  // Forward click từ AppButton custom sang nút thật của Google (đang bị ẩn).
+  const triggerGoogleLogin = () => {
+    const realGoogleButton = googleButtonWrapperRef.current?.querySelector(
+      'div[role="button"]'
+    ) as HTMLElement | null;
+    realGoogleButton?.click();
+  };
 
   const onSubmit = (data: LoginFormValues) => {
     void (async () => {
@@ -160,10 +253,9 @@ export default function Login() {
             control={methods.control}
           />
 
-          <AppFormInput
+          <AppFormPasswordInput
             name="password"
             label="Mật khẩu"
-            type="password"
             placeholder="••••••••"
             autoComplete="current-password"
             control={methods.control}
@@ -222,18 +314,35 @@ export default function Login() {
             </div>
           </div>
 
+          {/* Nút Google thật của thư viện — render ẩn, chỉ dùng để mở popup
+              đăng nhập và lấy `credential` (id_token). Không hiển thị cho user. */}
+          <div ref={googleButtonWrapperRef} style={{ display: 'none' }}>
+            <GoogleLogin onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
+          </div>
+
           <AppButton
             type="button"
             variant="outline"
+            disabled={isGoogleLoading}
+            onClick={triggerGoogleLogin}
             className="w-full h-11 rounded-full border border-[#E6E2D1] text-sm font-medium text-[#1F3933]"
           >
-            <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-            </svg>
-            Đăng nhập bằng Google
+            {isGoogleLoading ? (
+              <>
+                <AppSpinner size="sm" />
+                Đang xử lý...
+              </>
+            ) : (
+              <>
+                <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                </svg>
+                Đăng nhập bằng Google
+              </>
+            )}
           </AppButton>
         </form>
       </FormProvider>

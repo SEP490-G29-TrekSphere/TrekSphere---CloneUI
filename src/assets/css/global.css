@@ -331,3 +331,11 @@
     transform: translateY(-8px);
   }
 }
+
+/* Hide native password reveal button (Edge/IE) for ALL password inputs
+   so only the custom toggle (AppFormPasswordInput / AppPasswordInput)
+   is visible. */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
