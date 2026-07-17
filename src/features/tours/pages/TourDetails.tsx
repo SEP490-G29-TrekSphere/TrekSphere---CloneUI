@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { getBookTourPath, PATHS } from '@/constants';
 import { useTourDetail } from '@/features/tours/hooks/useTourDetail';
 import type { TourDetailFromApi, TourDetailScheduleApi } from '@/features/tours/types';
 import { useAppStore } from '@/store/useAppStore';
@@ -220,7 +221,7 @@ function MemberBanner({ isLoggedIn }: { isLoggedIn: boolean }) {
         </div>
       </div>
       <Link
-        to="/login"
+        to={PATHS.LOGIN}
         className="shrink-0 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
       >
         Đăng nhập để đặt tour
@@ -406,8 +407,18 @@ function ItinerarySection({ tour }: { tour: TourDetailFromApi }) {
 }
 
 /** Departure schedules section */
-function ScheduleSection({ schedules }: { schedules: TourDetailScheduleApi[] }) {
-  const openSchedules = schedules.filter((s) => s.status === 'OPEN');
+function ScheduleSection({
+  schedules,
+  tourId,
+  isLoggedIn,
+}: {
+  schedules: TourDetailScheduleApi[];
+  tourId: string;
+  isLoggedIn: boolean;
+}) {
+  const openSchedules = schedules.filter(
+    (s) => s.status === 'OPEN' && s.availableSlots - s.bookedSlots > 0
+  );
 
   if (openSchedules.length === 0) {
     return (
@@ -427,8 +438,11 @@ function ScheduleSection({ schedules }: { schedules: TourDetailScheduleApi[] }) 
         {openSchedules.map((s) => {
           const remaining = Math.max(0, s.availableSlots - s.bookedSlots);
           return (
-            <div
+            <Link
               key={s.scheduleId}
+              to={
+                isLoggedIn ? `${getBookTourPath(tourId)}?scheduleId=${s.scheduleId}` : PATHS.LOGIN
+              }
               className="flex items-center justify-between rounded-2xl border border-border bg-card p-4 transition-all hover:border-primary/30 hover:shadow-sm"
             >
               <div className="flex flex-col gap-1.5">
@@ -448,7 +462,7 @@ function ScheduleSection({ schedules }: { schedules: TourDetailScheduleApi[] }) 
                   / người
                 </span>
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>
@@ -652,7 +666,7 @@ export default function TourDetailsPage() {
           {/* Right column — vendor + schedule */}
           <div className="lg:sticky lg:top-24 flex flex-col gap-6 self-start">
             <VendorCard tour={tour} />
-            <ScheduleSection schedules={tour.schedules} />
+            <ScheduleSection schedules={tour.schedules} tourId={tour.tourId} isLoggedIn={!!user} />
           </div>
         </div>
 
@@ -670,15 +684,15 @@ export default function TourDetailsPage() {
             <span className="text-sm text-muted-foreground">/ người</span>
           </div>
           {user ? (
-            <button
-              type="button"
+            <Link
+              to={getBookTourPath(tour.tourId)}
               className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
             >
               Đặt ngay
-            </button>
+            </Link>
           ) : (
             <Link
-              to="/login"
+              to={PATHS.LOGIN}
               className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
             >
               Đăng nhập

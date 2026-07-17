@@ -11,7 +11,7 @@
     "check:fix:unsafe": "biome check . --write --unsafe",
     "ci": "biome ci . && pnpm typecheck",
     "preview": "vite preview",
-    "prepare": "lefthook install",
+    "prepare": "lefthook install || true",
     "typecheck": "tsc --noEmit",
     "test:coverage": "jest --coverage"
   },

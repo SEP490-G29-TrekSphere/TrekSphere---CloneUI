@@ -20,6 +20,10 @@ const Dashboard = lazy(() => import('@/features/dashboard/pages/Dashboard'));
 const Notifications = lazy(() => import('@/features/notifications/pages/Notifications'));
 const ListTours = lazy(() => import('@/features/tours/pages/ListTours'));
 const TourDetails = lazy(() => import('@/features/tours/pages/TourDetails'));
+const BookTour = lazy(() => import('@/features/tours/pages/BookTour'));
+const BookingDetail = lazy(() => import('@/features/tours/pages/BookingDetail'));
+const PayBooking = lazy(() => import('@/features/tours/pages/PayBooking'));
+const MyBookings = lazy(() => import('@/features/tours/pages/MyBookings'));
 const BlogList = lazy(() => import('@/features/news/pages/BlogList'));
 const BlogDetails = lazy(() => import('@/features/news/pages/BlogDetails'));
 const ViewProfile = lazy(() => import('@/features/profile/pages/ViewProfile'));
@@ -93,6 +97,10 @@ export default function AppRoutes() {
           <Route path={PATHS.BLOG_LIST} element={<MyBlogList />} />
           <Route path={PATHS.BLOG_CREATE} element={<CreateBlogPost />} />
           <Route path={PATHS.BLOG_EDIT} element={<CreateBlogPost editMode />} />
+          <Route path={PATHS.BOOK_TOUR} element={<BookTour />} />
+          <Route path={PATHS.BOOKING_DETAIL} element={<BookingDetail />} />
+          <Route path={PATHS.BOOKING_PAYMENT} element={<PayBooking />} />
+          <Route path={PATHS.MY_TOURS} element={<MyBookings />} />
         </Route>
 
         {/* Admin routes — yêu cầu role admin, dùng AdminLayout với sidebar riêng */}

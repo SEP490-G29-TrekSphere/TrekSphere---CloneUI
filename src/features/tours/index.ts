@@ -17,9 +17,11 @@ export * from './components/tour-details';
 // Hooks
 export { useTourDetail } from './hooks/useTourDetail';
 export { useTours } from './hooks/useTours';
-
+export { default as BookingDetail } from './pages/BookingDetail';
+export { default as BookTour } from './pages/BookTour';
 // Pages
 export { default as ListTours } from './pages/ListTours';
+export { default as MyBookings } from './pages/MyBookings';
 export { default as TourDetailsPage } from './pages/TourDetails';
 
 // Services
