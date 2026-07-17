@@ -39,14 +39,13 @@ export function useTrekkerBlogStats() {
 
 /**
  * Hook toggle visibility (ẩn/hiện) bài viết using mock data.
- * - isHidden=true  → chuyển sang DRAFT (ẩn)
- * - isHidden=false → chuyển sang PUBLISHED (hiện)
+ * Luôn chuyển đổi trạng thái: PUBLISHED → DRAFT, DRAFT → PUBLISHED.
  */
 export function useToggleBlogVisibility() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ blogId }: { blogId: string; isHidden?: boolean }) => {
+    mutationFn: async ({ blogId }: { blogId: string }) => {
       // Simulate API delay
       await new Promise((r) => setTimeout(r, 300));
       // Use mock toggle function

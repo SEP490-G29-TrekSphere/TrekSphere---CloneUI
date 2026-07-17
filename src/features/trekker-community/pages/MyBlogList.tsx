@@ -74,7 +74,7 @@ export default function MyBlogList() {
     const isCurrentlyPublished = blogToHide.status === 'PUBLISHED';
 
     toggleVisibility.mutate(
-      { blogId: blogToHide.blogId, isHidden: isCurrentlyPublished },
+      { blogId: blogToHide.blogId },
       {
         onSuccess: () => {
           toast.success(

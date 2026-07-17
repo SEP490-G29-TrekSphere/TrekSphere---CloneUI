@@ -51,7 +51,8 @@ export default function Login() {
 
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  const googleButtonWrapperRef = useRef<HTMLDivElement>(null);
+  // Store reference to the actual Google button element (captured via inline ref callback)
+  const googleButtonRef = useRef<HTMLElement | null>(null);
 
   const handleGoogleSuccess = (credentialResponse: CredentialResponse) => {
     void (async () => {
@@ -129,10 +130,7 @@ export default function Login() {
 
   // Forward click từ AppButton custom sang nút thật của Google (đang bị ẩn).
   const triggerGoogleLogin = () => {
-    const realGoogleButton = googleButtonWrapperRef.current?.querySelector(
-      'div[role="button"]'
-    ) as HTMLElement | null;
-    realGoogleButton?.click();
+    googleButtonRef.current?.click();
   };
 
   const onSubmit = (data: LoginFormValues) => {
@@ -316,7 +314,12 @@ export default function Login() {
 
           {/* Nút Google thật của thư viện — render ẩn, chỉ dùng để mở popup
               đăng nhập và lấy `credential` (id_token). Không hiển thị cho user. */}
-          <div ref={googleButtonWrapperRef} style={{ display: 'none' }}>
+          <div
+            ref={(el) => {
+              googleButtonRef.current = el?.querySelector('div[role="button"]') ?? null;
+            }}
+            style={{ display: 'none' }}
+          >
             <GoogleLogin onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
           </div>
 
