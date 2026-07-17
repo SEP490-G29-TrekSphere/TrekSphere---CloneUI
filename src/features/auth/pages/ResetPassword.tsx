@@ -11,7 +11,7 @@ import {
   resetPasswordSchema,
 } from '@/features/auth';
 import AuthLayout from '@/features/auth/components/AuthLayout';
-import { AppButton, AppFormInput, AppSpinner } from '@/shared/ui';
+import { AppButton, AppFormPasswordInput, AppSpinner } from '@/shared/ui';
 import { toast } from '@/store/useToastStore';
 
 const RESET_PASSWORD_IMAGE = heroImage;
@@ -138,10 +138,9 @@ export default function ResetPassword() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <input type="hidden" {...methods.register('token')} />
 
-            <AppFormInput
+            <AppFormPasswordInput
               name="newPassword"
               label="Mật khẩu mới"
-              type="password"
               placeholder="••••••••"
               autoComplete="new-password"
               control={methods.control}
@@ -149,10 +148,9 @@ export default function ResetPassword() {
 
             <PasswordStrengthField passwordFieldName="newPassword" />
 
-            <AppFormInput
+            <AppFormPasswordInput
               name="confirmPassword"
               label="Xác nhận mật khẩu mới"
-              type="password"
               placeholder="••••••••"
               autoComplete="new-password"
               control={methods.control}

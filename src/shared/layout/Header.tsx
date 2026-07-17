@@ -101,6 +101,7 @@ export default function Header() {
           >
             {mobileMenuOpen ? <X className="size-6" /> : <Menu className="size-6" />}
           </button>
+
           <AppLogo height={40} to={PATHS.HOME} />
         </div>
 

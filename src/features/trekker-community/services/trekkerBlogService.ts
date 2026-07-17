@@ -124,4 +124,19 @@ export const trekkerBlogService = {
       throw new Error(res.error);
     }
   },
+
+  /**
+   * Ẩn/Hiện bài viết (chuyển trạng thái sang DRAFT hoặc PUBLISHED).
+   */
+  async toggleBlogVisibility(blogId: string, isHidden: boolean): Promise<TrekkerBlogItem> {
+    const payload = { status: isHidden ? 'DRAFT' : 'PUBLISHED' };
+    const res = await ApiService<TrekkerBlogItem>(`/blogs/${blogId}`, 'PUT', payload);
+    if (res.error) {
+      throw new Error(res.error);
+    }
+    if (!res.data) {
+      throw new Error('Không nhận được phản hồi từ máy chủ.');
+    }
+    return res.data;
+  },
 };

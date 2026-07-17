@@ -29,9 +29,9 @@ export const PATHS = {
   TOURS: '/tours',
   TOUR_DETAIL: '/tours/:id',
   BOOK_TOUR: '/tours/:id/book',
+  BOOKING_DETAIL: '/bookings/:bookingId',
+  BOOKING_PAYMENT: '/bookings/:bookingId/payment',
   MY_TOURS: '/my-tours',
-  BOOKING_DETAIL: '/my-tours/:bookingId',
-  BOOKING_PAYMENT: '/my-tours/:bookingId/pay',
   COMMUNITY: '/community',
   NEWS: '/news',
   NEWS_DETAIL: '/news/:blogId',
@@ -45,6 +45,11 @@ export const PATHS = {
   // Profile
   PROFILE: '/profile',
   EDIT_PROFILE: '/profile/edit',
+
+  // Trekker Community / Blog
+  BLOG_LIST: '/blog',
+  BLOG_CREATE: '/blog/create',
+  BLOG_EDIT: '/blog/edit/:blogId',
 
   // Admin
   ADMIN: '/admin',

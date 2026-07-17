@@ -360,13 +360,15 @@ export const ApiUpload = async <T>(
 export const ApiService = async <T>(
   path: string,
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
-  data?: unknown
+  data?: unknown,
+  params?: Record<string, string>
 ): Promise<ApiResponse<T>> => {
   try {
     const response = await apiClient.request({
       url: path,
       method,
       data,
+      params,
     });
 
     return handleResponse<T>(response);

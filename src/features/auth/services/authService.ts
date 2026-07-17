@@ -68,6 +68,13 @@ export const authService = {
   },
 
   /**
+   * Log in with Google using the ID token from Google OAuth.
+   * BE: POST /api/v1/auth/google?idToken=xxx -> returns `{ user, access_token, refresh_token }`.
+   */
+  googleLogin: (idToken: string) =>
+    ApiService<AuthResponse>('/auth/google', 'POST', null, { idToken }),
+
+  /**
    * Get the profile of the currently logged-in user.
    */
   getProfile: () => ApiService<UserProfile>('/users/me', 'GET'),
