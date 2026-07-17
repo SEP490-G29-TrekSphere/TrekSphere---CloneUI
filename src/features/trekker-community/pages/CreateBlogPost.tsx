@@ -8,6 +8,24 @@ import { AppSpinner } from '@/shared/ui';
 import { toast } from '@/store/useToastStore';
 import { getMockBlogById, updateMockBlog } from '../data/mockBlogs';
 
+/** Chỉ cho phép URL http(s), data: hoặc blob: — chặn các scheme nguy hiểm như javascript: */
+function getSafeImageUrl(url: string | null): string | undefined {
+  if (!url) return undefined;
+  try {
+    // blob: URL từ URL.createObjectURL luôn an toàn
+    if (url.startsWith('blob:')) return url;
+
+    const parsed = new URL(url, window.location.origin);
+    const allowedProtocols = ['http:', 'https:', 'data:'];
+    if (allowedProtocols.includes(parsed.protocol)) {
+      return url;
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /** Các chuyên mục có sẵn */
 const CATEGORIES = [
   { id: 'experience', label: 'Kinh nghiệm' },
@@ -337,7 +355,7 @@ export function CreateBlogPost({ editMode = false }: { editMode?: boolean }) {
                 {coverImage ? (
                   <>
                     <img
-                      src={coverImage}
+                      src={getSafeImageUrl(coverImage)}
                       alt="Cover"
                       className="h-full w-full rounded-3xl object-cover"
                     />
