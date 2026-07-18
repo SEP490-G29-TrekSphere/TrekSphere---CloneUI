@@ -1,6 +1,7 @@
 import { Calendar, ChevronDown, ShieldAlert } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getBookingDetailPath } from '@/constants';
 import { tourService } from '@/features/tours/services/tourService';
 import { AppCard } from '@/shared/ui';
 import { toast } from '@/store/useToastStore';
@@ -68,7 +69,7 @@ export default function MyBookings() {
     if (mainEl) {
       sessionStorage.setItem('myBookingsScrollTop', String(mainEl.scrollTop));
     }
-    navigate(`/my-tours/${bookingId}`);
+    navigate(getBookingDetailPath(bookingId));
   };
 
   const handleLoadMore = async () => {

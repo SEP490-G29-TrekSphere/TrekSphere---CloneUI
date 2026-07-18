@@ -2,9 +2,9 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAppStore } from '@/store/useAppStore';
 
 const navItems = [
-  { name: 'Dashboard', path: '/' },
-  { name: 'Trips', path: '/trips' },
-  { name: 'Settings', path: '/settings' },
+  { name: 'Bảng điều khiển', path: '/' },
+  { name: 'Chuyến đi', path: '/trips' },
+  { name: 'Cài đặt', path: '/settings' },
 ];
 
 export default function Sidebar() {

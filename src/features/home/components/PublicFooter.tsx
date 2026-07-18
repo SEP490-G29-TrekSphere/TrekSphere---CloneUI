@@ -32,7 +32,7 @@ export default function PublicFooter() {
           </nav>
 
           <p className="text-sm shrink-0 text-secondary">
-            &copy; 2024 TrekSphere. All rights reserved.
+            &copy; 2024 TrekSphere. Mọi quyền được bảo lưu.
           </p>
         </div>
       </div>

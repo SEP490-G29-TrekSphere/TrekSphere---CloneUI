@@ -14,12 +14,12 @@ import { PATHS } from '@/constants';
 import { useAppStore } from '@/store/useAppStore';
 
 const adminNavItems = [
-  { name: 'Dashboard', path: PATHS.ADMIN_DASHBOARD, icon: LayoutGrid, disabled: true },
-  { name: 'Account', path: PATHS.ADMIN_ACCOUNTS, icon: User },
-  { name: 'Tour Approval', path: PATHS.ADMIN_APPLICATIONS, icon: ClipboardCheck },
-  { name: 'Data Management', path: PATHS.ADMIN_DATA, icon: Database, disabled: true },
-  { name: 'Voucher Approval', path: PATHS.ADMIN_VOUCHERS, icon: Ticket, disabled: true },
-  { name: 'Settings', path: PATHS.ADMIN_SETTINGS, icon: Settings },
+  { name: 'Bảng điều khiển', path: PATHS.ADMIN_DASHBOARD, icon: LayoutGrid, disabled: true },
+  { name: 'Tài khoản', path: PATHS.ADMIN_ACCOUNTS, icon: User },
+  { name: 'Duyệt Tour', path: PATHS.ADMIN_APPLICATIONS, icon: ClipboardCheck },
+  { name: 'Quản lý Dữ liệu', path: PATHS.ADMIN_DATA, icon: Database, disabled: true },
+  { name: 'Duyệt Voucher', path: PATHS.ADMIN_VOUCHERS, icon: Ticket, disabled: true },
+  { name: 'Cài đặt', path: PATHS.ADMIN_SETTINGS, icon: Settings },
 ];
 
 export default function AdminLayout() {
@@ -61,7 +61,7 @@ export default function AdminLayout() {
             <h1 className="text-3xl font-extrabold tracking-tight text-[#0B3025] leading-none mb-1">
               TrekSphere
             </h1>
-            <span className="text-xs text-zinc-500 font-medium tracking-wide">ADMIN PORTAL</span>
+            <span className="text-xs text-zinc-500 font-medium tracking-wide">TRANG QUẢN TRỊ</span>
           </div>
 
           {/* Navigation Items */}

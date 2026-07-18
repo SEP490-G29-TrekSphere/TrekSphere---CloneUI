@@ -1,3 +1,4 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   ArrowLeft,
   BarChart3,
@@ -21,9 +22,12 @@ import {
   Settings as SettingsIcon,
   Smile,
 } from 'lucide-react';
-import { type FormEvent, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
+import * as z from 'zod';
 import { PATHS } from '@/constants';
+import { toast } from '@/store/useToastStore';
 import type { Conversation, DetailMessage } from '../types/types';
 
 const getTagStyles = (variant?: 'default' | 'secondary' | 'outline' | 'destructive' | 'accent') => {
@@ -132,6 +136,15 @@ const initialMockMessages: Record<string, DetailMessage[]> = {
   ],
 };
 
+const chatMessageSchema = z.object({
+  message: z
+    .string()
+    .transform((val) => val.trim())
+    .refine((val) => val.length > 0, { message: 'Tin nhắn không được để trống' }),
+});
+
+type ChatMessageFormValues = z.infer<typeof chatMessageSchema>;
+
 export default function ChatList() {
   const [conversations, setConversations] = useState<Conversation[]>(mockConversations);
   const [messagesMap, setMessagesMap] =
@@ -139,12 +152,21 @@ export default function ChatList() {
   const [selectedId, setSelectedId] = useState<string | null>('1'); // Select Nguyen Van A by default
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
-  const [newMessageText, setNewMessageText] = useState('');
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<ChatMessageFormValues>({
+    resolver: zodResolver(chatMessageSchema),
+    defaultValues: { message: '' },
+  });
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: We want to clear the message input draft whenever the selected conversation changes.
   useEffect(() => {
-    setNewMessageText('');
-  }, [selectedId]);
+    reset({ message: '' });
+  }, [selectedId, reset]);
 
   // Find active conversation
   const selectedConversation = conversations.find((c) => c.id === selectedId);
@@ -179,15 +201,15 @@ export default function ChatList() {
     setConversations((prev) => prev.map((c) => (c.id === id ? { ...c, unread: false } : c)));
   };
 
-  const handleSendMessage = (e: FormEvent) => {
-    e.preventDefault();
-    if (!newMessageText.trim() || !selectedId) return;
+  const onSubmitMessage = (data: ChatMessageFormValues) => {
+    if (!selectedId) return;
 
+    const msgText = data.message;
     const newMsgId = `m_${selectedId}_${Date.now()}`;
     const newMsg: DetailMessage = {
       id: newMsgId,
       sender: 'agent',
-      text: newMessageText,
+      text: msgText,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       isSeen: false,
     };
@@ -204,18 +226,15 @@ export default function ChatList() {
         c.id === selectedId
           ? {
               ...c,
-              lastMessage:
-                newMessageText.length > 22
-                  ? `${newMessageText.substring(0, 22)}...`
-                  : newMessageText,
-              lastMessageTime: 'Just now',
+              lastMessage: msgText.length > 22 ? `${msgText.substring(0, 22)}...` : msgText,
+              lastMessageTime: 'Vừa xong',
               timestamp: new Date().toISOString(),
             }
           : c
       )
     );
 
-    setNewMessageText('');
+    reset({ message: '' });
   };
 
   return (
@@ -226,18 +245,18 @@ export default function ChatList() {
         <div className="mb-6 flex flex-col gap-1">
           <span className="text-3xl font-extrabold tracking-tight text-primary">TrekSphere</span>
           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            STAFF PORTAL
+            TRANG NHÂN VIÊN
           </span>
         </div>
 
-        {/* New Trek Button */}
+        {/* Nút hành trình mới */}
         <button
           type="button"
-          onClick={() => alert('New Trek button clicked')}
+          onClick={() => toast.info('Tính năng Hành trình Mới đang được phát triển.')}
           className="mb-8 flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3 text-sm font-bold text-primary-foreground transition-all hover:bg-primary/95 hover:shadow-md"
         >
           <Plus className="h-4 w-4" />
-          New Trek
+          Hành trình Mới
         </button>
 
         {/* Navigation Section */}
@@ -247,28 +266,28 @@ export default function ChatList() {
             className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
           >
             <LayoutDashboard className="h-5 w-5" />
-            Dashboard
+            Bảng điều khiển
           </Link>
           <Link
             to={PATHS.TOURS}
             className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
           >
             <Compass className="h-5 w-5" />
-            Tours
+            Tour du lịch
           </Link>
           <Link
             to={PATHS.DASHBOARD}
             className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
           >
             <CalendarRange className="h-5 w-5" />
-            Bookings
+            Đặt chỗ
           </Link>
           <Link
             to={PATHS.CHAT}
             className="flex items-center gap-3 rounded-xl bg-muted px-4 py-3 text-sm font-bold text-primary transition-all relative"
           >
             <MessageSquare className="h-5 w-5" />
-            Chat
+            Trò chuyện
             <span className="absolute right-4 top-1/2 h-4 w-1 -translate-y-1/2 rounded-full bg-primary" />
           </Link>
           <Link
@@ -276,7 +295,7 @@ export default function ChatList() {
             className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
           >
             <BarChart3 className="h-5 w-5" />
-            Reports
+            Báo cáo
           </Link>
         </nav>
 
@@ -287,14 +306,14 @@ export default function ChatList() {
             className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
           >
             <SettingsIcon className="h-5 w-5" />
-            Settings
+            Cài đặt
           </Link>
           <Link
             to={PATHS.DASHBOARD}
             className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
           >
             <HelpCircle className="h-5 w-5" />
-            Support
+            Hỗ trợ
           </Link>
         </div>
       </aside>
@@ -308,8 +327,8 @@ export default function ChatList() {
             <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search conversations..."
-              aria-label="Search conversations"
+              placeholder="Tìm kiếm cuộc trò chuyện..."
+              aria-label="Tìm kiếm cuộc trò chuyện"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="h-10 w-full rounded-full border border-border bg-muted/30 pl-10 pr-4 text-sm outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:bg-background focus:ring-1 focus:ring-primary"
@@ -357,7 +376,7 @@ export default function ChatList() {
           >
             {/* Title */}
             <div className="px-6 py-4">
-              <h1 className="text-2xl font-bold tracking-tight">Chat Room</h1>
+              <h1 className="text-2xl font-bold tracking-tight">Phòng Chat</h1>
             </div>
 
             {/* Filtering Tabs */}
@@ -371,7 +390,7 @@ export default function ChatList() {
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                All Chats
+                Tất cả
               </button>
               <button
                 type="button"
@@ -382,7 +401,7 @@ export default function ChatList() {
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                Unread
+                Chưa đọc
               </button>
             </div>
 
@@ -391,7 +410,7 @@ export default function ChatList() {
               {filteredConversations.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
                   <MessageSquare className="mb-2 h-8 w-8 stroke-1" />
-                  <p className="text-sm">No conversations found</p>
+                  <p className="text-sm">Không tìm thấy cuộc trò chuyện nào</p>
                 </div>
               ) : (
                 filteredConversations.map((item) => {
@@ -503,12 +522,12 @@ export default function ChatList() {
                       {selectedConversation.online ? (
                         <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
                           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                          Online
+                          Trực tuyến
                         </span>
                       ) : (
                         <span className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1">
                           <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/30" />
-                          Offline
+                          Ngoại tuyến
                         </span>
                       )}
                     </div>
@@ -550,13 +569,21 @@ export default function ChatList() {
                   className="flex-1 overflow-y-auto p-6 space-y-6 bg-muted/5"
                 >
                   {/* Started conversation divider */}
-                  {selectedConversation.startDate && (
-                    <div className="flex items-center justify-center">
-                      <span className="rounded-full bg-muted border border-border/40 px-4 py-1 text-[11px] font-bold text-muted-foreground">
-                        Conversation started • {selectedConversation.startDate}
-                      </span>
-                    </div>
-                  )}
+                  {selectedConversation.startDate &&
+                    (() => {
+                      const parsedDate = new Date(selectedConversation.startDate);
+                      const isValidDate = !Number.isNaN(parsedDate.getTime());
+                      const displayDate = isValidDate
+                        ? new Intl.DateTimeFormat('vi-VN').format(parsedDate)
+                        : selectedConversation.startDate;
+                      return (
+                        <div className="flex items-center justify-center">
+                          <span className="rounded-full bg-muted border border-border/40 px-4 py-1 text-[11px] font-bold text-muted-foreground">
+                            Cuộc hội thoại bắt đầu • {displayDate}
+                          </span>
+                        </div>
+                      );
+                    })()}
 
                   {currentMessages.map((msg) => {
                     const isAgent = msg.sender === 'agent';
@@ -672,7 +699,7 @@ export default function ChatList() {
                 {/* 4. Bottom Rich Editor Composer */}
                 <div className="p-6 bg-background border-t border-border">
                   <form
-                    onSubmit={handleSendMessage}
+                    onSubmit={handleSubmit(onSubmitMessage)}
                     className="flex flex-col rounded-2xl border border-border bg-muted/10 p-3"
                   >
                     {/* Editor Toolbar */}
@@ -731,21 +758,32 @@ export default function ChatList() {
                     </div>
 
                     {/* Text Field & Action Send */}
-                    <div className="flex items-end gap-3">
-                      <textarea
-                        rows={2}
-                        placeholder="Type your message here..."
-                        value={newMessageText}
-                        onChange={(e) => setNewMessageText(e.target.value)}
-                        className="flex-1 resize-none bg-transparent text-sm outline-none placeholder:text-muted-foreground py-1"
-                      />
-                      <button
-                        type="submit"
-                        aria-label="Send"
-                        className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-transform hover:scale-105 active:scale-95 flex-shrink-0"
-                      >
-                        <Send className="h-4 w-4" />
-                      </button>
+                    <div className="flex flex-col w-full gap-1">
+                      <div className="flex items-end gap-3">
+                        <textarea
+                          rows={2}
+                          placeholder="Nhập tin nhắn của bạn tại đây..."
+                          {...register('message')}
+                          aria-invalid={errors.message ? 'true' : 'false'}
+                          aria-describedby={errors.message ? 'chat-message-error' : undefined}
+                          className="flex-1 resize-none bg-transparent text-sm outline-none placeholder:text-muted-foreground py-1"
+                        />
+                        <button
+                          type="submit"
+                          aria-label="Send"
+                          className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-transform hover:scale-105 active:scale-95 flex-shrink-0"
+                        >
+                          <Send className="h-4 w-4" />
+                        </button>
+                      </div>
+                      {errors.message?.message && (
+                        <p
+                          id="chat-message-error"
+                          className="text-xs text-destructive mt-1 font-medium"
+                        >
+                          {errors.message.message}
+                        </p>
+                      )}
                     </div>
                   </form>
                 </div>
@@ -754,8 +792,10 @@ export default function ChatList() {
               // Empty State
               <div className="flex flex-1 flex-col items-center justify-center p-8 text-center text-muted-foreground">
                 <MessageSquare className="mb-4 h-12 w-12 stroke-1" />
-                <h3 className="text-lg font-bold">No Conversation Selected</h3>
-                <p className="text-sm">Choose a chat room on the left side pane to start.</p>
+                <h3 className="text-lg font-bold">Chưa chọn cuộc trò chuyện nào</h3>
+                <p className="text-sm">
+                  Chọn một phòng chat ở thanh bên trái để bắt đầu cuộc trò chuyện.
+                </p>
               </div>
             )}
           </div>

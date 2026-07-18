@@ -142,19 +142,19 @@ export default function PublicHeader() {
               )}
             </div>
           ) : (
-            /* Guest: Sign in / Sign up */
+            /* Khách vãng lai: Đăng nhập / Đăng ký */
             <>
               <Link
                 to={PATHS.LOGIN}
                 className="px-4 py-2 rounded-full text-sm font-semibold transition-opacity hover:opacity-80 text-primary"
               >
-                Sign in
+                Đăng nhập
               </Link>
               <Link
                 to={PATHS.REGISTER}
                 className="px-4 py-2 rounded-full text-sm font-semibold text-white transition-opacity hover:opacity-90 bg-primary"
               >
-                Sign up
+                Đăng ký
               </Link>
             </>
           )}

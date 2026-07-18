@@ -28,22 +28,27 @@ import { toast } from '@/store/useToastStore';
 const invoices = [
   {
     invoice: 'INV001',
-    paymentStatus: 'Paid',
-    totalAmount: '$250.00',
-    paymentMethod: 'Credit Card',
+    paymentStatus: 'Đã thanh toán',
+    totalAmount: '250.000 đ',
+    paymentMethod: 'Thẻ tín dụng',
   },
-  { invoice: 'INV002', paymentStatus: 'Pending', totalAmount: '$150.00', paymentMethod: 'PayPal' },
+  {
+    invoice: 'INV002',
+    paymentStatus: 'Chờ xử lý',
+    totalAmount: '150.000 đ',
+    paymentMethod: 'PayPal',
+  },
   {
     invoice: 'INV003',
-    paymentStatus: 'Unpaid',
-    totalAmount: '$350.00',
-    paymentMethod: 'Bank Transfer',
+    paymentStatus: 'Chưa thanh toán',
+    totalAmount: '350.000 đ',
+    paymentMethod: 'Chuyển khoản ngân hàng',
   },
 ];
 
 const formSchema = z.object({
-  username: z.string().min(10, 'Username must be at least 10 characters.'),
-  email: z.string().email('Invalid email address.'),
+  username: z.string().min(10, 'Tên đăng nhập phải có ít nhất 10 ký tự.'),
+  email: z.string().email('Địa chỉ email không hợp lệ.'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -57,47 +62,49 @@ export default function Dashboard() {
   });
 
   const onSubmit = (data: FormValues) => {
-    toast.success(`Submitted: ${data.username} - ${data.email}`);
+    toast.success(`Đã gửi: ${data.username} - ${data.email}`);
   };
 
   const handleShowGlobalSpinner = () => {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      toast.success('Finished loading!');
+      toast.success('Đã tải xong!');
     }, 2000);
   };
 
   return (
     <div className="space-y-12 pb-12">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">UI Components Showcase</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Trưng bày các Thành phần UI</h1>
         <p className="text-muted-foreground">
-          A complete overview of all shared components in the TrekSphere project.
+          Tổng quan đầy đủ về tất cả các thành phần giao diện dùng chung trong dự án TrekSphere.
         </p>
       </div>
 
       {/* 1. Buttons */}
       <section className="space-y-4">
-        <h2 className="text-2xl font-semibold border-b pb-2">1. Buttons</h2>
+        <h2 className="text-2xl font-semibold border-b pb-2">1. Nút bấm (Buttons)</h2>
         <div className="flex flex-wrap gap-4 items-center">
-          <AppButton variant="default">Default</AppButton>
-          <AppButton variant="secondary">Secondary</AppButton>
-          <AppButton variant="destructive">Destructive</AppButton>
-          <AppButton variant="outline">Outline</AppButton>
-          <AppButton variant="ghost">Ghost</AppButton>
-          <AppButton variant="link">Link</AppButton>
+          <AppButton variant="default">Mặc định</AppButton>
+          <AppButton variant="secondary">Phụ</AppButton>
+          <AppButton variant="destructive">Nguy hiểm</AppButton>
+          <AppButton variant="outline">Đường viền</AppButton>
+          <AppButton variant="ghost">Trong suốt</AppButton>
+          <AppButton variant="link">Liên kết</AppButton>
         </div>
       </section>
 
       {/* 2. Badges & Spinners */}
       <section className="space-y-4">
-        <h2 className="text-2xl font-semibold border-b pb-2">2. Badges & Local Spinners</h2>
+        <h2 className="text-2xl font-semibold border-b pb-2">
+          2. Nhãn (Badges) & Hiệu ứng tải tại chỗ
+        </h2>
         <div className="flex flex-wrap gap-4 items-center">
-          <AppBadge variant="default">Default</AppBadge>
-          <AppBadge variant="secondary">Secondary</AppBadge>
-          <AppBadge variant="destructive">Destructive</AppBadge>
-          <AppBadge variant="outline">Outline</AppBadge>
+          <AppBadge variant="default">Mặc định</AppBadge>
+          <AppBadge variant="secondary">Phụ</AppBadge>
+          <AppBadge variant="destructive">Nguy hiểm</AppBadge>
+          <AppBadge variant="outline">Đường viền</AppBadge>
           <div className="w-px h-6 bg-border mx-4"></div>
           <AppSpinner size="sm" />
           <AppSpinner size="default" className="text-primary" />
@@ -107,37 +114,41 @@ export default function Dashboard() {
 
       {/* 3. Global Loading Spinner */}
       <section className="space-y-4">
-        <h2 className="text-2xl font-semibold border-b pb-2">3. Global Loading Spinner</h2>
+        <h2 className="text-2xl font-semibold border-b pb-2">3. Hiệu ứng tải toàn màn hình</h2>
         <div className="flex flex-wrap gap-4 items-center">
-          <AppButton onClick={handleShowGlobalSpinner}>Trigger Global Spinner (2s)</AppButton>
-          <p className="text-sm text-muted-foreground">Blocks the entire screen.</p>
+          <AppButton onClick={handleShowGlobalSpinner}>
+            Kích hoạt Spinner toàn màn hình (2 giây)
+          </AppButton>
+          <p className="text-sm text-muted-foreground">Chặn tương tác trên toàn bộ màn hình.</p>
         </div>
       </section>
 
       {/* 4. Toasts */}
       <section className="space-y-4">
-        <h2 className="text-2xl font-semibold border-b pb-2">4. Toasts (Global Notifications)</h2>
+        <h2 className="text-2xl font-semibold border-b pb-2">
+          4. Thông báo Toast (Thông báo hệ thống)
+        </h2>
         <div className="flex flex-wrap gap-4 items-center">
           <AppButton
-            onClick={() => toast.success('Data saved successfully!')}
-            className="bg-green-600 hover:bg-green-700"
+            onClick={() => toast.success('Lưu dữ liệu thành công!')}
+            className="bg-green-600 hover:bg-green-700 text-white"
           >
-            Success
+            Thành công
           </AppButton>
-          <AppButton onClick={() => toast.error('Failed to delete item.')} variant="destructive">
-            Error
-          </AppButton>
-          <AppButton
-            onClick={() => toast.info('New update available.')}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            Info
+          <AppButton onClick={() => toast.error('Xóa mục thất bại.')} variant="destructive">
+            Lỗi
           </AppButton>
           <AppButton
-            onClick={() => toast.warning('Your session will expire soon.')}
-            className="bg-yellow-600 hover:bg-yellow-700"
+            onClick={() => toast.info('Có bản cập nhật mới.')}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
           >
-            Warning
+            Thông tin
+          </AppButton>
+          <AppButton
+            onClick={() => toast.warning('Phiên làm việc của bạn sắp hết hạn.')}
+            className="bg-yellow-600 hover:bg-yellow-700 text-white"
+          >
+            Cảnh báo
           </AppButton>
         </div>
       </section>
@@ -151,20 +162,20 @@ export default function Dashboard() {
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <AppFormInput
                   name="username"
-                  label="Username"
-                  placeholder="Enter username..."
+                  label="Tên đăng nhập"
+                  placeholder="Nhập tên đăng nhập..."
                   control={control}
-                  helperText="This uses React Hook Form + Zod"
+                  helperText="Form này sử dụng React Hook Form + Zod"
                 />
                 <AppFormInput
                   name="email"
                   label="Email"
-                  placeholder="Enter email..."
+                  placeholder="Nhập email..."
                   control={control}
                 />
                 <AppButton type="submit" className="w-full">
                   <AppIcon svg={EmptyIcon} className="mr-2 h-4 w-4" />
-                  Submit with Icon
+                  Gửi kèm Icon
                 </AppButton>
               </form>
             </AppCardContent>
@@ -175,18 +186,18 @@ export default function Dashboard() {
       <div className="grid gap-8 md:grid-cols-2">
         {/* 6. Data Table */}
         <section className="space-y-4">
-          <h2 className="text-2xl font-semibold border-b pb-2">6. Data Table</h2>
+          <h2 className="text-2xl font-semibold border-b pb-2">6. Bảng dữ liệu (Data Table)</h2>
           <AppCard>
             <AppCardHeader>
-              <AppCardTitle>Recent Invoices</AppCardTitle>
+              <AppCardTitle>Hoá đơn gần đây</AppCardTitle>
             </AppCardHeader>
             <AppCardContent>
               <AppTable>
                 <AppTableHeader>
                   <AppTableRow>
-                    <AppTableHead className="w-[100px]">Invoice</AppTableHead>
-                    <AppTableHead>Status</AppTableHead>
-                    <AppTableHead className="text-right">Amount</AppTableHead>
+                    <AppTableHead className="w-[100px]">Hoá đơn</AppTableHead>
+                    <AppTableHead>Trạng thái</AppTableHead>
+                    <AppTableHead className="text-right">Số tiền</AppTableHead>
                   </AppTableRow>
                 </AppTableHeader>
                 <AppTableBody>
@@ -205,12 +216,14 @@ export default function Dashboard() {
 
         {/* 7. Empty State */}
         <section className="space-y-4">
-          <h2 className="text-2xl font-semibold border-b pb-2">7. Empty State</h2>
+          <h2 className="text-2xl font-semibold border-b pb-2">
+            7. Trạng thái trống (Empty State)
+          </h2>
           <AppCard className="h-full">
             <AppCardContent className="h-full flex items-center justify-center min-h-[300px]">
               <AppEmptyState
-                title="No Trips Found"
-                description="You haven't created any trips yet. Empty states help users know what to do next."
+                title="Không tìm thấy chuyến đi"
+                description="Bạn chưa tạo chuyến đi nào. Trạng thái trống giúp người dùng biết cần thực hiện bước tiếp theo thế nào."
               />
             </AppCardContent>
           </AppCard>
@@ -219,23 +232,24 @@ export default function Dashboard() {
 
       {/* 8. Cards */}
       <section className="space-y-4">
-        <h2 className="text-2xl font-semibold border-b pb-2">8. Cards</h2>
+        <h2 className="text-2xl font-semibold border-b pb-2">8. Thẻ thông tin (Cards)</h2>
         <div className="max-w-sm">
           <AppCard>
             <AppCardHeader>
-              <AppCardTitle>Card Title</AppCardTitle>
+              <AppCardTitle>Tiêu đề Thẻ</AppCardTitle>
               <AppCardDescription>
-                Card Description showing contextual information.
+                Mô tả Thẻ hiển thị thông tin ngữ cảnh tương ứng.
               </AppCardDescription>
             </AppCardHeader>
             <AppCardContent>
               <p className="text-sm text-muted-foreground">
-                Card Content body. This area can contain text, images, or other components.
+                Nội dung phần thân của Thẻ. Khu vực này có thể chứa văn bản, hình ảnh hoặc các thành
+                phần khác.
               </p>
             </AppCardContent>
             <AppCardFooter className="flex justify-between">
-              <AppButton variant="outline">Cancel</AppButton>
-              <AppButton>Confirm</AppButton>
+              <AppButton variant="outline">Hủy bỏ</AppButton>
+              <AppButton>Xác nhận</AppButton>
             </AppCardFooter>
           </AppCard>
         </div>
