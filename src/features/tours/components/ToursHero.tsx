@@ -17,7 +17,7 @@ export default function ToursHero({ className = '' }: ToursHeroProps) {
       {/* Decorative blurred blob */}
       <div className="absolute -top-20 -left-20 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
 
-      <div className="relative mx-auto max-w-[1200px] px-4 sm:px-6">
+      <div className="relative mx-auto max-w-none w-full px-4 sm:px-6">
         <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
           Khám phá
         </span>

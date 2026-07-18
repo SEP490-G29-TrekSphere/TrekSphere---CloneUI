@@ -45,11 +45,11 @@ export default function BlogList() {
       <BlogHeroSection />
 
       {/* Filter bar */}
-      <div className="mx-auto max-w-[1200px] px-4 sm:px-6 mt-6 md:mt-8">
+      <div className="mx-auto max-w-none w-full px-4 sm:px-6 mt-6 md:mt-8">
         <BlogFilterBar searchQuery={search} onSearchChange={handleSearchChange} />
       </div>
 
-      <main className="mx-auto max-w-[1200px] px-4 pb-16 sm:px-6">
+      <main className="mx-auto max-w-none w-full px-4 pb-16 sm:px-6">
         <div className="h-10 md:h-12" aria-hidden />
 
         {isLoading ? (

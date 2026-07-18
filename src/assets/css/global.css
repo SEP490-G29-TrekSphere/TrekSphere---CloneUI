@@ -229,7 +229,7 @@
     display: none;
   }
 
-  /* ── Popular Destinations ── */
+  /* ── Popular Destinations (legacy circle — kept for compat) ── */
   .destination-item {
     display: flex;
     flex-direction: column;
@@ -257,24 +257,72 @@
     border-radius: 50%;
   }
 
+  /* ── Destination Masonry Tile (v2) ── */
+  .destination-tile {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+    min-height: 220px;
+  }
+
+  .destination-tile img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .destination-tile:hover img {
+    transform: scale(1.07);
+  }
+
+  .destination-tile-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to top,
+      color-mix(in oklch, var(--color-primary) 80%, transparent) 0%,
+      transparent 55%
+    );
+    pointer-events: none;
+  }
+
+  .destination-tile-label {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  }
+
   /* ── Featured Tours ── */
   .tour-card {
-    background-color: var(--color-muted);
-    border-radius: 16px !important;
+    background-color: var(--color-card);
+    border-radius: 20px !important;
     overflow: hidden !important;
     display: flex;
     flex-direction: column;
     width: 100%;
     height: 100%;
-    box-shadow: 0 4px 12px oklch(0% 0 0 / 0.05);
+    box-shadow:
+      0 4px 16px oklch(0% 0 0 / 0.06),
+      0 1px 4px oklch(0% 0 0 / 0.04);
     transition:
-      transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
-      box-shadow 0.3s ease;
+      transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 0.35s ease;
+    border: 1px solid var(--color-border);
   }
 
   .tour-card:hover {
-    transform: translateY(-10px) scale(1.02);
-    box-shadow: 0 20px 40px color-mix(in oklch, var(--color-primary) 18%, transparent);
+    transform: translateY(-12px) scale(1.015);
+    box-shadow: 0 24px 48px color-mix(in oklch, var(--color-primary) 22%, transparent);
   }
 
   .tour-image-wrapper {
@@ -291,6 +339,11 @@
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important;
+    transition: transform 0.5s ease;
+  }
+
+  .tour-card:hover .tour-image-wrapper img {
+    transform: scale(1.06);
   }
 
   .tour-content-wrapper {
@@ -301,7 +354,237 @@
     flex: 1;
   }
 
-  /* ─── Journey Stories ─── */
+  /* ─── Journey Stories — Editorial v2 ─── */
+  .story-card-v2 {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    cursor: pointer;
+    height: 100%;
+  }
+
+  .story-card-v2 img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    will-change: transform;
+  }
+
+  .story-card-v2:hover img {
+    transform: scale(1.06);
+  }
+
+  .story-card-v2 .story-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(15, 32, 28, 0.05) 0%, rgba(15, 32, 28, 0.9) 100%);
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  .story-card-v2:hover .story-overlay {
+    opacity: 0.85;
+  }
+
+  .story-card-v2 .story-content {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 28px 24px;
+  }
+
+  /* ─── Companions — Full-Bleed ─── */
+  .companions-banner {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .companions-banner-bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    will-change: transform;
+  }
+
+  .companions-banner-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      110deg,
+      color-mix(in oklch, var(--color-primary) 90%, transparent) 40%,
+      color-mix(in oklch, var(--color-primary) 50%, transparent) 100%
+    );
+  }
+
+  /* ─── Why Choose Us — Stats Card ─── */
+  .stat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 28px 20px;
+    border-radius: 16px;
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    box-shadow: 0 2px 12px oklch(0% 0 0 / 0.04);
+    transition:
+      transform 0.3s ease,
+      box-shadow 0.3s ease;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px color-mix(in oklch, var(--color-primary) 14%, transparent);
+  }
+
+  .stat-number {
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--color-primary);
+    letter-spacing: -0.02em;
+  }
+
+  .stat-label {
+    margin-top: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--color-muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* ─── Feature Cards v2 ─── */
+  .feature-card-v2 {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 36px 24px;
+    border-radius: 20px;
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    box-shadow: 0 2px 12px oklch(0% 0 0 / 0.04);
+    transition:
+      transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 0.3s ease;
+  }
+
+  .feature-card-v2:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px color-mix(in oklch, var(--color-primary) 14%, transparent);
+  }
+
+  .feature-icon-circle {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in oklch, var(--color-secondary) 30%, transparent);
+    margin-bottom: 20px;
+    flex-shrink: 0;
+  }
+
+  /* ─── Glass Nav (header on scroll) ─── */
+  .glass-nav {
+    background: color-mix(in oklch, var(--color-background) 80%, transparent) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border-bottom: 1px solid color-mix(in oklch, var(--color-border) 60%, transparent) !important;
+  }
+
+  /* ─── Section Eyebrow Label ─── */
+  .section-eyebrow {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--color-muted-foreground);
+    margin-bottom: 10px;
+  }
+
+  /* ─── Hero Video ─── */
+  .hero-video-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    will-change: transform;
+  }
+
+  /* ─── Scroll Down Indicator ─── */
+  @keyframes scroll-bounce {
+    0%,
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    50% {
+      transform: translateY(8px);
+      opacity: 0.5;
+    }
+  }
+
+  .scroll-indicator {
+    animation: scroll-bounce 2s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .scroll-indicator {
+      animation: none;
+    }
+  }
+
+  /* ─── Newsletter glassmorphism ─── */
+  .newsletter-glass-input {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #fff;
+  }
+
+  .newsletter-glass-input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  /* ─── Footer v2 ─── */
+  .footer-v2 {
+    background-color: var(--color-primary);
+  }
+
+  .footer-social-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.8);
+    transition:
+      background 0.2s,
+      color 0.2s,
+      transform 0.2s;
+    flex-shrink: 0;
+  }
+
+  .footer-social-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    transform: translateY(-2px);
+  }
+
+  /* ─── Journey Stories (legacy — kept) ─── */
   .story-card-hover {
     transition:
       transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
@@ -313,7 +596,7 @@
     box-shadow: 0 20px 40px color-mix(in oklch, var(--color-primary) 18%, transparent);
   }
 
-  /* ─── Popular Destinations ─── */
+  /* ─── Popular Destinations (legacy) ─── */
   .destination-hover {
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
@@ -322,7 +605,7 @@
     transform: translateY(-8px) scale(1.05);
   }
 
-  /* ─── Why Choose Us ─── */
+  /* ─── Why Choose Us (legacy) ─── */
   .feature-card-hover {
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
@@ -338,4 +621,10 @@
 input::-ms-reveal,
 input::-ms-clear {
   display: none;
+}
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
 }

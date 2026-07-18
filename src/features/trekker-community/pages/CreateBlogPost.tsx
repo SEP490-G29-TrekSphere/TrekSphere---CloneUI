@@ -322,7 +322,7 @@ export function CreateBlogPost({ editMode = false }: { editMode?: boolean }) {
       </div>
 
       {/* Main content */}
-      <main className="mx-auto max-w-[1200px] px-4 pb-16 sm:px-6">
+      <main className="mx-auto max-w-none w-full px-4 pb-16 sm:px-6">
         {/* Page Header */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold" style={{ color: '#06261D' }}>

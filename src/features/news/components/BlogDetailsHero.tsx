@@ -28,7 +28,7 @@ export function BlogDetailsHero({ post }: BlogDetailsHeroProps) {
         backgroundPosition: 'center',
       }}
     >
-      <div className="mx-auto w-full max-w-[1200px]">
+      <div className="mx-auto w-full max-w-none w-full">
         {post.categoryName ? (
           <span className="inline-flex items-center rounded-full bg-accent px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary shadow-sm">
             {post.categoryName}

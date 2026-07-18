@@ -63,7 +63,7 @@ export default function BlogDetails() {
     <div className="min-h-screen bg-background">
       <BlogDetailsHero post={post!} />
 
-      <main className="mx-auto max-w-[1200px] px-4 py-10 sm:px-6 md:py-12">
+      <main className="mx-auto max-w-none w-full px-4 py-10 sm:px-6 md:py-12">
         {/* Breadcrumb */}
         <nav className="mb-6 flex items-center gap-2 text-sm" aria-label="Điều hướng">
           <Link

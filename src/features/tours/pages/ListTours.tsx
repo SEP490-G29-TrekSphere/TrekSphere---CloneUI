@@ -223,7 +223,7 @@ export default function ListTours() {
       <ToursHero />
 
       <div className="relative z-10">
-        <div className="mx-auto max-w-[1200px] px-4 sm:px-6">
+        <div className="mx-auto max-w-none w-full px-4 sm:px-6">
           <TourSearchBar onSearch={handleSearch} initialValues={draft} />
 
           {/* Grid Layout below Search: Left Sidebar Filters, Right Content Area */}

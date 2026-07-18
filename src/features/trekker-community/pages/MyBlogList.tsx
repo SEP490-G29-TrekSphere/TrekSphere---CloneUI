@@ -107,7 +107,7 @@ export default function MyBlogList() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#FAF8F1' }}>
-      <main className="mx-auto max-w-[1200px] px-4 pb-16 pt-6 sm:px-6">
+      <main className="mx-auto max-w-none w-full px-4 pb-16 pt-6 sm:px-6">
         {/* Page Header */}
         <div
           className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"

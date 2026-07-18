@@ -68,3 +68,5 @@ sketch
 # End of https://www.toptal.com/developers/gitignore/api/react
 .vercel
 DB_ANALYSIS.md
+design-system
+.sourcery.yaml

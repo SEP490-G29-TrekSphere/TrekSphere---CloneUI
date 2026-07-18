@@ -7,6 +7,21 @@ import './assets/css/global.css';
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
 
+// Early theme initialization to avoid flash of light mode
+try {
+  const storedTheme = localStorage.getItem('theme');
+  if (
+    storedTheme === 'dark' ||
+    (!storedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  ) {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+} catch (e) {
+  console.error('Failed to initialize theme early:', e);
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>

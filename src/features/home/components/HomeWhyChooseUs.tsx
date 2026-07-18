@@ -1,11 +1,22 @@
-import { ScrollReveal } from '@/shared/ui';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useEffect, useRef, useState } from 'react';
+
+gsap.registerPlugin(ScrollTrigger);
+
+const STATS = [
+  { value: 10000, suffix: '+', label: 'Trekkers' },
+  { value: 50, suffix: '+', label: 'Tours độc đáo' },
+  { value: 5, suffix: '★', label: 'Đánh giá trung bình' },
+  { value: 5, suffix: ' Năm', label: 'Kinh nghiệm' },
+];
 
 const FEATURES = [
   {
     title: 'Hướng dẫn viên chuyên nghiệp',
     description: 'Đội ngũ chuyên gia am hiểu địa hình, giàu kinh nghiệm và đầy nhiệt huyết.',
     icon: (
-      <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="#1F3933" strokeWidth={1.5}>
+      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="#1F3933" strokeWidth={1.5}>
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -18,7 +29,7 @@ const FEATURES = [
     title: 'An toàn là trên hết',
     description: 'Trang bị tiêu chuẩn quốc tế và quy trình bảo an nghiêm ngặt cho mọi hành trình.',
     icon: (
-      <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="#1F3933" strokeWidth={1.5}>
+      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="#1F3933" strokeWidth={1.5}>
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -31,7 +42,7 @@ const FEATURES = [
     title: 'Du lịch bền vững',
     description: 'Cam kết bảo vệ môi trường và hỗ trợ phát triển cộng đồng bản địa địa phương.',
     icon: (
-      <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="#1F3933" strokeWidth={1.5}>
+      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="#1F3933" strokeWidth={1.5}>
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -43,29 +54,108 @@ const FEATURES = [
 ];
 
 export default function HomeWhyChooseUs() {
+  const statsRef = useRef<HTMLDivElement[]>([]);
+  const sectionRef = useRef<HTMLElement>(null);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    setPrefersReducedMotion(prefersReduced);
+    if (prefersReduced) return;
+
+    const ctx = gsap.context(() => {
+      statsRef.current.forEach((el, i) => {
+        if (!el) return;
+        const stat = STATS[i];
+        const numEl = el.querySelector('.stat-value-display') as HTMLElement | null;
+        if (!numEl) return;
+
+        ScrollTrigger.create({
+          trigger: el,
+          start: 'top 85%',
+          onEnter: () => {
+            const obj = { val: 0 };
+            gsap.to(obj, {
+              val: stat.value,
+              duration: 1.6,
+              ease: 'power2.out',
+              onUpdate: () => {
+                numEl.textContent = `${Math.round(obj.val).toLocaleString('vi-VN')}${stat.suffix}`;
+              },
+            });
+          },
+          once: true,
+        });
+
+        gsap.from(el, {
+          opacity: 0,
+          y: 30,
+          duration: 0.6,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: el,
+            start: 'top 85%',
+            toggleActions: 'play none none reverse',
+          },
+          delay: i * 0.1,
+        });
+      });
+    }, sectionRef);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <section className="py-20 bg-background">
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
-        <ScrollReveal variant="fade-up">
-          <h2 className="text-3xl md:text-4xl font-bold text-center text-primary">
+    <section ref={sectionRef} className="py-24 bg-background">
+      <div className="max-w-none w-full mx-auto px-4 sm:px-6">
+        {/* Section heading */}
+        <div className="text-center mb-14">
+          <span className="section-eyebrow">Cam kết của chúng tôi</span>
+          <h2 className="text-3xl md:text-5xl font-black text-primary leading-tight mt-1">
             Tại sao chọn TrekSphere?
           </h2>
-        </ScrollReveal>
+        </div>
 
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-10">
-          {FEATURES.map((f, idx) => (
-            <ScrollReveal
-              key={f.title}
-              variant="fade-up"
-              scrollOptions={{ delay: idx * 120 }}
-              className="flex flex-col items-center text-center feature-card-hover"
+        {/* Stats row */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
+          {STATS.map((stat, i) => (
+            <div
+              key={stat.label}
+              ref={(el) => {
+                if (el) statsRef.current[i] = el;
+              }}
+              className="stat-card"
             >
-              <div className="mb-5">{f.icon}</div>
+              <p className="stat-number">
+                <span className="sr-only">
+                  {stat.value}
+                  {stat.suffix}
+                </span>
+                <span className="stat-value-display" aria-hidden="true">
+                  {prefersReducedMotion
+                    ? `${stat.value.toLocaleString('vi-VN')}${stat.suffix}`
+                    : `0${stat.suffix}`}
+                </span>
+              </p>
+              <p className="stat-label">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Feature cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {FEATURES.map((f, idx) => (
+            <div
+              key={f.title}
+              className="feature-card-v2"
+              style={{ animationDelay: `${idx * 120}ms` }}
+            >
+              <div className="feature-icon-circle">{f.icon}</div>
               <h3 className="text-lg font-bold text-primary">{f.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed max-w-xs text-muted-foreground">
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground max-w-xs">
                 {f.description}
               </p>
-            </ScrollReveal>
+            </div>
           ))}
         </div>
       </div>

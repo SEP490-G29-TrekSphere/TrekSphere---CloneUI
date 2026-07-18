@@ -13,7 +13,7 @@ export function BlogHeroSection() {
         backgroundPosition: 'center',
       }}
     >
-      <div className="max-w-[1200px] text-center">
+      <div className="max-w-none w-full text-center">
         <h1 className="text-3xl font-bold text-white md:text-5xl">Blog Kinh Nghiệm & Chia Sẻ</h1>
         <p className="mx-auto mt-4 max-w-2xl text-sm text-white/80 md:text-base">
           Khám phá cẩm nang trekking, review chi tiết các tour và những câu chuyện thực tế từ cộng
