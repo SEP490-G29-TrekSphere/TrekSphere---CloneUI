@@ -2,7 +2,6 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import TrekkingVideo from '@/assets/videos/Trekking.mp4';
 import { PATHS } from '@/constants';
 
 gsap.registerPlugin(ScrollTrigger);
