@@ -8,7 +8,8 @@ import { PATHS } from '@/constants';
 gsap.registerPlugin(ScrollTrigger);
 
 // Free-to-use mountain/nature video from Pixabay CDN
-const HERO_VIDEO_URL = TrekkingVideo;
+const HERO_VIDEO_URL =
+  'https://res.cloudinary.com/berniedev/video/upload/v1784424258/Trekking_etkcia.mp4';
 
 // Fallback poster image if video fails
 const HERO_POSTER_URL = 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1920&q=80';

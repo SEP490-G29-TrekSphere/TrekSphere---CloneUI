@@ -36,26 +36,28 @@ export default function RequireRole({ children, allowedRoles = [ROLES.ADMIN] }: 
     return <Navigate to={PATHS.LOGIN} state={{ from: location }} replace />;
   }
 
-  // Lấy role đầu tiên trong danh sách của user
-  const primaryRole = (user.roles?.[0] as Role | undefined) ?? null;
+  // Lấy danh sách vai trò của user (đã được chuẩn hóa về lowercase)
+  const userRoles = (user.roles ?? []) as Role[];
 
-  // Nếu user có role nằm trong allowedRoles → cho vào
-  const hasAccess = primaryRole !== null && allowedRoles.includes(primaryRole);
+  // Nếu user có ít nhất một role nằm trong allowedRoles → cho vào
+  const hasAccess = userRoles.some((role) => allowedRoles.includes(role));
 
   // Ngoài ra, dùng ROLE_PROTECTED_ROUTES để fallback khi user vào sai khu vực
-  // (vd: trekker gõ /admin/accounts → redirect về /dashboard).
-  const pathAllowed = primaryRole !== null && canAccessPath(primaryRole, location.pathname);
+  const pathAllowed = userRoles.some((role) => canAccessPath(role, location.pathname));
 
   if (!hasAccess && !pathAllowed) {
-    // Tìm trang mặc định phù hợp với role của user
-    const redirectPath =
-      primaryRole === ROLES.TREKKER
-        ? PATHS.DASHBOARD
-        : primaryRole === ROLES.VENDOR_STAFF
-          ? '/partner'
-          : primaryRole === ROLES.VENDOR_MANAGER
-            ? '/vendor-manager'
-            : PATHS.LOGIN;
+    // Tìm trang mặc định phù hợp nhất với các role của user theo thứ tự ưu tiên:
+    // admin -> vendor_manager -> vendor_staff -> trekker.
+    let redirectPath: string = PATHS.LOGIN;
+    if (userRoles.includes(ROLES.ADMIN)) {
+      redirectPath = PATHS.ADMIN_ACCOUNTS;
+    } else if (userRoles.includes(ROLES.VENDOR_MANAGER)) {
+      redirectPath = '/vendor-manager';
+    } else if (userRoles.includes(ROLES.VENDOR_STAFF)) {
+      redirectPath = '/partner';
+    } else if (userRoles.includes(ROLES.TREKKER)) {
+      redirectPath = PATHS.DASHBOARD;
+    }
 
     return <Navigate to={redirectPath} state={{ from: location }} replace />;
   }

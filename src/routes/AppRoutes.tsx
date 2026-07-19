@@ -35,6 +35,10 @@ const AdminLayout = lazy(() => import('@/shared/layout/AdminLayout'));
 const Applications = lazy(() => import('@/features/admin/pages/Applications'));
 const ApplicationDetails = lazy(() => import('@/features/admin/pages/ApplicationDetails'));
 const SystemSettings = lazy(() => import('@/features/admin/pages/SystemSettings'));
+const VendorManagerDashboard = lazy(
+  () => import('@/features/dashboard/pages/VendorManagerDashboard')
+);
+const PartnerDashboard = lazy(() => import('@/features/dashboard/pages/PartnerDashboard'));
 
 function PageLoader() {
   return (
@@ -122,6 +126,30 @@ export default function AppRoutes() {
           <Route path={PATHS.ADMIN_APPLICATIONS} element={<Applications />} />
           <Route path={PATHS.ADMIN_APPLICATION_DETAIL} element={<ApplicationDetails />} />
           <Route path={PATHS.ADMIN_SETTINGS} element={<SystemSettings />} />
+        </Route>
+
+        {/* Vendor Manager routes */}
+        <Route
+          path="/vendor-manager"
+          element={
+            <RequireRole allowedRoles={[ROLES.VENDOR_MANAGER]}>
+              <MainLayout />
+            </RequireRole>
+          }
+        >
+          <Route index element={<VendorManagerDashboard />} />
+        </Route>
+
+        {/* Partner routes */}
+        <Route
+          path="/partner"
+          element={
+            <RequireRole allowedRoles={[ROLES.VENDOR_STAFF]}>
+              <MainLayout />
+            </RequireRole>
+          }
+        >
+          <Route index element={<PartnerDashboard />} />
         </Route>
       </Routes>
     </Suspense>
