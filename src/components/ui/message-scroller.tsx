@@ -1,26 +1,67 @@
-import {
-  MessageScroller as MessageScrollerPrimitive,
-  useMessageScroller,
-  useMessageScrollerScrollable,
-  useMessageScrollerVisibility,
-} from '@shadcn/react/message-scroller';
 import { ArrowDownIcon } from 'lucide-react';
 import type * as React from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-function MessageScrollerProvider(
-  props: React.ComponentProps<typeof MessageScrollerPrimitive.Provider>
-) {
-  return <MessageScrollerPrimitive.Provider {...props} />;
+interface MessageScrollerContextType {
+  viewportRef: React.RefObject<HTMLDivElement | null>;
+  scrollToBottom: () => void;
+  isAtBottom: boolean;
+  autoScroll: boolean;
 }
 
-function MessageScroller({
-  className,
-  ...props
-}: React.ComponentProps<typeof MessageScrollerPrimitive.Root>) {
+const MessageScrollerContext = createContext<MessageScrollerContextType | null>(null);
+
+function useMessageScroller() {
+  const context = useContext(MessageScrollerContext);
+  if (!context) {
+    throw new Error('useMessageScroller must be used within a MessageScrollerProvider');
+  }
+  return context;
+}
+
+function useMessageScrollerScrollable() {
+  const { isAtBottom } = useMessageScroller();
+  return !isAtBottom;
+}
+
+function useMessageScrollerVisibility() {
+  const { isAtBottom } = useMessageScroller();
+  return !isAtBottom;
+}
+
+function MessageScrollerProvider({
+  children,
+  autoScroll = true,
+}: {
+  children: React.ReactNode;
+  autoScroll?: boolean;
+}) {
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const [isAtBottom] = useState(true);
+
+  const scrollToBottom = () => {
+    if (viewportRef.current) {
+      viewportRef.current.scrollTo({
+        top: viewportRef.current.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
+  };
+
   return (
-    <MessageScrollerPrimitive.Root
+    <MessageScrollerContext.Provider
+      value={{ viewportRef, scrollToBottom, isAtBottom, autoScroll }}
+    >
+      {children}
+    </MessageScrollerContext.Provider>
+  );
+}
+
+function MessageScroller({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
       data-slot="message-scroller"
       className={cn(
         'group/message-scroller relative flex size-full min-h-0 flex-col overflow-hidden',
@@ -31,28 +72,33 @@ function MessageScroller({
   );
 }
 
-function MessageScrollerViewport({
-  className,
-  ...props
-}: React.ComponentProps<typeof MessageScrollerPrimitive.Viewport>) {
+function MessageScrollerViewport({ className, children, ...props }: React.ComponentProps<'div'>) {
+  const { viewportRef, autoScroll } = useMessageScroller();
+
+  useEffect(() => {
+    if (autoScroll && viewportRef.current) {
+      viewportRef.current.scrollTop = viewportRef.current.scrollHeight;
+    }
+  }, [autoScroll, viewportRef]);
+
   return (
-    <MessageScrollerPrimitive.Viewport
+    <div
+      ref={viewportRef}
       data-slot="message-scroller-viewport"
       className={cn(
-        'size-full min-h-0 min-w-0 scroll-fade-b scrollbar-thin scrollbar-gutter-stable overflow-y-auto overscroll-contain contain-content data-autoscrolling:scrollbar-thumb-transparent data-autoscrolling:scrollbar-track-transparent',
+        'size-full min-h-0 min-w-0 scroll-fade-b scrollbar-thin scrollbar-gutter-stable overflow-y-auto overscroll-contain contain-content',
         className
       )}
       {...props}
-    />
+    >
+      {children}
+    </div>
   );
 }
 
-function MessageScrollerContent({
-  className,
-  ...props
-}: React.ComponentProps<typeof MessageScrollerPrimitive.Content>) {
+function MessageScrollerContent({ className, ...props }: React.ComponentProps<'div'>) {
   return (
-    <MessageScrollerPrimitive.Content
+    <div
       data-slot="message-scroller-content"
       className={cn('flex h-max min-h-full flex-col gap-6', className)}
       {...props}
@@ -62,13 +108,14 @@ function MessageScrollerContent({
 
 function MessageScrollerItem({
   className,
+  messageId,
   scrollAnchor = false,
   ...props
-}: React.ComponentProps<typeof MessageScrollerPrimitive.Item>) {
+}: React.ComponentProps<'div'> & { messageId?: string; scrollAnchor?: boolean }) {
   return (
-    <MessageScrollerPrimitive.Item
+    <div
       data-slot="message-scroller-item"
-      scrollAnchor={scrollAnchor}
+      data-message-id={messageId}
       className={cn(
         'min-w-0 shrink-0 [contain-intrinsic-size:auto_10rem] [content-visibility:auto]',
         className
@@ -82,35 +129,41 @@ function MessageScrollerButton({
   direction = 'end',
   className,
   children,
-  render,
   variant = 'secondary',
   size = 'icon-sm',
   ...props
-}: React.ComponentProps<typeof MessageScrollerPrimitive.Button> &
-  Pick<React.ComponentProps<typeof Button>, 'variant' | 'size'>) {
+}: React.ComponentProps<'button'> & {
+  direction?: 'start' | 'end';
+  variant?: React.ComponentProps<typeof Button>['variant'];
+  size?: React.ComponentProps<typeof Button>['size'];
+}) {
+  const { scrollToBottom, isAtBottom } = useMessageScroller();
+
+  if (isAtBottom && direction === 'end') {
+    return null;
+  }
+
   return (
-    <MessageScrollerPrimitive.Button
+    <Button
+      variant={variant}
+      size={size}
+      onClick={scrollToBottom}
       data-slot="message-scroller-button"
-      data-direction={direction}
-      data-variant={variant}
-      data-size={size}
-      direction={direction}
       className={cn(
-        'absolute inset-s-1/2 -translate-x-1/2 border-border bg-background text-foreground transition-[translate,scale,opacity] duration-200 hover:bg-muted hover:text-foreground data-[active=false]:pointer-events-none data-[active=false]:scale-95 data-[active=false]:opacity-0 data-[active=false]:duration-400 data-[active=false]:ease-[cubic-bezier(0.7,0,0.84,0)] data-[active=true]:translate-y-0 data-[active=true]:scale-100 data-[active=true]:opacity-100 data-[active=true]:ease-[cubic-bezier(0.23,1,0.32,1)] data-[direction=end]:bottom-4 data-[direction=end]:data-[active=false]:translate-y-full data-[direction=start]:top-4 data-[direction=start]:data-[active=false]:-translate-y-full rtl:translate-x-1/2 data-[direction=start]:[&_svg]:rotate-180',
+        'absolute left-1/2 -translate-x-1/2 bottom-4 border-border bg-background text-foreground transition-all duration-200 hover:bg-muted hover:text-foreground',
         className
       )}
-      render={render ?? <Button variant={variant} size={size} />}
       {...props}
     >
       {children ?? (
         <>
-          <ArrowDownIcon />
+          <ArrowDownIcon className="h-4 w-4" />
           <span className="sr-only">
             {direction === 'end' ? 'Scroll to end' : 'Scroll to start'}
           </span>
         </>
       )}
-    </MessageScrollerPrimitive.Button>
+    </Button>
   );
 }
 

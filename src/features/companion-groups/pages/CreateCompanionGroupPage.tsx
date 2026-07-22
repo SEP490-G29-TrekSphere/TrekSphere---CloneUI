@@ -9,10 +9,13 @@ import { toast } from '@/store/useToastStore';
 const createGroupSchema = z.object({
   tourId: z.string().min(1, 'Vui lòng chọn Tour bạn muốn đi'),
   departureDate: z.string().min(1, 'Vui lòng chọn ngày khởi hành'),
-  neededMembers: z.coerce
-    .number({ invalid_type_error: 'Số lượng phải là con số' })
-    .min(1, 'Cần tuyển ít nhất 1 người')
-    .max(20, 'Tối đa 20 người'),
+  neededMembers: z.preprocess(
+    (val) => (typeof val === 'string' && val.trim() !== '' ? Number(val) : val),
+    z
+      .number({ message: 'Số lượng phải là con số' })
+      .min(1, 'Cần tuyển ít nhất 1 người')
+      .max(20, 'Tối đa 20 người')
+  ),
   description: z.string().optional(),
 });
 
@@ -30,7 +33,11 @@ const DEFAULT_TOURS = [
 export default function CreateCompanionGroupPage() {
   const navigate = useNavigate();
 
-  const form = useForm<CreateGroupFormValues>({
+  const form = useForm<
+    z.input<typeof createGroupSchema>,
+    undefined,
+    z.output<typeof createGroupSchema>
+  >({
     resolver: zodResolver(createGroupSchema),
     defaultValues: {
       tourId: '',
