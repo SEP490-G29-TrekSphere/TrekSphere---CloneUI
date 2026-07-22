@@ -31,7 +31,18 @@ const EditProfile = lazy(() => import('@/features/profile/pages/EditProfile'));
 const MyBlogList = lazy(() => import('@/features/trekker-community/pages/MyBlogList'));
 const CreateBlogPost = lazy(() => import('@/features/trekker-community/pages/CreateBlogPost'));
 const ChatList = lazy(() => import('@/features/chat/pages/ChatList'));
+const CompanionGroups = lazy(() => import('@/features/companion-groups/pages/CompanionGroupsPage'));
+const CreateCompanionGroup = lazy(
+  () => import('@/features/companion-groups/pages/CreateCompanionGroupPage')
+);
+const CompanionGroupDetail = lazy(
+  () => import('@/features/companion-groups/pages/CompanionGroupDetailPage')
+);
+const JoinGroupRequestPage = lazy(
+  () => import('@/features/companion-groups/pages/JoinGroupRequestPage')
+);
 const AdminLayout = lazy(() => import('@/shared/layout/AdminLayout'));
+
 const Applications = lazy(() => import('@/features/admin/pages/Applications'));
 const ApplicationDetails = lazy(() => import('@/features/admin/pages/ApplicationDetails'));
 const SystemSettings = lazy(() => import('@/features/admin/pages/SystemSettings'));
@@ -80,6 +91,10 @@ export default function AppRoutes() {
         {/* Public routes — chung khung Header + Footer qua PublicLayout */}
         <Route element={<PublicLayout />}>
           <Route path={PATHS.HOME} element={<Home />} />
+          <Route path={PATHS.GROUPS} element={<CompanionGroups />} />
+          <Route path={PATHS.GROUPS_CREATE} element={<CreateCompanionGroup />} />
+          <Route path={PATHS.GROUPS_JOIN} element={<JoinGroupRequestPage />} />
+          <Route path={PATHS.GROUPS_DETAIL} element={<CompanionGroupDetail />} />
           <Route path={PATHS.TOURS} element={<ListTours />} />
           <Route path={PATHS.TOUR_DETAIL} element={<TourDetails />} />
           <Route path={PATHS.NEWS} element={<BlogList />} />

@@ -32,6 +32,10 @@ export const PATHS = {
   BOOKING_DETAIL: '/bookings/:bookingId',
   BOOKING_PAYMENT: '/bookings/:bookingId/payment',
   MY_TOURS: '/my-tours',
+  GROUPS: '/groups',
+  GROUPS_CREATE: '/groups/create',
+  GROUPS_JOIN: '/groups/:groupId/join',
+  GROUPS_DETAIL: '/groups/:groupId',
   COMMUNITY: '/community',
   NEWS: '/news',
   NEWS_DETAIL: '/news/:blogId',
@@ -71,3 +75,6 @@ export const getBookingDetailPath = (bookingId: string) =>
   PATHS.BOOKING_DETAIL.replace(':bookingId', bookingId);
 export const getBookingPaymentPath = (bookingId: string) =>
   PATHS.BOOKING_PAYMENT.replace(':bookingId', bookingId);
+export const getGroupDetailPath = (groupId: string) =>
+  PATHS.GROUPS_DETAIL.replace(':groupId', groupId);
+export const getGroupJoinPath = (groupId: string) => PATHS.GROUPS_JOIN.replace(':groupId', groupId);
