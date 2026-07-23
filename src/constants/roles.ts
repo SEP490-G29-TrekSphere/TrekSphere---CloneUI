@@ -28,7 +28,7 @@ import { PATHS } from './paths';
  */
 export const ROLE_PROTECTED_ROUTES: Record<Role, readonly string[]> = {
   [ROLES.GUEST]: [],
-  [ROLES.TREKKER]: ['/dashboard', '/my-tours', '/community'],
+  [ROLES.TREKKER]: ['/dashboard', '/my-tours', '/blog'],
   [ROLES.VENDOR_STAFF]: ['/partner'],
   [ROLES.VENDOR_MANAGER]: ['/vendor-manager'],
   [ROLES.ADMIN]: ['/admin'],
@@ -65,16 +65,42 @@ export function extractRoles(input: unknown): string[] {
 }
 
 /**
+ * Thứ tự ưu tiên role khi 1 user có nhiều role cùng lúc (vd: vừa là trekker
+ * vừa được cấp thêm vendor_manager). Dùng chung cho `getPostLoginRoute` và
+ * `RequireRole` để đảm bảo nhất quán — KHÔNG được suy ra role chính từ
+ * `roles[0]` vì thứ tự mảng do BE trả về không đảm bảo.
+ */
+const ROLE_PRIORITY: readonly Role[] = [
+  ROLES.ADMIN,
+  ROLES.VENDOR_MANAGER,
+  ROLES.VENDOR_STAFF,
+  ROLES.TREKKER,
+];
+
+/**
+ * Trả về role "chính" của user theo độ ưu tiên ở trên, bất kể thứ tự trong
+ * mảng `roles` gốc. Trả `null` nếu không khớp role nào đã biết.
+ */
+export function getPrimaryRole(roles: string[] | undefined | null): Role | null {
+  const set = new Set(roles ?? []);
+  return ROLE_PRIORITY.find((role) => set.has(role)) ?? null;
+}
+
+/**
  * Trả về trang đích sau login dựa trên role của user.
  *
  * Ưu tiên theo thứ tự: admin → vendor_manager → vendor_staff → trekker.
  * Nếu không nhận diện được role nào, fallback về trang chủ.
  */
 export function getPostLoginRoute(roles: string[]): string {
-  const set = new Set(roles);
-  if (set.has(ROLES.ADMIN)) return PATHS.ADMIN_ACCOUNTS;
-  if (set.has('vendor_manager')) return '/vendor-manager';
-  if (set.has('vendor_staff')) return '/partner';
-  if (set.has(ROLES.TREKKER)) return PATHS.HOME;
-  return PATHS.HOME;
+  switch (getPrimaryRole(roles)) {
+    case ROLES.ADMIN:
+      return PATHS.ADMIN_ACCOUNTS;
+    case ROLES.VENDOR_MANAGER:
+      return PATHS.VENDOR_MANAGER;
+    case ROLES.VENDOR_STAFF:
+      return '/partner';
+    default:
+      return PATHS.HOME;
+  }
 }

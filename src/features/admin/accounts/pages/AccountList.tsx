@@ -1,5 +1,7 @@
-import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useOutletContext } from 'react-router-dom';
+import { useDebounce } from '@/shared/hooks';
+import type { AdminLayoutContext } from '@/shared/layout/AdminLayout';
 import { AccountFilterDropdown } from '../components/AccountFilterDropdown';
 import { AccountPagination } from '../components/AccountPagination';
 import { AccountTableRow } from '../components/AccountTableRow';
@@ -16,13 +18,26 @@ const PAGE_SIZE = 10;
  * - Bảng dữ liệu (5 cột) trong khối bo góc 24px.
  * - Pagination footer.
  *
- * Thanh search "Tìm kiếm tài khoản..." được đẩy lên Header chung của AdminLayout.
+ * Thanh search "Tìm kiếm tài khoản..." nằm ở Header chung của AdminLayout,
+ * giá trị được truyền xuống qua Outlet context.
  */
 export default function AccountList() {
   const [filterRole, setFilterRole] = useState<AccountRole | 'ALL'>('ALL');
   const [page, setPage] = useState(1);
 
-  const filter = useMemo(() => ({ role: filterRole, search: '' }), [filterRole]);
+  const { searchValue } = useOutletContext<AdminLayoutContext>();
+  const debouncedSearch = useDebounce(searchValue, 400);
+
+  // Reset về trang 1 mỗi khi từ khóa tìm kiếm thay đổi.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: debouncedSearch chỉ dùng để trigger effect, không đọc giá trị trong body
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  const filter = useMemo(
+    () => ({ role: filterRole, search: debouncedSearch }),
+    [filterRole, debouncedSearch]
+  );
 
   const { data, isLoading, isError, error } = useAdminAccounts(filter, page, PAGE_SIZE);
 

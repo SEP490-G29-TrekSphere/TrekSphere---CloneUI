@@ -309,6 +309,7 @@ export interface TourDetailFromApi {
   location: string;
   durationDays: number;
   basePrice: number;
+  minCapacity?: number;
   maxCapacity: number;
   highlights: string | null;
   includes: string | null;

@@ -9,9 +9,15 @@ import {
   Ticket,
   User,
 } from 'lucide-react';
+import { useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { PATHS } from '@/constants';
 import { useAppStore } from '@/store/useAppStore';
+
+/** Context truyền xuống các trang con qua `<Outlet />` (vd: AccountList dùng để lọc theo từ khóa). */
+export interface AdminLayoutContext {
+  searchValue: string;
+}
 
 const adminNavItems = [
   { name: 'Dashboard', path: PATHS.ADMIN_DASHBOARD, icon: LayoutGrid, disabled: true },
@@ -27,6 +33,7 @@ export default function AdminLayout() {
   const user = useAppStore((state) => state.user);
   const setUser = useAppStore((state) => state.setUser);
   const navigate = useNavigate();
+  const [searchValue, setSearchValue] = useState('');
 
   const handleLogout = () => {
     setUser(null);
@@ -148,6 +155,8 @@ export default function AdminLayout() {
             </span>
             <input
               type="text"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
               placeholder={isAccountPage ? 'Tìm kiếm tài khoản...' : 'Tìm kiếm hồ sơ...'}
               aria-label={isAccountPage ? 'Tìm kiếm tài khoản' : 'Tìm kiếm hồ sơ'}
               className="w-full pl-10 pr-4 py-2 text-sm rounded-full bg-[#F4F4F2] border-none focus:outline-none focus:ring-1 focus:ring-[#0B3025] text-zinc-800 placeholder-zinc-400 transition-all font-medium"
@@ -184,7 +193,7 @@ export default function AdminLayout() {
 
         {/* Content Outlet */}
         <main className="flex-1 overflow-y-auto p-6 md:p-8">
-          <Outlet />
+          <Outlet context={{ searchValue } satisfies AdminLayoutContext} />
         </main>
       </div>
     </div>

@@ -3,6 +3,7 @@ import { type CredentialResponse, GoogleLogin } from '@react-oauth/google';
 import { useEffect, useRef, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { queryClient } from '@/config/queryClient';
 import { PATHS } from '@/constants';
 import { extractRoles, getPostLoginRoute } from '@/constants/roles';
 import { authService, toAppStoreUser } from '@/features/auth';
@@ -111,6 +112,9 @@ export default function Login() {
           return;
         }
 
+        // Xoá cache React Query của phiên trước (nếu có) — tránh trường hợp
+        // đăng nhập tài khoản khác mà vẫn thấy dữ liệu cũ do staleTime 5 phút.
+        queryClient.clear();
         setUser(toAppStoreUser(user));
         toast.success(`Chào mừng, ${user.fullName}!`);
 
@@ -219,6 +223,9 @@ export default function Login() {
           return;
         }
 
+        // Xoá cache React Query của phiên trước (nếu có) — tránh trường hợp
+        // đăng nhập tài khoản khác mà vẫn thấy dữ liệu cũ do staleTime 5 phút.
+        queryClient.clear();
         setUser(toAppStoreUser(user));
         toast.success(`Chào mừng quay trở lại, ${user.fullName}!`);
 

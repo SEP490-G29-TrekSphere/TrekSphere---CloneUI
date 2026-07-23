@@ -1,4 +1,4 @@
-import { Key, LogOut, User } from 'lucide-react';
+import { FileText, Key, LogOut, User } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { queryClient } from '@/config/queryClient';
@@ -13,7 +13,6 @@ import { storage } from '@/utils/storage';
 const NAV_ITEMS = [
   { label: 'Khám phá', path: PATHS.HOME },
   { label: 'Tour của tôi', path: PATHS.MY_TOURS },
-  { label: 'Bài viết', path: PATHS.COMMUNITY },
   { label: 'Tin tức', path: PATHS.NEWS },
 ];
 
@@ -120,6 +119,14 @@ export default function PublicHeader() {
                   >
                     <User className="h-4 w-4" />
                     Hồ sơ
+                  </Link>
+                  <Link
+                    to={PATHS.BLOG_LIST}
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  >
+                    <FileText className="h-4 w-4" />
+                    Bài viết của tôi
                   </Link>
                   <Link
                     to={PATHS.CHANGE_PASSWORD}

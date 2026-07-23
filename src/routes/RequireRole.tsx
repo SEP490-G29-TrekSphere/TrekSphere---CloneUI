@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { canAccessPath, PATHS, ROLES, type Role } from '@/constants';
+import { getPrimaryRole } from '@/constants/roles';
 import { useAuthCheck } from '@/shared/hooks/useAuthCheck';
 import { AppSpinner } from '@/shared/ui';
 import { useAppStore } from '@/store/useAppStore';
@@ -36,8 +37,11 @@ export default function RequireRole({ children, allowedRoles = [ROLES.ADMIN] }: 
     return <Navigate to={PATHS.LOGIN} state={{ from: location }} replace />;
   }
 
-  // Lấy role đầu tiên trong danh sách của user
-  const primaryRole = (user.roles?.[0] as Role | undefined) ?? null;
+  // Role "chính" theo độ ưu tiên (admin > vendor_manager > vendor_staff >
+  // trekker) — KHÔNG dùng roles[0] vì thứ tự mảng từ BE không đảm bảo (vd:
+  // user vốn là trekker được cấp thêm vendor_manager thì role mới có thể
+  // nằm cuối mảng).
+  const primaryRole = getPrimaryRole(user.roles);
 
   // Nếu user có role nằm trong allowedRoles → cho vào
   const hasAccess = primaryRole !== null && allowedRoles.includes(primaryRole);

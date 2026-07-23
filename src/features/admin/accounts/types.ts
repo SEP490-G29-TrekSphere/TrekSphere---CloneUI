@@ -2,8 +2,8 @@
  * Types cho khu vực Admin — Quản lý tài khoản.
  */
 
-/** Trạng thái tài khoản trong hệ thống. */
-export type AccountStatus = 'ACTIVE' | 'LOCKED';
+/** Trạng thái tài khoản trong hệ thống (mirror enum BE trả về ở `/users`). */
+export type AccountStatus = 'ACTIVE' | 'LOCKED' | 'DEACTIVATED';
 
 /** Loại tài khoản (mirror các role trong `@/constants/roles`). */
 export type AccountRole = 'trekker' | 'vendor_staff' | 'vendor_manager' | 'admin';

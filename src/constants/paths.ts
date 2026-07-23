@@ -32,7 +32,6 @@ export const PATHS = {
   BOOKING_DETAIL: '/bookings/:bookingId',
   BOOKING_PAYMENT: '/bookings/:bookingId/payment',
   MY_TOURS: '/my-tours',
-  COMMUNITY: '/community',
   NEWS: '/news',
   NEWS_DETAIL: '/news/:blogId',
   NOTIFICATIONS: '/notifications',
@@ -62,6 +61,19 @@ export const PATHS = {
   ADMIN_APPLICATION_DETAIL: '/admin/applications/:id',
   ADMIN_VOUCHERS: '/admin/vouchers',
   ADMIN_SETTINGS: '/admin/settings',
+
+  // Vendor Manager (TrekManager portal)
+  VENDOR_MANAGER: '/vendor-manager',
+  VENDOR_MANAGER_STAFF: '/vendor-manager/staff',
+  VENDOR_MANAGER_TOURS: '/vendor-manager/tours',
+  VENDOR_MANAGER_TOUR_CREATE: '/vendor-manager/tours/new',
+  VENDOR_MANAGER_TOUR_EDIT: '/vendor-manager/tours/:id/edit',
+
+  // Vendor Staff (TrekPartner portal)
+  PARTNER: '/partner',
+  PARTNER_TOURS: '/partner/tours',
+  PARTNER_TOUR_CREATE: '/partner/tours/new',
+  PARTNER_TOUR_EDIT: '/partner/tours/:id/edit',
 } as const;
 
 export type AppPath = (typeof PATHS)[keyof typeof PATHS];
@@ -71,3 +83,6 @@ export const getBookingDetailPath = (bookingId: string) =>
   PATHS.BOOKING_DETAIL.replace(':bookingId', bookingId);
 export const getBookingPaymentPath = (bookingId: string) =>
   PATHS.BOOKING_PAYMENT.replace(':bookingId', bookingId);
+export const getVendorManagerTourEditPath = (id: string) =>
+  PATHS.VENDOR_MANAGER_TOUR_EDIT.replace(':id', id);
+export const getPartnerTourEditPath = (id: string) => PATHS.PARTNER_TOUR_EDIT.replace(':id', id);

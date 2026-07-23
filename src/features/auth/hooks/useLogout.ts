@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { queryClient } from '@/config/queryClient';
 import { PATHS } from '@/constants';
 import { authService } from '@/features/auth';
-import { profileKeys } from '@/features/profile/hooks/useProfile';
 import { useAppStore } from '@/store/useAppStore';
 import { toast } from '@/store/useToastStore';
 import { storage } from '@/utils/storage';
@@ -33,9 +32,15 @@ interface UseLogoutReturn {
  *   1. Gọi `POST /auth/logout` (optional, mặc định bật).
  *   2. Xoá `accessToken` / `refreshToken` trong storage.
  *   3. Reset `useAppStore.user` → null.
- *   4. Xoá cache React Query của profile.
+ *   4. Xoá TOÀN BỘ cache React Query (`queryClient.clear()`).
  *   5. Toast thông báo.
  *   6. Navigate về `redirectTo` (mặc định `/login`).
+ *
+ * Bước 4 phải xoá sạch cache (không chỉ riêng `profile`) vì `staleTime` mặc
+ * định của `queryClient` là 5 phút — nếu đăng nhập lại (kể cả tài khoản khác)
+ * trong 5 phút đó mà không reload trang, các query key không gắn theo
+ * user/vendor (vd danh sách tour) sẽ trả thẳng dữ liệu cache của phiên trước
+ * thay vì gọi lại API, khiến user thấy dữ liệu sai/thiếu cho tới khi F5.
  *
  * Lưu ý: bước 1 chỉ để BE invalidate refresh token. Ngay cả khi BE fail (5xx,
  * network) vẫn nên tiếp tục clear local state — user đã yêu cầu logout, để họ
@@ -60,7 +65,7 @@ export function useLogout(options: UseLogoutOptions = {}): UseLogoutReturn {
     storage.remove('accessToken');
     storage.remove('refreshToken');
     setUser(null);
-    queryClient.removeQueries({ queryKey: profileKeys.all });
+    queryClient.clear();
     toast.success('Đã đăng xuất.');
     navigate(redirectTo);
   }, [callApi, navigate, redirectTo, setUser]);

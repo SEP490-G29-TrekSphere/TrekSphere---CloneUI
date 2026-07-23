@@ -4,35 +4,26 @@ import { adminAccountDetailKeys } from './useAdminAccountDetail';
 import { adminAccountKeys } from './useAdminAccounts';
 
 /**
- * Hook mutation cho các thao tác nguy hiểm trên tài khoản.
- * Dùng chung cho cả AccountDetail (lock/unlock/revoke).
+ * Hook mutation cho thao tác khóa/mở khóa tài khoản (`PUT /users/{id}/status`).
+ * Dùng chung cho AccountDetail.
  */
 export function useAccountMutations(accountId: string) {
   const queryClient = useQueryClient();
 
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: adminAccountKeys.all });
+    queryClient.invalidateQueries({ queryKey: adminAccountDetailKeys.all });
+  };
+
   const lock = useMutation({
-    mutationFn: () => adminAccountService.lockAccount(accountId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: adminAccountKeys.all });
-      queryClient.invalidateQueries({ queryKey: adminAccountDetailKeys.all });
-    },
+    mutationFn: () => adminAccountService.updateStatus(accountId, 'LOCKED'),
+    onSuccess: invalidate,
   });
 
   const unlock = useMutation({
-    mutationFn: () => adminAccountService.unlockAccount(accountId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: adminAccountKeys.all });
-      queryClient.invalidateQueries({ queryKey: adminAccountDetailKeys.all });
-    },
+    mutationFn: () => adminAccountService.updateStatus(accountId, 'ACTIVE'),
+    onSuccess: invalidate,
   });
 
-  const revoke = useMutation({
-    mutationFn: () => adminAccountService.revokeLicense(accountId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: adminAccountKeys.all });
-      queryClient.invalidateQueries({ queryKey: adminAccountDetailKeys.all });
-    },
-  });
-
-  return { lock, unlock, revoke };
+  return { lock, unlock };
 }
