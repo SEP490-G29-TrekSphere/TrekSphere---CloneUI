@@ -286,13 +286,17 @@ export const handleResponse = <T>(response: AxiosResponse<unknown>): ApiResponse
   if (envelopeInner && typeof envelopeInner === 'object' && 'data' in envelopeInner) {
     data = (envelopeInner as { data: T }).data;
   }
-  // Trường hợp (b): unwrap 1 lớp
+  // Trường hợp (b): unwrap 1 lớp — nhận diện envelope qua field `success` (boolean),
+  // field này luôn có mặt trong mọi `ApiResponseXxx` thật của BE (xem `/v3/api-docs`).
+  // KHÔNG đoán qua kiểu của `data` như trước — vì `data` có thể là string (vd
+  // `ApiResponseString` của `/files/upload`), không chỉ object, và đoán sai khiến
+  // các endpoint trả `data` dạng string bị rơi xuống nhánh "phẳng" ở dưới, trả về
+  // nguyên cả envelope thay vì unwrap.
   else if (
     envelopeOuter &&
     typeof envelopeOuter === 'object' &&
     'data' in envelopeOuter &&
-    typeof (envelopeOuter as { data: unknown }).data === 'object' &&
-    (envelopeOuter as { data: unknown }).data !== null
+    typeof (envelopeOuter as { success?: unknown }).success === 'boolean'
   ) {
     data = (envelopeOuter as { data: T }).data;
   }

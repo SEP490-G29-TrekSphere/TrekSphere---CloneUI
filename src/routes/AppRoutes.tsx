@@ -46,10 +46,17 @@ const AdminLayout = lazy(() => import('@/shared/layout/AdminLayout'));
 const Applications = lazy(() => import('@/features/admin/pages/Applications'));
 const ApplicationDetails = lazy(() => import('@/features/admin/pages/ApplicationDetails'));
 const SystemSettings = lazy(() => import('@/features/admin/pages/SystemSettings'));
-const VendorManagerDashboard = lazy(
-  () => import('@/features/dashboard/pages/VendorManagerDashboard')
+const VendorManagerLayout = lazy(
+  () => import('@/features/vendor-manager/layout/VendorManagerLayout')
 );
-const PartnerDashboard = lazy(() => import('@/features/dashboard/pages/PartnerDashboard'));
+const StaffList = lazy(() => import('@/features/vendor-manager/staff/pages/StaffList'));
+const TourList = lazy(() => import('@/features/vendor-manager/tours/pages/TourList'));
+const TourCreate = lazy(() => import('@/features/vendor-manager/tours/pages/TourCreate'));
+const TourEdit = lazy(() => import('@/features/vendor-manager/tours/pages/TourEdit'));
+const VendorStaffLayout = lazy(() => import('@/features/vendor-staff/layout/VendorStaffLayout'));
+const PartnerTourList = lazy(() => import('@/features/vendor-staff/tours/pages/TourList'));
+const PartnerTourCreate = lazy(() => import('@/features/vendor-staff/tours/pages/TourCreate'));
+const PartnerTourEdit = lazy(() => import('@/features/vendor-staff/tours/pages/TourEdit'));
 
 function PageLoader() {
   return (
@@ -99,7 +106,6 @@ export default function AppRoutes() {
           <Route path={PATHS.TOUR_DETAIL} element={<TourDetails />} />
           <Route path={PATHS.NEWS} element={<BlogList />} />
           <Route path={PATHS.NEWS_DETAIL} element={<BlogDetails />} />
-          <Route path={PATHS.COMMUNITY} element={<MyBlogList />} />
         </Route>
 
         {/* Protected routes — yêu cầu đăng nhập, dùng MainLayout có Header/Sidebar */}
@@ -143,28 +149,35 @@ export default function AppRoutes() {
           <Route path={PATHS.ADMIN_SETTINGS} element={<SystemSettings />} />
         </Route>
 
-        {/* Vendor Manager routes */}
+        {/* Vendor Manager routes — yêu cầu role vendor_manager, dùng VendorManagerLayout riêng */}
         <Route
-          path="/vendor-manager"
+          path={PATHS.VENDOR_MANAGER}
           element={
             <RequireRole allowedRoles={[ROLES.VENDOR_MANAGER]}>
-              <MainLayout />
+              <VendorManagerLayout />
             </RequireRole>
           }
         >
-          <Route index element={<VendorManagerDashboard />} />
+          <Route index element={<Navigate to={PATHS.VENDOR_MANAGER_TOURS} replace />} />
+          <Route path={PATHS.VENDOR_MANAGER_STAFF} element={<StaffList />} />
+          <Route path={PATHS.VENDOR_MANAGER_TOURS} element={<TourList />} />
+          <Route path={PATHS.VENDOR_MANAGER_TOUR_CREATE} element={<TourCreate />} />
+          <Route path={PATHS.VENDOR_MANAGER_TOUR_EDIT} element={<TourEdit />} />
         </Route>
 
-        {/* Partner routes */}
+        {/* Vendor Staff routes — yêu cầu role vendor_staff, dùng VendorStaffLayout riêng */}
         <Route
-          path="/partner"
+          path={PATHS.PARTNER}
           element={
             <RequireRole allowedRoles={[ROLES.VENDOR_STAFF]}>
-              <MainLayout />
+              <VendorStaffLayout />
             </RequireRole>
           }
         >
-          <Route index element={<PartnerDashboard />} />
+          <Route index element={<Navigate to={PATHS.PARTNER_TOURS} replace />} />
+          <Route path={PATHS.PARTNER_TOURS} element={<PartnerTourList />} />
+          <Route path={PATHS.PARTNER_TOUR_CREATE} element={<PartnerTourCreate />} />
+          <Route path={PATHS.PARTNER_TOUR_EDIT} element={<PartnerTourEdit />} />
         </Route>
       </Routes>
     </Suspense>

@@ -1,0 +1,12 @@
+# Sourcery configuration
+# Exclude false positive security warnings for packages with permissive licenses
+
+ignore:
+  - package-lock.json
+  - pnpm-lock.yaml
+  - yarn.lock
+  - package.json
+  - "**/package-lock.json"
+  - "**/pnpm-lock.yaml"
+  - "**/yarn.lock"
+  - "**/package.json"

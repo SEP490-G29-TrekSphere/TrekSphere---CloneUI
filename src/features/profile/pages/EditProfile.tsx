@@ -13,7 +13,7 @@ import { AppButton, AppSpinner } from '@/shared/ui';
 import { useAppStore } from '@/store/useAppStore';
 import { toast } from '@/store/useToastStore';
 import ProfileSidebar from '../components/ProfileSidebar';
-import { profileKeys, useProfile } from '../hooks/useProfile';
+import { normalizeProfile, profileKeys, useProfile } from '../hooks/useProfile';
 import { profileService } from '../services/profileService';
 
 /**
@@ -93,9 +93,11 @@ export default function EditProfile() {
       }
       toast.success('Cập nhật hồ sơ thành công!');
 
-      // Cập nhật user trong store bằng data từ response
+      // Cập nhật user trong store bằng data từ response — response là raw shape
+      // từ BE (fullName, avatarUrl, ...) nên phải chuẩn hoá qua normalizeProfile
+      // trước khi map sang AppUser, nếu không avatar/tên ở Header sẽ không đổi theo.
       if (res.data) {
-        const updatedUser = res.data as UserProfile;
+        const updatedUser = normalizeProfile(res.data as Record<string, unknown>);
         setUser({
           id: updatedUser.id,
           name: updatedUser.name,

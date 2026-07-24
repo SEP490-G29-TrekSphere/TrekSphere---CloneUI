@@ -33,7 +33,7 @@ export const profileKeys = {
  * FE dùng camelCase khác (`id`, `name`, `avatar`). Hàm này map từ shape
  * BE sang shape FE đang dùng.
  */
-function normalizeProfile(raw: Record<string, unknown>): UserProfile {
+export function normalizeProfile(raw: Record<string, unknown>): UserProfile {
   const fullName = (raw.fullName as string | undefined) ?? '';
   const roles = Array.isArray(raw.roles) ? (raw.roles as string[]) : [];
 

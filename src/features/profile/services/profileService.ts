@@ -25,14 +25,25 @@ export const profileService = {
    */
   updateProfile: (data: FormData) => updateProfileMultipart<UserProfile>(data),
   /**
-   * Upload 1 file (ảnh) lên BE → trả về URL string qua envelope `data`.
+   * Upload 1 file (ảnh) lên BE → trả về URL string.
    * Endpoint: POST /files/upload?folder=<folder>
    * Body: FormData với field `file`.
+   *
+   * BE endpoint này KHÔNG theo đúng convention envelope chung (field `data`) —
+   * nó trả URL qua field `message`: `{ success, code, message: "<url>", timestamp }`,
+   * không có `data`. `handleResponse` không tìm thấy `data` nên rơi vào nhánh
+   * "phẳng", trả nguyên cả envelope làm `data`. Unwrap thủ công lại ở đây.
    */
-  uploadFile: (file: File, folder = 'avatars') => {
+  uploadFile: async (file: File, folder = 'avatars') => {
     const formData = new FormData();
     formData.append('file', file);
-    return ApiUpload<string>(`/files/upload?folder=${encodeURIComponent(folder)}`, formData);
+    const res = await ApiUpload<string>(
+      `/files/upload?folder=${encodeURIComponent(folder)}`,
+      formData
+    );
+    if (typeof res.data === 'string' && res.data) return res;
+    if (typeof res.message === 'string' && res.message) return { ...res, data: res.message };
+    return res;
   },
 };
 

@@ -1,4 +1,4 @@
-import { Ban, ShieldOff } from 'lucide-react';
+import { Ban } from 'lucide-react';
 import type * as React from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-export type ConfirmDialogVariant = 'lock' | 'revoke';
+export type ConfirmDialogVariant = 'lock';
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -39,13 +39,6 @@ const VARIANT_CONFIG: Record<
     confirmLabel: 'Khóa tài khoản',
     confirmVariant: 'destructive',
   },
-  revoke: {
-    icon: <ShieldOff className="h-5 w-5" />,
-    iconBg: 'rgba(220, 38, 38, 0.1)',
-    iconColor: '#DC2626',
-    confirmLabel: 'Thu hồi giấy phép',
-    confirmVariant: 'destructive',
-  },
 };
 
 const DESCRIPTIONS: Record<
@@ -57,16 +50,10 @@ const DESCRIPTIONS: Record<
     body: (name) =>
       `Bạn có chắc chắn muốn khóa tài khoản của "${name}" không? Người dùng này sẽ không thể đăng nhập cho đến khi bạn mở khóa.`,
   },
-  revoke: {
-    title: 'Thu hồi giấy phép',
-    body: (name) =>
-      `Bạn có chắc chắn muốn thu hồi giấy phép của "${name}" không? Hành động này sẽ xóa toàn bộ quyền đặc biệt của tài khoản này.`,
-  },
 };
 
 /**
- * Popup xác nhận cho các thao tác nguy hiểm trong Admin.
- * Dùng chung cho: Khóa tài khoản, Thu hồi giấy phép.
+ * Popup xác nhận cho thao tác khóa tài khoản trong Admin.
  */
 export function ConfirmDialog({
   open,
