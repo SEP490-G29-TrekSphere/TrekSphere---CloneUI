@@ -16,7 +16,7 @@ export interface AdminAccount {
   avatarUrl?: string;
   role: AccountRole;
   status: AccountStatus;
-  createdAt: string;
+  createdAt?: string;
 }
 
 /** Payload trả về từ API list accounts (pagination). */

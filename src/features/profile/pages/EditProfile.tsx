@@ -97,7 +97,7 @@ export default function EditProfile() {
       // từ BE (fullName, avatarUrl, ...) nên phải chuẩn hoá qua normalizeProfile
       // trước khi map sang AppUser, nếu không avatar/tên ở Header sẽ không đổi theo.
       if (res.data) {
-        const updatedUser = normalizeProfile(res.data as Record<string, unknown>);
+        const updatedUser = normalizeProfile(res.data as unknown as Record<string, unknown>);
         setUser({
           id: updatedUser.id,
           name: updatedUser.name,
