@@ -1,16 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertCircle, ArrowLeft, FileImage, QrCode, ShieldCheck, Upload } from 'lucide-react';
+import { AlertCircle, ArrowLeft, FileImage, QrCode, Upload } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 import * as z from 'zod';
 import { getBookingDetailPath } from '@/constants/paths';
+import { profileService } from '@/features/profile/services/profileService';
 import { useBookingCountdown } from '@/features/tours/hooks/useBookingCountdown';
-import {
-  type MockBooking,
-  PAYMENT_DEADLINE_SECONDS,
-  tourService,
-} from '@/features/tours/services/tourService';
+import { PAYMENT_DEADLINE_SECONDS, tourService } from '@/features/tours/services/tourService';
+import type { BookingDetailResponse } from '@/features/tours/types';
 import { AppButton, AppCard } from '@/shared/ui';
 import { toast } from '@/store/useToastStore';
 import { formatCountdown, formatPrice } from '@/utils/format';
@@ -28,23 +26,17 @@ const isValidImageFile = async (file: File): Promise<boolean> => {
     header[6] === 0x1a &&
     header[7] === 0x0a;
 
-  const isJpeg =
+  const isJpg =
     header.length >= 3 && header[0] === 0xff && header[1] === 0xd8 && header[2] === 0xff;
 
-  return isPng || isJpeg;
+  return isPng || isJpg;
 };
 
 const paymentSchema = z.object({
   paymentProof: z
-    .custom<File | null>((val) => val instanceof File || val === null, {
-      message: 'Vui lòng tải lên ảnh chụp minh chứng thanh toán.',
-    })
-    .refine((file) => file !== null, 'Vui lòng tải lên ảnh chụp minh chứng thanh toán.')
-    .refine((file) => {
-      if (!file) return true;
-      const allowedTypes = ['image/png', 'image/jpeg'];
-      return allowedTypes.includes(file.type);
-    }, 'Định dạng file không hợp lệ! Vui lòng chỉ tải lên file PNG hoặc JPG/JPEG.')
+    .instanceof(File, { message: 'Vui lòng chọn ảnh minh chứng thanh toán' })
+    .nullable()
+    .refine((file) => file !== null, 'Vui lòng chọn file minh chứng thanh toán.')
     .refine((file) => {
       if (!file) return true;
       const maxSize = 5 * 1024 * 1024;
@@ -60,14 +52,14 @@ export default function PayBooking() {
   const { bookingId } = useParams<{ bookingId: string }>();
   const navigate = useNavigate();
 
-  const [booking, setBooking] = useState<MockBooking | null>(null);
+  const [booking, setBooking] = useState<BookingDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Time Countdown state (BR-08: 15 minutes)
   const [isExpired, setIsExpired] = useState(false);
   const timeLeft = useBookingCountdown(
     booking?.createdAt,
-    !loading && !isExpired && booking?.status === 'PENDING',
+    !loading && !isExpired && booking?.bookingStatus === 'PENDING',
     PAYMENT_DEADLINE_SECONDS
   );
 
@@ -103,9 +95,9 @@ export default function PayBooking() {
         const data = await tourService.getBookingDetail(bookingId);
         setBooking(data);
 
-        // If it's already awaiting confirmation or confirmed/cancelled, we shouldn't show the pay screen
-        if (data.status !== 'PENDING') {
-          toast.info('Đơn hàng này không ở trạng thái cần thanh toán.');
+        // If it's already awaiting confirmation, confirmed, cancelled or proof is already uploaded, we shouldn't show the pay screen
+        if (data.bookingStatus !== 'PENDING' || data.proofImageUrl) {
+          toast.info('Đơn hàng đã gửi minh chứng hoặc đang chờ Vendor xác nhận.');
           navigate(getBookingDetailPath(bookingId));
           return;
         }
@@ -130,7 +122,7 @@ export default function PayBooking() {
 
   // Handle timer expiration side effects
   useEffect(() => {
-    if (timeLeft === 0 && !isExpired && booking?.status === 'PENDING') {
+    if (timeLeft === 0 && !isExpired && booking?.bookingStatus === 'PENDING') {
       setIsExpired(true);
       if (bookingId) {
         tourService.updateBookingStatus(bookingId, 'CANCELLED');
@@ -162,13 +154,21 @@ export default function PayBooking() {
 
     setIsMutating(true);
     try {
-      // Step 5: Upload image to cloud storage, update status to AWAITING_CONFIRMATION
-      await tourService.uploadPaymentProof(bookingId, data.paymentProof);
+      let proofImageUrl = '';
+      const uploadRes = await profileService.uploadFile(data.paymentProof, 'payment-proofs');
+      if (uploadRes.data) {
+        proofImageUrl = uploadRes.data;
+      } else if (uploadRes.error) {
+        throw new Error(uploadRes.error);
+      }
 
-      // Step 6: Notify vendor manually (simulated)
-      toast.success('Đã gửi minh chứng thanh toán. Hệ thống đã gửi thông báo đến đối tác!');
+      if (!proofImageUrl) {
+        throw new Error('Không thể tải ảnh minh chứng lên hệ thống');
+      }
 
-      // Step 7: Redirect to confirmation wait page (we redirect to Booking Detail)
+      await tourService.updatePaymentProof(bookingId, proofImageUrl);
+
+      toast.success('Cập nhật minh chứng thanh toán thành công!');
       navigate(getBookingDetailPath(bookingId));
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : 'Đã xảy ra lỗi khi gửi minh chứng.';
@@ -259,28 +259,19 @@ export default function PayBooking() {
             <div className="flex flex-col items-center justify-center p-4 bg-[#FAF9F5] border border-[#E5E4DE] rounded-2xl">
               <div className="w-48 h-48 bg-white border border-[#E5E4DE] rounded-xl flex flex-col items-center justify-center relative overflow-hidden shadow-sm">
                 <QrCode className="h-32 w-32 text-zinc-800" />
-                <span className="text-[10px] font-extrabold text-zinc-400 mt-2 tracking-wider">
-                  VietQR / Techcombank
-                </span>
               </div>
-              <p className="text-[11px] text-zinc-500 font-semibold mt-3 text-center">
-                Quét mã QR để tự động điền thông tin chuyển khoản nhanh chóng.
-              </p>
             </div>
 
             {/* Bank text details */}
             <div className="space-y-4">
               <div className="flex justify-between items-center py-2 border-b border-[#F4F4F2]">
                 <span className="text-zinc-500 text-xs font-semibold">Tên ngân hàng</span>
-                <span className="text-zinc-800 text-sm font-bold">Techcombank</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-[#F4F4F2]">
                 <span className="text-zinc-500 text-xs font-semibold">Số tài khoản</span>
-                <span className="text-zinc-800 text-sm font-extrabold">19038283929182</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-[#F4F4F2]">
                 <span className="text-zinc-500 text-xs font-semibold">Tên chủ tài khoản</span>
-                <span className="text-zinc-800 text-sm font-bold uppercase">TrekSphere JSC</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-[#F4F4F2]">
                 <span className="text-zinc-500 text-xs font-semibold">Số tiền cần chuyển</span>
@@ -290,9 +281,6 @@ export default function PayBooking() {
               </div>
               <div className="flex justify-between items-center py-2 border-b border-[#F4F4F2]">
                 <span className="text-zinc-500 text-xs font-semibold">Nội dung chuyển khoản</span>
-                <span className="text-emerald-700 text-sm font-extrabold bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100">
-                  TS-{bookingId}
-                </span>
               </div>
             </div>
           </div>
@@ -384,12 +372,6 @@ export default function PayBooking() {
             </div>
           </form>
         </AppCard>
-
-        {/* Security badge and guidelines */}
-        <div className="flex items-center justify-center gap-2 text-zinc-400 text-xs py-2">
-          <ShieldCheck className="h-4 w-4 text-emerald-600" />
-          <span>Giao dịch của bạn được mã hóa an toàn và bảo mật</span>
-        </div>
       </div>
     </div>
   );

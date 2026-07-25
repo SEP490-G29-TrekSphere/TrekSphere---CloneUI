@@ -432,7 +432,7 @@ function ScheduleSection({
   return (
     <section className="flex flex-col gap-4">
       <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-        Lịch khởi hành
+        Chọn lịch khởi hành
       </h3>
       <div className="flex flex-col gap-3">
         {openSchedules.map((s) => {

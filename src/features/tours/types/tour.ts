@@ -335,3 +335,128 @@ export interface TourSearchValues {
   departureDate: string;
   budget: string;
 }
+
+// ============================================================
+// API Types for My Booking History (GET /api/v1/bookings/my-history)
+// ============================================================
+
+export type BookingStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
+
+export type PaymentStatus = 'PENDING' | 'PAID' | 'REFUNDED' | 'PARTIALLY_REFUNDED';
+
+export interface BookingItemFromApi {
+  bookingId: string;
+  bookingCode: string;
+  tourName: string;
+  coverImageUrl: string;
+  departureDate: string;
+  returnDate: string;
+  numberOfParticipants: number;
+  totalPrice: number;
+  bookingStatus: BookingStatus;
+  paymentStatus: PaymentStatus;
+  createdAt: string;
+}
+
+export interface BookingHistoryParams {
+  status?: BookingStatus;
+  keyword?: string;
+  page?: number;
+  size?: number;
+  sortBy?: string;
+  sortDir?: ApiSortDir;
+}
+
+export interface BookingHistoryApiResponse {
+  content: BookingItemFromApi[];
+  pageNumber: number;
+  pageSize: number;
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
+}
+
+// ============================================================
+// API Types for Booking Detail (GET /api/v1/bookings/{id})
+// ============================================================
+
+export type ParticipantGender = 'MALE' | 'FEMALE' | 'OTHER';
+
+export interface BookingParticipantFromApi {
+  participantId: string;
+  fullName: string;
+  dateOfBirth?: string;
+  gender?: ParticipantGender;
+  idNumber?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  specialRequirements?: string;
+}
+
+export interface BookingDetailResponse {
+  bookingId: string;
+  bookingCode: string;
+  tourId: string;
+  tourName: string;
+  coverImageUrl: string;
+  departureDate: string;
+  returnDate: string;
+  pricePerSlot: number;
+  numberOfParticipants: number;
+  originalPrice: number;
+  discountAmount: number;
+  totalPrice: number;
+  refundAmount: number;
+  bookingStatus: BookingStatus;
+  paymentStatus: PaymentStatus;
+  proofImageUrl?: string;
+  cancellationReason?: string;
+  cancelledAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  voucherCode?: string;
+  userId: string;
+  userEmail: string;
+  userFullName: string;
+  userPhone: string;
+  participants: BookingParticipantFromApi[];
+}
+
+export interface BookingCancelRequest {
+  cancellationReason: string;
+}
+
+export interface PaymentProofRequest {
+  proofImageUrl: string;
+}
+
+export interface BookingParticipantRequest {
+  fullName: string;
+  dateOfBirth: string;
+  gender: ParticipantGender;
+  idNumber: string;
+  phone: string;
+  email?: string;
+  address?: string;
+  specialRequirements?: string;
+}
+
+export interface CreateBookingRequest {
+  scheduleId: string;
+  voucherCode?: string;
+  participants: BookingParticipantRequest[];
+}
+
+export interface ApiResponseBookingDetailResponse {
+  success: boolean;
+  code: number;
+  message: string;
+  data: BookingDetailResponse;
+  errors?: Array<{
+    field?: string;
+    message?: string;
+    timestamp?: string;
+  }>;
+  timestamp?: string;
+}

@@ -1,5 +1,9 @@
 import { type ApiResponse, ApiService } from '@/config/apiClient';
 import type {
+  BookingDetailResponse,
+  BookingHistoryApiResponse,
+  BookingHistoryParams,
+  CreateBookingRequest,
   TourDetailFromApi,
   TourListApiResponse,
   TourListParams,
@@ -171,56 +175,6 @@ export const tourService = {
     return unwrapResponse(response);
   },
 
-  async getAvailableVouchers(): Promise<
-    Array<{
-      code: string;
-      description: string;
-      discountAmount: number;
-      minSpend: number;
-      isExceeded: boolean;
-      isExpired: boolean;
-    }>
-  > {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve([
-          {
-            code: 'TREKNEW',
-            description: 'Giảm 200.000đ cho mọi đơn hàng',
-            discountAmount: 200000,
-            minSpend: 0,
-            isExceeded: false,
-            isExpired: false,
-          },
-          {
-            code: 'SUMMER50',
-            description: 'Giảm 500.000đ cho đơn hàng từ 3.000.000đ',
-            discountAmount: 500000,
-            minSpend: 3000000,
-            isExceeded: false,
-            isExpired: false,
-          },
-          {
-            code: 'LIMITEXCEEDED',
-            description: 'Giảm 100.000đ (Voucher đã đạt giới hạn)',
-            discountAmount: 100000,
-            minSpend: 0,
-            isExceeded: true,
-            isExpired: false,
-          },
-          {
-            code: 'EXPIRED',
-            description: 'Giảm 150.000đ (Voucher đã hết hạn)',
-            discountAmount: 150000,
-            minSpend: 0,
-            isExceeded: false,
-            isExpired: true,
-          },
-        ]);
-      }, 300);
-    });
-  },
-
   async validateVoucher(
     code: string,
     subtotal: number
@@ -241,99 +195,20 @@ export const tourService = {
         } else if (uppercaseCode === 'LIMITEXCEEDED') {
           reject(new Error('Voucher này đã hết lượt sử dụng'));
         } else {
-          reject(new Error('Voucher is invalid or has expired'));
+          reject(new Error('Voucher không hợp lệ hoặc đã hết hạn'));
         }
       }, 500);
     });
   },
 
-  async createBooking(bookingData: {
-    tourId: string;
-    scheduleId: string;
-    fullName: string;
-    phone: string;
-    email: string;
-    notes?: string;
-    participants: number;
-    paymentMethod: string;
-    voucherCode?: string;
-    tourName?: string;
-    tourPrice?: number;
-    discountAmount?: number;
-    totalPrice?: number;
-  }): Promise<{ bookingId: string; status: string }> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const bookingId = `BK-${Math.floor(100000 + Math.random() * 900000)}`;
-        const newBooking: MockBooking = {
-          bookingId,
-          tourId: bookingData.tourId,
-          tourName: bookingData.tourName || 'Trekking Tà Năng - Phan Dũng',
-          coverImageUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80',
-          departureDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000)
-            .toISOString()
-            .split('T')[0],
-          returnDate: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          duration: '3 ngày 2 đêm',
-          participants: Array.from({ length: bookingData.participants }).map((_, i) => ({
-            fullName: i === 0 ? bookingData.fullName : `Khách đi cùng ${i}`,
-            phone: i === 0 ? bookingData.phone : '',
-            email: i === 0 ? bookingData.email : '',
-          })),
-          status: 'PENDING',
-          tourPrice: bookingData.tourPrice ?? 3000000,
-          discountAmount: bookingData.discountAmount ?? 0,
-          totalPrice: bookingData.totalPrice ?? 3000000,
-          cancellationDeadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
-            .toISOString()
-            .split('T')[0],
-          createdAt: new Date().toISOString(),
-          paymentMethod: bookingData.paymentMethod,
-          notes: bookingData.notes,
-        };
-        mockBookingsDb[bookingId] = newBooking;
-        resolve({
-          bookingId,
-          status: 'PENDING',
-        });
-      }, 1000);
-    });
+  async createBooking(bookingData: CreateBookingRequest): Promise<BookingDetailResponse> {
+    const response = await ApiService<BookingDetailResponse>('/bookings', 'POST', bookingData);
+    return unwrapResponse(response);
   },
 
-  async getBookingDetail(bookingId: string): Promise<MockBooking> {
-    return new Promise((resolve, _reject) => {
-      setTimeout(() => {
-        const booking = mockBookingsDb[bookingId];
-        if (booking) {
-          resolve(booking);
-        } else {
-          // If not found, create a temporary PENDING one for backward compatibility / debug
-          const tempBooking: MockBooking = {
-            bookingId: bookingId || 'TS-10293',
-            tourId: '1',
-            tourName: 'Trekking Tà Năng - Phan Dũng',
-            coverImageUrl:
-              'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80',
-            departureDate: '2026-10-15',
-            returnDate: '2026-10-17',
-            duration: '3 ngày 2 đêm (28km)',
-            participants: [
-              { fullName: 'Nguyễn Văn A', phone: '0901234567', email: 'nguyenvana@gmail.com' },
-              { fullName: 'Trần Thị B', phone: '0902345678', email: 'tranthib@gmail.com' },
-            ],
-            status: 'PENDING',
-            tourPrice: 3000000,
-            discountAmount: 200000,
-            totalPrice: 2800000,
-            cancellationDeadline: '2026-10-10',
-            createdAt: new Date().toISOString(),
-            paymentMethod: 'bank',
-          };
-          mockBookingsDb[tempBooking.bookingId] = tempBooking;
-          resolve(tempBooking);
-        }
-      }, 500);
-    });
+  async getBookingDetail(bookingId: string): Promise<BookingDetailResponse> {
+    const response = await ApiService<BookingDetailResponse>(`/bookings/${bookingId}`, 'GET');
+    return unwrapResponse(response);
   },
 
   async updateParticipants(
@@ -352,29 +227,16 @@ export const tourService = {
     });
   },
 
-  async requestCancel(
+  async cancelBooking(
     bookingId: string,
-    refundAmount: number,
-    reason?: string
-  ): Promise<{ status: 'PENDING_CANCEL' }> {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const booking = mockBookingsDb[bookingId];
-        if (!booking) {
-          reject(new Error('Không tìm thấy đơn đặt chỗ'));
-          return;
-        }
-        const nonCancellable = ['CANCELLED', 'COMPLETED', 'PENDING_CANCEL'];
-        if (nonCancellable.includes(booking.status)) {
-          reject(new Error('Đơn đặt chỗ không ở trạng thái có thể yêu cầu hủy.'));
-          return;
-        }
-        booking.status = 'PENDING_CANCEL';
-        booking.cancelReason = reason;
-        booking.cancellationRefund = refundAmount;
-        resolve({ status: 'PENDING_CANCEL' });
-      }, 500);
-    });
+    cancellationReason: string
+  ): Promise<BookingDetailResponse> {
+    const response = await ApiService<BookingDetailResponse>(
+      `/bookings/${bookingId}/cancel`,
+      'POST',
+      { cancellationReason }
+    );
+    return unwrapResponse(response);
   },
 
   async reviewCancelRequest(
@@ -415,37 +277,16 @@ export const tourService = {
     });
   },
 
-  async uploadPaymentProof(
+  async updatePaymentProof(
     bookingId: string,
-    file: File
-  ): Promise<{ status: 'AWAITING_CONFIRMATION'; paymentProofUrl: string }> {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const booking = mockBookingsDb[bookingId];
-        if (!booking) {
-          reject(new Error('Không tìm thấy đơn đặt chỗ'));
-          return;
-        }
-        if (booking.status !== 'PENDING') {
-          reject(new Error('Đơn hàng không ở trạng thái chờ thanh toán.'));
-          return;
-        }
-        const createdTime = new Date(booking.createdAt).getTime();
-        const elapsedSeconds = Math.floor((Date.now() - createdTime) / 1000);
-        if (elapsedSeconds >= PAYMENT_DEADLINE_SECONDS) {
-          booking.status = 'CANCELLED';
-          reject(new Error('Đã quá thời hạn thanh toán 15 phút.'));
-          return;
-        }
-        const dummyUrl = URL.createObjectURL(file);
-        booking.status = 'AWAITING_CONFIRMATION';
-        booking.paymentProofUrl = dummyUrl;
-        resolve({
-          status: 'AWAITING_CONFIRMATION',
-          paymentProofUrl: dummyUrl,
-        });
-      }, 1500);
-    });
+    proofImageUrl: string
+  ): Promise<BookingDetailResponse> {
+    const response = await ApiService<BookingDetailResponse>(
+      `/bookings/${bookingId}/payment-proof`,
+      'PUT',
+      { proofImageUrl }
+    );
+    return unwrapResponse(response);
   },
 
   async updateBookingStatus(
@@ -462,35 +303,34 @@ export const tourService = {
     });
   },
 
-  async getMyBookings(
-    page = 1,
-    limit = 5
-  ): Promise<{
-    content: Array<{
-      bookingId: string;
-      tourName: string;
-      departureDate: string;
-      status: MockBooking['status'];
-    }>;
-    hasMore: boolean;
-  }> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const allBookings = Object.values(mockBookingsDb).map((b) => ({
-          bookingId: b.bookingId,
-          tourName: b.tourName,
-          departureDate: b.departureDate,
-          status: b.status,
-        }));
-        const start = (page - 1) * limit;
-        const end = start + limit;
-        const pageContent = allBookings.slice(start, end);
-        const hasMore = end < allBookings.length;
-        resolve({
-          content: pageContent,
-          hasMore,
-        });
-      }, 500);
-    });
+  async getMyBookings(params: BookingHistoryParams = {}): Promise<BookingHistoryApiResponse> {
+    const queryParams: Record<string, string> = {};
+
+    if (params.status) {
+      queryParams.status = params.status;
+    }
+    if (params.keyword !== undefined && params.keyword !== '') {
+      queryParams.keyword = params.keyword;
+    }
+    if (params.page !== undefined) {
+      queryParams.page = String(params.page);
+    }
+    if (params.size !== undefined) {
+      queryParams.size = String(params.size);
+    }
+    if (params.sortBy) {
+      queryParams.sortBy = params.sortBy;
+    }
+    if (params.sortDir) {
+      queryParams.sortDir = params.sortDir;
+    }
+
+    const response = await ApiService<BookingHistoryApiResponse>(
+      '/bookings/my-history',
+      'GET',
+      undefined,
+      queryParams
+    );
+    return unwrapResponse(response);
   },
 };

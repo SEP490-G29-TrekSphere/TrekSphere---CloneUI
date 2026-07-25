@@ -1,34 +1,48 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  AlertCircle,
-  Calendar,
-  CreditCard,
-  Info,
-  QrCode,
-  ShieldCheck,
-  User,
-  Users,
-  Wallet,
-} from 'lucide-react';
+import { AlertCircle, Calendar, Info, Plus, ShieldCheck, Trash2, User, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useFieldArray, useForm } from 'react-hook-form';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import * as z from 'zod';
 import { getBookingPaymentPath } from '@/constants/paths';
 import { useTourDetail } from '@/features/tours/hooks/useTourDetail';
 import { tourService } from '@/features/tours/services/tourService';
+import type { ParticipantGender } from '@/features/tours/types';
 import { AppButton, AppCard, AppFormInput } from '@/shared/ui';
 import { toast } from '@/store/useToastStore';
 
-// Form validation schema
+// Participant schema matching API POST /api/v1/bookings items
+const participantSchema = z.object({
+  fullName: z.string().min(1, 'Vui lòng nhập họ tên đầy đủ'),
+  dateOfBirth: z
+    .string()
+    .min(1, 'Vui lòng chọn ngày sinh')
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày sinh không hợp lệ (YYYY-MM-DD)'),
+  gender: z.enum(['MALE', 'FEMALE', 'OTHER'] as const, {
+    message: 'Giới tính không hợp lệ',
+  }),
+  idNumber: z.string().min(1, 'Vui lòng nhập số CCCD hoặc hộ chiếu'),
+  phone: z
+    .string()
+    .min(1, 'Vui lòng nhập số điện thoại')
+    .regex(/^[0-9]{10}$/, 'Số điện thoại không hợp lệ (yêu cầu 10 chữ số)'),
+  email: z
+    .string()
+    .optional()
+    .refine((val) => !val || z.string().email().safeParse(val).success, {
+      message: 'Địa chỉ email không hợp lệ',
+    }),
+  address: z.string().optional(),
+  specialRequirements: z.string().optional(),
+});
+
+// Booking form schema
 const bookingFormSchema = z.object({
   scheduleId: z.string().min(1, 'Vui lòng chọn ngày khởi hành'),
-  participants: z.number().min(1, 'Số lượng người tham gia tối thiểu là 1'),
-  fullName: z.string().min(2, 'Họ và tên phải có ít nhất 2 ký tự'),
-  phone: z.string().regex(/^[0-9]{10}$/, 'Số điện thoại không hợp lệ (yêu cầu 10 chữ số)'),
-  email: z.email({ message: 'Địa chỉ email không hợp lệ' }),
-  notes: z.string().optional(),
   paymentMethod: z.enum(['card', 'bank', 'wallet']),
+  participants: z
+    .array(participantSchema)
+    .min(1, 'Vui lòng nhập thông tin ít nhất 1 người tham gia'),
 });
 
 type BookingFormValues = z.infer<typeof bookingFormSchema>;
@@ -36,15 +50,14 @@ type BookingFormValues = z.infer<typeof bookingFormSchema>;
 export default function BookTour() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const preSelectedScheduleId = searchParams.get('scheduleId') || '';
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlScheduleId = searchParams.get('scheduleId') || '';
   const preSelectedParticipantsStr = searchParams.get('participants');
   const parsedPart = preSelectedParticipantsStr ? parseInt(preSelectedParticipantsStr, 10) : 1;
-  const preSelectedParticipants = Number.isNaN(parsedPart) || parsedPart < 1 ? 1 : parsedPart;
+  const preSelectedParticipantsCount = Number.isNaN(parsedPart) || parsedPart < 1 ? 1 : parsedPart;
 
   const { data: tour, isLoading, error } = useTourDetail(id);
 
-  const [_bookingId, setBookingId] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Voucher state
@@ -55,55 +68,88 @@ export default function BookTour() {
   } | null>(null);
   const [voucherError, setVoucherError] = useState<string | null>(null);
   const [isValidatingVoucher, setIsValidatingVoucher] = useState(false);
-  const [availableVouchers, setAvailableVouchers] = useState<
-    Array<{
-      code: string;
-      description: string;
-      discountAmount: number;
-      minSpend: number;
-      isExceeded: boolean;
-      isExpired: boolean;
-    }>
-  >([]);
 
-  // Fetch available vouchers
-  useEffect(() => {
-    async function fetchVouchers() {
-      try {
-        const list = await tourService.getAvailableVouchers();
-        setAvailableVouchers(list);
-      } catch {
-        // ignore
-      }
-    }
-    fetchVouchers();
-  }, []);
+  const createDefaultParticipant = () => ({
+    fullName: '',
+    dateOfBirth: '',
+    gender: 'MALE' as ParticipantGender,
+    idNumber: '',
+    phone: '',
+    email: '',
+    address: '',
+    specialRequirements: '',
+  });
 
   const {
     control,
     handleSubmit,
     setValue,
     watch,
+    register,
     formState: { errors },
   } = useForm<BookingFormValues>({
     resolver: zodResolver(bookingFormSchema),
     defaultValues: {
-      scheduleId: preSelectedScheduleId,
-      participants: preSelectedParticipants,
-      fullName: '',
-      phone: '',
-      email: '',
-      notes: '',
+      scheduleId: urlScheduleId,
       paymentMethod: 'bank',
+      participants: Array.from({ length: preSelectedParticipantsCount }, createDefaultParticipant),
     },
   });
 
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'participants',
+  });
+
   const selectedScheduleId = watch('scheduleId');
-  const participantsCount = watch('participants');
-  const paymentMethod = watch('paymentMethod');
+  const participantsList = watch('participants');
+  const participantsCount = participantsList?.length || 0;
 
   // Find selected schedule details
   const selectedSchedule = tour?.schedules.find((s) => s.scheduleId === selectedScheduleId);
+
+  // 1. Sync URL scheduleId parameter -> Form state when user edits URL manually
+  useEffect(() => {
+    if (urlScheduleId && urlScheduleId !== selectedScheduleId) {
+      setValue('scheduleId', urlScheduleId, { shouldValidate: true });
+    }
+  }, [urlScheduleId, setValue, selectedScheduleId]);
+
+  // 2. Validate selected schedule & auto-correct if scheduleId is invalid/empty or doesn't belong to tour
+  useEffect(() => {
+    if (tour && tour.schedules.length > 0) {
+      const openSchedulesList = tour.schedules.filter(
+        (s) => s.status === 'OPEN' && s.availableSlots - s.bookedSlots > 0
+      );
+      const isScheduleValid = openSchedulesList.some((s) => s.scheduleId === selectedScheduleId);
+
+      if (!isScheduleValid && openSchedulesList.length > 0) {
+        const fallbackScheduleId = openSchedulesList[0].scheduleId;
+        setValue('scheduleId', fallbackScheduleId, { shouldValidate: true });
+        setSearchParams(
+          (prev) => {
+            const next = new URLSearchParams(prev);
+            next.set('scheduleId', fallbackScheduleId);
+            return next;
+          },
+          { replace: true }
+        );
+      }
+    }
+  }, [tour, selectedScheduleId, setValue, setSearchParams]);
+
+  // 3. Helper to change schedule and update URL searchParams simultaneously
+  const handleScheduleSelect = (scheduleId: string) => {
+    setValue('scheduleId', scheduleId, { shouldValidate: true });
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('scheduleId', scheduleId);
+        return next;
+      },
+      { replace: true }
+    );
+  };
 
   // Clamp participants count to selected schedule remaining capacity (BR-08)
   useEffect(() => {
@@ -112,11 +158,13 @@ export default function BookTour() {
         0,
         selectedSchedule.availableSlots - selectedSchedule.bookedSlots
       );
-      if (participantsCount > remainingCapacity) {
-        setValue('participants', remainingCapacity, { shouldValidate: true });
+      if (fields.length > remainingCapacity && remainingCapacity > 0) {
+        while (fields.length > remainingCapacity) {
+          remove(fields.length - 1);
+        }
       }
     }
-  }, [selectedSchedule, setValue, participantsCount]);
+  }, [selectedSchedule, fields.length, remove]);
 
   // Get base price
   const basePrice = selectedSchedule?.price ?? tour?.basePrice ?? 0;
@@ -148,7 +196,6 @@ export default function BookTour() {
         setAppliedVoucher(null);
       }
     } catch (err) {
-      // E1, E2, E3 Exception Handling
       const message =
         err instanceof Error ? err.message : 'Mã giảm giá không hợp lệ hoặc đã hết hạn';
       setVoucherError(message);
@@ -159,30 +206,29 @@ export default function BookTour() {
     }
   };
 
-  // Submit initial form to proceed to payment redirect
+  // Submit form with participants array & voucherCode to POST /api/v1/bookings
   const onFormSubmit = async (data: BookingFormValues) => {
     setIsSubmitting(true);
     try {
-      const response = await tourService.createBooking({
-        tourId: tour?.tourId || '',
+      const formattedParticipants = data.participants.map((p) => ({
+        fullName: p.fullName.trim(),
+        dateOfBirth: p.dateOfBirth,
+        gender: p.gender,
+        idNumber: p.idNumber.trim(),
+        phone: p.phone.trim(),
+        email: p.email?.trim() || undefined,
+        address: p.address?.trim() || undefined,
+        specialRequirements: p.specialRequirements?.trim() || undefined,
+      }));
+
+      const bookingResponse = await tourService.createBooking({
         scheduleId: data.scheduleId,
-        fullName: data.fullName,
-        phone: data.phone,
-        email: data.email,
-        notes: data.notes,
-        participants: data.participants,
-        paymentMethod: data.paymentMethod,
-        voucherCode: appliedVoucher?.code,
-        tourName: tour?.tourName,
-        tourPrice: subtotal,
-        discountAmount: discount,
-        totalPrice: total,
+        voucherCode: appliedVoucher?.code || undefined,
+        participants: formattedParticipants,
       });
 
-      setBookingId(response.bookingId);
-      // Redirect directly to manual payment page
-      toast.success('Đặt chỗ thành công! Đang chuyển đến trang thanh toán.');
-      navigate(getBookingPaymentPath(response.bookingId));
+      toast.success('Đặt tour thành công! Đang chuyển đến trang thanh toán.');
+      navigate(getBookingPaymentPath(bookingResponse.bookingId));
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : 'Đã xảy ra lỗi khi tạo đặt chỗ.';
       toast.error(errMsg);
@@ -218,19 +264,22 @@ export default function BookTour() {
     (s) => s.status === 'OPEN' && s.availableSlots - s.bookedSlots > 0
   );
   const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80';
+  const remainingSlots = selectedSchedule
+    ? Math.max(0, selectedSchedule.availableSlots - selectedSchedule.bookedSlots)
+    : 10;
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 md:py-12">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 md:py-12">
       <div className="mb-8">
-        <h1 className="text-3xl font-extrabold text-[#0B3025]">Thanh toán đơn hàng</h1>
+        <h1 className="text-3xl font-extrabold text-[#0B3025]">Đặt tour mới</h1>
         <p className="text-zinc-500 mt-2 font-medium text-sm">
-          Vui lòng kiểm tra kỹ thông tin trước khi hoàn tất đặt chỗ.
+          Vui lòng điền đầy đủ thông tin danh sách thành viên tham gia tour.
         </p>
       </div>
 
       <form
         onSubmit={handleSubmit(onFormSubmit)}
-        className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px]"
+        className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px]"
       >
         {/* Left side: Input Details */}
         <div className="space-y-6">
@@ -252,9 +301,7 @@ export default function BookTour() {
                     <button
                       key={s.scheduleId}
                       type="button"
-                      onClick={() => {
-                        setValue('scheduleId', s.scheduleId, { shouldValidate: true });
-                      }}
+                      onClick={() => handleScheduleSelect(s.scheduleId)}
                       className={`flex flex-col text-left p-4 rounded-2xl border transition-all ${
                         isSelected
                           ? 'border-[#0B3025] bg-[#E8F1EE]/30 ring-2 ring-[#0B3025]'
@@ -277,188 +324,144 @@ export default function BookTour() {
               {errors.scheduleId && (
                 <p className="text-xs text-destructive">{errors.scheduleId.message}</p>
               )}
-
-              {/* Participants Selector */}
-              <div className="mt-4 border-t border-[#F4F4F2] pt-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-zinc-400" />
-                  <span className="font-bold text-sm text-zinc-700">Số lượng người tham gia</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const current = watch('participants');
-                      if (current > 1) setValue('participants', current - 1);
-                    }}
-                    className="h-8 w-8 rounded-full border border-[#E5E4DE] bg-white flex items-center justify-center font-bold hover:bg-zinc-50"
-                  >
-                    -
-                  </button>
-                  <span className="font-extrabold text-zinc-800 text-sm">{participantsCount}</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const current = watch('participants');
-                      const limit = selectedSchedule
-                        ? Math.max(
-                            0,
-                            selectedSchedule.availableSlots - selectedSchedule.bookedSlots
-                          )
-                        : 10;
-                      if (current < limit) setValue('participants', current + 1);
-                    }}
-                    className="h-8 w-8 rounded-full border border-[#E5E4DE] bg-white flex items-center justify-center font-bold hover:bg-zinc-50"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
             </div>
           </AppCard>
 
-          {/* Participant info */}
+          {/* Participant list */}
           <AppCard className="border-[#E5E4DE] rounded-3xl bg-white p-6 shadow-sm">
-            <div className="flex items-center gap-3 border-b border-[#F4F4F2] pb-4 mb-4">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E8F1EE] text-[#0B3025]">
-                <User className="h-4 w-4" />
+            <div className="flex items-center justify-between border-b border-[#F4F4F2] pb-4 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E8F1EE] text-[#0B3025]">
+                  <Users className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-zinc-800 text-base">
+                    Danh sách người tham gia ({fields.length})
+                  </h3>
+                </div>
               </div>
-              <h3 className="font-extrabold text-zinc-800 text-base">Thông tin người tham gia</h3>
+              <AppButton
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={fields.length >= remainingSlots}
+                onClick={() => append(createDefaultParticipant())}
+                className="rounded-xl flex items-center gap-1.5 text-xs font-bold border-[#E5E4DE] text-[#0B3025] hover:bg-[#E8F1EE]/40"
+              >
+                <Plus className="h-4 w-4" /> Thêm người
+              </AppButton>
             </div>
 
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <AppFormInput
-                  control={control}
-                  name="fullName"
-                  label="Họ và tên"
-                  placeholder="Nhập họ và tên khách hàng"
-                  className="bg-[#FAF9F5] rounded-2xl border-[#E5E4DE] focus:ring-1 focus:ring-[#0B3025]"
-                />
-                <AppFormInput
-                  control={control}
-                  name="phone"
-                  label="Số điện thoại"
-                  placeholder="0xxx xxx xxx"
-                  className="bg-[#FAF9F5] rounded-2xl border-[#E5E4DE] focus:ring-1 focus:ring-[#0B3025]"
-                />
-              </div>
-              <AppFormInput
-                control={control}
-                name="email"
-                label="Email"
-                placeholder="example@email.com"
-                className="bg-[#FAF9F5] rounded-2xl border-[#E5E4DE] focus:ring-1 focus:ring-[#0B3025]"
-              />
+            {errors.participants?.root && (
+              <p className="text-xs text-destructive mb-4 font-semibold">
+                {errors.participants.root.message}
+              </p>
+            )}
 
-              <div className="space-y-2">
-                <label htmlFor="notes" className="text-zinc-700 font-bold text-xs">
-                  Ghi chú đặc biệt
-                </label>
-                <textarea
-                  id="notes"
-                  className="w-full min-h-[100px] p-4 bg-[#FAF9F5] border border-[#E5E4DE] rounded-2xl text-zinc-800 font-medium text-sm focus:outline-none focus:ring-1 focus:ring-[#0B3025]"
-                  placeholder="Yêu cầu về ăn uống, y tế hoặc lưu ý khác..."
-                  onChange={(e) => setValue('notes', e.target.value)}
-                  value={watch('notes') || ''}
-                />
-              </div>
-            </div>
-          </AppCard>
-
-          {/* Payment Methods */}
-          <AppCard className="border-[#E5E4DE] rounded-3xl bg-white p-6 shadow-sm">
-            <div className="flex items-center gap-3 border-b border-[#F4F4F2] pb-4 mb-4">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E8F1EE] text-[#0B3025]">
-                <Wallet className="h-4 w-4" />
-              </div>
-              <h3 className="font-extrabold text-zinc-800 text-base">Phương thức thanh toán</h3>
-            </div>
-
-            <div className="space-y-3">
-              {/* Credit card */}
-              <label
-                className={`flex items-center justify-between p-4 bg-[#FAF9F5] rounded-2xl border cursor-pointer transition-all ${
-                  paymentMethod === 'card'
-                    ? 'border-[#0B3025] ring-1 ring-[#0B3025]'
-                    : 'border-[#E5E4DE]'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    checked={paymentMethod === 'card'}
-                    onChange={() => setValue('paymentMethod', 'card')}
-                    className="accent-[#0B3025] h-4 w-4"
-                  />
-                  <div>
-                    <span className="font-bold text-sm text-zinc-800 block">
-                      Thẻ tín dụng / Ghi nợ
+            <div className="space-y-6">
+              {fields.map((field, index) => (
+                <div
+                  key={field.id}
+                  className="p-5 bg-[#FAF9F5] border border-[#E5E4DE] rounded-2xl space-y-4 relative"
+                >
+                  <div className="flex items-center justify-between border-b border-[#E5E4DE] pb-3">
+                    <span className="font-extrabold text-sm text-[#0B3025] flex items-center gap-2">
+                      <User className="h-4 w-4" /> Người tham gia {index + 1}
                     </span>
-                    <span className="text-[11px] text-zinc-500 font-semibold mt-0.5">
-                      Visa, Mastercard, JCB, American Express
-                    </span>
+                    {fields.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => remove(index)}
+                        className="text-zinc-400 hover:text-destructive p-1 rounded-lg transition-colors"
+                        title="Xóa người tham gia"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
-                </div>
-                <CreditCard className="h-5 w-5 text-zinc-400" />
-              </label>
 
-              {/* Bank transfer */}
-              <label
-                className={`flex items-center justify-between p-4 bg-[#FAF9F5] rounded-2xl border cursor-pointer transition-all ${
-                  paymentMethod === 'bank'
-                    ? 'border-[#0B3025] ring-1 ring-[#0B3025]'
-                    : 'border-[#E5E4DE]'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    checked={paymentMethod === 'bank'}
-                    onChange={() => setValue('paymentMethod', 'bank')}
-                    className="accent-[#0B3025] h-4 w-4"
-                  />
-                  <div>
-                    <span className="font-bold text-sm text-zinc-800 block">
-                      Chuyển khoản ngân hàng
-                    </span>
-                    <span className="text-[11px] text-zinc-500 font-semibold mt-0.5">
-                      Xác nhận nhanh chóng qua QR Code VietQR
-                    </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <AppFormInput
+                      control={control}
+                      name={`participants.${index}.fullName`}
+                      label="Họ và tên *"
+                      placeholder="Nguyễn Văn A"
+                      className="bg-white rounded-xl border-[#E5E4DE]"
+                    />
+                    <AppFormInput
+                      control={control}
+                      name={`participants.${index}.phone`}
+                      label="Số điện thoại *"
+                      placeholder="0987654321"
+                      className="bg-white rounded-xl border-[#E5E4DE]"
+                    />
                   </div>
-                </div>
-                <QrCode className="h-5 w-5 text-zinc-400" />
-              </label>
 
-              {/* Mobile wallet */}
-              <label
-                className={`flex items-center justify-between p-4 bg-[#FAF9F5] rounded-2xl border cursor-pointer transition-all ${
-                  paymentMethod === 'wallet'
-                    ? 'border-[#0B3025] ring-1 ring-[#0B3025]'
-                    : 'border-[#E5E4DE]'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    checked={paymentMethod === 'wallet'}
-                    onChange={() => setValue('paymentMethod', 'wallet')}
-                    className="accent-[#0B3025] h-4 w-4"
-                  />
-                  <div>
-                    <span className="font-bold text-sm text-zinc-800 block">
-                      Ví điện tử MoMo / ZaloPay
-                    </span>
-                    <span className="text-[11px] text-zinc-500 font-semibold mt-0.5">
-                      Thanh toán tiện lợi, bảo mật cao
-                    </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <AppFormInput
+                      control={control}
+                      name={`participants.${index}.dateOfBirth`}
+                      label="Ngày sinh *"
+                      type="date"
+                      className="bg-white rounded-xl border-[#E5E4DE]"
+                    />
+                    <div className="space-y-2">
+                      <label
+                        htmlFor={`participants.${index}.gender`}
+                        className="text-zinc-700 font-bold text-xs block"
+                      >
+                        Giới tính *
+                      </label>
+                      <select
+                        id={`participants.${index}.gender`}
+                        {...register(`participants.${index}.gender`)}
+                        className="w-full h-10 px-3 bg-white border border-[#E5E4DE] rounded-xl text-zinc-800 font-medium text-sm focus:outline-none focus:ring-1 focus:ring-[#0B3025]"
+                      >
+                        <option value="MALE">Nam (MALE)</option>
+                        <option value="FEMALE">Nữ (FEMALE)</option>
+                        <option value="OTHER">Khác (OTHER)</option>
+                      </select>
+                      {errors.participants?.[index]?.gender && (
+                        <p className="text-xs text-destructive">
+                          {errors.participants[index]?.gender?.message}
+                        </p>
+                      )}
+                    </div>
+                    <AppFormInput
+                      control={control}
+                      name={`participants.${index}.idNumber`}
+                      label="Số CCCD / Hộ chiếu *"
+                      placeholder="001202001234"
+                      className="bg-white rounded-xl border-[#E5E4DE]"
+                    />
                   </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <AppFormInput
+                      control={control}
+                      name={`participants.${index}.email`}
+                      label="Email (Không bắt buộc)"
+                      placeholder="nguyenvana@gmail.com"
+                      className="bg-white rounded-xl border-[#E5E4DE]"
+                    />
+                    <AppFormInput
+                      control={control}
+                      name={`participants.${index}.address`}
+                      label="Địa chỉ (Không bắt buộc)"
+                      placeholder="Cầu Giấy, Hà Nội"
+                      className="bg-white rounded-xl border-[#E5E4DE]"
+                    />
+                  </div>
+
+                  <AppFormInput
+                    control={control}
+                    name={`participants.${index}.specialRequirements`}
+                    label="Yêu cầu đặc biệt (Không bắt buộc)"
+                    placeholder="Không ăn được thịt bò, dị ứng thực phẩm..."
+                    className="bg-white rounded-xl border-[#E5E4DE]"
+                  />
                 </div>
-                <Wallet className="h-5 w-5 text-zinc-400" />
-              </label>
+              ))}
             </div>
           </AppCard>
         </div>
@@ -539,46 +542,14 @@ export default function BookTour() {
                   {formatPrice(appliedVoucher.discountAmount)}đ)
                 </p>
               )}
-
-              {/* List of available vouchers */}
-              {availableVouchers.length > 0 && (
-                <div className="mt-4 pt-3 border-t border-[#F4F4F2]">
-                  <span className="text-[10px] font-extrabold text-zinc-400 tracking-wider block mb-2 uppercase">
-                    Mã giảm giá khả dụng
-                  </span>
-                  <div className="flex flex-col gap-2 max-h-40 overflow-y-auto pr-1">
-                    {availableVouchers.map((v) => {
-                      const isDisabled = v.isExceeded || v.isExpired;
-                      return (
-                        <button
-                          key={v.code}
-                          type="button"
-                          disabled={isDisabled}
-                          onClick={() => {
-                            if (isDisabled) return;
-                            setVoucherCode(v.code);
-                            handleApplyVoucher(v.code);
-                          }}
-                          className={`flex flex-col text-left p-2.5 rounded-xl border transition-all text-xs ${
-                            isDisabled
-                              ? 'border-zinc-200 bg-zinc-50 opacity-50 cursor-not-allowed'
-                              : 'border-[#E5E4DE] bg-[#FAF9F5] hover:border-[#0B3025] hover:bg-[#E8F1EE]/10 cursor-pointer'
-                          }`}
-                        >
-                          <span className="font-bold text-zinc-800">{v.code}</span>
-                          <span className="text-[10px] text-zinc-500 font-semibold mt-0.5">
-                            {v.description}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Cost display */}
             <div className="space-y-3 pt-4 border-t border-[#F4F4F2] mb-6">
+              <div className="flex justify-between items-center text-zinc-500 font-semibold text-sm">
+                <span>Số lượng người tham gia</span>
+                <span>{participantsCount} người</span>
+              </div>
               <div className="flex justify-between items-center text-zinc-500 font-semibold text-sm">
                 <span>Tạm tính</span>
                 <span>{formatPrice(subtotal)}đ</span>
@@ -606,13 +577,12 @@ export default function BookTour() {
               <ShieldCheck className="h-4 w-4 text-emerald-600" />
               <span>Thanh toán an toàn & bảo mật</span>
             </div>
+            {/* Refund Info Alert */}
+            <div className="mt-4 p-4 bg-emerald-50 text-emerald-800 border border-emerald-100 rounded-2xl text-xs font-semibold flex gap-2">
+              <Info className="h-4 w-4 shrink-0 mt-0.5" />
+              <span>Chính sách hoàn tiền: Hoàn 100% nếu hủy trước khởi hành 7 ngày.</span>
+            </div>
           </AppCard>
-
-          {/* Refund Info Alert */}
-          <div className="p-4 bg-emerald-50 text-emerald-800 border border-emerald-100 rounded-2xl text-xs font-semibold flex gap-2">
-            <Info className="h-4 w-4 shrink-0 mt-0.5" />
-            <span>Chính sách hoàn tiền: Hoàn 100% nếu hủy trước khởi hành 7 ngày.</span>
-          </div>
         </div>
       </form>
     </div>
