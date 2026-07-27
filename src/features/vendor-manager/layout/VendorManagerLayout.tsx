@@ -31,7 +31,7 @@ const navItems = [
     disabled: false,
   },
   { name: 'Khách hàng', path: '', icon: UserRound, disabled: true },
-  { name: 'Thiết bị', path: '', icon: Backpack, disabled: true },
+  { name: 'Thiết bị', path: PATHS.VENDOR_MANAGER_EQUIPMENT, icon: Backpack, disabled: false },
   { name: 'Báo cáo', path: '', icon: BarChart3, disabled: true },
 ];
 
@@ -44,8 +44,10 @@ export default function VendorManagerLayout() {
   const vendorName = user?.name || 'Vendor Manager';
   const vendorInitial = vendorName.charAt(0).toUpperCase();
   // Header search chỉ phục vụ trang Nhân viên (lọc qua context) — ẩn ở màn Tour
-  // vì Tour đã có ô lọc riêng của chính nó, header ở đây chỉ là dư thừa.
-  const showHeader = !location.pathname.startsWith(PATHS.VENDOR_MANAGER_TOURS);
+  // và Thiết bị vì 2 trang đó đã có ô lọc riêng của chính mình, header ở đây chỉ là dư thừa.
+  const showHeader =
+    !location.pathname.startsWith(PATHS.VENDOR_MANAGER_TOURS) &&
+    !location.pathname.startsWith(PATHS.VENDOR_MANAGER_EQUIPMENT);
 
   // Nhiều mục có thể cùng khớp prefix (vd "Tour" và "Duyệt tour" đều bắt đầu bằng
   // "/vendor-manager/tours") — chỉ mục có path khớp DÀI NHẤT được coi là active.

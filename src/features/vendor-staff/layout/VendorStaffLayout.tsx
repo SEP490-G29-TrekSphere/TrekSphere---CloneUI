@@ -24,7 +24,7 @@ const navItems = [
   { name: 'Tổng quan', path: '', icon: LayoutGrid, disabled: true },
   { name: 'Lịch trình', path: '', icon: CalendarClock, disabled: true },
   { name: 'Tour', path: PATHS.PARTNER_TOURS, icon: MapIcon, disabled: false },
-  { name: 'Thiết bị', path: '', icon: Backpack, disabled: true },
+  { name: 'Thiết bị', path: PATHS.PARTNER_EQUIPMENT, icon: Backpack, disabled: false },
   { name: 'Báo cáo', path: '', icon: BarChart3, disabled: true },
 ];
 
@@ -36,9 +36,11 @@ export default function VendorStaffLayout() {
 
   const staffName = user?.name || 'Vendor Staff';
   const staffInitial = staffName.charAt(0).toUpperCase();
-  // Header search không liên kết với ô lọc riêng của trang Tour — ẩn ở màn Tour
-  // để tránh 2 ô tìm kiếm không đồng bộ với nhau.
-  const showHeader = !location.pathname.startsWith(PATHS.PARTNER_TOURS);
+  // Header search không liên kết với ô lọc riêng của trang Tour/Thiết bị — ẩn ở
+  // 2 màn đó để tránh 2 ô tìm kiếm không đồng bộ với nhau.
+  const showHeader =
+    !location.pathname.startsWith(PATHS.PARTNER_TOURS) &&
+    !location.pathname.startsWith(PATHS.PARTNER_EQUIPMENT);
 
   return (
     <div className="flex h-screen w-full overflow-hidden" style={{ backgroundColor: '#FAF8F1' }}>
