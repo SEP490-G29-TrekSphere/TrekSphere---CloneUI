@@ -1,4 +1,4 @@
-import { Bell, FileText, Key, LogOut, Moon, Sun, User } from 'lucide-react';
+import { Bell, Compass, FileText, Key, LogOut, User } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { queryClient } from '@/config/queryClient';
@@ -6,7 +6,6 @@ import { PATHS } from '@/constants';
 import { authService } from '@/features/auth';
 import { mockNotifications } from '@/features/notifications/data/mockNotifications';
 import { profileKeys } from '@/features/profile/hooks/useProfile';
-import { useDarkMode } from '@/hooks/useDarkMode';
 import { AppLogo } from '@/shared/ui';
 import { useAppStore } from '@/store/useAppStore';
 import { toast } from '@/store/useToastStore';
@@ -14,7 +13,6 @@ import { storage } from '@/utils/storage';
 
 const NAV_ITEMS = [
   { label: 'Khám phá', path: PATHS.HOME },
-  { label: 'Tour của tôi', path: PATHS.MY_TOURS },
   { label: 'Nhóm', path: PATHS.GROUPS },
   { label: 'Tin tức', path: PATHS.NEWS },
 ];
@@ -32,7 +30,6 @@ export default function PublicHeader() {
   const setUser = useAppStore((state) => state.setUser);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [isDark, toggleDark] = useDarkMode();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Glassmorphism on scroll
@@ -114,20 +111,6 @@ export default function PublicHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          {/* Dark mode toggle */}
-          <button
-            type="button"
-            onClick={toggleDark}
-            aria-label={isDark ? 'Chuyển sang sáng' : 'Chuyển sang tối'}
-            className={`flex size-9 items-center justify-center rounded-full transition-colors cursor-pointer ${
-              transparent
-                ? 'text-white/80 hover:text-white hover:bg-white/10'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-            }`}
-          >
-            {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
-          </button>
-
           {user ? (
             /* Authenticated: bell + avatar + dropdown */
             <>
@@ -186,6 +169,14 @@ export default function PublicHeader() {
                     >
                       <User className="h-4 w-4" />
                       Hồ sơ
+                    </Link>
+                    <Link
+                      to={PATHS.MY_TOURS}
+                      onClick={() => setDropdownOpen(false)}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    >
+                      <Compass className="h-4 w-4" />
+                      Tour của tôi
                     </Link>
                     <Link
                       to={PATHS.BLOG_LIST}

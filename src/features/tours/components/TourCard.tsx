@@ -5,6 +5,7 @@ import type { Tour } from '@/features/tours/types';
 import { cn } from '@/lib/utils';
 
 interface TourCardProps {
+  key?: React.Key;
   tour: Tour;
   className?: string;
   layout?: 'list' | 'grid';

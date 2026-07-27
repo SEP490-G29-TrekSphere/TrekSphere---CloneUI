@@ -1,29 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 /**
  * useDarkMode — manages the `.dark` class on <html> and persists to localStorage.
  * Returns [isDark, toggleDark].
  */
 export function useDarkMode(): [boolean, () => void] {
-  const [isDark, setIsDark] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    const stored = localStorage.getItem('theme');
-    if (stored) return stored === 'dark';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
-
   useEffect(() => {
-    const root = document.documentElement;
-    if (isDark) {
-      root.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      root.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [isDark]);
+    document.documentElement.classList.remove('dark');
+    document.documentElement.classList.add('light');
+  }, []);
 
-  const toggleDark = () => setIsDark((prev) => !prev);
-
-  return [isDark, toggleDark];
+  return [false, () => {}];
 }

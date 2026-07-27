@@ -9,7 +9,6 @@ import {
   type TourSearchValues,
   ToursHero,
 } from '@/features/tours';
-import { useTourPriceRange } from '@/features/tours/hooks/useTourPriceRange';
 import { useTours } from '@/features/tours/hooks/useTours';
 import type {
   ApiDifficulty,
@@ -159,16 +158,6 @@ export default function ListTours() {
 
   const { sortBy, sortDir } = resolveSort(filters.sortBy);
 
-  const {
-    minPrice,
-    maxPrice,
-    isLoading: isPriceRangeLoading,
-  } = useTourPriceRange({
-    keyword: filters.keyword,
-    location: filters.location,
-    difficulty: filters.difficulty,
-  });
-
   const queryParams = useMemo<TourListParams>(
     () => ({
       keyword: filters.keyword,
@@ -192,25 +181,42 @@ export default function ListTours() {
 
   const { tours, totalPages, pageNumber, isLoading, error, refetch } = useTours(queryParams);
 
-  useEffect(() => {
-    if (isPriceRangeLoading) return;
-    setPriceRange([minPrice, maxPrice]);
-  }, [minPrice, maxPrice, isPriceRangeLoading]);
+  // Calculate dynamic min/max prices directly from current tours list without extra API queries
+  const { calculatedMinPrice, calculatedMaxPrice } = useMemo(() => {
+    if (!tours.length) return { calculatedMinPrice: 0, calculatedMaxPrice: 0 };
+    let min = Number.POSITIVE_INFINITY;
+    let max = Number.NEGATIVE_INFINITY;
+    for (const t of tours) {
+      if (t.basePrice !== undefined) {
+        if (t.basePrice < min) min = t.basePrice;
+        if (t.basePrice > max) max = t.basePrice;
+      }
+    }
+    return {
+      calculatedMinPrice: min === Number.POSITIVE_INFINITY ? 0 : min,
+      calculatedMaxPrice: max === Number.NEGATIVE_INFINITY ? 0 : max,
+    };
+  }, [tours]);
 
-  // Client-side price filtering (since API does not support price query range yet)
+  const minPrice = calculatedMinPrice;
+  const maxPrice = calculatedMaxPrice;
+  const isPriceRangeLoading = isLoading;
+
+  useEffect(() => {
+    if (isLoading || isPriceFilterActive) return;
+    setPriceRange([calculatedMinPrice, calculatedMaxPrice]);
+  }, [calculatedMinPrice, calculatedMaxPrice, isLoading, isPriceFilterActive]);
+
+  // Client-side price filtering
   const filteredTours = useMemo(() => {
     return tours.filter((tour) => {
-      if (
-        !isPriceFilterActive ||
-        isPriceRangeLoading ||
-        (priceRange[0] === 0 && priceRange[1] === 0)
-      ) {
+      if (!isPriceFilterActive || isLoading || (priceRange[0] === 0 && priceRange[1] === 0)) {
         return true;
       }
       if (!tour.basePrice) return true;
       return tour.basePrice >= priceRange[0] && tour.basePrice <= priceRange[1];
     });
-  }, [tours, priceRange, isPriceRangeLoading, isPriceFilterActive]);
+  }, [tours, priceRange, isLoading, isPriceFilterActive]);
 
   const activeTotalCount = isLoading ? 0 : filteredTours.length;
 
