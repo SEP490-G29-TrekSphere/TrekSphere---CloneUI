@@ -1,7 +1,7 @@
 import { Filter } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getPartnerTourEditPath, PATHS } from '@/constants';
+import { getPartnerTourEditPath, getPartnerTourSchedulesPath, PATHS } from '@/constants';
 import { DeleteTourConfirmDialog } from '@/features/vendor-tours/components/DeleteTourConfirmDialog';
 import { SubmitApprovalConfirmDialog } from '@/features/vendor-tours/components/SubmitApprovalConfirmDialog';
 import { TourPagination } from '@/features/vendor-tours/components/TourPagination';
@@ -239,6 +239,7 @@ export default function TourList() {
                     key={tour.id}
                     tour={tour}
                     editPath={getPartnerTourEditPath(tour.id)}
+                    schedulesPath={getPartnerTourSchedulesPath(tour.id)}
                     onDeleteClick={setDeleteTarget}
                     onSubmitApprovalClick={setSubmitApprovalTarget}
                   />

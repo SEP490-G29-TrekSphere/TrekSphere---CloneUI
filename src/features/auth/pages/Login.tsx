@@ -7,6 +7,7 @@ import { queryClient } from '@/config/queryClient';
 import { PATHS } from '@/constants';
 import { extractRoles, getPostLoginRoute } from '@/constants/roles';
 import { authService, toAppStoreUser } from '@/features/auth';
+import { useAuthCheck } from '@/shared/hooks/useAuthCheck';
 import {
   AppButton,
   AppCheckbox,
@@ -25,11 +26,24 @@ const LOGIN_IMAGE = 'https://images.unsplash.com/photo-1506905925346-21bda4d32df
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
+  const user = useAppStore((state) => state.user);
   const setUser = useAppStore((state) => state.setUser);
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuthCheck();
   const [rememberMe, setRememberMe] = useState(false);
   // Nếu user vừa đăng ký xong, Register sẽ navigate sang kèm state.registeredEmail.
   const registeredEmail =
     (location.state as { registeredEmail?: string } | null)?.registeredEmail ?? '';
+
+  // Trường hợp user đã login rồi nhưng vẫn vào được /login (vd: bấm nút Back
+  // của trình duyệt quay lại entry /login cũ trong history). Redirect luôn
+  // thay vì hiển thị lại form, và dùng `replace` để /login biến mất khỏi
+  // history — tránh việc Back lại rơi vào đúng trang này lần nữa.
+  useEffect(() => {
+    if (isAuthLoading || !isAuthenticated) return;
+
+    const from = (location.state as { from?: { pathname: string } } | null)?.from;
+    navigate(from?.pathname ?? getPostLoginRoute(user?.roles ?? []), { replace: true });
+  }, [isAuthLoading, isAuthenticated, location.state, navigate, user?.roles]);
 
   const methods = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -118,7 +132,7 @@ export default function Login() {
         setUser(toAppStoreUser(user));
         toast.success(`Chào mừng, ${user.fullName}!`);
 
-        navigate(getPostLoginRoute(user.roles));
+        navigate(getPostLoginRoute(user.roles), { replace: true });
       } catch (err) {
         console.error('Google login error:', err);
         toast.error('Đăng nhập Google thất bại. Vui lòng thử lại.');
@@ -230,13 +244,23 @@ export default function Login() {
         toast.success(`Chào mừng quay trở lại, ${user.fullName}!`);
 
         // Điều hướng theo role (roles đã được normalize ở trên).
-        navigate(getPostLoginRoute(user.roles));
+        navigate(getPostLoginRoute(user.roles), { replace: true });
       } catch (err) {
         console.error('Login error:', err);
         toast.error('Đăng nhập thất bại. Vui lòng thử lại.');
       }
     })();
   };
+
+  // Đang chờ hydrate hoặc đã login (chuẩn bị redirect ở effect trên) → không
+  // render form login để tránh flash lại màn hình đăng nhập.
+  if (isAuthLoading || isAuthenticated) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <AppSpinner size="lg" className="text-primary" />
+      </div>
+    );
+  }
 
   return (
     <AuthLayout

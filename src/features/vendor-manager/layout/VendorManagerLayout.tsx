@@ -3,6 +3,7 @@ import {
   BarChart3,
   Bell,
   CalendarClock,
+  ClipboardCheck,
   LayoutGrid,
   LogOut,
   Map as MapIcon,
@@ -23,6 +24,12 @@ const navItems = [
   { name: 'Lịch trình', path: '', icon: CalendarClock, disabled: true },
   { name: 'Nhân viên', path: PATHS.VENDOR_MANAGER_STAFF, icon: Users, disabled: false },
   { name: 'Tour', path: PATHS.VENDOR_MANAGER_TOURS, icon: MapIcon, disabled: false },
+  {
+    name: 'Duyệt tour',
+    path: PATHS.VENDOR_MANAGER_TOUR_APPROVALS,
+    icon: ClipboardCheck,
+    disabled: false,
+  },
   { name: 'Khách hàng', path: '', icon: UserRound, disabled: true },
   { name: 'Thiết bị', path: '', icon: Backpack, disabled: true },
   { name: 'Báo cáo', path: '', icon: BarChart3, disabled: true },
@@ -39,6 +46,12 @@ export default function VendorManagerLayout() {
   // Header search chỉ phục vụ trang Nhân viên (lọc qua context) — ẩn ở màn Tour
   // vì Tour đã có ô lọc riêng của chính nó, header ở đây chỉ là dư thừa.
   const showHeader = !location.pathname.startsWith(PATHS.VENDOR_MANAGER_TOURS);
+
+  // Nhiều mục có thể cùng khớp prefix (vd "Tour" và "Duyệt tour" đều bắt đầu bằng
+  // "/vendor-manager/tours") — chỉ mục có path khớp DÀI NHẤT được coi là active.
+  const activeItem = navItems
+    .filter((item) => !item.disabled && location.pathname.startsWith(item.path))
+    .sort((a, b) => b.path.length - a.path.length)[0];
 
   return (
     <div className="flex h-screen w-full overflow-hidden" style={{ backgroundColor: '#FAF8F1' }}>
@@ -76,7 +89,7 @@ export default function VendorManagerLayout() {
                 );
               }
 
-              const isActive = location.pathname.startsWith(item.path);
+              const isActive = item === activeItem;
               return (
                 <Link
                   key={item.name}

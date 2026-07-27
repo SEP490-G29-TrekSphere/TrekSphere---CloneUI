@@ -53,10 +53,15 @@ const StaffList = lazy(() => import('@/features/vendor-manager/staff/pages/Staff
 const TourList = lazy(() => import('@/features/vendor-manager/tours/pages/TourList'));
 const TourCreate = lazy(() => import('@/features/vendor-manager/tours/pages/TourCreate'));
 const TourEdit = lazy(() => import('@/features/vendor-manager/tours/pages/TourEdit'));
+const TourApprovals = lazy(() => import('@/features/vendor-manager/tours/pages/TourApprovals'));
+const TourSchedules = lazy(() => import('@/features/vendor-manager/tours/pages/TourSchedules'));
 const VendorStaffLayout = lazy(() => import('@/features/vendor-staff/layout/VendorStaffLayout'));
 const PartnerTourList = lazy(() => import('@/features/vendor-staff/tours/pages/TourList'));
 const PartnerTourCreate = lazy(() => import('@/features/vendor-staff/tours/pages/TourCreate'));
 const PartnerTourEdit = lazy(() => import('@/features/vendor-staff/tours/pages/TourEdit'));
+const PartnerTourSchedules = lazy(
+  () => import('@/features/vendor-staff/tours/pages/TourSchedules')
+);
 
 function PageLoader() {
   return (
@@ -163,6 +168,8 @@ export default function AppRoutes() {
           <Route path={PATHS.VENDOR_MANAGER_TOURS} element={<TourList />} />
           <Route path={PATHS.VENDOR_MANAGER_TOUR_CREATE} element={<TourCreate />} />
           <Route path={PATHS.VENDOR_MANAGER_TOUR_EDIT} element={<TourEdit />} />
+          <Route path={PATHS.VENDOR_MANAGER_TOUR_APPROVALS} element={<TourApprovals />} />
+          <Route path={PATHS.VENDOR_MANAGER_TOUR_SCHEDULES} element={<TourSchedules />} />
         </Route>
 
         {/* Vendor Staff routes — yêu cầu role vendor_staff, dùng VendorStaffLayout riêng */}
@@ -178,6 +185,7 @@ export default function AppRoutes() {
           <Route path={PATHS.PARTNER_TOURS} element={<PartnerTourList />} />
           <Route path={PATHS.PARTNER_TOUR_CREATE} element={<PartnerTourCreate />} />
           <Route path={PATHS.PARTNER_TOUR_EDIT} element={<PartnerTourEdit />} />
+          <Route path={PATHS.PARTNER_TOUR_SCHEDULES} element={<PartnerTourSchedules />} />
         </Route>
       </Routes>
     </Suspense>

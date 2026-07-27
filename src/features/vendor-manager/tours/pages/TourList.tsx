@@ -1,7 +1,11 @@
 import { Filter } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getVendorManagerTourEditPath, PATHS } from '@/constants';
+import {
+  getVendorManagerTourEditPath,
+  getVendorManagerTourSchedulesPath,
+  PATHS,
+} from '@/constants';
 import { DeleteTourConfirmDialog } from '@/features/vendor-tours/components/DeleteTourConfirmDialog';
 import { TourPagination } from '@/features/vendor-tours/components/TourPagination';
 import { TourTableRow } from '@/features/vendor-tours/components/TourTableRow';
@@ -73,15 +77,6 @@ export default function TourList() {
   const tours = hasClientFilter
     ? filteredTours.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
     : filteredTours;
-
-  // BE chưa có API duyệt/từ chối tour — 2 nút này tạm thời chỉ là placeholder,
-  // giống cách nút Sửa từng làm trước khi có API thật.
-  const handleApprovePlaceholder = () => {
-    toast.info('Chức năng duyệt tour đang phát triển.');
-  };
-  const handleRejectPlaceholder = () => {
-    toast.info('Chức năng từ chối tour đang phát triển.');
-  };
 
   const handleDeleteConfirm = () => {
     if (!deleteTarget) return;
@@ -234,9 +229,8 @@ export default function TourList() {
                     key={tour.id}
                     tour={tour}
                     editPath={getVendorManagerTourEditPath(tour.id)}
+                    schedulesPath={getVendorManagerTourSchedulesPath(tour.id)}
                     onDeleteClick={setDeleteTarget}
-                    onApproveClick={handleApprovePlaceholder}
-                    onRejectClick={handleRejectPlaceholder}
                   />
                 ))
               )}

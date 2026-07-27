@@ -29,6 +29,9 @@ import type {
  *   PUT    /vendor/tours/checkpoints/{checkpointId}     — sửa 1 checkpoint đã tồn tại
  *   DELETE /vendor/tours/checkpoints/{checkpointId}     — xóa 1 checkpoint
  *   POST   /vendor/tours/{id}/submit-approval           — gửi tour (DRAFT/REJECTED) lên cho Manager duyệt
+ *   PUT    /vendor/tours/{id}/approve                — Manager duyệt tour đang PENDING_APPROVAL
+ *   PUT    /vendor/tours/{id}/reject                 — Manager từ chối tour PENDING_APPROVAL (kèm reason)
+ *   PUT    /vendor/tours/{id}/hide                   — Manager ẩn tour APPROVED nếu vi phạm (kèm reason)
  *
  * LƯU Ý: `/vendor/tours/{id}` KHÔNG có method GET (đã xác nhận qua OpenAPI spec —
  * path đó chỉ khai báo `put`/`delete`). Muốn lấy chi tiết 1 tour để đổ vào form
@@ -45,6 +48,7 @@ interface VendorTourResponseDto {
   difficulty: ApiDifficulty;
   status: ApiStatus;
   coverImageUrl: string | null;
+  createdAt: string;
 }
 
 interface TourDetailResponseDto {
@@ -83,6 +87,7 @@ function mapVendorTour(dto: VendorTourResponseDto): VendorTourListItem {
     basePrice: dto.basePrice,
     difficulty: dto.difficulty,
     status: dto.status,
+    createdAt: dto.createdAt,
   };
 }
 
@@ -194,6 +199,38 @@ export const vendorTourService = {
     const response = await ApiService<TourDetailResponseDto>(
       `/vendor/tours/${tourId}/submit-approval`,
       'POST'
+    );
+    const data = unwrapResponse(response);
+    return { id: data.tourId, status: data.status };
+  },
+
+  /** Duyệt tour đang PENDING_APPROVAL — không cần body. */
+  async approveTour(tourId: string): Promise<CreatedTour> {
+    const response = await ApiService<TourDetailResponseDto>(
+      `/vendor/tours/${tourId}/approve`,
+      'PUT'
+    );
+    const data = unwrapResponse(response);
+    return { id: data.tourId, status: data.status };
+  },
+
+  /** Từ chối tour đang PENDING_APPROVAL — bắt buộc kèm lý do. */
+  async rejectTour(tourId: string, reason: string): Promise<CreatedTour> {
+    const response = await ApiService<TourDetailResponseDto>(
+      `/vendor/tours/${tourId}/reject`,
+      'PUT',
+      { reason }
+    );
+    const data = unwrapResponse(response);
+    return { id: data.tourId, status: data.status };
+  },
+
+  /** Ẩn tour đã APPROVED nếu phát hiện vi phạm — bắt buộc kèm lý do. */
+  async hideTour(tourId: string, reason: string): Promise<CreatedTour> {
+    const response = await ApiService<TourDetailResponseDto>(
+      `/vendor/tours/${tourId}/hide`,
+      'PUT',
+      { reason }
     );
     const data = unwrapResponse(response);
     return { id: data.tourId, status: data.status };

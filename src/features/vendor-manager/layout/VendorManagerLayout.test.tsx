@@ -17,14 +17,16 @@ function ChildProbe() {
   return <div>child-rendered</div>;
 }
 
-function renderLayout() {
+function renderLayout(initialPath = '/vendor-manager/staff') {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={['/vendor-manager/staff']}>
+      <MemoryRouter initialEntries={[initialPath]}>
         <Routes>
           <Route path="/vendor-manager" element={<VendorManagerLayout />}>
             <Route path="staff" element={<ChildProbe />} />
+            <Route path="tours" element={<ChildProbe />} />
+            <Route path="tours/approvals" element={<ChildProbe />} />
           </Route>
         </Routes>
       </MemoryRouter>
@@ -63,4 +65,24 @@ test('search input thay đổi giá trị (context truyền xuống Outlet)', ()
 test('hiển thị tên user từ store', () => {
   renderLayout();
   expect(screen.getByText('Vendor Owner')).toBeTruthy();
+});
+
+test('mục "Duyệt tour" active khi ở /vendor-manager/tours/approvals, "Tour" không active', () => {
+  renderLayout('/vendor-manager/tours/approvals');
+
+  const tourLink = screen.getByText('Tour').closest('a');
+  const approvalsLink = screen.getByText('Duyệt tour').closest('a');
+
+  expect(tourLink?.style.backgroundColor).toBe('');
+  expect(approvalsLink?.style.backgroundColor).not.toBe('');
+});
+
+test('mục "Tour" active khi ở /vendor-manager/tours (danh sách), "Duyệt tour" không active', () => {
+  renderLayout('/vendor-manager/tours');
+
+  const tourLink = screen.getByText('Tour').closest('a');
+  const approvalsLink = screen.getByText('Duyệt tour').closest('a');
+
+  expect(tourLink?.style.backgroundColor).not.toBe('');
+  expect(approvalsLink?.style.backgroundColor).toBe('');
 });

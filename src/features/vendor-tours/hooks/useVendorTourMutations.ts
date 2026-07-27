@@ -97,11 +97,40 @@ export function useVendorTourMutations() {
     },
   });
 
+  const approveTour = useMutation({
+    mutationFn: (tourId: string) => vendorTourService.approveTour(tourId),
+    onSuccess: (_data, tourId) => {
+      invalidate();
+      queryClient.invalidateQueries({ queryKey: vendorTourDetailKeys.detail(tourId) });
+    },
+  });
+
+  const rejectTour = useMutation({
+    mutationFn: ({ tourId, reason }: { tourId: string; reason: string }) =>
+      vendorTourService.rejectTour(tourId, reason),
+    onSuccess: (_data, variables) => {
+      invalidate();
+      queryClient.invalidateQueries({ queryKey: vendorTourDetailKeys.detail(variables.tourId) });
+    },
+  });
+
+  const hideTour = useMutation({
+    mutationFn: ({ tourId, reason }: { tourId: string; reason: string }) =>
+      vendorTourService.hideTour(tourId, reason),
+    onSuccess: (_data, variables) => {
+      invalidate();
+      queryClient.invalidateQueries({ queryKey: vendorTourDetailKeys.detail(variables.tourId) });
+    },
+  });
+
   return {
     createTourWithCheckpoints,
     updateTour,
     updateTourWithCheckpoints,
     deleteTour,
     submitTourForApproval,
+    approveTour,
+    rejectTour,
+    hideTour,
   };
 }

@@ -24,6 +24,7 @@ export function useVendorTourStats() {
         total,
         pendingApproval: tours.filter((tour) => tour.status === 'PENDING_APPROVAL').length,
         approved: tours.filter((tour) => tour.status === 'APPROVED').length,
+        rejected: tours.filter((tour) => tour.status === 'REJECTED').length,
       };
     },
     staleTime: 60_000,

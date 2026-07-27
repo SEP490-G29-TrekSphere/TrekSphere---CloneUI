@@ -1,4 +1,4 @@
-import { Check, Pencil, Send, Trash2, X } from 'lucide-react';
+import { CalendarClock, Check, Pencil, Send, Trash2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { formatPrice } from '@/utils/format';
 import type { VendorTourListItem } from '../types';
@@ -11,10 +11,18 @@ const FALLBACK_COVER =
 /** Chỉ tour đang bản nháp hoặc bị từ chối mới gửi kiểm duyệt được (khớp mô tả API). */
 const SUBMITTABLE_STATUSES = new Set(['DRAFT', 'REJECTED']);
 
+/**
+ * Sửa tour chỉ được phép khi đang DRAFT/REJECTED — BE trả lỗi nếu sửa lúc đang chờ duyệt,
+ * đã duyệt, hoặc đã ẩn (cùng 1 API PUT /vendor/tours/{id} dùng chung cho Manager và Staff).
+ */
+const EDITABLE_STATUSES = new Set(['DRAFT', 'REJECTED']);
+
 interface TourTableRowProps {
   tour: VendorTourListItem;
   /** Đường dẫn màn Sửa cho đúng tour này — do trang cha tính sẵn (khác nhau giữa Manager/Staff). */
   editPath: string;
+  /** Đường dẫn màn Lịch khởi hành cho đúng tour này — do trang cha tính sẵn (khác nhau giữa Manager/Staff). */
+  schedulesPath: string;
   onDeleteClick: (tour: VendorTourListItem) => void;
   /** Chỉ truyền prop này (vd: từ màn Staff) nếu muốn hiện nút "Gửi kiểm duyệt". */
   onSubmitApprovalClick?: (tour: VendorTourListItem) => void;
@@ -30,6 +38,7 @@ interface TourTableRowProps {
 export function TourTableRow({
   tour,
   editPath,
+  schedulesPath,
   onDeleteClick,
   onSubmitApprovalClick,
   onApproveClick,
@@ -38,6 +47,7 @@ export function TourTableRow({
   const navigate = useNavigate();
   const canSubmitApproval = onSubmitApprovalClick && SUBMITTABLE_STATUSES.has(tour.status);
   const canReview = (onApproveClick || onRejectClick) && tour.status === 'PENDING_APPROVAL';
+  const canEdit = EDITABLE_STATUSES.has(tour.status);
 
   return (
     <tr className="border-b transition-colors last:border-b-0" style={{ borderColor: '#E6E2D1' }}>
@@ -109,14 +119,25 @@ export function TourTableRow({
               <X className="h-4 w-4" />
             </button>
           )}
+          {canEdit && (
+            <button
+              type="button"
+              onClick={() => navigate(editPath)}
+              className="transition-opacity hover:opacity-70"
+              style={{ color: '#06261D' }}
+              title="Sửa tour"
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+          )}
           <button
             type="button"
-            onClick={() => navigate(editPath)}
+            onClick={() => navigate(schedulesPath)}
             className="transition-opacity hover:opacity-70"
-            style={{ color: '#06261D' }}
-            title="Sửa tour"
+            style={{ color: '#0E7C6B' }}
+            title="Lịch khởi hành"
           >
-            <Pencil className="h-4 w-4" />
+            <CalendarClock className="h-4 w-4" />
           </button>
           <button
             type="button"

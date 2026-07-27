@@ -44,7 +44,7 @@ export default function Register() {
     // BE register không trả token — chỉ trả `{ userId, email, fullName }`.
     // Điều hướng sang trang login kèm email vừa đăng ký để người dùng đăng nhập luôn.
     toast.success('Đăng ký thành công! Vui lòng đăng nhập để tiếp tục.');
-    navigate(PATHS.LOGIN, { state: { registeredEmail: data.email } });
+    navigate(PATHS.LOGIN, { state: { registeredEmail: data.email }, replace: true });
   };
 
   return (

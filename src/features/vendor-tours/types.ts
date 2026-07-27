@@ -4,7 +4,12 @@
  * BE tag "Vendor Tour Management" ghi rõ: "Các API quản lý Tour dành cho Vendor
  * Manager và Vendor Staff" — cùng 1 bộ endpoint cho cả 2 role, chỉ khác UI/route.
  */
-import type { ApiDifficulty, ApiStatus, TourDetailFromApi } from '@/features/tours/types';
+import type {
+  ApiDifficulty,
+  ApiStatus,
+  TourDetailFromApi,
+  TourDetailScheduleApi,
+} from '@/features/tours/types';
 
 export type { ApiDifficulty, ApiStatus };
 
@@ -21,6 +26,7 @@ export interface VendorTourListItem {
   basePrice: number;
   difficulty: ApiDifficulty;
   status: ApiStatus;
+  createdAt: string;
 }
 
 /**
@@ -82,4 +88,31 @@ export interface CheckpointSubmitItem {
 export interface CreatedTour {
   id: string;
   status: ApiStatus;
+}
+
+/**
+ * Types cho "Lịch khởi hành" (Tour Schedule) — BE tag "Vendor Tour Schedule
+ * Management": "Các API quản lý lịch khởi hành dành cho Vendor Manager và
+ * Vendor Staff". Danh sách lịch của 1 tour lấy qua `TourDetailFromApi.schedules`
+ * (không có endpoint list riêng cho vendor) — chỉ create/update/delete là API
+ * riêng theo `scheduleId`/`tourId`.
+ */
+export type ApiScheduleStatus = TourDetailScheduleApi['status'];
+
+export type TourSchedule = TourDetailScheduleApi;
+
+export interface CreateSchedulePayload {
+  departureDate: string;
+  returnDate: string;
+  price: number;
+  availableSlots: number;
+}
+
+/** `PUT /vendor/tours/schedules/{scheduleId}` — mọi field đều optional trên BE, nhưng FE luôn gửi đủ. */
+export interface UpdateSchedulePayload {
+  departureDate: string;
+  returnDate: string;
+  price: number;
+  availableSlots: number;
+  status: ApiScheduleStatus;
 }

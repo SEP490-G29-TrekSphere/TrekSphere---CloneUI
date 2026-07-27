@@ -292,7 +292,7 @@ export interface TourDetailScheduleApi {
   availableSlots: number;
   bookedSlots: number;
   price: number;
-  status: 'OPEN' | 'CLOSED' | 'FULL';
+  status: 'OPEN' | 'CLOSED' | 'CANCELLED' | 'COMPLETED';
 }
 
 /**
