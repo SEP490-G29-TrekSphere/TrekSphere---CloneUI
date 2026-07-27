@@ -1,4 +1,5 @@
 import {
+  AlertTriangle,
   Bell,
   ClipboardCheck,
   Database,
@@ -23,6 +24,7 @@ const adminNavItems = [
   { name: 'Bảng điều khiển', path: PATHS.ADMIN_DASHBOARD, icon: LayoutGrid, disabled: true },
   { name: 'Tài khoản', path: PATHS.ADMIN_ACCOUNTS, icon: User },
   { name: 'Duyệt Tour', path: PATHS.ADMIN_APPLICATIONS, icon: ClipboardCheck },
+  { name: 'Báo cáo Vi phạm', path: PATHS.ADMIN_REPORTS, icon: AlertTriangle },
   { name: 'Quản lý Dữ liệu', path: PATHS.ADMIN_DATA, icon: Database, disabled: true },
   { name: 'Duyệt Voucher', path: PATHS.ADMIN_VOUCHERS, icon: Ticket, disabled: true },
   { name: 'Cài đặt', path: PATHS.ADMIN_SETTINGS, icon: Settings },
@@ -93,7 +95,9 @@ export default function AdminLayout() {
                 (item.path === PATHS.ADMIN_APPLICATIONS &&
                   location.pathname.startsWith(PATHS.ADMIN_APPLICATIONS)) ||
                 (item.path === PATHS.ADMIN_ACCOUNTS &&
-                  location.pathname.startsWith(PATHS.ADMIN_ACCOUNTS));
+                  location.pathname.startsWith(PATHS.ADMIN_ACCOUNTS)) ||
+                (item.path === PATHS.ADMIN_REPORTS &&
+                  location.pathname.startsWith(PATHS.ADMIN_REPORTS));
               return (
                 <Link
                   key={item.name}

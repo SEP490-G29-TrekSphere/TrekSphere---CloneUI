@@ -1,7 +1,8 @@
 import { ChevronLeft } from 'lucide-react';
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { PATHS } from '@/constants';
-import { AppSpinner } from '@/shared/ui';
+import { AppSpinner, ReportModal } from '@/shared/ui';
 import { useAppStore } from '@/store/useAppStore';
 import { BlogComments } from '../components/BlogComments';
 import { BlogContent } from '../components/BlogContent';
@@ -24,6 +25,8 @@ export default function BlogDetails() {
   const { blogId } = useParams<{ blogId: string }>();
   const user = useAppStore((state) => state.user);
   const isLoggedIn = Boolean(user);
+
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   const detailQuery = useBlogDetail(blogId);
 
@@ -61,7 +64,7 @@ export default function BlogDetails() {
 
   return (
     <div className="min-h-screen bg-background">
-      <BlogDetailsHero post={post!} />
+      <BlogDetailsHero post={post!} onReport={() => setIsReportModalOpen(true)} />
 
       <main className="mx-auto max-w-none w-full px-4 py-10 sm:px-6 md:py-12">
         {/* Breadcrumb */}
@@ -103,6 +106,15 @@ export default function BlogDetails() {
           blogId={blogId}
         />
       </main>
+
+      {/* Report Violation Modal */}
+      <ReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        targetId={blogId || 'TREK-8829'}
+        targetType="BLOG"
+        targetTitle={post!.title}
+      />
     </div>
   );
 }

@@ -45,6 +45,8 @@ const AdminLayout = lazy(() => import('@/shared/layout/AdminLayout'));
 
 const Applications = lazy(() => import('@/features/admin/pages/Applications'));
 const ApplicationDetails = lazy(() => import('@/features/admin/pages/ApplicationDetails'));
+const ReportDetail = lazy(() => import('@/features/admin/pages/ReportDetail'));
+const Reports = lazy(() => import('@/features/admin/pages/Reports'));
 const SystemSettings = lazy(() => import('@/features/admin/pages/SystemSettings'));
 const VendorManagerLayout = lazy(
   () => import('@/features/vendor-manager/layout/VendorManagerLayout')
@@ -151,6 +153,8 @@ export default function AppRoutes() {
           <Route path={PATHS.ADMIN_SETTINGS} element={<AdminDashboard />} />
           <Route path={PATHS.ADMIN_APPLICATIONS} element={<Applications />} />
           <Route path={PATHS.ADMIN_APPLICATION_DETAIL} element={<ApplicationDetails />} />
+          <Route path={PATHS.ADMIN_REPORTS} element={<Reports />} />
+          <Route path={PATHS.ADMIN_REPORT_DETAIL} element={<ReportDetail />} />
           <Route path={PATHS.ADMIN_SETTINGS} element={<SystemSettings />} />
         </Route>
 

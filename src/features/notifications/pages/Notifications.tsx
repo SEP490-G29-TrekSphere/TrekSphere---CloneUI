@@ -27,20 +27,26 @@ const typeConfig: Record<NotificationType, { icon: typeof Bell; bg: string; text
 // ── Notification Item ─────────────────────────────────────────────────────────
 interface NotificationItemProps {
   notification: Notification;
+  onToggleRead: (id: string) => void;
 }
 
-const NotificationItem = memo(function NotificationItem({ notification }: NotificationItemProps) {
+const NotificationItem = memo(function NotificationItem({
+  notification,
+  onToggleRead,
+}: NotificationItemProps) {
   const config = typeConfig[notification.type];
   const Icon = config.icon;
 
   return (
-    <div
+    <button
+      type="button"
+      onClick={() => onToggleRead(notification.id)}
       className={cn(
-        'group relative flex items-start gap-4 px-5 py-4 transition-colors',
+        'group relative flex items-start gap-4 px-5 py-4 transition-colors cursor-pointer text-left w-full border-none outline-none focus-visible:ring-2 focus-visible:ring-primary/20',
         'border-b border-border last:border-b-0',
         notification.read
           ? 'bg-white hover:bg-muted/30'
-          : 'bg-amber-50 dark:bg-amber-950/10 hover:bg-amber-50/80'
+          : 'bg-amber-50/70 dark:bg-amber-950/10 hover:bg-amber-50/90'
       )}
     >
       {/* Unread dot */}
@@ -59,7 +65,7 @@ const NotificationItem = memo(function NotificationItem({ notification }: Notifi
       </div>
 
       {/* Content */}
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 pr-4">
         <p
           className={cn(
             'text-sm leading-snug',
@@ -77,11 +83,16 @@ const NotificationItem = memo(function NotificationItem({ notification }: Notifi
         )}
       </div>
 
-      {/* Timestamp */}
-      <span className="shrink-0 text-xs text-muted-foreground">
-        {formatRelativeTime(notification.timestamp)}
-      </span>
-    </div>
+      {/* Timestamp & Action */}
+      <div className="flex flex-col items-end gap-1 shrink-0">
+        <span className="text-xs text-muted-foreground">
+          {formatRelativeTime(notification.timestamp)}
+        </span>
+        <span className="text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity hover:underline">
+          {notification.read ? 'Đánh dấu chưa đọc' : 'Đánh dấu đã đọc'}
+        </span>
+      </div>
+    </button>
   );
 });
 
@@ -99,6 +110,10 @@ export default function Notifications() {
 
   const handleMarkAllRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  };
+
+  const handleToggleRead = (id: string) => {
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: !n.read } : n)));
   };
 
   return (
@@ -164,7 +179,11 @@ export default function Notifications() {
             </div>
           ) : (
             filteredNotifications.map((notification) => (
-              <NotificationItem key={notification.id} notification={notification} />
+              <NotificationItem
+                key={notification.id}
+                notification={notification}
+                onToggleRead={handleToggleRead}
+              />
             ))
           )}
         </div>

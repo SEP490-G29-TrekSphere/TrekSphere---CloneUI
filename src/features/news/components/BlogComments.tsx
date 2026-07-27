@@ -1,8 +1,8 @@
-import { Lock } from 'lucide-react';
+import { Flag, Lock } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PATHS } from '@/constants';
-import { useAppStore } from '@/store/useAppStore';
+import { ReportModal } from '@/shared/ui';
 import { toast } from '@/store/useToastStore';
 import { useCreateBlogComment } from '../hooks/useBlog';
 import type { BlogCommentItem } from '../types';
@@ -36,9 +36,10 @@ const formatRelativeTime = (iso: string): string => {
  * - Hỗ trợ nested comments (replies) — render theo thứ tự cha → con.
  */
 export function BlogComments({ comments, total, isLoggedIn, blogId }: BlogCommentsProps) {
-  const user = useAppStore((state) => state.user);
   const [content, setContent] = useState('');
   const createMutation = useCreateBlogComment(blogId);
+
+  const [reportingComment, setReportingComment] = useState<BlogCommentItem | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,71 +60,89 @@ export function BlogComments({ comments, total, isLoggedIn, blogId }: BlogCommen
   const count = total ?? comments.length;
 
   return (
-    <section className="mt-12 border-t border-border pt-10">
-      <h2 className="text-xl font-bold text-primary md:text-2xl">Bình luận ({count})</h2>
+    <section className="mt-12 rounded-3xl bg-[#FAF9F5] p-6 sm:p-8 border border-[#E5E4DE]">
+      <h2 className="text-xl font-bold text-[#0B3025] sm:text-2xl">Bình luận ({count})</h2>
 
-      <ul className="mt-6 flex flex-col gap-5">
-        {comments.map((c) => (
-          <CommentNode key={c.id} comment={c} depth={0} />
-        ))}
-      </ul>
-
-      {/* Input box hoặc locked state */}
-      <div className="mt-8">
-        {isLoggedIn ? (
-          <form onSubmit={handleSubmit} className="rounded-2xl bg-card p-4 shadow-sm">
-            <div className="mb-3 flex items-center gap-2 text-xs text-muted-foreground">
-              {user?.avatarUrl ? (
-                <img
-                  src={user.avatarUrl}
-                  alt={user.name}
-                  className="h-7 w-7 rounded-full object-cover"
-                />
-              ) : null}
-              <span className="font-medium text-primary">{user?.name ?? 'Bạn'}</span>
-            </div>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Chia sẻ suy nghĩ của bạn..."
-              rows={3}
+      {/* Form bình luận */}
+      {isLoggedIn ? (
+        <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-3">
+          <textarea
+            rows={3}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Viết bình luận của bạn..."
+            className="w-full rounded-2xl border border-[#DCD9CF] bg-white p-4 text-sm focus:outline-none focus:ring-1 focus:ring-[#0B3025]"
+          />
+          <div className="flex justify-end">
+            <button
+              type="submit"
               disabled={createMutation.isPending}
-              className="w-full resize-none rounded-xl border border-border bg-background p-3 text-sm text-primary outline-none placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
-            />
-            <div className="mt-3 flex justify-end">
-              <button
-                type="submit"
-                disabled={createMutation.isPending || content.trim().length === 0}
-                className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {createMutation.isPending ? 'Đang gửi...' : 'Gửi bình luận'}
-              </button>
-            </div>
-          </form>
-        ) : (
-          <div className="flex flex-col items-center rounded-2xl bg-muted px-6 py-10 text-center">
-            <Lock className="mb-3 h-7 w-7 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground md:text-base">
-              Vui lòng đăng nhập để bình luận. Tham gia cộng đồng để chia sẻ trải nghiệm của bạn.
-            </p>
-            <Link
-              to={PATHS.LOGIN}
-              className="mt-5 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+              className="rounded-full bg-[#0B3025] px-6 py-2.5 text-xs font-bold text-white hover:bg-[#08241C] transition-all disabled:opacity-50"
             >
-              Đăng nhập
-            </Link>
+              {createMutation.isPending ? 'Đang gửi...' : 'Gửi bình luận'}
+            </button>
           </div>
-        )}
-      </div>
+        </form>
+      ) : (
+        <div className="mt-6 flex items-center justify-between rounded-2xl bg-amber-50 p-4 border border-amber-200">
+          <div className="flex items-center gap-3">
+            <Lock className="size-5 text-amber-600" />
+            <span className="text-sm font-semibold text-amber-900">
+              Vui lòng đăng nhập để tham gia bình luận
+            </span>
+          </div>
+          <Link
+            to={PATHS.LOGIN}
+            className="rounded-full bg-amber-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-amber-700"
+          >
+            Đăng nhập
+          </Link>
+        </div>
+      )}
+
+      {/* Danh sách bình luận */}
+      {comments.length > 0 ? (
+        <ul className="mt-8 flex flex-col gap-4">
+          {comments.map((comment) => (
+            <CommentNode
+              key={comment.id}
+              comment={comment}
+              depth={0}
+              onReport={(c) => setReportingComment(c)}
+            />
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-6 text-center text-sm text-zinc-500 font-medium">Chưa có bình luận nào.</p>
+      )}
+
+      {/* Modal Báo cáo Comment */}
+      {reportingComment && (
+        <ReportModal
+          isOpen={Boolean(reportingComment)}
+          onClose={() => setReportingComment(null)}
+          targetId={reportingComment.id}
+          targetType="COMMENT"
+          targetTitle={reportingComment.content}
+        />
+      )}
     </section>
   );
 }
 
 /** Một node comment + danh sách reply đệ quy. */
-function CommentNode({ comment, depth }: { comment: BlogCommentItem; depth: number }) {
+function CommentNode({
+  comment,
+  depth,
+  onReport,
+}: {
+  comment: BlogCommentItem;
+  depth: number;
+  onReport: (comment: BlogCommentItem) => void;
+}) {
   return (
     <li
-      className="flex gap-4 rounded-2xl bg-card p-4 shadow-sm md:p-5"
+      className="flex gap-4 rounded-2xl bg-white p-4 shadow-sm border border-[#E5E4DE] md:p-5"
       style={depth > 0 ? { marginLeft: `${Math.min(depth, 3) * 1.5}rem` } : undefined}
     >
       {comment.userAvatarUrl ? (
@@ -136,13 +155,25 @@ function CommentNode({ comment, depth }: { comment: BlogCommentItem; depth: numb
         <div className="h-10 w-10 shrink-0 rounded-full bg-muted md:h-12 md:w-12" />
       )}
       <div className="flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm font-semibold text-primary md:text-base">
-            {comment.userFullName}
-          </span>
-          <span className="text-xs text-muted-foreground md:text-sm">
-            {formatRelativeTime(comment.createdAt)}
-          </span>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-primary md:text-base">
+              {comment.userFullName}
+            </span>
+            <span className="text-xs text-muted-foreground md:text-sm">
+              {formatRelativeTime(comment.createdAt)}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => onReport(comment)}
+            className="flex items-center gap-1 text-xs text-zinc-400 hover:text-red-600 transition-colors"
+            title="Báo cáo bình luận"
+          >
+            <Flag className="size-3.5" />
+            <span>Báo cáo</span>
+          </button>
         </div>
         <p className="mt-2 text-sm leading-relaxed text-primary/90 md:text-base">
           {comment.content}
@@ -157,7 +188,7 @@ function CommentNode({ comment, depth }: { comment: BlogCommentItem; depth: numb
         {comment.replies && comment.replies.length > 0 && (
           <ul className="mt-4 flex flex-col gap-4">
             {comment.replies.map((reply) => (
-              <CommentNode key={reply.id} comment={reply} depth={depth + 1} />
+              <CommentNode key={reply.id} comment={reply} depth={depth + 1} onReport={onReport} />
             ))}
           </ul>
         )}

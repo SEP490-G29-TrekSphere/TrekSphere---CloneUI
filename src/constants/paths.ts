@@ -64,6 +64,8 @@ export const PATHS = {
   ADMIN_DATA: '/admin/data',
   ADMIN_APPLICATIONS: '/admin/applications',
   ADMIN_APPLICATION_DETAIL: '/admin/applications/:id',
+  ADMIN_REPORTS: '/admin/reports',
+  ADMIN_REPORT_DETAIL: '/admin/reports/:id',
   ADMIN_VOUCHERS: '/admin/vouchers',
   ADMIN_SETTINGS: '/admin/settings',
 

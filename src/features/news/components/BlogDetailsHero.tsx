@@ -1,7 +1,9 @@
+import { Flag } from 'lucide-react';
 import type { BlogPostDetail } from '../types';
 
 interface BlogDetailsHeroProps {
   post: BlogPostDetail;
+  onReport?: () => void;
 }
 
 const formatDate = (iso: string): string => {
@@ -18,7 +20,7 @@ const formatDate = (iso: string): string => {
  * Hero của trang chi tiết: full-screen ngang, ảnh nền + gradient overlay,
  * nội dung nằm ở góc dưới bên trái (badge, title, meta).
  */
-export function BlogDetailsHero({ post }: BlogDetailsHeroProps) {
+export function BlogDetailsHero({ post, onReport }: BlogDetailsHeroProps) {
   return (
     <section
       className="relative flex h-[60vh] min-h-[420px] w-full items-end px-4 py-10 sm:px-6 md:h-[70vh]"
@@ -28,12 +30,28 @@ export function BlogDetailsHero({ post }: BlogDetailsHeroProps) {
         backgroundPosition: 'center',
       }}
     >
-      <div className="mx-auto w-full max-w-none w-full">
-        {post.categoryName ? (
-          <span className="inline-flex items-center rounded-full bg-accent px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary shadow-sm">
-            {post.categoryName}
-          </span>
-        ) : null}
+      <div className="mx-auto w-full max-w-none">
+        <div className="flex items-center justify-between gap-4">
+          {post.categoryName ? (
+            <span className="inline-flex items-center rounded-full bg-accent px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary shadow-sm">
+              {post.categoryName}
+            </span>
+          ) : (
+            <div />
+          )}
+
+          {onReport && (
+            <button
+              type="button"
+              onClick={onReport}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-white text-xs font-semibold transition-all border border-white/30"
+              title="Báo cáo vi phạm"
+            >
+              <Flag className="size-3.5" />
+              Báo cáo vi phạm
+            </button>
+          )}
+        </div>
 
         <h1 className="mt-4 max-w-3xl text-2xl font-bold leading-tight text-white sm:text-3xl md:text-4xl lg:text-5xl">
           {post.title}

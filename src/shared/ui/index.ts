@@ -14,6 +14,11 @@
  *   import { AppButton } from '@/shared/ui/primitives/AppButton';
  */
 
+export {
+  ReportModal,
+  type ReportModalProps,
+  type ViolationType,
+} from './components/ReportModal';
 // Scroll reveal
 export {
   default as ScrollReveal,
