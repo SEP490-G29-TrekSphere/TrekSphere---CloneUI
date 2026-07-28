@@ -2,7 +2,7 @@
   "extends": "./tsconfig.app.json",
   "compilerOptions": {
     "module": "commonjs",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
     "types": ["vite/client", "jest", "node"]
   }
