@@ -30,8 +30,3 @@ export interface AddVendorStaffPayload {
   email: string;
   fullName?: string;
 }
-
-/** Context truyền từ `VendorManagerLayout` xuống các trang con qua `<Outlet />`. */
-export interface VendorManagerLayoutContext {
-  searchValue: string;
-}

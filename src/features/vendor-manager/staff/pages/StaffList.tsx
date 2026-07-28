@@ -1,5 +1,5 @@
+import { Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
 import { useDebounce } from '@/shared/hooks';
 import { toast } from '@/store/useToastStore';
 import { AddStaffDialog } from '../components/AddStaffDialog';
@@ -9,7 +9,7 @@ import { StaffTableRow } from '../components/StaffTableRow';
 import { useVendorStaffList } from '../hooks/useVendorStaffList';
 import { useVendorStaffLockedCount } from '../hooks/useVendorStaffLockedCount';
 import { useVendorStaffMutations } from '../hooks/useVendorStaffMutations';
-import type { VendorManagerLayoutContext, VendorStaffMember } from '../types';
+import type { VendorStaffMember } from '../types';
 
 const PAGE_SIZE = 10;
 
@@ -18,7 +18,7 @@ export default function StaffList() {
   const [isAddOpen, setAddOpen] = useState(false);
   const [lockTarget, setLockTarget] = useState<VendorStaffMember | null>(null);
 
-  const { searchValue } = useOutletContext<VendorManagerLayoutContext>();
+  const [searchValue, setSearchValue] = useState('');
   const debouncedSearch = useDebounce(searchValue, 400);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: debouncedSearch chỉ dùng để trigger effect
@@ -84,14 +84,35 @@ export default function StaffList() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setAddOpen(true)}
-          className="inline-flex items-center rounded-full px-5 py-2.5 text-sm font-semibold text-white"
-          style={{ backgroundColor: '#06261D' }}
-        >
-          + Thêm nhân viên
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="relative w-72">
+            <input
+              type="text"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              placeholder="Tìm kiếm thông tin nhân viên..."
+              className="w-full rounded-full py-2.5 pl-10 pr-4 text-sm font-medium transition-colors focus:outline-none"
+              style={{
+                backgroundColor: '#FFFFFF',
+                border: '1px solid #E0DCD1',
+                color: '#06261D',
+              }}
+            />
+            <Search
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4"
+              style={{ color: '#6F7B75' }}
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setAddOpen(true)}
+            className="inline-flex items-center rounded-full px-5 py-2.5 text-sm font-semibold text-white whitespace-nowrap"
+            style={{ backgroundColor: '#06261D' }}
+          >
+            + Thêm nhân viên
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">

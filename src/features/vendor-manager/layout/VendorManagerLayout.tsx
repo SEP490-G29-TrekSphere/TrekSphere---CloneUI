@@ -1,23 +1,19 @@
 import {
   Backpack,
   BarChart3,
-  Bell,
   CalendarClock,
   ClipboardCheck,
   Footprints,
   LayoutGrid,
   LogOut,
   Map as MapIcon,
-  Search,
-  Settings,
+  Ticket,
   UserRound,
   Users,
 } from 'lucide-react';
-import { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { PATHS } from '@/constants';
 import { useLogout } from '@/features/auth/hooks/useLogout';
-import type { VendorManagerLayoutContext } from '@/features/vendor-manager/staff/types';
 import { useAppStore } from '@/store/useAppStore';
 
 const navItems = [
@@ -31,6 +27,7 @@ const navItems = [
     icon: ClipboardCheck,
     disabled: false,
   },
+  { name: 'Đặt tour', path: PATHS.VENDOR_MANAGER_BOOKINGS, icon: Ticket, disabled: false },
   { name: 'Khách hàng', path: '', icon: UserRound, disabled: true },
   { name: 'Thiết bị', path: PATHS.VENDOR_MANAGER_EQUIPMENT, icon: Backpack, disabled: false },
   { name: 'Porter', path: PATHS.VENDOR_MANAGER_PORTERS, icon: Footprints, disabled: false },
@@ -41,16 +38,9 @@ export default function VendorManagerLayout() {
   const location = useLocation();
   const user = useAppStore((state) => state.user);
   const { logout } = useLogout({ redirectTo: PATHS.LOGIN });
-  const [searchValue, setSearchValue] = useState('');
 
   const vendorName = user?.name || 'Vendor Manager';
   const vendorInitial = vendorName.charAt(0).toUpperCase();
-  // Header search chỉ phục vụ trang Nhân viên (lọc qua context) — ẩn ở màn Tour
-  // và Thiết bị vì 2 trang đó đã có ô lọc riêng của chính mình, header ở đây chỉ là dư thừa.
-  const showHeader =
-    !location.pathname.startsWith(PATHS.VENDOR_MANAGER_TOURS) &&
-    !location.pathname.startsWith(PATHS.VENDOR_MANAGER_EQUIPMENT) &&
-    !location.pathname.startsWith(PATHS.VENDOR_MANAGER_PORTERS);
 
   // Nhiều mục có thể cùng khớp prefix (vd "Tour" và "Duyệt tour" đều bắt đầu bằng
   // "/vendor-manager/tours") — chỉ mục có path khớp DÀI NHẤT được coi là active.
@@ -153,51 +143,8 @@ export default function VendorManagerLayout() {
       </aside>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        {showHeader && (
-          <header
-            className="flex h-16 w-full items-center justify-between bg-white px-6 md:px-8 shadow-sm"
-            style={{ borderBottom: '1px solid #E6E2D1' }}
-          >
-            <div className="relative w-72 md:w-96">
-              <span
-                className="absolute inset-y-0 left-3 flex items-center"
-                style={{ color: '#6F7B75' }}
-              >
-                <Search className="h-4 w-4" />
-              </span>
-              <input
-                type="text"
-                value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
-                placeholder="Tìm kiếm thông tin nhân viên..."
-                aria-label="Tìm kiếm thông tin nhân viên"
-                className="w-full pl-10 pr-4 py-2 text-sm rounded-full border-none focus:outline-none focus:ring-1 transition-all font-medium"
-                style={{ backgroundColor: '#F0EEE6', color: '#06261D' }}
-              />
-            </div>
-
-            <div className="flex items-center gap-6">
-              <button
-                type="button"
-                className="relative flex h-9 w-9 items-center justify-center rounded-full transition-colors focus:outline-none"
-                style={{ color: '#6F7B75' }}
-              >
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
-              </button>
-              <button
-                type="button"
-                className="flex h-9 w-9 items-center justify-center rounded-full transition-colors focus:outline-none"
-                style={{ color: '#6F7B75' }}
-              >
-                <Settings className="h-5 w-5" />
-              </button>
-            </div>
-          </header>
-        )}
-
         <main className="flex-1 overflow-y-auto p-6 md:p-8">
-          <Outlet context={{ searchValue } satisfies VendorManagerLayoutContext} />
+          <Outlet />
         </main>
       </div>
     </div>

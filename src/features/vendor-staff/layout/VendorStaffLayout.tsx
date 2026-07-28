@@ -10,6 +10,7 @@ import {
   PenSquare,
   Search,
   Settings,
+  Ticket,
 } from 'lucide-react';
 import { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
@@ -26,6 +27,7 @@ const navItems = [
   { name: 'Tổng quan', path: '', icon: LayoutGrid, disabled: true },
   { name: 'Lịch trình', path: '', icon: CalendarClock, disabled: true },
   { name: 'Tour', path: PATHS.PARTNER_TOURS, icon: MapIcon, disabled: false },
+  { name: 'Đặt tour', path: PATHS.PARTNER_BOOKINGS, icon: Ticket, disabled: false },
   { name: 'Thiết bị', path: PATHS.PARTNER_EQUIPMENT, icon: Backpack, disabled: false },
   { name: 'Porter', path: PATHS.PARTNER_PORTERS, icon: Footprints, disabled: false },
   { name: 'Viết Blog', path: PATHS.PARTNER_BLOG_CREATE, icon: PenSquare, disabled: false },
