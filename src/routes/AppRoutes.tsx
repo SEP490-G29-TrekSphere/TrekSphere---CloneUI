@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { PATHS, ROLES } from '@/constants';
-import { AccountDetail, AccountList, AdminDashboard } from '@/features/admin';
+import { AccountDetail, AccountList, AdminDashboard, BlogManagement } from '@/features/admin';
 import ProtectedRoute from '@/routes/ProtectedRoute';
 import RequireRole from '@/routes/RequireRole';
 import MainLayout from '@/shared/layout/MainLayout';
@@ -65,6 +65,9 @@ const PartnerTourSchedules = lazy(
   () => import('@/features/vendor-staff/tours/pages/TourSchedules')
 );
 const EquipmentList = lazy(() => import('@/features/vendor-equipment/pages/EquipmentList'));
+const PorterList = lazy(() => import('@/features/vendor-porters/pages/PorterList'));
+const PorterCreate = lazy(() => import('@/features/vendor-porters/pages/PorterCreate'));
+const PorterEdit = lazy(() => import('@/features/vendor-porters/pages/PorterEdit'));
 
 function PageLoader() {
   return (
@@ -156,6 +159,7 @@ export default function AppRoutes() {
           <Route path={PATHS.ADMIN_APPLICATION_DETAIL} element={<ApplicationDetails />} />
           <Route path={PATHS.ADMIN_REPORTS} element={<Reports />} />
           <Route path={PATHS.ADMIN_REPORT_DETAIL} element={<ReportDetail />} />
+          <Route path={PATHS.ADMIN_BLOGS} element={<BlogManagement />} />
           <Route path={PATHS.ADMIN_SETTINGS} element={<SystemSettings />} />
         </Route>
 
@@ -176,6 +180,9 @@ export default function AppRoutes() {
           <Route path={PATHS.VENDOR_MANAGER_TOUR_APPROVALS} element={<TourApprovals />} />
           <Route path={PATHS.VENDOR_MANAGER_TOUR_SCHEDULES} element={<TourSchedules />} />
           <Route path={PATHS.VENDOR_MANAGER_EQUIPMENT} element={<EquipmentList />} />
+          <Route path={PATHS.VENDOR_MANAGER_PORTERS} element={<PorterList />} />
+          <Route path={PATHS.VENDOR_MANAGER_PORTER_CREATE} element={<PorterCreate />} />
+          <Route path={PATHS.VENDOR_MANAGER_PORTER_EDIT} element={<PorterEdit />} />
         </Route>
 
         {/* Vendor Staff routes — yêu cầu role vendor_staff, dùng VendorStaffLayout riêng */}
@@ -193,6 +200,10 @@ export default function AppRoutes() {
           <Route path={PATHS.PARTNER_TOUR_EDIT} element={<PartnerTourEdit />} />
           <Route path={PATHS.PARTNER_TOUR_SCHEDULES} element={<PartnerTourSchedules />} />
           <Route path={PATHS.PARTNER_EQUIPMENT} element={<EquipmentList />} />
+          <Route path={PATHS.PARTNER_PORTERS} element={<PorterList />} />
+          <Route path={PATHS.PARTNER_PORTER_CREATE} element={<PorterCreate />} />
+          <Route path={PATHS.PARTNER_PORTER_EDIT} element={<PorterEdit />} />
+          <Route path={PATHS.PARTNER_BLOG_CREATE} element={<CreateBlogPost />} />
         </Route>
       </Routes>
     </Suspense>

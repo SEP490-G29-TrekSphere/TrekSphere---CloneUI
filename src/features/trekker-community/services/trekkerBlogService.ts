@@ -1,142 +1,114 @@
-import { ApiService } from '@/config/apiClient';
+import { type ApiResponse, ApiService } from '@/config/apiClient';
 import type {
+  CreateBlogPayload,
+  TrekkerBlogDetail,
   TrekkerBlogItem,
   TrekkerBlogListParams,
   TrekkerBlogListResponse,
-  TrekkerBlogStats,
+  UpdateBlogPayload,
 } from '../types';
 
 /**
- * Service gọi API cho feature Trekker Community / "Blog của tôi".
+ * Service gọi API cho feature Blog (Trekker & Vendor Staff dùng chung để tạo/sửa bài viết
+ * của chính mình; Admin cũng tái sử dụng `toggleBlogVisibility`/`deleteBlog` để kiểm duyệt).
  *
- * Endpoints (mock/giả định — cần confirm với BE):
- *   GET  /api/v1/blogs/my-blogs?keyword=&page=&size=&sortBy=&sortDir=&status=
- *         → { success, code, message, data: { content, pageNumber, pageSize, totalElements, totalPages }, timestamp }
- *   GET  /api/v1/blogs/my-blogs/stats
- *         → { success, code, message, data: TrekkerBlogStats }, timestamp }
- *   POST /api/v1/blogs
- *         → { success, code, message, data: TrekkerBlogItem }, timestamp }
- *   PUT  /api/v1/blogs/{id}
- *         → { success, code, message, data: TrekkerBlogItem }, timestamp }
- *   DELETE /api/v1/blogs/{id}
- *         → { success, code, message, data: null }, timestamp }
- *
- * Vì `ApiService` đã unwrap 1 cấp envelope (success/data),
- * `res.data` chính là phần `data` của envelope BE.
+ * Endpoints (BE thật):
+ *   GET    /blogs?authorId=&keyword=&page=&size=&sortBy=&sortDir=
+ *   GET    /blogs/{id}
+ *   POST   /blogs
+ *   PUT    /blogs/{id}
+ *   PUT    /blogs/{id}/hide   — không có body, BE tự toggle PUBLISHED <-> HIDDEN theo status hiện tại
+ *   DELETE /blogs/{id}
  */
+
+interface PaginationResponseDto<T> {
+  content: T[];
+  pageNumber: number;
+  pageSize: number;
+  totalElements: number;
+  totalPages: number;
+}
+
+function unwrapResponse<T>(response: ApiResponse<T>): T {
+  if (response.error) {
+    throw new Error(response.error);
+  }
+  if (response.data === undefined) {
+    throw new Error('Không nhận được dữ liệu từ máy chủ.');
+  }
+  return response.data;
+}
+
 export const trekkerBlogService = {
-  /**
-   * Lấy danh sách blog của Trekker hiện tại (phân trang).
-   */
-  async getMyBlogs(params: TrekkerBlogListParams = {}): Promise<TrekkerBlogListResponse> {
-    const query = new URLSearchParams();
-    if (params.keyword?.trim()) query.set('keyword', params.keyword.trim());
-    if (params.page) query.set('page', String(params.page - 1)); // BE Spring Data 0-indexed
-    if (params.size) query.set('size', String(params.size));
-    if (params.sortBy) query.set('sortBy', params.sortBy);
-    if (params.sortDir) query.set('sortDir', params.sortDir);
-    if (params.status) query.set('status', params.status);
+  /** Lấy danh sách blog (phân trang). Truyền `authorId` để lọc blog của 1 tác giả. */
+  async getBlogs(params: TrekkerBlogListParams = {}): Promise<TrekkerBlogListResponse> {
+    const query: Record<string, string> = {};
+    if (params.authorId) query.authorId = params.authorId;
+    if (params.keyword?.trim()) query.keyword = params.keyword.trim();
+    query.page = String((params.page ?? 1) - 1); // BE Spring Data 0-indexed
+    query.size = String(params.size ?? 10);
+    if (params.sortBy) query.sortBy = params.sortBy;
+    if (params.sortDir) query.sortDir = params.sortDir;
 
-    const qs = query.toString();
-    const res = await ApiService<{
-      content: TrekkerBlogItem[];
-      pageNumber: number;
-      pageSize: number;
-      totalElements: number;
-      totalPages: number;
-    }>(`/blogs/my-blogs${qs ? `?${qs}` : ''}`, 'GET');
+    const response = await ApiService<PaginationResponseDto<TrekkerBlogItem>>(
+      '/blogs',
+      'GET',
+      undefined,
+      query
+    );
+    const data = unwrapResponse(response);
 
-    if (res.error) {
-      throw new Error(res.error);
-    }
-
-    const data = res.data;
     return {
-      items: data?.content ?? [],
+      items: data.content,
       meta: {
-        pageNumber: (data?.pageNumber ?? params.page ?? 1) + 1,
-        pageSize: data?.pageSize ?? params.size ?? 10,
-        totalElements: data?.totalElements ?? 0,
-        totalPages: data?.totalPages ?? 1,
+        pageNumber: data.pageNumber + 1,
+        pageSize: data.pageSize,
+        totalElements: data.totalElements,
+        totalPages: data.totalPages,
       },
     };
   },
 
   /**
-   * Lấy thống kê tổng quan blog của Trekker.
+   * Lấy chi tiết 1 bài viết (dùng để load dữ liệu cho màn Sửa).
+   * Lưu ý: endpoint này public và tăng `viewCount` mỗi lần gọi — kể cả khi
+   * chính tác giả mở trang Sửa. BE không có endpoint riêng để tránh side-effect
+   * này, đây là giới hạn đã biết và được chấp nhận.
    */
-  async getMyBlogStats(): Promise<TrekkerBlogStats> {
-    const res = await ApiService<TrekkerBlogStats>('/blogs/my-blogs/stats', 'GET');
-    if (res.error) {
-      throw new Error(res.error);
-    }
-    return res.data ?? { totalPosts: 0, totalViews: 0, newComments: 0 };
+  async getBlogDetail(blogId: string): Promise<TrekkerBlogDetail> {
+    const response = await ApiService<TrekkerBlogDetail>(`/blogs/${blogId}`, 'GET');
+    return unwrapResponse(response);
+  },
+
+  /** Tạo bài viết mới — đăng ngay ở trạng thái PUBLISHED. */
+  async createBlog(payload: CreateBlogPayload): Promise<TrekkerBlogDetail> {
+    const response = await ApiService<TrekkerBlogDetail>('/blogs', 'POST', payload);
+    return unwrapResponse(response);
+  },
+
+  /** Cập nhật bài viết (chỉ chủ bài viết). */
+  async updateBlog(blogId: string, payload: UpdateBlogPayload): Promise<TrekkerBlogDetail> {
+    const response = await ApiService<TrekkerBlogDetail>(`/blogs/${blogId}`, 'PUT', payload);
+    return unwrapResponse(response);
   },
 
   /**
-   * Tạo bài viết mới.
+   * Ẩn/Hiện bài viết — gọi chung 1 endpoint, BE tự toggle status hiện tại
+   * (PUBLISHED <-> HIDDEN). Response không trả về blog đã cập nhật nên caller
+   * cần refetch (invalidate query) để lấy status mới.
    */
-  async createBlog(payload: {
-    title: string;
-    content: string;
-    coverImageUrl?: string;
-    tags?: string[];
-  }): Promise<TrekkerBlogItem> {
-    const res = await ApiService<TrekkerBlogItem>('/blogs', 'POST', payload);
-    if (res.error) {
-      throw new Error(res.error);
+  async toggleBlogVisibility(blogId: string): Promise<void> {
+    const response = await ApiService<void>(`/blogs/${blogId}/hide`, 'PUT');
+    if (response.error) {
+      throw new Error(response.error);
     }
-    if (!res.data) {
-      throw new Error('Không nhận được phản hồi từ máy chủ.');
-    }
-    return res.data;
   },
 
-  /**
-   * Cập nhật bài viết.
-   */
-  async updateBlog(
-    blogId: string,
-    payload: {
-      title?: string;
-      content?: string;
-      coverImageUrl?: string;
-      tags?: string;
-      status?: string;
-    }
-  ): Promise<TrekkerBlogItem> {
-    const res = await ApiService<TrekkerBlogItem>(`/blogs/${blogId}`, 'PUT', payload);
-    if (res.error) {
-      throw new Error(res.error);
-    }
-    if (!res.data) {
-      throw new Error('Không nhận được phản hồi từ máy chủ.');
-    }
-    return res.data;
-  },
-
-  /**
-   * Xóa bài viết.
-   */
+  /** Xóa vĩnh viễn bài viết (chủ bài viết hoặc Admin). */
   async deleteBlog(blogId: string): Promise<void> {
-    const res = await ApiService<null>(`/blogs/${blogId}`, 'DELETE');
-    if (res.error) {
-      throw new Error(res.error);
+    const response = await ApiService<void>(`/blogs/${blogId}`, 'DELETE');
+    if (response.error) {
+      throw new Error(response.error);
     }
-  },
-
-  /**
-   * Ẩn/Hiện bài viết (chuyển trạng thái sang DRAFT hoặc PUBLISHED).
-   */
-  async toggleBlogVisibility(blogId: string, isHidden: boolean): Promise<TrekkerBlogItem> {
-    const payload = { status: isHidden ? 'DRAFT' : 'PUBLISHED' };
-    const res = await ApiService<TrekkerBlogItem>(`/blogs/${blogId}`, 'PUT', payload);
-    if (res.error) {
-      throw new Error(res.error);
-    }
-    if (!res.data) {
-      throw new Error('Không nhận được phản hồi từ máy chủ.');
-    }
-    return res.data;
   },
 };

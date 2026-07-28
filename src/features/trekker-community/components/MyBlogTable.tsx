@@ -1,4 +1,4 @@
-import { Eye, EyeOff, FileImage, Pencil } from 'lucide-react';
+import { Eye, EyeOff, FileImage, Pencil, Trash2 } from 'lucide-react';
 import type { TrekkerBlogItem } from '../types';
 
 interface MyBlogTableProps {
@@ -91,7 +91,9 @@ interface TableRowProps {
   onHide?: (blog: TrekkerBlogItem) => void;
 }
 
-function TableRow({ blog, index, onEdit, onDelete: _onDelete, onHide }: TableRowProps) {
+function TableRow({ blog, index, onEdit, onDelete, onHide }: TableRowProps) {
+  const isHidden = blog.status === 'HIDDEN';
+
   return (
     <tr
       style={{
@@ -152,38 +154,57 @@ function TableRow({ blog, index, onEdit, onDelete: _onDelete, onHide }: TableRow
 
       {/* Cột 4: Lượt xem */}
       <td className="px-4 py-4 text-center">
-        <ViewCount count={blog.viewCount} status={blog.status} />
+        <span className="inline-flex items-center gap-1" style={{ color: '#6F7B75' }}>
+          <Eye className="h-3.5 w-3.5" />
+          {formatViewCount(blog.viewCount)}
+        </span>
       </td>
 
-      {/* Cột 5: Thao tác */}
+      {/* Cột 5: Thao tác — chỉ hiện nút nếu có handler tương ứng (đọc-only khi không truyền gì) */}
       <td className="px-4 py-4 text-center">
         <div className="flex items-center justify-center gap-2">
-          <button
-            type="button"
-            onClick={() => onHide?.(blog)}
-            className="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-muted"
-            title="Ẩn bài viết"
-            style={{ color: '#6F7B75' }}
-          >
-            <EyeOff className="h-4 w-4" />
-          </button>
+          {onHide && (
+            <button
+              type="button"
+              onClick={() => onHide(blog)}
+              className="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-muted"
+              title={isHidden ? 'Hiển thị lại' : 'Ẩn bài viết'}
+              style={{ color: '#6F7B75' }}
+            >
+              {isHidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+            </button>
+          )}
 
-          <button
-            type="button"
-            onClick={() => onEdit?.(blog)}
-            className="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-muted"
-            title="Sửa bài viết"
-            style={{ color: '#6F7B75' }}
-          >
-            <Pencil className="h-4 w-4" />
-          </button>
+          {onEdit && (
+            <button
+              type="button"
+              onClick={() => onEdit(blog)}
+              className="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-muted"
+              title="Sửa bài viết"
+              style={{ color: '#6F7B75' }}
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+          )}
+
+          {onDelete && (
+            <button
+              type="button"
+              onClick={() => onDelete(blog)}
+              className="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-red-50"
+              title="Xóa vĩnh viễn"
+              style={{ color: '#EF4444' }}
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </td>
     </tr>
   );
 }
 
-/** Badge trạng thái: Đã xuất bản / Bản nháp */
+/** Badge trạng thái: Đã xuất bản / Đã ẩn */
 function StatusBadge({ status }: { status: TrekkerBlogItem['status'] }) {
   if (status === 'PUBLISHED') {
     return (
@@ -199,7 +220,7 @@ function StatusBadge({ status }: { status: TrekkerBlogItem['status'] }) {
     );
   }
 
-  if (status === 'DRAFT') {
+  if (status === 'HIDDEN') {
     return (
       <span
         className="inline-block rounded-full px-3 py-1 text-xs font-semibold"
@@ -208,7 +229,7 @@ function StatusBadge({ status }: { status: TrekkerBlogItem['status'] }) {
           color: '#6F7B75',
         }}
       >
-        Bản nháp
+        Đã ẩn
       </span>
     );
   }
@@ -222,18 +243,6 @@ function StatusBadge({ status }: { status: TrekkerBlogItem['status'] }) {
       }}
     >
       {status}
-    </span>
-  );
-}
-
-/** Hiển thị lượt xem với icon mắt */
-function ViewCount({ count, status }: { count: number; status: TrekkerBlogItem['status'] }) {
-  const isDraft = status === 'DRAFT';
-
-  return (
-    <span className="inline-flex items-center gap-1" style={{ color: '#6F7B75' }}>
-      <Eye className="h-3.5 w-3.5" />
-      {isDraft ? '--' : formatViewCount(count)}
     </span>
   );
 }

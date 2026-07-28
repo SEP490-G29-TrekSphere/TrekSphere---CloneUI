@@ -47,16 +47,19 @@ export interface BlogPostDetail extends BlogListItem {
   updatedAt: string;
 }
 
-/** Một comment — BE có thể trả nested tree. */
+/**
+ * Một comment — BE trả nested tree qua `replies`.
+ * Field định danh thật của BE là `commentId` (KHÔNG phải `id`).
+ * BE không trả `blogId`/`parentCommentId` trong response comment (chỉ dùng khi tạo mới).
+ */
 export interface BlogCommentItem {
-  id: string;
-  blogId: string;
+  commentId: string;
   userId: string;
   userFullName: string;
   userAvatarUrl: string;
   content: string;
+  status?: 'ACTIVE' | 'HIDDEN' | 'DELETED' | string;
   createdAt: string;
-  parentCommentId: string | null;
   replies?: BlogCommentItem[];
 }
 
@@ -75,6 +78,11 @@ export interface BlogCommentListMeta extends BlogListMeta {}
 export interface CreateBlogCommentPayload {
   content: string;
   parentCommentId?: string | null;
+}
+
+/** Payload khi sửa nội dung comment. */
+export interface UpdateBlogCommentPayload {
+  content: string;
 }
 
 /** Tham số query cho list endpoint — bám đúng param BE hỗ trợ. */

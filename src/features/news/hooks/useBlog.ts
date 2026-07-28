@@ -8,6 +8,7 @@ import type {
   BlogListParams,
   BlogPostDetail,
   CreateBlogCommentPayload,
+  UpdateBlogCommentPayload,
 } from '../types';
 
 /**
@@ -77,20 +78,27 @@ export function useBlogRelated(currentBlogId: string | undefined) {
 
 /**
  * Hook lấy comments của bài viết (gọi endpoint riêng `/blogs/{blogId}/comments`).
+ *
+ * Dùng `topLevelOnly: true` — mỗi bình luận gốc trả về kèm cây `replies` lồng nhau,
+ * nên không cần phân trang riêng cho reply. `size` lấy lớn để tránh phải làm UI
+ * phân trang comment (ngoài phạm vi hiện tại).
+ *
+ * Lưu ý: KHÔNG dùng `GET /blogs/{id}` (blog detail) làm nguồn comment vì endpoint đó
+ * tăng viewCount mỗi lần gọi — refetch sau mỗi thao tác comment sẽ làm tăng view ảo.
  */
 export function useBlogComments(blogId: string | undefined) {
   return useQuery<{ items: BlogCommentItem[]; meta: BlogCommentListMeta }>({
     queryKey: blogKeys.comments(blogId ?? ''),
-    queryFn: () => blogService.getCommentsById(blogId as string),
+    queryFn: () => blogService.getCommentsById(blogId as string, { topLevelOnly: true, size: 50 }),
     enabled: Boolean(blogId),
-    staleTime: 60 * 1000,
+    staleTime: 30 * 1000,
   });
 }
 
 /**
- * Hook tạo comment mới.
+ * Hook tạo comment mới hoặc trả lời (kèm `parentCommentId`).
  * - Yêu cầu user đã đăng nhập (BE check accessToken).
- * - Sau khi tạo thành công: invalidate cache comments + detail để auto-refetch.
+ * - Chỉ invalidate cache comments (KHÔNG đụng blog detail — tránh tăng viewCount ảo).
  */
 export function useCreateBlogComment(blogId: string | undefined) {
   const queryClient = useQueryClient();
@@ -103,7 +111,42 @@ export function useCreateBlogComment(blogId: string | undefined) {
     },
     onSuccess: () => {
       if (blogId) {
-        queryClient.invalidateQueries({ queryKey: blogKeys.detail(blogId) });
+        queryClient.invalidateQueries({ queryKey: blogKeys.comments(blogId) });
+      }
+    },
+  });
+}
+
+/**
+ * Hook sửa nội dung comment (chỉ chủ comment — kiểm tra ở UI, BE cũng enforce).
+ */
+export function useUpdateBlogComment(blogId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      commentId,
+      payload,
+    }: {
+      commentId: string;
+      payload: UpdateBlogCommentPayload;
+    }) => blogService.updateComment(commentId, payload),
+    onSuccess: () => {
+      if (blogId) {
+        queryClient.invalidateQueries({ queryKey: blogKeys.comments(blogId) });
+      }
+    },
+  });
+}
+
+/**
+ * Hook xóa comment (chỉ chủ comment — kiểm tra ở UI, BE cũng enforce).
+ */
+export function useDeleteBlogComment(blogId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (commentId: string) => blogService.deleteComment(commentId),
+    onSuccess: () => {
+      if (blogId) {
         queryClient.invalidateQueries({ queryKey: blogKeys.comments(blogId) });
       }
     },

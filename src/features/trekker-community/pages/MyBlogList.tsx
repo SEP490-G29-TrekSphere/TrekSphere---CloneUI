@@ -1,39 +1,32 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AppSpinner } from '@/shared/ui';
+import { PATHS } from '@/constants';
+import { AppSpinner, ConfirmActionDialog } from '@/shared/ui';
+import { useAppStore } from '@/store/useAppStore';
 import { toast } from '@/store/useToastStore';
 import { MyBlogPagination } from '../components/MyBlogPagination';
-import { MyBlogStatsCards } from '../components/MyBlogStatsCards';
 import { MyBlogTable } from '../components/MyBlogTable';
-import {
-  useToggleBlogVisibility,
-  useTrekkerBlogList,
-  useTrekkerBlogStats,
-} from '../hooks/useTrekkerBlog';
+import { useTrekkerBlogList } from '../hooks/useTrekkerBlog';
+import { useTrekkerBlogMutations } from '../hooks/useTrekkerBlogMutations';
 import type { TrekkerBlogItem } from '../types';
 
 const PAGE_SIZE = 8;
 
+type PendingAction = { blog: TrekkerBlogItem; type: 'hide' | 'delete' };
+
 /**
  * Trang "Blog của tôi" — màn hình quản lý blog của Trekker.
  * Header chung đã có sẵn từ MainLayout.
- *
- * Layout:
- * 1. Page header: tiêu đề + nút "Viết bài mới"
- * 2. Stats cards: 3 thẻ thống kê
- * 3. DataTable: danh sách bài viết
- * 4. Pagination footer
  */
 export default function MyBlogList() {
   const navigate = useNavigate();
+  const userId = useAppStore((state) => state.user?.id);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-
-  // Modal state for hide confirmation
-  const [hideModalOpen, setHideModalOpen] = useState(false);
-  const [blogToHide, setBlogToHide] = useState<TrekkerBlogItem | null>(null);
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
 
   const { data, isLoading, isError, isFetching } = useTrekkerBlogList({
+    authorId: userId,
     page,
     size: PAGE_SIZE,
     keyword: search.trim() || undefined,
@@ -41,69 +34,54 @@ export default function MyBlogList() {
     sortDir: 'desc',
   });
 
-  const { data: statsData, isLoading: statsLoading } = useTrekkerBlogStats();
-
-  const toggleVisibility = useToggleBlogVisibility();
+  const { toggleVisibility, deleteBlog } = useTrekkerBlogMutations();
 
   const blogs = data?.items ?? [];
   const total = data?.meta.totalElements ?? 0;
   const totalPages = Math.max(1, data?.meta.totalPages ?? 1);
-
-  const stats = statsData ?? { totalPosts: 0, totalViews: 0, newComments: 0 };
 
   const handleSearchChange = (q: string) => {
     setSearch(q);
     setPage(1);
   };
 
-  // Navigate to edit blog page
   const handleEditBlog = (blog: TrekkerBlogItem) => {
     navigate(`/blog/edit/${blog.blogId}`);
   };
 
-  // Open hide confirmation modal
-  const handleRequestHide = (blog: TrekkerBlogItem) => {
-    setBlogToHide(blog);
-    setHideModalOpen(true);
-  };
+  const handleConfirmAction = () => {
+    if (!pendingAction) return;
+    const { blog, type } = pendingAction;
 
-  // Confirm hide action
-  const handleConfirmHide = async () => {
-    if (!blogToHide) return;
-
-    const isCurrentlyPublished = blogToHide.status === 'PUBLISHED';
-
-    toggleVisibility.mutate(
-      { blogId: blogToHide.blogId },
-      {
+    if (type === 'hide') {
+      const willHide = blog.status !== 'HIDDEN';
+      toggleVisibility.mutate(blog.blogId, {
         onSuccess: () => {
           toast.success(
-            isCurrentlyPublished
-              ? 'Bài viết đã được ẩn khỏi cộng đồng.'
-              : 'Bài viết đã được hiển thị lại.'
+            willHide ? 'Bài viết đã được ẩn khỏi cộng đồng.' : 'Bài viết đã được hiển thị lại.'
           );
-          setHideModalOpen(false);
-          setBlogToHide(null);
+          setPendingAction(null);
         },
         onError: () => {
           toast.error('Có lỗi xảy ra. Vui lòng thử lại.');
-          setHideModalOpen(false);
-          setBlogToHide(null);
+          setPendingAction(null);
         },
-      }
-    );
+      });
+    } else {
+      deleteBlog.mutate(blog.blogId, {
+        onSuccess: () => {
+          toast.success('Đã xóa vĩnh viễn bài viết.');
+          setPendingAction(null);
+        },
+        onError: () => {
+          toast.error('Không thể xóa bài viết. Vui lòng thử lại.');
+          setPendingAction(null);
+        },
+      });
+    }
   };
 
-  // Cancel hide action
-  const handleCancelHide = () => {
-    setHideModalOpen(false);
-    setBlogToHide(null);
-  };
-
-  // Navigate to create new blog
-  const handleCreateBlog = () => {
-    navigate('/blog/create');
-  };
+  const isActionPending = toggleVisibility.isPending || deleteBlog.isPending;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#FAF8F1' }}>
@@ -119,12 +97,13 @@ export default function MyBlogList() {
             </h2>
             <p className="mt-2 max-w-lg text-sm" style={{ color: '#6F7B75' }}>
               Quản lý và chia sẻ những chuyến hành trình của bạn với cộng đồng TrekSphere.
+              {total > 0 && ` Tổng cộng ${total} bài viết.`}
             </p>
           </div>
 
           <button
             type="button"
-            onClick={handleCreateBlog}
+            onClick={() => navigate(PATHS.BLOG_CREATE)}
             className="inline-flex shrink-0 items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
             style={{ backgroundColor: '#06261D' }}
           >
@@ -178,17 +157,6 @@ export default function MyBlogList() {
           </svg>
         </div>
 
-        {/* Stats Cards */}
-        <div style={{ marginBottom: '32px' }}>
-          {statsLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <AppSpinner size="default" className="text-primary" />
-            </div>
-          ) : (
-            <MyBlogStatsCards stats={stats} />
-          )}
-        </div>
-
         {/* Data Table */}
         {isLoading ? (
           <div
@@ -211,7 +179,12 @@ export default function MyBlogList() {
           </div>
         ) : (
           <div className={`transition-opacity ${isFetching ? 'opacity-60' : ''}`}>
-            <MyBlogTable blogs={blogs} onEdit={handleEditBlog} onHide={handleRequestHide} />
+            <MyBlogTable
+              blogs={blogs}
+              onEdit={handleEditBlog}
+              onHide={(blog) => setPendingAction({ blog, type: 'hide' })}
+              onDelete={(blog) => setPendingAction({ blog, type: 'delete' })}
+            />
 
             {/* Pagination Footer */}
             {total > 0 && (
@@ -236,105 +209,36 @@ export default function MyBlogList() {
         )}
       </main>
 
-      {/* Hide Confirmation Modal */}
-      {hideModalOpen && blogToHide && (
-        <HideConfirmationModal
-          blogTitle={blogToHide.title}
-          isPublished={blogToHide.status === 'PUBLISHED'}
-          isPending={toggleVisibility.isPending}
-          onConfirm={handleConfirmHide}
-          onCancel={handleCancelHide}
+      {pendingAction && (
+        <ConfirmActionDialog
+          variant={pendingAction.type === 'delete' ? 'destructive' : 'default'}
+          title={
+            pendingAction.type === 'delete'
+              ? 'Xóa vĩnh viễn bài viết?'
+              : pendingAction.blog.status === 'HIDDEN'
+                ? 'Hiển thị bài viết?'
+                : 'Ẩn bài viết?'
+          }
+          description={
+            pendingAction.type === 'delete'
+              ? 'Bài viết sẽ bị xóa vĩnh viễn và không thể khôi phục.'
+              : pendingAction.blog.status === 'HIDDEN'
+                ? 'Bạn có chắc chắn muốn hiển thị bài viết này trở lại không?'
+                : 'Bạn có chắc chắn muốn ẩn bài viết này khỏi cộng đồng không?'
+          }
+          detail={pendingAction.blog.title}
+          confirmLabel={
+            pendingAction.type === 'delete'
+              ? 'Xóa vĩnh viễn'
+              : pendingAction.blog.status === 'HIDDEN'
+                ? 'Xác nhận hiển thị'
+                : 'Xác nhận ẩn'
+          }
+          isPending={isActionPending}
+          onConfirm={handleConfirmAction}
+          onCancel={() => setPendingAction(null)}
         />
       )}
-    </div>
-  );
-}
-
-/**
- * Modal xác nhận ẩn/hiện bài viết.
- */
-interface HideConfirmationModalProps {
-  blogTitle: string;
-  isPublished: boolean;
-  isPending: boolean;
-  onConfirm: () => void;
-  onCancel: () => void;
-}
-
-function HideConfirmationModal({
-  blogTitle,
-  isPublished,
-  isPending,
-  onConfirm,
-  onCancel,
-}: HideConfirmationModalProps) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
-    >
-      <div
-        className="mx-4 w-full max-w-md rounded-3xl p-6 shadow-xl"
-        style={{ backgroundColor: '#FFFFFF' }}
-      >
-        {/* Icon */}
-        <div
-          className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full"
-          style={{ backgroundColor: '#F0EEE6' }}
-        >
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#06261D"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-            <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-            <line x1="1" y1="1" x2="23" y2="23" />
-          </svg>
-        </div>
-
-        {/* Title */}
-        <h3 className="mb-2 text-center text-lg font-bold" style={{ color: '#06261D' }}>
-          {isPublished ? 'Ẩn bài viết?' : 'Hiển thị bài viết?'}
-        </h3>
-
-        {/* Description */}
-        <p className="mb-1 text-center text-sm" style={{ color: '#6F7B75' }}>
-          {isPublished
-            ? 'Bạn có chắc chắn muốn ẩn bài viết này khỏi cộng đồng không?'
-            : 'Bạn có chắc chắn muốn hiển thị bài viết này trở lại?'}
-        </p>
-        <p className="mb-6 text-center text-xs font-medium" style={{ color: '#6F7B75' }}>
-          "{blogTitle.length > 60 ? `${blogTitle.slice(0, 60)}...` : blogTitle}"
-        </p>
-
-        {/* Actions */}
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={isPending}
-            className="flex-1 rounded-full border px-4 py-3 text-sm font-semibold transition-opacity hover:opacity-80 disabled:opacity-50"
-            style={{ borderColor: '#E6E2D1', color: '#6F7B75' }}
-          >
-            Hủy
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            disabled={isPending}
-            className="flex-1 rounded-full px-4 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-            style={{ backgroundColor: '#06261D' }}
-          >
-            {isPending ? 'Đang xử lý...' : isPublished ? 'Xác nhận ẩn' : 'Xác nhận hiển thị'}
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

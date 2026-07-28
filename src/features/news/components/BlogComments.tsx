@@ -2,16 +2,18 @@ import { Flag, Lock } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PATHS } from '@/constants';
-import { ReportModal } from '@/shared/ui';
+import { ConfirmActionDialog, ReportModal } from '@/shared/ui';
 import { toast } from '@/store/useToastStore';
-import { useCreateBlogComment } from '../hooks/useBlog';
+import { useCreateBlogComment, useDeleteBlogComment, useUpdateBlogComment } from '../hooks/useBlog';
 import type { BlogCommentItem } from '../types';
 
 interface BlogCommentsProps {
   comments: BlogCommentItem[];
   total?: number;
   isLoggedIn: boolean;
-  /** ID bài viết — dùng để invalidate cache + gọi POST `/blogs/{id}/comments`. */
+  /** userId của người đang đăng nhập — dùng để hiện nút Sửa/Xóa đúng chủ bình luận. */
+  currentUserId?: string;
+  /** ID bài viết — dùng để invalidate cache + gọi API comment. */
   blogId?: string;
 }
 
@@ -33,13 +35,22 @@ const formatRelativeTime = (iso: string): string => {
  * Khu vực bình luận.
  * - Nếu đã đăng nhập: hiển thị form nhập + danh sách comment + gọi API POST khi gửi.
  * - Nếu chưa đăng nhập: hiển thị comment + khóa form bên dưới.
- * - Hỗ trợ nested comments (replies) — render theo thứ tự cha → con.
+ * - Hỗ trợ nested comments (replies), trả lời, sửa và xóa (chỉ chủ comment).
  */
-export function BlogComments({ comments, total, isLoggedIn, blogId }: BlogCommentsProps) {
+export function BlogComments({
+  comments,
+  total,
+  isLoggedIn,
+  currentUserId,
+  blogId,
+}: BlogCommentsProps) {
   const [content, setContent] = useState('');
   const createMutation = useCreateBlogComment(blogId);
+  const updateMutation = useUpdateBlogComment(blogId);
+  const deleteMutation = useDeleteBlogComment(blogId);
 
   const [reportingComment, setReportingComment] = useState<BlogCommentItem | null>(null);
+  const [deletingComment, setDeletingComment] = useState<BlogCommentItem | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,6 +65,27 @@ export function BlogComments({ comments, total, isLoggedIn, blogId }: BlogCommen
       toast.success('Đã gửi bình luận.');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Gửi bình luận thất bại.');
+    }
+  };
+
+  const handleReply = async (parentCommentId: string, replyContent: string) => {
+    await createMutation.mutateAsync({ content: replyContent, parentCommentId });
+    toast.success('Đã gửi trả lời.');
+  };
+
+  const handleEdit = async (commentId: string, newContent: string) => {
+    await updateMutation.mutateAsync({ commentId, payload: { content: newContent } });
+    toast.success('Đã cập nhật bình luận.');
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingComment) return;
+    try {
+      await deleteMutation.mutateAsync(deletingComment.commentId);
+      toast.success('Đã xóa bình luận.');
+      setDeletingComment(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Xóa bình luận thất bại.');
     }
   };
 
@@ -105,10 +137,15 @@ export function BlogComments({ comments, total, isLoggedIn, blogId }: BlogCommen
         <ul className="mt-8 flex flex-col gap-4">
           {comments.map((comment) => (
             <CommentNode
-              key={comment.id}
+              key={comment.commentId}
               comment={comment}
               depth={0}
+              isLoggedIn={isLoggedIn}
+              currentUserId={currentUserId}
               onReport={(c) => setReportingComment(c)}
+              onReply={handleReply}
+              onEdit={handleEdit}
+              onDelete={(c) => setDeletingComment(c)}
             />
           ))}
         </ul>
@@ -121,9 +158,23 @@ export function BlogComments({ comments, total, isLoggedIn, blogId }: BlogCommen
         <ReportModal
           isOpen={Boolean(reportingComment)}
           onClose={() => setReportingComment(null)}
-          targetId={reportingComment.id}
+          targetId={reportingComment.commentId}
           targetType="COMMENT"
           targetTitle={reportingComment.content}
+        />
+      )}
+
+      {/* Modal xác nhận xóa comment */}
+      {deletingComment && (
+        <ConfirmActionDialog
+          title="Xóa bình luận?"
+          description="Bình luận sẽ bị xóa vĩnh viễn và không thể khôi phục."
+          detail={deletingComment.content}
+          confirmLabel="Xóa"
+          variant="destructive"
+          isPending={deleteMutation.isPending}
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setDeletingComment(null)}
         />
       )}
     </section>
@@ -134,12 +185,74 @@ export function BlogComments({ comments, total, isLoggedIn, blogId }: BlogCommen
 function CommentNode({
   comment,
   depth,
+  isLoggedIn,
+  currentUserId,
   onReport,
+  onReply,
+  onEdit,
+  onDelete,
 }: {
   comment: BlogCommentItem;
   depth: number;
+  isLoggedIn: boolean;
+  currentUserId?: string;
   onReport: (comment: BlogCommentItem) => void;
+  onReply: (parentCommentId: string, content: string) => Promise<void>;
+  onEdit: (commentId: string, content: string) => Promise<void>;
+  onDelete: (comment: BlogCommentItem) => void;
 }) {
+  const isOwner = Boolean(currentUserId) && comment.userId === currentUserId;
+
+  const [isReplying, setIsReplying] = useState(false);
+  const [replyContent, setReplyContent] = useState('');
+  const [isSubmittingReply, setIsSubmittingReply] = useState(false);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(comment.content);
+  const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
+
+  const handleReplySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = replyContent.trim();
+    if (!trimmed) {
+      toast.error('Vui lòng nhập nội dung trả lời.');
+      return;
+    }
+    setIsSubmittingReply(true);
+    try {
+      await onReply(comment.commentId, trimmed);
+      setReplyContent('');
+      setIsReplying(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Gửi trả lời thất bại.');
+    } finally {
+      setIsSubmittingReply(false);
+    }
+  };
+
+  const startEditing = () => {
+    setEditContent(comment.content);
+    setIsEditing(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = editContent.trim();
+    if (!trimmed) {
+      toast.error('Nội dung bình luận không được để trống.');
+      return;
+    }
+    setIsSubmittingEdit(true);
+    try {
+      await onEdit(comment.commentId, trimmed);
+      setIsEditing(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Cập nhật bình luận thất bại.');
+    } finally {
+      setIsSubmittingEdit(false);
+    }
+  };
+
   return (
     <li
       className="flex gap-4 rounded-2xl bg-white p-4 shadow-sm border border-[#E5E4DE] md:p-5"
@@ -165,30 +278,114 @@ function CommentNode({
             </span>
           </div>
 
+          <div className="flex items-center gap-3">
+            {isOwner && !isEditing && (
+              <>
+                <button
+                  type="button"
+                  onClick={startEditing}
+                  className="text-xs text-zinc-400 hover:text-primary transition-colors"
+                >
+                  Sửa
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDelete(comment)}
+                  className="text-xs text-zinc-400 hover:text-red-600 transition-colors"
+                >
+                  Xóa
+                </button>
+              </>
+            )}
+            <button
+              type="button"
+              onClick={() => onReport(comment)}
+              className="flex items-center gap-1 text-xs text-zinc-400 hover:text-red-600 transition-colors"
+              title="Báo cáo bình luận"
+            >
+              <Flag className="size-3.5" />
+              <span>Báo cáo</span>
+            </button>
+          </div>
+        </div>
+
+        {isEditing ? (
+          <form onSubmit={handleEditSubmit} className="mt-2 flex flex-col gap-2">
+            <textarea
+              rows={2}
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              className="w-full rounded-xl border border-[#DCD9CF] bg-white p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#0B3025]"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsEditing(false)}
+                disabled={isSubmittingEdit}
+                className="rounded-full border border-[#DCD9CF] px-4 py-1.5 text-xs font-semibold text-muted-foreground hover:opacity-80 disabled:opacity-50"
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmittingEdit}
+                className="rounded-full bg-[#0B3025] px-4 py-1.5 text-xs font-bold text-white hover:bg-[#08241C] disabled:opacity-50"
+              >
+                {isSubmittingEdit ? 'Đang lưu...' : 'Lưu'}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <p className="mt-2 text-sm leading-relaxed text-primary/90 md:text-base">
+            {comment.content}
+          </p>
+        )}
+
+        {isLoggedIn && !isEditing && (
           <button
             type="button"
-            onClick={() => onReport(comment)}
-            className="flex items-center gap-1 text-xs text-zinc-400 hover:text-red-600 transition-colors"
-            title="Báo cáo bình luận"
+            onClick={() => setIsReplying((v) => !v)}
+            className="mt-2 text-xs font-semibold text-primary hover:underline md:text-sm"
           >
-            <Flag className="size-3.5" />
-            <span>Báo cáo</span>
+            {isReplying ? 'Hủy trả lời' : 'Trả lời'}
           </button>
-        </div>
-        <p className="mt-2 text-sm leading-relaxed text-primary/90 md:text-base">
-          {comment.content}
-        </p>
-        <button
-          type="button"
-          className="mt-2 text-xs font-semibold text-primary hover:underline md:text-sm"
-        >
-          Trả lời
-        </button>
+        )}
+
+        {isReplying && (
+          <form onSubmit={handleReplySubmit} className="mt-3 flex flex-col gap-2">
+            <textarea
+              rows={2}
+              value={replyContent}
+              onChange={(e) => setReplyContent(e.target.value)}
+              placeholder={`Trả lời ${comment.userFullName}...`}
+              className="w-full rounded-xl border border-[#DCD9CF] bg-white p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#0B3025]"
+            />
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={isSubmittingReply}
+                className="rounded-full bg-[#0B3025] px-4 py-1.5 text-xs font-bold text-white hover:bg-[#08241C] disabled:opacity-50"
+              >
+                {isSubmittingReply ? 'Đang gửi...' : 'Gửi trả lời'}
+              </button>
+            </div>
+          </form>
+        )}
 
         {comment.replies && comment.replies.length > 0 && (
           <ul className="mt-4 flex flex-col gap-4">
             {comment.replies.map((reply) => (
-              <CommentNode key={reply.id} comment={reply} depth={depth + 1} onReport={onReport} />
+              <CommentNode
+                key={reply.commentId}
+                comment={reply}
+                depth={depth + 1}
+                isLoggedIn={isLoggedIn}
+                currentUserId={currentUserId}
+                onReport={onReport}
+                onReply={onReply}
+                onEdit={onEdit}
+                onDelete={onDelete}
+              />
             ))}
           </ul>
         )}

@@ -1,60 +1,30 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getMockBlogList, MOCK_STATS, toggleMockBlogVisibility } from '../data/mockBlogs';
-import type { TrekkerBlogListParams, TrekkerBlogListResponse, TrekkerBlogStats } from '../types';
+import { useQuery } from '@tanstack/react-query';
+import { trekkerBlogService } from '../services/trekkerBlogService';
+import type { TrekkerBlogListParams, TrekkerBlogListResponse } from '../types';
 
-/** Query key factory cho trekker community. */
+/** Query key factory cho feature Blog. */
 export const trekkerBlogKeys = {
   all: ['trekker-blog'] as const,
   lists: () => [...trekkerBlogKeys.all, 'list'] as const,
   list: (params: TrekkerBlogListParams) => [...trekkerBlogKeys.lists(), params] as const,
-  stats: () => [...trekkerBlogKeys.all, 'stats'] as const,
+  details: () => [...trekkerBlogKeys.all, 'detail'] as const,
+  detail: (blogId: string) => [...trekkerBlogKeys.details(), blogId] as const,
 };
 
-/**
- * Hook lấy danh sách blog của Trekker hiện tại (phân trang).
- * Hiện dùng mock data — thay bằng API thực khi BE cung cấp.
- */
-export function useTrekkerBlogList(params: TrekkerBlogListParams) {
+/** Hook lấy danh sách blog (phân trang). Truyền `authorId` để lọc theo tác giả. */
+export function useTrekkerBlogList(params: TrekkerBlogListParams, options?: { enabled?: boolean }) {
   return useQuery<TrekkerBlogListResponse, Error>({
     queryKey: trekkerBlogKeys.list(params),
-    queryFn: () => getMockBlogList(params),
+    queryFn: () => trekkerBlogService.getBlogs(params),
+    enabled: options?.enabled,
   });
 }
 
-/**
- * Hook lấy thống kê tổng quan blog của Trekker.
- * Hiện dùng mock data — thay bằng API thực khi BE cung cấp.
- */
-export function useTrekkerBlogStats() {
-  return useQuery<TrekkerBlogStats, Error>({
-    queryKey: trekkerBlogKeys.stats(),
-    queryFn: async () => {
-      // Simulate network delay
-      await new Promise((r) => setTimeout(r, 400));
-      return MOCK_STATS;
-    },
-    staleTime: 1000 * 60 * 2,
-  });
-}
-
-/**
- * Hook toggle visibility (ẩn/hiện) bài viết using mock data.
- * Luôn chuyển đổi trạng thái: PUBLISHED → DRAFT, DRAFT → PUBLISHED.
- */
-export function useToggleBlogVisibility() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ blogId }: { blogId: string }) => {
-      // Simulate API delay
-      await new Promise((r) => setTimeout(r, 300));
-      // Use mock toggle function
-      return toggleMockBlogVisibility(blogId);
-    },
-    onSuccess: () => {
-      // Invalidate list queries to refresh table
-      queryClient.invalidateQueries({ queryKey: trekkerBlogKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: trekkerBlogKeys.stats() });
-    },
+/** Hook lấy chi tiết 1 bài viết — dùng để load dữ liệu cho màn Sửa. */
+export function useTrekkerBlogDetail(blogId: string | undefined) {
+  return useQuery({
+    queryKey: trekkerBlogKeys.detail(blogId ?? ''),
+    queryFn: () => trekkerBlogService.getBlogDetail(blogId as string),
+    enabled: Boolean(blogId),
   });
 }

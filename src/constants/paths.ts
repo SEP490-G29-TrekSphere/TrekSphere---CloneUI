@@ -78,6 +78,9 @@ export const PATHS = {
   VENDOR_MANAGER_TOUR_APPROVALS: '/vendor-manager/tours/approvals',
   VENDOR_MANAGER_TOUR_SCHEDULES: '/vendor-manager/tours/:id/schedules',
   VENDOR_MANAGER_EQUIPMENT: '/vendor-manager/equipment',
+  VENDOR_MANAGER_PORTERS: '/vendor-manager/porters',
+  VENDOR_MANAGER_PORTER_CREATE: '/vendor-manager/porters/new',
+  VENDOR_MANAGER_PORTER_EDIT: '/vendor-manager/porters/:id/edit',
 
   // Vendor Staff (TrekPartner portal)
   PARTNER: '/partner',
@@ -86,6 +89,13 @@ export const PATHS = {
   PARTNER_TOUR_EDIT: '/partner/tours/:id/edit',
   PARTNER_TOUR_SCHEDULES: '/partner/tours/:id/schedules',
   PARTNER_EQUIPMENT: '/partner/equipment',
+  PARTNER_PORTERS: '/partner/porters',
+  PARTNER_PORTER_CREATE: '/partner/porters/new',
+  PARTNER_PORTER_EDIT: '/partner/porters/:id/edit',
+  PARTNER_BLOG_CREATE: '/partner/blog/create',
+
+  // Admin — Blog moderation
+  ADMIN_BLOGS: '/admin/blogs',
 } as const;
 
 export type AppPath = (typeof PATHS)[keyof typeof PATHS];
@@ -105,3 +115,4 @@ export const getVendorManagerTourSchedulesPath = (id: string) =>
   PATHS.VENDOR_MANAGER_TOUR_SCHEDULES.replace(':id', id);
 export const getPartnerTourSchedulesPath = (id: string) =>
   PATHS.PARTNER_TOUR_SCHEDULES.replace(':id', id);
+export const getNewsDetailPath = (blogId: string) => PATHS.NEWS_DETAIL.replace(':blogId', blogId);

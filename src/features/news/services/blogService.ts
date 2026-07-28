@@ -7,6 +7,7 @@ import type {
   BlogListParams,
   BlogPostDetail,
   CreateBlogCommentPayload,
+  UpdateBlogCommentPayload,
 } from '../types';
 
 /**
@@ -17,11 +18,16 @@ import type {
  *         → { success, code, message, data: { content, pageNumber, pageSize, totalElements, totalPages, ... }, timestamp }
  *   GET    /api/v1/blogs/{id}
  *         → { success, code, message, data: BlogPostDetail (id, title, content, coverImageUrl, comments, ...) }
- *   GET    /api/v1/blogs/{id}/comments?page=&size=
+ *   GET    /api/v1/blogs/{id}/comments?topLevelOnly=&page=&size=
  *         → { success, code, message, data: { content: BlogComment[], ...meta }, timestamp }
  *   POST   /api/v1/blogs/{id}/comments (auth)
  *         body: { content, parentCommentId? }
  *         → { success, code, message, data: BlogComment }
+ *   PUT    /api/v1/blogs/comments/{commentId} (auth, chủ comment)
+ *         body: { content }
+ *         → { success, code, message, data: BlogComment }
+ *   DELETE /api/v1/blogs/comments/{commentId} (auth, chủ comment)
+ *         → { success, code, message, data: null }
  *
  * Vì `ApiService` đã unwrap 1 cấp envelope (success/data),
  * `res.data` chính là phần `data` của envelope BE.
@@ -84,16 +90,17 @@ export const blogService = {
   },
 
   /**
-   * Lấy comments của bài viết (phân trang).
-   * BE: GET /api/v1/blogs/{id}/comments?page=&size=
+   * Lấy comments của bài viết (phân trang, dạng cây lồng nhau).
+   * BE: GET /api/v1/blogs/{id}/comments?topLevelOnly=&page=&size=
    */
   async getCommentsById(
     id: string,
-    params: { page?: number; size?: number } = {}
+    params: { page?: number; size?: number; topLevelOnly?: boolean } = {}
   ): Promise<{ items: BlogCommentItem[]; meta: BlogCommentListMeta }> {
     const query = new URLSearchParams();
     if (params.page) query.set('page', String(params.page - 1)); // BE Spring Data dùng 0-indexed
     if (params.size) query.set('size', String(params.size));
+    if (params.topLevelOnly !== undefined) query.set('topLevelOnly', String(params.topLevelOnly));
     const qs = query.toString();
     const res = await ApiService<{
       content: BlogCommentItem[];
@@ -133,5 +140,34 @@ export const blogService = {
       throw new Error('Không nhận được phản hồi từ máy chủ.');
     }
     return res.data;
+  },
+
+  /**
+   * Sửa nội dung comment (chỉ chủ comment).
+   * BE: PUT /api/v1/blogs/comments/{commentId}
+   */
+  async updateComment(
+    commentId: string,
+    payload: UpdateBlogCommentPayload
+  ): Promise<BlogCommentItem> {
+    const res = await ApiService<BlogCommentItem>(`/blogs/comments/${commentId}`, 'PUT', payload);
+    if (res.error) {
+      throw new Error(res.error);
+    }
+    if (!res.data) {
+      throw new Error('Không nhận được phản hồi từ máy chủ.');
+    }
+    return res.data;
+  },
+
+  /**
+   * Xóa comment (chỉ chủ comment, hoặc Admin).
+   * BE: DELETE /api/v1/blogs/comments/{commentId}
+   */
+  async deleteComment(commentId: string): Promise<void> {
+    const res = await ApiService<void>(`/blogs/comments/${commentId}`, 'DELETE');
+    if (res.error) {
+      throw new Error(res.error);
+    }
   },
 };

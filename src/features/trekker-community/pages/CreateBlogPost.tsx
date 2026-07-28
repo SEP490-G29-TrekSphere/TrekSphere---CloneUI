@@ -1,166 +1,192 @@
-import { ImageIcon, Link, List, ListOrdered, Quote, Video } from 'lucide-react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { ImageIcon, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { getPrimaryRole, PATHS, ROLES } from '@/constants';
+import { profileService } from '@/features/profile/services/profileService';
 import { AppSpinner } from '@/shared/ui';
+import { useAppStore } from '@/store/useAppStore';
 import { toast } from '@/store/useToastStore';
-import { getMockBlogById, updateMockBlog } from '../data/mockBlogs';
+import { getSafeImageUrl } from '@/utils/sanitize';
+import { MyBlogPagination } from '../components/MyBlogPagination';
+import { MyBlogTable } from '../components/MyBlogTable';
+import { useTrekkerBlogDetail, useTrekkerBlogList } from '../hooks/useTrekkerBlog';
+import { useTrekkerBlogMutations } from '../hooks/useTrekkerBlogMutations';
 
-/** Chỉ cho phép URL http(s), data: hoặc blob: — chặn các scheme nguy hiểm như javascript: */
-function getSafeImageUrl(url: string | null): string | undefined {
-  if (!url) return undefined;
-  try {
-    // blob: URL từ URL.createObjectURL luôn an toàn
-    if (url.startsWith('blob:')) return url;
+const STAFF_POSTS_PAGE_SIZE = 5;
 
-    const parsed = new URL(url, window.location.origin);
-    const allowedProtocols = ['http:', 'https:', 'data:'];
-    if (allowedProtocols.includes(parsed.protocol)) {
-      return url;
-    }
-    return undefined;
-  } catch {
-    return undefined;
-  }
+/** ~200 từ/phút — ước tính đơn giản, tính hoàn toàn phía client. */
+function computeReadStats(content: string) {
+  const words = content.trim().length === 0 ? 0 : content.trim().split(/\s+/).length;
+  const minutes = words === 0 ? 0 : Math.max(1, Math.round(words / 200));
+  return { words, minutes };
 }
 
-/** Các chuyên mục có sẵn */
-const CATEGORIES = [
-  { id: 'experience', label: 'Kinh nghiệm' },
-  { id: 'review', label: 'Review Tour' },
-  { id: 'guide', label: 'Cẩm nang' },
-  { id: 'equipment', label: 'Thiết bị' },
-] as const;
+const blogFormSchema = z.object({
+  title: z.string().trim().min(1, 'Vui lòng nhập tiêu đề bài viết.'),
+  content: z.string().trim().min(1, 'Vui lòng nhập nội dung bài viết.'),
+});
 
-/** Toolbar format icons */
-const TOOLBAR_ITEMS = [
-  { icon: B, label: 'Bold', action: 'bold' },
-  { icon: I, label: 'Italic', action: 'italic' },
-  { icon: List, label: 'Danh sách không thứ tự', action: 'ul' },
-  { icon: ListOrdered, label: 'Danh sách có thứ tự', action: 'ol' },
-  { icon: Link, label: 'Liên kết', action: 'link' },
-  { icon: ImageIcon, label: 'Chèn ảnh', action: 'image' },
-  { icon: Video, label: 'Chèn video', action: 'video' },
-  { icon: MapPin, label: 'Chèn địa điểm', action: 'location' },
-  { icon: Quote, label: 'Trích dẫn', action: 'quote' },
-];
-
-/** Temporary inline SVG components to avoid imports */
-function B({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z" />
-      <path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z" />
-    </svg>
-  );
-}
-
-function I({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <line x1="19" y1="4" x2="10" y2="4" />
-      <line x1="14" y1="20" x2="5" y2="20" />
-      <line x1="15" y1="4" x2="9" y2="20" />
-    </svg>
-  );
-}
-
-function MapPin({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-      <circle cx="12" cy="10" r="3" />
-    </svg>
-  );
-}
+type BlogFormValues = z.infer<typeof blogFormSchema>;
 
 export function CreateBlogPost({ editMode = false }: { editMode?: boolean }) {
   const navigate = useNavigate();
   const params = useParams();
   const blogId = params.blogId;
 
-  // Form state
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [coverImage, setCoverImage] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState('experience');
-  const [tags, setTags] = useState<string[]>([]);
-  const [newTag, setNewTag] = useState('');
-  const [allowComments, setAllowComments] = useState(true);
-  const [isFeatured, setIsFeatured] = useState(false);
-  const [isPrivate, setIsPrivate] = useState(false);
+  const user = useAppStore((state) => state.user);
+  const isStaff = getPrimaryRole(user?.roles) === ROLES.VENDOR_STAFF;
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingBlog, setIsLoadingBlog] = useState(editMode);
+  const { data: existingBlog, isLoading: isLoadingBlog } = useTrekkerBlogDetail(
+    editMode ? blogId : undefined
+  );
+  const { createBlog, updateBlog } = useTrekkerBlogMutations();
 
-  // Load existing blog data when in edit mode
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [coverRemoved, setCoverRemoved] = useState(false);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [staffPostsPage, setStaffPostsPage] = useState(1);
+
+  // Staff không có màn "Bài viết của tôi" riêng — hiển thị luôn danh sách bài
+  // đã đăng ngay dưới khung soạn thảo trên trang Viết Blog.
+  const showStaffPostList = isStaff && !editMode;
+  const staffPosts = useTrekkerBlogList(
+    {
+      authorId: user?.id,
+      page: staffPostsPage,
+      size: STAFF_POSTS_PAGE_SIZE,
+      sortBy: 'createdAt',
+      sortDir: 'desc',
+    },
+    { enabled: showStaffPostList }
+  );
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm<BlogFormValues>({
+    resolver: zodResolver(blogFormSchema),
+    defaultValues: { title: '', content: '' },
+  });
+
+  const title = watch('title');
+  const content = watch('content');
+
+  // Nạp dữ liệu bài viết khi ở chế độ Sửa
   useEffect(() => {
-    if (!editMode || !blogId) return;
+    if (!existingBlog) return;
+    reset({ title: existingBlog.title, content: existingBlog.content });
+    setCoverPreview(existingBlog.coverImageUrl ?? null);
+    setCoverRemoved(false);
+  }, [existingBlog, reset]);
 
-    const loadBlog = async () => {
-      setIsLoadingBlog(true);
-      try {
-        // Simulate loading delay
-        await new Promise((r) => setTimeout(r, 300));
-
-        // Get blog from mock data
-        const blog = getMockBlogById(blogId);
-
-        if (blog) {
-          setTitle(blog.title);
-          setContent(blog.excerpt);
-          setCoverImage(blog.coverImageUrl);
-          setTags(blog.tags);
-          setAllowComments(true);
-          setIsFeatured(false);
-          setIsPrivate(false);
-        } else {
-          toast.error('Không tìm thấy bài viết.');
-        }
-      } catch {
-        toast.error('Không thể tải bài viết. Vui lòng thử lại.');
-      } finally {
-        setIsLoadingBlog(false);
-      }
+  // Dọn dẹp blob preview khi đổi ảnh hoặc unmount
+  useEffect(() => {
+    return () => {
+      if (coverPreview?.startsWith('blob:')) URL.revokeObjectURL(coverPreview);
     };
+  }, [coverPreview]);
 
-    loadBlog();
-  }, [editMode, blogId]);
+  const handleCoverImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Vui lòng chọn file ảnh.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Ảnh tối đa 5MB.');
+      return;
+    }
+    if (coverPreview?.startsWith('blob:')) URL.revokeObjectURL(coverPreview);
+    setCoverFile(file);
+    setCoverPreview(URL.createObjectURL(file));
+    setCoverRemoved(false);
+  };
 
-  // Show loading state while fetching blog data
-  if (isLoadingBlog) {
+  const handleRemoveCover = () => {
+    if (coverPreview?.startsWith('blob:')) URL.revokeObjectURL(coverPreview);
+    setCoverFile(null);
+    setCoverPreview(null);
+    setCoverRemoved(true);
+  };
+
+  const isSubmitting = isUploadingCover || createBlog.isPending || updateBlog.isPending;
+
+  const onSubmit = async (values: BlogFormValues) => {
+    let coverImageUrl: string | undefined;
+
+    if (coverFile) {
+      setIsUploadingCover(true);
+      const uploadRes = await profileService.uploadFile(coverFile, 'blogs');
+      setIsUploadingCover(false);
+      if (uploadRes.error || !uploadRes.data) {
+        toast.error(uploadRes.error || 'Không thể tải ảnh bìa lên.');
+        return;
+      }
+      coverImageUrl = uploadRes.data;
+    } else if (editMode && coverRemoved) {
+      coverImageUrl = '';
+    }
+
+    if (editMode && blogId) {
+      updateBlog.mutate(
+        {
+          blogId,
+          payload: {
+            title: values.title,
+            content: values.content,
+            ...(coverImageUrl !== undefined ? { coverImageUrl } : {}),
+          },
+        },
+        {
+          onSuccess: () => {
+            toast.success('Đã lưu thay đổi.');
+            navigate(PATHS.BLOG_LIST);
+          },
+          onError: (err) =>
+            toast.error(err instanceof Error ? err.message : 'Không thể lưu thay đổi.'),
+        }
+      );
+      return;
+    }
+
+    createBlog.mutate(
+      {
+        title: values.title,
+        content: values.content,
+        ...(coverImageUrl ? { coverImageUrl } : {}),
+      },
+      {
+        onSuccess: () => {
+          toast.success('Bài viết đã được đăng thành công!');
+          if (isStaff) {
+            // Staff không có trang danh sách riêng — ở lại đây, reset form để
+            // viết bài tiếp theo, bài vừa đăng sẽ tự xuất hiện trong danh sách bên dưới.
+            reset({ title: '', content: '' });
+            handleRemoveCover();
+            setStaffPostsPage(1);
+          } else {
+            navigate(PATHS.BLOG_LIST);
+          }
+        },
+        onError: (err) => toast.error(err instanceof Error ? err.message : 'Đăng bài thất bại.'),
+      }
+    );
+  };
+
+  const handleBack = () => navigate(isStaff ? PATHS.PARTNER : PATHS.BLOG_LIST);
+
+  if (editMode && isLoadingBlog) {
     return (
       <div className="flex h-64 items-center justify-center" style={{ backgroundColor: '#FAF8F1' }}>
         <AppSpinner size="lg" className="text-primary" />
@@ -168,114 +194,16 @@ export function CreateBlogPost({ editMode = false }: { editMode?: boolean }) {
     );
   }
 
-  const handleAddTag = () => {
-    const trimmed = newTag.trim();
-    if (trimmed && !tags.includes(trimmed)) {
-      setTags([...tags, trimmed]);
-      setNewTag('');
-    }
-  };
-
-  const handleRemoveTag = (tag: string) => {
-    setTags(tags.filter((t) => t !== tag));
-  };
-
-  const handleCoverImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        toast.error('Vui lòng chọn file ảnh.');
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('Ảnh tối đa 5MB.');
-        return;
-      }
-      const previewUrl = URL.createObjectURL(file);
-      setCoverImage(previewUrl);
-    }
-  };
-
-  const handleToolbarAction = (action: string) => {
-    // TODO: implement rich text formatting
-    console.log('Toolbar action:', action);
-  };
-
-  const handleSaveDraft = async () => {
-    setIsSubmitting(true);
-    try {
-      // Simulate API delay
-      await new Promise((r) => setTimeout(r, 500));
-
-      // Update mock data if in edit mode
-      if (editMode && blogId) {
-        updateMockBlog(blogId, {
-          title,
-          excerpt: content,
-          coverImageUrl: coverImage,
-          tags,
-          status: 'DRAFT',
-          updatedAt: new Date().toISOString(),
-        });
-      }
-
-      toast.success('Đã lưu bài viết vào nháp!');
-    } catch {
-      toast.error('Lưu nháp thất bại. Vui lòng thử lại.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handlePublish = async () => {
-    if (!title.trim()) {
-      toast.error('Vui lòng nhập tiêu đề bài viết.');
-      return;
-    }
-    if (!content.trim()) {
-      toast.error('Vui lòng nhập nội dung bài viết.');
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      // Simulate API delay
-      await new Promise((r) => setTimeout(r, 500));
-
-      // Update mock data if in edit mode
-      if (editMode && blogId) {
-        updateMockBlog(blogId, {
-          title,
-          excerpt: content,
-          coverImageUrl: coverImage,
-          tags,
-          status: 'PUBLISHED',
-          publishedAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
-      }
-
-      toast.success('Bài viết đã được đăng thành công!');
-      navigate('/blog');
-    } catch {
-      toast.error('Đăng bài thất bại. Vui lòng thử lại.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleBack = () => {
-    navigate('/blog');
-  };
+  const readStats = computeReadStats(content ?? '');
+  const safeCoverPreview = getSafeImageUrl(coverPreview);
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#FAF8F1' }}>
-      {/* Topbar Action - Transparent, blends with page background */}
+      {/* Topbar Action */}
       <div
         className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 sm:px-6"
         style={{ backgroundColor: 'transparent' }}
       >
-        {/* Left: Back button */}
         <button
           type="button"
           onClick={handleBack}
@@ -297,33 +225,30 @@ export function CreateBlogPost({ editMode = false }: { editMode?: boolean }) {
           Quay lại
         </button>
 
-        {/* Right: Action buttons */}
         <div className="flex items-center gap-2">
           <Button
             type="button"
             variant="outline"
-            onClick={handleSaveDraft}
-            disabled={isSubmitting}
+            onClick={() => setShowPreview(true)}
             className="rounded-full border-[#6F7B75] px-4 py-2 text-xs font-medium text-[#06261D] hover:bg-[#F0EEE6]"
           >
-            Lưu nháp
+            Xem trước
           </Button>
 
           <Button
             type="button"
-            onClick={handlePublish}
+            onClick={handleSubmit(onSubmit)}
             disabled={isSubmitting}
             className="rounded-full px-4 py-2 text-xs font-medium"
             style={{ backgroundColor: '#06261D', color: '#FFFFFF' }}
           >
-            {isSubmitting ? 'Đang xử lý...' : 'Đăng bài'}
+            {isSubmitting ? 'Đang xử lý...' : editMode ? 'Lưu thay đổi' : 'Đăng bài'}
           </Button>
         </div>
       </div>
 
       {/* Main content */}
       <main className="mx-auto max-w-none w-full px-4 pb-16 sm:px-6">
-        {/* Page Header */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold" style={{ color: '#06261D' }}>
             {editMode ? 'Chỉnh sửa bài viết' : 'Soạn thảo bài viết mới'}
@@ -333,29 +258,26 @@ export function CreateBlogPost({ editMode = false }: { editMode?: boolean }) {
           </p>
         </div>
 
-        {/* 2-column layout: Editor (65%) + Sidebar (35%) */}
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
           {/* Left Column: Editor Area (65%) */}
           <div className="w-full lg:w-[65%]">
-            {/* Cover Image Placeholder */}
+            {/* Cover Image */}
             <div className="relative mb-6">
               <button
                 type="button"
                 className="flex h-52 w-full cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed border-[#C5C0B0] bg-[#F8F6EF] transition-colors hover:bg-[#F0EEE6] sm:h-64"
                 style={{
-                  borderStyle: coverImage ? 'none' : 'dashed',
-                  backgroundColor: coverImage ? 'transparent' : '#F8F6EF',
+                  borderStyle: safeCoverPreview ? 'none' : 'dashed',
+                  backgroundColor: safeCoverPreview ? 'transparent' : '#F8F6EF',
                 }}
                 onClick={() => {
-                  if (!coverImage) {
-                    document.getElementById('cover-image-input')?.click();
-                  }
+                  if (!safeCoverPreview) document.getElementById('cover-image-input')?.click();
                 }}
               >
-                {coverImage ? (
+                {safeCoverPreview ? (
                   <>
                     <img
-                      src={getSafeImageUrl(coverImage)}
+                      src={safeCoverPreview}
                       alt="Cover"
                       className="h-full w-full rounded-3xl object-cover"
                     />
@@ -363,23 +285,11 @@ export function CreateBlogPost({ editMode = false }: { editMode?: boolean }) {
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setCoverImage(null);
+                        handleRemoveCover();
                       }}
                       className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70"
                     >
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                      </svg>
+                      <X className="h-3.5 w-3.5" />
                     </button>
                   </>
                 ) : (
@@ -409,289 +319,254 @@ export function CreateBlogPost({ editMode = false }: { editMode?: boolean }) {
             </div>
 
             {/* Title Input */}
-            <div className="mb-4">
+            <div className="mb-1">
               <input
                 type="text"
                 placeholder="Nhập tiêu đề bài viết tại đây..."
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                {...register('title')}
                 className="w-full rounded-full border px-6 py-4 text-lg font-semibold outline-none transition-colors focus:border-[#06261D]"
                 style={{
-                  borderColor: '#E6E2D1',
+                  borderColor: errors.title ? '#EF4444' : '#E6E2D1',
                   backgroundColor: '#FFFFFF',
                   color: '#06261D',
                 }}
               />
-            </div>
-
-            {/* Toolbar */}
-            <div
-              className="mb-4 flex flex-wrap items-center gap-1 rounded-full border px-3 py-2"
-              style={{ borderColor: '#E6E2D1', backgroundColor: '#FFFFFF' }}
-            >
-              {TOOLBAR_ITEMS.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={item.action}
-                    type="button"
-                    onClick={() => handleToolbarAction(item.action)}
-                    title={item.label}
-                    className="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-[#F0EEE6]"
-                    style={{ color: '#6F7B75' }}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </button>
-                );
-              })}
+              {errors.title && (
+                <p className="mt-1 px-2 text-xs font-medium" style={{ color: '#EF4444' }}>
+                  {errors.title.message}
+                </p>
+              )}
             </div>
 
             {/* Content Editor */}
             <div
-              className="rounded-3xl border"
-              style={{ borderColor: '#E6E2D1', backgroundColor: '#FFFFFF' }}
+              className="mt-4 rounded-3xl border"
+              style={{
+                borderColor: errors.content ? '#EF4444' : '#E6E2D1',
+                backgroundColor: '#FFFFFF',
+              }}
             >
               <Textarea
                 placeholder="Bắt đầu chia sẻ hành trình của bạn..."
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
+                {...register('content')}
                 className="min-h-[400px] resize-none rounded-3xl border-0 p-6 text-base placeholder:text-[#9E9A92] focus-visible:ring-0"
                 style={{ backgroundColor: 'transparent' }}
               />
             </div>
+            {errors.content && (
+              <p className="mt-1 px-2 text-xs font-medium" style={{ color: '#EF4444' }}>
+                {errors.content.message}
+              </p>
+            )}
           </div>
 
-          {/* Right Column: Sidebar Settings (35%) */}
+          {/* Right Column: Sidebar (35%) */}
           <div className="w-full space-y-4 lg:w-[35%]">
-            {/* Categories Card */}
+            {/* Read Time Card */}
             <div
               className="rounded-3xl p-5"
               style={{ backgroundColor: '#F8F6EF', border: '1px solid #E6E2D1' }}
             >
-              <h3
-                className="mb-4 flex items-center gap-2 text-sm font-semibold"
-                style={{ color: '#06261D' }}
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M3 3h6l6 18h6" />
-                  <path d="M14 3h7" />
-                </svg>
-                Chuyên mục
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {CATEGORIES.map((cat) => {
-                  const isActive = selectedCategory === cat.id;
-                  return (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => setSelectedCategory(cat.id)}
-                      className="rounded-full px-4 py-2 text-xs font-medium transition-colors"
-                      style={
-                        isActive
-                          ? { backgroundColor: '#A2EBD2', color: '#06261D' }
-                          : {
-                              backgroundColor: '#FFFFFF',
-                              color: '#6F7B75',
-                              border: '1px solid #E6E2D1',
-                            }
-                      }
-                    >
-                      {cat.label}
-                    </button>
-                  );
-                })}
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold" style={{ color: '#06261D' }}>
+                  Thời gian đọc
+                </h3>
+                <span className="text-sm font-bold" style={{ color: '#06261D' }}>
+                  ~ {readStats.minutes} phút
+                </span>
               </div>
+              <p className="mt-2 text-xs" style={{ color: '#6F7B75' }}>
+                {readStats.words} từ
+              </p>
             </div>
 
-            {/* Tags Card */}
+            {/* Publish Info Card */}
             <div
               className="rounded-3xl p-5"
               style={{ backgroundColor: '#F8F6EF', border: '1px solid #E6E2D1' }}
             >
-              <h3
-                className="mb-4 flex items-center gap-2 text-sm font-semibold"
-                style={{ color: '#06261D' }}
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z" />
-                  <path d="M7 7h.01" />
-                </svg>
-                Thẻ (Tags)
+              <h3 className="mb-3 text-sm font-semibold" style={{ color: '#06261D' }}>
+                Tác giả
               </h3>
-
-              {/* Add tag input */}
-              <div className="mb-3 flex items-center gap-2">
-                <Input
-                  type="text"
-                  placeholder="+ Thêm thẻ mới..."
-                  value={newTag}
-                  onChange={(e) => setNewTag(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddTag();
-                    }
-                  }}
-                  className="h-9 rounded-full border-[#E6E2D1] bg-white text-xs"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddTag}
-                  className="flex h-9 w-9 items-center justify-center rounded-full text-white transition-opacity hover:opacity-90"
+              <div className="flex items-center gap-3">
+                <div
+                  className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full text-sm font-bold text-white"
                   style={{ backgroundColor: '#06261D' }}
                 >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                  >
-                    <line x1="12" y1="5" x2="12" y2="19" />
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Tags list */}
-              {tags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium"
-                      style={{ backgroundColor: '#06261D', color: '#FFFFFF' }}
-                    >
-                      #{tag}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveTag(tag)}
-                        className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-white/20 hover:bg-white/40"
-                      >
-                        <svg
-                          width="8"
-                          height="8"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="3"
-                          strokeLinecap="round"
-                        >
-                          <line x1="18" y1="6" x2="6" y2="18" />
-                          <line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                      </button>
-                    </span>
-                  ))}
+                  {user?.avatarUrl ? (
+                    <img
+                      src={user.avatarUrl}
+                      alt={user.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span>{(user?.name ?? '?').charAt(0).toUpperCase()}</span>
+                  )}
                 </div>
-              )}
-            </div>
-
-            {/* Display Options Card */}
-            <div
-              className="rounded-3xl p-5"
-              style={{ backgroundColor: '#F8F6EF', border: '1px solid #E6E2D1' }}
-            >
-              <h3
-                className="mb-4 flex items-center gap-2 text-sm font-semibold"
-                style={{ color: '#06261D' }}
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
-                </svg>
-                Tùy chọn hiển thị
-              </h3>
-
-              <div className="space-y-4">
-                {/* Allow comments */}
-                <label className="flex cursor-pointer items-center justify-between">
-                  <span className="text-sm" style={{ color: '#6F7B75' }}>
-                    Cho phép bình luận
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setAllowComments(!allowComments)}
-                    className="relative flex h-6 w-11 items-center rounded-full transition-colors"
-                    style={{ backgroundColor: allowComments ? '#06261D' : '#C5C0B0' }}
-                  >
-                    <span
-                      className="h-4 w-4 rounded-full bg-white shadow transition-transform"
-                      style={{ transform: allowComments ? 'translateX(24px)' : 'translateX(4px)' }}
-                    />
-                  </button>
-                </label>
-
-                {/* Featured */}
-                <label className="flex cursor-pointer items-center justify-between">
-                  <span className="text-sm" style={{ color: '#6F7B75' }}>
-                    Đặt làm nổi bật
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setIsFeatured(!isFeatured)}
-                    className="relative flex h-6 w-11 items-center rounded-full transition-colors"
-                    style={{ backgroundColor: isFeatured ? '#06261D' : '#C5C0B0' }}
-                  >
-                    <span
-                      className="h-4 w-4 rounded-full bg-white shadow transition-transform"
-                      style={{ transform: isFeatured ? 'translateX(24px)' : 'translateX(4px)' }}
-                    />
-                  </button>
-                </label>
-
-                {/* Private */}
-                <label className="flex cursor-pointer items-center justify-between">
-                  <span className="text-sm" style={{ color: '#6F7B75' }}>
-                    Bài viết riêng tư
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setIsPrivate(!isPrivate)}
-                    className="relative flex h-6 w-11 items-center rounded-full transition-colors"
-                    style={{ backgroundColor: isPrivate ? '#06261D' : '#C5C0B0' }}
-                  >
-                    <span
-                      className="h-4 w-4 rounded-full bg-white shadow transition-transform"
-                      style={{ transform: isPrivate ? 'translateX(24px)' : 'translateX(4px)' }}
-                    />
-                  </button>
-                </label>
+                <p className="text-sm font-semibold" style={{ color: '#06261D' }}>
+                  {user?.name ?? 'Bạn'}
+                </p>
               </div>
+              <p className="mt-3 text-xs" style={{ color: '#6F7B75' }}>
+                {editMode
+                  ? 'Thay đổi sẽ được cập nhật ngay trên bài viết đã đăng.'
+                  : 'Bài viết sẽ hiển thị công khai với cộng đồng TrekSphere ngay sau khi đăng.'}
+              </p>
             </div>
           </div>
         </div>
+
+        {showStaffPostList && (
+          <div className="mt-10">
+            <h3 className="mb-4 text-lg font-bold" style={{ color: '#06261D' }}>
+              Bài viết đã đăng
+            </h3>
+
+            {staffPosts.isLoading ? (
+              <div
+                className="flex items-center justify-center rounded-2xl py-16"
+                style={{ backgroundColor: '#FFFFFF', border: '1px solid #E6E2D1' }}
+              >
+                <AppSpinner size="default" className="text-primary" />
+              </div>
+            ) : (
+              <>
+                <MyBlogTable blogs={staffPosts.data?.items ?? []} />
+                {(staffPosts.data?.meta.totalElements ?? 0) > 0 && (
+                  <div
+                    className="overflow-hidden rounded-b-3xl"
+                    style={{
+                      backgroundColor: '#FFFFFF',
+                      borderTop: '1px solid #E6E2D1',
+                      borderRadius: '0 0 24px 24px',
+                    }}
+                  >
+                    <MyBlogPagination
+                      currentPage={staffPostsPage}
+                      totalPages={Math.max(1, staffPosts.data?.meta.totalPages ?? 1)}
+                      onPageChange={setStaffPostsPage}
+                      totalCount={staffPosts.data?.meta.totalElements ?? 0}
+                      pageSize={STAFF_POSTS_PAGE_SIZE}
+                    />
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </main>
+
+      {showPreview && (
+        <BlogPreviewModal
+          title={title || 'Tiêu đề bài viết'}
+          content={content || ''}
+          coverPreview={safeCoverPreview}
+          authorName={user?.name ?? 'Bạn'}
+          authorAvatarUrl={user?.avatarUrl}
+          onClose={() => setShowPreview(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+interface BlogPreviewModalProps {
+  title: string;
+  content: string;
+  coverPreview?: string;
+  authorName: string;
+  authorAvatarUrl?: string;
+  onClose: () => void;
+}
+
+/** Modal xem trước — mô phỏng cách bài viết hiển thị trên trang đọc công khai. */
+function BlogPreviewModal({
+  title,
+  content,
+  coverPreview,
+  authorName,
+  authorAvatarUrl,
+  onClose,
+}: BlogPreviewModalProps) {
+  const paragraphs = content
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+    >
+      <div
+        className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-3xl p-8"
+        style={{ backgroundColor: '#FFFFFF' }}
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <span
+            className="text-xs font-semibold uppercase tracking-wide"
+            style={{ color: '#6F7B75' }}
+          >
+            Xem trước
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-muted"
+            style={{ color: '#6F7B75' }}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {getSafeImageUrl(coverPreview) && (
+          <img
+            src={getSafeImageUrl(coverPreview)}
+            alt="Cover"
+            className="mb-6 h-56 w-full rounded-2xl object-cover"
+          />
+        )}
+
+        <h1 className="mb-3 text-2xl font-bold" style={{ color: '#06261D' }}>
+          {title}
+        </h1>
+
+        <div className="mb-6 flex items-center gap-2">
+          <div
+            className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full text-xs font-bold text-white"
+            style={{ backgroundColor: '#06261D' }}
+          >
+            {getSafeImageUrl(authorAvatarUrl) ? (
+              <img
+                src={getSafeImageUrl(authorAvatarUrl)}
+                alt={authorName}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span>{authorName.charAt(0).toUpperCase()}</span>
+            )}
+          </div>
+          <span className="text-sm font-medium" style={{ color: '#6F7B75' }}>
+            {authorName}
+          </span>
+        </div>
+
+        <article
+          className="flex flex-col gap-4 text-base leading-relaxed"
+          style={{ color: '#06261D' }}
+        >
+          {paragraphs.length === 0 ? (
+            <p className="italic" style={{ color: '#9E9A92' }}>
+              Nội dung đang được cập nhật.
+            </p>
+          ) : (
+            paragraphs.map((p, idx) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: nội dung xem trước không có id ổn định
+              <p key={`preview-p-${idx}`}>{p}</p>
+            ))
+          )}
+        </article>
+      </div>
     </div>
   );
 }

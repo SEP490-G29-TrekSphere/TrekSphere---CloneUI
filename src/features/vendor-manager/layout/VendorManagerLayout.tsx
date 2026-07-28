@@ -4,6 +4,7 @@ import {
   Bell,
   CalendarClock,
   ClipboardCheck,
+  Footprints,
   LayoutGrid,
   LogOut,
   Map as MapIcon,
@@ -32,6 +33,7 @@ const navItems = [
   },
   { name: 'Khách hàng', path: '', icon: UserRound, disabled: true },
   { name: 'Thiết bị', path: PATHS.VENDOR_MANAGER_EQUIPMENT, icon: Backpack, disabled: false },
+  { name: 'Porter', path: PATHS.VENDOR_MANAGER_PORTERS, icon: Footprints, disabled: false },
   { name: 'Báo cáo', path: '', icon: BarChart3, disabled: true },
 ];
 
@@ -47,7 +49,8 @@ export default function VendorManagerLayout() {
   // và Thiết bị vì 2 trang đó đã có ô lọc riêng của chính mình, header ở đây chỉ là dư thừa.
   const showHeader =
     !location.pathname.startsWith(PATHS.VENDOR_MANAGER_TOURS) &&
-    !location.pathname.startsWith(PATHS.VENDOR_MANAGER_EQUIPMENT);
+    !location.pathname.startsWith(PATHS.VENDOR_MANAGER_EQUIPMENT) &&
+    !location.pathname.startsWith(PATHS.VENDOR_MANAGER_PORTERS);
 
   // Nhiều mục có thể cùng khớp prefix (vd "Tour" và "Duyệt tour" đều bắt đầu bằng
   // "/vendor-manager/tours") — chỉ mục có path khớp DÀI NHẤT được coi là active.

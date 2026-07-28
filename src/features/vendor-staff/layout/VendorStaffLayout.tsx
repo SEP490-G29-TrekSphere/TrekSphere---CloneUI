@@ -3,9 +3,11 @@ import {
   BarChart3,
   Bell,
   CalendarClock,
+  Footprints,
   LayoutGrid,
   LogOut,
   Map as MapIcon,
+  PenSquare,
   Search,
   Settings,
 } from 'lucide-react';
@@ -25,6 +27,8 @@ const navItems = [
   { name: 'Lịch trình', path: '', icon: CalendarClock, disabled: true },
   { name: 'Tour', path: PATHS.PARTNER_TOURS, icon: MapIcon, disabled: false },
   { name: 'Thiết bị', path: PATHS.PARTNER_EQUIPMENT, icon: Backpack, disabled: false },
+  { name: 'Porter', path: PATHS.PARTNER_PORTERS, icon: Footprints, disabled: false },
+  { name: 'Viết Blog', path: PATHS.PARTNER_BLOG_CREATE, icon: PenSquare, disabled: false },
   { name: 'Báo cáo', path: '', icon: BarChart3, disabled: true },
 ];
 
@@ -37,10 +41,12 @@ export default function VendorStaffLayout() {
   const staffName = user?.name || 'Vendor Staff';
   const staffInitial = staffName.charAt(0).toUpperCase();
   // Header search không liên kết với ô lọc riêng của trang Tour/Thiết bị — ẩn ở
-  // 2 màn đó để tránh 2 ô tìm kiếm không đồng bộ với nhau.
+  // các màn đó (và màn Viết Blog, vốn có thanh action riêng) để tránh trùng lặp.
   const showHeader =
     !location.pathname.startsWith(PATHS.PARTNER_TOURS) &&
-    !location.pathname.startsWith(PATHS.PARTNER_EQUIPMENT);
+    !location.pathname.startsWith(PATHS.PARTNER_EQUIPMENT) &&
+    !location.pathname.startsWith(PATHS.PARTNER_PORTERS) &&
+    !location.pathname.startsWith(PATHS.PARTNER_BLOG_CREATE);
 
   return (
     <div className="flex h-screen w-full overflow-hidden" style={{ backgroundColor: '#FAF8F1' }}>

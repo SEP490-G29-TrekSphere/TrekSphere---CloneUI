@@ -8,7 +8,8 @@ import { BlogComments } from '../components/BlogComments';
 import { BlogContent } from '../components/BlogContent';
 import { BlogDetailsHero } from '../components/BlogDetailsHero';
 import { BlogSidebar } from '../components/BlogSidebar';
-import { useBlogDetail } from '../hooks/useBlog';
+import { useBlogComments, useBlogDetail } from '../hooks/useBlog';
+import { flattenComments } from '../types';
 
 /**
  * Màn hình 2: Chi tiết bài viết Blog.
@@ -29,10 +30,11 @@ export default function BlogDetails() {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   const detailQuery = useBlogDetail(blogId);
+  const commentsQuery = useBlogComments(blogId);
 
   const post = detailQuery.data ?? null;
-  const comments = post?.comments ?? [];
-  const totalComments = post?.totalComments ?? 0;
+  const comments = commentsQuery.data?.items ?? [];
+  const totalComments = flattenComments(comments).length;
 
   if (detailQuery.isLoading) {
     return (
@@ -103,6 +105,7 @@ export default function BlogDetails() {
           comments={comments}
           total={totalComments}
           isLoggedIn={isLoggedIn}
+          currentUserId={user?.id}
           blogId={blogId}
         />
       </main>

@@ -15,6 +15,10 @@
  */
 
 export {
+  ConfirmActionDialog,
+  type ConfirmActionDialogProps,
+} from './components/ConfirmActionDialog';
+export {
   ReportModal,
   type ReportModalProps,
   type ViolationType,

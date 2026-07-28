@@ -38,12 +38,18 @@ export default function Login() {
   // của trình duyệt quay lại entry /login cũ trong history). Redirect luôn
   // thay vì hiển thị lại form, và dùng `replace` để /login biến mất khỏi
   // history — tránh việc Back lại rơi vào đúng trang này lần nữa.
+  //
+  // Luôn điều hướng theo `getPostLoginRoute(role)` — KHÔNG dùng `location.state.from`.
+  // Lý do: `from` là trang user từng cố vào lúc chưa đăng nhập (vd: gõ thẳng
+  // /dashboard khi chưa login), nếu ưu tiên nó thì effect này (chạy khi
+  // `isAuthenticated` vừa đổi thành true ngay sau khi login) sẽ ghi đè lên
+  // navigate đúng mà `handleGoogleSuccess`/`onSubmit` vừa gọi, khiến user luôn
+  // bị đẩy về trang cũ đó thay vì trang mặc định theo role.
   useEffect(() => {
     if (isAuthLoading || !isAuthenticated) return;
 
-    const from = (location.state as { from?: { pathname: string } } | null)?.from;
-    navigate(from?.pathname ?? getPostLoginRoute(user?.roles ?? []), { replace: true });
-  }, [isAuthLoading, isAuthenticated, location.state, navigate, user?.roles]);
+    navigate(getPostLoginRoute(user?.roles ?? []), { replace: true });
+  }, [isAuthLoading, isAuthenticated, navigate, user?.roles]);
 
   const methods = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
