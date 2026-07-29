@@ -24,7 +24,7 @@ import type { VendorStaffLayoutContext } from '../types';
  * viên" (đó là quyền riêng của Vendor Manager, xem `ROLE_PROTECTED_ROUTES`).
  */
 const navItems = [
-  { name: 'Tổng quan', path: '', icon: LayoutGrid, disabled: true },
+  { name: 'Tổng quan', path: PATHS.PARTNER_PROFILE, icon: LayoutGrid, disabled: false },
   { name: 'Lịch trình', path: '', icon: CalendarClock, disabled: true },
   { name: 'Tour', path: PATHS.PARTNER_TOURS, icon: MapIcon, disabled: false },
   { name: 'Đặt tour', path: PATHS.PARTNER_BOOKINGS, icon: Ticket, disabled: false },

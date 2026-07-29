@@ -1,6 +1,7 @@
 import {
   AlertTriangle,
   Bell,
+  Building2,
   ClipboardCheck,
   Database,
   LayoutGrid,
@@ -24,6 +25,7 @@ export interface AdminLayoutContext {
 const adminNavItems = [
   { name: 'Bảng điều khiển', path: PATHS.ADMIN_DASHBOARD, icon: LayoutGrid, disabled: true },
   { name: 'Tài khoản', path: PATHS.ADMIN_ACCOUNTS, icon: User },
+  { name: 'Quản lý Nhà cung cấp', path: PATHS.ADMIN_VENDORS, icon: Building2 },
   { name: 'Duyệt Tour', path: PATHS.ADMIN_APPLICATIONS, icon: ClipboardCheck },
   { name: 'Báo cáo Vi phạm', path: PATHS.ADMIN_REPORTS, icon: AlertTriangle },
   { name: 'Quản lý Blog', path: PATHS.ADMIN_BLOGS, icon: Newspaper },

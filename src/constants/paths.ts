@@ -60,6 +60,7 @@ export const PATHS = {
   ADMIN_DASHBOARD: '/admin/dashboard',
   ADMIN_ACCOUNTS: '/admin/accounts',
   ADMIN_ACCOUNT_DETAIL: '/admin/accounts/:id',
+  ADMIN_VENDORS: '/admin/vendors',
   ADMIN_TOURS: '/admin/tours',
   ADMIN_DATA: '/admin/data',
   ADMIN_APPLICATIONS: '/admin/applications',
@@ -71,6 +72,8 @@ export const PATHS = {
 
   // Vendor Manager (TrekManager portal)
   VENDOR_MANAGER: '/vendor-manager',
+  VENDOR_MANAGER_PROFILE: '/vendor-manager/profile',
+  VENDOR_MANAGER_PROFILE_EDIT: '/vendor-manager/profile/edit',
   VENDOR_MANAGER_STAFF: '/vendor-manager/staff',
   VENDOR_MANAGER_TOURS: '/vendor-manager/tours',
   VENDOR_MANAGER_TOUR_CREATE: '/vendor-manager/tours/new',
@@ -85,6 +88,7 @@ export const PATHS = {
 
   // Vendor Staff (TrekPartner portal)
   PARTNER: '/partner',
+  PARTNER_PROFILE: '/partner/profile',
   PARTNER_TOURS: '/partner/tours',
   PARTNER_TOUR_CREATE: '/partner/tours/new',
   PARTNER_TOUR_EDIT: '/partner/tours/:id/edit',

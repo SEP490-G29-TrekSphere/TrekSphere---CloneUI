@@ -48,6 +48,7 @@ const ApplicationDetails = lazy(() => import('@/features/admin/pages/Application
 const ReportDetail = lazy(() => import('@/features/admin/pages/ReportDetail'));
 const Reports = lazy(() => import('@/features/admin/pages/Reports'));
 const SystemSettings = lazy(() => import('@/features/admin/pages/SystemSettings'));
+const VendorList = lazy(() => import('@/features/admin/vendors/pages/VendorList'));
 const VendorManagerLayout = lazy(
   () => import('@/features/vendor-manager/layout/VendorManagerLayout')
 );
@@ -69,6 +70,10 @@ const VendorBookingList = lazy(() => import('@/features/vendor-bookings/pages/Bo
 const PorterList = lazy(() => import('@/features/vendor-porters/pages/PorterList'));
 const PorterCreate = lazy(() => import('@/features/vendor-porters/pages/PorterCreate'));
 const PorterEdit = lazy(() => import('@/features/vendor-porters/pages/PorterEdit'));
+const VendorProfileOverview = lazy(
+  () => import('@/features/vendor-profile/pages/VendorProfileOverview')
+);
+const VendorProfileEdit = lazy(() => import('@/features/vendor-profile/pages/VendorProfileEdit'));
 
 function PageLoader() {
   return (
@@ -153,6 +158,7 @@ export default function AppRoutes() {
           <Route path={PATHS.ADMIN_DASHBOARD} element={<AdminDashboard />} />
           <Route path={PATHS.ADMIN_ACCOUNTS} element={<AccountList />} />
           <Route path={PATHS.ADMIN_ACCOUNT_DETAIL} element={<AccountDetail />} />
+          <Route path={PATHS.ADMIN_VENDORS} element={<VendorList />} />
           <Route path={PATHS.ADMIN_TOURS} element={<AdminDashboard />} />
           <Route path={PATHS.ADMIN_DATA} element={<AdminDashboard />} />
           <Route path={PATHS.ADMIN_SETTINGS} element={<AdminDashboard />} />
@@ -174,6 +180,8 @@ export default function AppRoutes() {
           }
         >
           <Route index element={<Navigate to={PATHS.VENDOR_MANAGER_TOURS} replace />} />
+          <Route path={PATHS.VENDOR_MANAGER_PROFILE} element={<VendorProfileOverview />} />
+          <Route path={PATHS.VENDOR_MANAGER_PROFILE_EDIT} element={<VendorProfileEdit />} />
           <Route path={PATHS.VENDOR_MANAGER_STAFF} element={<StaffList />} />
           <Route path={PATHS.VENDOR_MANAGER_TOURS} element={<TourList />} />
           <Route path={PATHS.VENDOR_MANAGER_TOUR_CREATE} element={<TourCreate />} />
@@ -197,6 +205,7 @@ export default function AppRoutes() {
           }
         >
           <Route index element={<Navigate to={PATHS.PARTNER_TOURS} replace />} />
+          <Route path={PATHS.PARTNER_PROFILE} element={<VendorProfileOverview />} />
           <Route path={PATHS.PARTNER_TOURS} element={<PartnerTourList />} />
           <Route path={PATHS.PARTNER_TOUR_CREATE} element={<PartnerTourCreate />} />
           <Route path={PATHS.PARTNER_TOUR_EDIT} element={<PartnerTourEdit />} />
