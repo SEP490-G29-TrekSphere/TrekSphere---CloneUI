@@ -1,9 +1,11 @@
 {
   "extends": "./tsconfig.app.json",
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "esnext",
     "moduleResolution": "bundler",
     "esModuleInterop": true,
     "types": ["vite/client", "jest", "node"]
-  }
+  },
+  "include": ["src/**/*.test.ts", "src/**/*.test.tsx"],
+  "exclude": []
 }

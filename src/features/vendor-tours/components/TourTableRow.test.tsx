@@ -19,6 +19,7 @@ function renderRow(status: VendorTourListItem['status']) {
           <TourTableRow
             tour={tour}
             editPath="/vendor-manager/tours/t1/edit"
+            schedulesPath="/vendor-manager/tours/t1/schedules"
             onDeleteClick={jest.fn()}
           />
         </tbody>

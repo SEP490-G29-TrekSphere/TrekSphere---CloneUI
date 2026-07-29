@@ -16,6 +16,7 @@ export const ROLES = {
   VENDOR_STAFF: 'vendor_staff',
   VENDOR_MANAGER: 'vendor_manager',
   ADMIN: 'admin',
+  COORDINATOR: 'coordinator',
 } as const;
 
 export type Role = (typeof ROLES)[keyof typeof ROLES];
@@ -32,6 +33,7 @@ export const ROLE_PROTECTED_ROUTES: Record<Role, readonly string[]> = {
   [ROLES.VENDOR_STAFF]: ['/partner'],
   [ROLES.VENDOR_MANAGER]: ['/vendor-manager'],
   [ROLES.ADMIN]: ['/admin'],
+  [ROLES.COORDINATOR]: ['/coordinator'],
 };
 
 /**
@@ -74,6 +76,7 @@ const ROLE_PRIORITY: readonly Role[] = [
   ROLES.ADMIN,
   ROLES.VENDOR_MANAGER,
   ROLES.VENDOR_STAFF,
+  ROLES.COORDINATOR,
   ROLES.TREKKER,
 ];
 

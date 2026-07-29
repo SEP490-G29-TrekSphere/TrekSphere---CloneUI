@@ -106,6 +106,9 @@ export const PATHS = {
 
   // Admin — Blog moderation
   ADMIN_BLOGS: '/admin/blogs',
+
+  // Coordinator
+  COORDINATOR_SCHEDULES: '/coordinator/schedules',
 } as const;
 
 export type AppPath = (typeof PATHS)[keyof typeof PATHS];

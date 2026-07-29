@@ -76,6 +76,9 @@ const VendorProfileOverview = lazy(
   () => import('@/features/vendor-profile/pages/VendorProfileOverview')
 );
 const VendorProfileEdit = lazy(() => import('@/features/vendor-profile/pages/VendorProfileEdit'));
+const CoordinatorSchedulesPage = lazy(
+  () => import('@/features/coordinator/pages/CoordinatorSchedulesPage')
+);
 
 function PageLoader() {
   return (
@@ -222,6 +225,24 @@ export default function AppRoutes() {
           <Route path={PATHS.PARTNER_SESSIONS} element={<SessionList />} />
           <Route path={PATHS.PARTNER_SESSION_DETAIL} element={<SessionDetail />} />
           <Route path={PATHS.PARTNER_BLOG_CREATE} element={<CreateBlogPost />} />
+        </Route>
+
+        {/* Coordinator routes — dùng MainLayout */}
+        <Route
+          element={
+            <RequireRole
+              allowedRoles={[
+                ROLES.COORDINATOR,
+                ROLES.VENDOR_STAFF,
+                ROLES.VENDOR_MANAGER,
+                ROLES.ADMIN,
+              ]}
+            >
+              <MainLayout />
+            </RequireRole>
+          }
+        >
+          <Route path={PATHS.COORDINATOR_SCHEDULES} element={<CoordinatorSchedulesPage />} />
         </Route>
       </Routes>
     </Suspense>
