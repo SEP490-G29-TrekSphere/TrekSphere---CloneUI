@@ -25,7 +25,7 @@ import type { VendorStaffLayoutContext } from '../types';
  */
 const navItems = [
   { name: 'Tổng quan', path: PATHS.PARTNER_PROFILE, icon: LayoutGrid, disabled: false },
-  { name: 'Lịch trình', path: '', icon: CalendarClock, disabled: true },
+  { name: 'Lịch trình', path: PATHS.PARTNER_SESSIONS, icon: CalendarClock, disabled: false },
   { name: 'Tour', path: PATHS.PARTNER_TOURS, icon: MapIcon, disabled: false },
   { name: 'Đặt tour', path: PATHS.PARTNER_BOOKINGS, icon: Ticket, disabled: false },
   { name: 'Thiết bị', path: PATHS.PARTNER_EQUIPMENT, icon: Backpack, disabled: false },
@@ -48,6 +48,7 @@ export default function VendorStaffLayout() {
     !location.pathname.startsWith(PATHS.PARTNER_TOURS) &&
     !location.pathname.startsWith(PATHS.PARTNER_EQUIPMENT) &&
     !location.pathname.startsWith(PATHS.PARTNER_PORTERS) &&
+    !location.pathname.startsWith(PATHS.PARTNER_SESSIONS) &&
     !location.pathname.startsWith(PATHS.PARTNER_BLOG_CREATE);
 
   return (

@@ -18,7 +18,7 @@ import { useAppStore } from '@/store/useAppStore';
 
 const navItems = [
   { name: 'Tổng quan', path: PATHS.VENDOR_MANAGER_PROFILE, icon: LayoutGrid, disabled: false },
-  { name: 'Lịch trình', path: '', icon: CalendarClock, disabled: true },
+  { name: 'Lịch trình', path: PATHS.VENDOR_MANAGER_SESSIONS, icon: CalendarClock, disabled: false },
   { name: 'Nhân viên', path: PATHS.VENDOR_MANAGER_STAFF, icon: Users, disabled: false },
   { name: 'Tour', path: PATHS.VENDOR_MANAGER_TOURS, icon: MapIcon, disabled: false },
   {

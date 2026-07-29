@@ -85,6 +85,8 @@ export const PATHS = {
   VENDOR_MANAGER_PORTERS: '/vendor-manager/porters',
   VENDOR_MANAGER_PORTER_CREATE: '/vendor-manager/porters/new',
   VENDOR_MANAGER_PORTER_EDIT: '/vendor-manager/porters/:id/edit',
+  VENDOR_MANAGER_SESSIONS: '/vendor-manager/sessions',
+  VENDOR_MANAGER_SESSION_DETAIL: '/vendor-manager/sessions/:sessionId',
 
   // Vendor Staff (TrekPartner portal)
   PARTNER: '/partner',
@@ -98,6 +100,8 @@ export const PATHS = {
   PARTNER_PORTERS: '/partner/porters',
   PARTNER_PORTER_CREATE: '/partner/porters/new',
   PARTNER_PORTER_EDIT: '/partner/porters/:id/edit',
+  PARTNER_SESSIONS: '/partner/sessions',
+  PARTNER_SESSION_DETAIL: '/partner/sessions/:sessionId',
   PARTNER_BLOG_CREATE: '/partner/blog/create',
 
   // Admin — Blog moderation
@@ -122,3 +126,7 @@ export const getVendorManagerTourSchedulesPath = (id: string) =>
 export const getPartnerTourSchedulesPath = (id: string) =>
   PATHS.PARTNER_TOUR_SCHEDULES.replace(':id', id);
 export const getNewsDetailPath = (blogId: string) => PATHS.NEWS_DETAIL.replace(':blogId', blogId);
+export const getVendorManagerSessionDetailPath = (sessionId: string) =>
+  PATHS.VENDOR_MANAGER_SESSION_DETAIL.replace(':sessionId', sessionId);
+export const getPartnerSessionDetailPath = (sessionId: string) =>
+  PATHS.PARTNER_SESSION_DETAIL.replace(':sessionId', sessionId);

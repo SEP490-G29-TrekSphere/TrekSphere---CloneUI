@@ -8,6 +8,8 @@ export interface VendorStaffMember {
   id: string;
   /** 8 ký tự đầu của `id`, viết hoa — dùng hiển thị "ID: XXXXXXXX" (BE không có mã tuần tự). */
   shortId: string;
+  /** User id thật của nhân viên (khác `id`/`vendorStaffId`) — cần cho các API nhận `coordinatorId` (vd Vendor Logistics). */
+  userId: string;
   fullName: string;
   email: string;
   avatarUrl?: string;

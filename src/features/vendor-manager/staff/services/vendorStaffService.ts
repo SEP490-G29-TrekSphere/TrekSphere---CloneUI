@@ -58,6 +58,7 @@ function mapVendorStaff(dto: VendorStaffResponseDto): VendorStaffMember {
   return {
     id: dto.vendorStaffId,
     shortId: formatShortId(dto.vendorStaffId),
+    userId: dto.user.id,
     fullName: dto.user.fullName,
     email: dto.user.email,
     avatarUrl: dto.user.avatarUrl ?? undefined,

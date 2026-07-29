@@ -70,6 +70,8 @@ const VendorBookingList = lazy(() => import('@/features/vendor-bookings/pages/Bo
 const PorterList = lazy(() => import('@/features/vendor-porters/pages/PorterList'));
 const PorterCreate = lazy(() => import('@/features/vendor-porters/pages/PorterCreate'));
 const PorterEdit = lazy(() => import('@/features/vendor-porters/pages/PorterEdit'));
+const SessionList = lazy(() => import('@/features/vendor-sessions/pages/SessionList'));
+const SessionDetail = lazy(() => import('@/features/vendor-sessions/pages/SessionDetail'));
 const VendorProfileOverview = lazy(
   () => import('@/features/vendor-profile/pages/VendorProfileOverview')
 );
@@ -193,6 +195,8 @@ export default function AppRoutes() {
           <Route path={PATHS.VENDOR_MANAGER_PORTERS} element={<PorterList />} />
           <Route path={PATHS.VENDOR_MANAGER_PORTER_CREATE} element={<PorterCreate />} />
           <Route path={PATHS.VENDOR_MANAGER_PORTER_EDIT} element={<PorterEdit />} />
+          <Route path={PATHS.VENDOR_MANAGER_SESSIONS} element={<SessionList />} />
+          <Route path={PATHS.VENDOR_MANAGER_SESSION_DETAIL} element={<SessionDetail />} />
         </Route>
 
         {/* Vendor Staff routes — yêu cầu role vendor_staff, dùng VendorStaffLayout riêng */}
@@ -215,6 +219,8 @@ export default function AppRoutes() {
           <Route path={PATHS.PARTNER_PORTERS} element={<PorterList />} />
           <Route path={PATHS.PARTNER_PORTER_CREATE} element={<PorterCreate />} />
           <Route path={PATHS.PARTNER_PORTER_EDIT} element={<PorterEdit />} />
+          <Route path={PATHS.PARTNER_SESSIONS} element={<SessionList />} />
+          <Route path={PATHS.PARTNER_SESSION_DETAIL} element={<SessionDetail />} />
           <Route path={PATHS.PARTNER_BLOG_CREATE} element={<CreateBlogPost />} />
         </Route>
       </Routes>
