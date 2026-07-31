@@ -2,9 +2,11 @@ import {
   AlertTriangle,
   Calendar,
   CheckCircle2,
-  Circle,
+  ChevronLeft,
+  ChevronRight,
   Eye,
   EyeOff,
+  Loader2,
   LogOut,
   MapPin,
   MessageSquare,
@@ -17,25 +19,65 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { PATHS } from '@/constants/paths';
-import { MOCK_GROUP_DETAIL } from '../data/mockGroupDetail';
-import type { GroupMemberDetail, JoinRequest, UserRoleInGroup } from '../types';
+import { useAppStore } from '@/store/useAppStore';
+import { useApproveMember } from '../hooks/useApproveMember';
+import { useDeleteMatchingGroup } from '../hooks/useDeleteMatchingGroup';
+import { useJoinRequests } from '../hooks/useJoinRequests';
+import { useLeaveMatchingGroup } from '../hooks/useLeaveMatchingGroup';
+import { useMatchingGroupDetail } from '../hooks/useMatchingGroupDetail';
+import { useRejectMember } from '../hooks/useRejectMember';
+import type { JoinRequest, UserRoleInGroup } from '../types';
 
 export default function CompanionGroupDetailPage() {
   const navigate = useNavigate();
   const { groupId } = useParams<{ groupId: string }>();
 
-  // Current logged-in user role context (Leader | Member | Guest)
-  const [currentUserRole, _setCurrentUserRole] = useState<UserRoleInGroup>('leader');
+  const user = useAppStore((state) => state.user);
+  const deleteGroupMutation = useDeleteMatchingGroup();
+  const leaveGroupMutation = useLeaveMatchingGroup();
+  const approveMemberMutation = useApproveMember();
+  const rejectMemberMutation = useRejectMember();
 
-  // Group State
-  const [group, setGroup] = useState(() => {
-    if (groupId && groupId !== MOCK_GROUP_DETAIL.id) {
-      return { ...MOCK_GROUP_DETAIL, id: groupId };
-    }
-    return MOCK_GROUP_DETAIL;
+  // Fetch real group detail data from API GET /api/v1/matching-groups/{matchingGroupId}
+  const { data: groupData, isLoading, isError, error, refetch } = useMatchingGroupDetail(groupId);
+
+  // Fetch join requests (PENDING) — dedicated endpoint, only runs when user is owner
+  const isOwner: boolean = Boolean(user && groupData && groupData.ownerId === user.id);
+
+  // Join requests pagination state (must be declared before useJoinRequests)
+  const [joinRequestsPage, setJoinRequestsPage] = useState(1);
+  const JOIN_REQUESTS_PAGE_SIZE = 10;
+
+  const {
+    data: joinRequestsData,
+    isLoading: isJoinRequestsLoading,
+    isError: isJoinRequestsError,
+    refetch: refetchJoinRequests,
+  } = useJoinRequests(isOwner ? groupId : undefined, {
+    status: 'PENDING',
+    page: joinRequestsPage,
+    size: JOIN_REQUESTS_PAGE_SIZE,
   });
 
+  // Compute current user role context (Leader | Member | Pending | Guest)
+  const currentUserRole: UserRoleInGroup = (() => {
+    if (!user || !groupData) return 'guest';
+    if (groupData.ownerId === user.id) return 'leader';
+    const isMember = groupData.members?.some(
+      (m) => m.userId === user.id && m.status === 'ACCEPTED'
+    );
+    if (isMember) return 'member';
+    const isPending = groupData.members?.some(
+      (m) => m.userId === user.id && m.status === 'PENDING'
+    );
+    if (isPending) return 'pending';
+    return 'guest';
+  })();
+
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Local state toggles
+  const [isHidden, setIsHidden] = useState(false);
 
   // Active Modals
   const [activeModal, setActiveModal] = useState<
@@ -43,154 +85,126 @@ export default function CompanionGroupDetailPage() {
   >(null);
   const [selectedRequest, setSelectedRequest] = useState<JoinRequest | null>(null);
 
-  // Trip Requirements Checkbox items state
-  const [checklist, setChecklist] = useState([
-    {
-      id: 'gear',
-      label: 'Đồ bảo hộ',
-      detail: 'Giày trekking, gậy leo núi, đèn pin',
-      completed: true,
-    },
-    {
-      id: 'health',
-      label: 'Sức khỏe',
-      detail: 'Không có bệnh tim mạch, hô hấp',
-      completed: true,
-    },
-    {
-      id: 'docs',
-      label: 'Giấy tờ',
-      detail: 'CCCD photo để làm thủ tục biên giới',
-      completed: false,
-    },
-  ]);
-
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  const toggleChecklistItem = (id: string) => {
-    setChecklist((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, completed: !item.completed } : item))
-    );
-  };
-
   // --- HANDLERS ---
   const handleConfirmApprove = () => {
     if (!selectedRequest) return;
-    const req = selectedRequest;
-    const newMember: GroupMemberDetail = {
-      id: req.id,
-      name: req.userName,
-      avatarUrl: req.avatarUrl,
-      initials: req.initials,
-      role: 'Thành viên',
-      roleTitle: 'THÀNH VIÊN',
-    };
-
-    setGroup((prev) => ({
-      ...prev,
-      currentMembers: prev.currentMembers + 1,
-      neededMembers: Math.max(0, prev.neededMembers - 1),
-      joinRequests: prev.joinRequests.filter((r) => r.id !== req.id),
-      members: [...prev.members, newMember],
-    }));
-
-    setActiveModal(null);
-    setSelectedRequest(null);
-    showToast(`Đã duyệt thành viên ${req.userName} gia nhập nhóm!`);
+    approveMemberMutation.mutate(selectedRequest.id, {
+      onSuccess: () => {
+        setActiveModal(null);
+        showToast(`Đã duyệt thành viên ${selectedRequest.userName} gia nhập nhóm!`);
+        setSelectedRequest(null);
+      },
+      onError: (err) => {
+        showToast(err instanceof Error ? err.message : 'Có lỗi xảy ra khi duyệt thành viên.');
+      },
+    });
   };
 
   const handleConfirmReject = () => {
     if (!selectedRequest) return;
-    const req = selectedRequest;
-    setGroup((prev) => ({
-      ...prev,
-      joinRequests: prev.joinRequests.filter((r) => r.id !== req.id),
-    }));
-    setActiveModal(null);
-    setSelectedRequest(null);
-    showToast(`Đã từ chối yêu cầu của ${req.userName}`);
+    rejectMemberMutation.mutate(selectedRequest.id, {
+      onSuccess: () => {
+        setActiveModal(null);
+        showToast(`Đã từ chối yêu cầu của ${selectedRequest.userName}`);
+        setSelectedRequest(null);
+      },
+      onError: (err) => {
+        showToast(err instanceof Error ? err.message : 'Có lỗi xảy ra khi từ chối yêu cầu.');
+      },
+    });
   };
 
   const handleConfirmLeaveGroup = () => {
-    setGroup((prev) => ({
-      ...prev,
-      currentMembers: Math.max(1, prev.currentMembers - 1),
-      neededMembers: prev.neededMembers + 1,
-      members: prev.members.filter((m) => !m.isLeader && m.id !== 'usr-current'),
-    }));
-    setActiveModal(null);
-    showToast('Bạn đã rời khỏi nhóm ghép thành công.');
-    setTimeout(() => {
-      navigate(PATHS.GROUPS);
-    }, 1200);
+    if (!groupId) return;
+    leaveGroupMutation.mutate(groupId, {
+      onSuccess: () => {
+        setActiveModal(null);
+        showToast('Bạn đã rời khỏi nhóm ghép thành công.');
+        setTimeout(() => {
+          navigate(PATHS.GROUPS);
+        }, 1200);
+      },
+      onError: (err) => {
+        showToast(err instanceof Error ? err.message : 'Có lỗi xảy ra khi rời khỏi nhóm.');
+      },
+    });
   };
 
   const handleConfirmDissolveGroup = () => {
-    setActiveModal(null);
-    showToast('Đã giải tán nhóm thành công!');
-    setTimeout(() => {
-      navigate(PATHS.GROUPS);
-    }, 1200);
+    if (!groupId) return;
+    deleteGroupMutation.mutate(groupId, {
+      onSuccess: () => {
+        setActiveModal(null);
+        showToast('Đã giải tán nhóm thành công!');
+        setTimeout(() => {
+          navigate(PATHS.GROUPS);
+        }, 1200);
+      },
+      onError: (err) => {
+        showToast(err instanceof Error ? err.message : 'Có lỗi xảy ra khi giải tán nhóm.');
+      },
+    });
   };
 
   const handleToggleHideGroup = () => {
-    const nextState = !group.isHidden;
-    setGroup((prev) => ({ ...prev, isHidden: nextState }));
+    const nextState = !isHidden;
+    setIsHidden(nextState);
     setActiveModal(null);
     showToast(
       nextState ? 'Đã ẩn nhóm ghép khỏi danh sách công khai!' : 'Đã hiện lại nhóm ghép công khai!'
     );
   };
 
-  // Mock list of 12 group members matching design screen
-  const allGroupMembers = [
-    {
-      id: 'm-1',
-      name: 'Minh Quân',
-      roleTitle: 'TRƯỞNG NHÓM',
-      isLeader: true,
-      avatarUrl:
-        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-    },
-    {
-      id: 'm-2',
-      name: 'Linh Chi',
-      roleTitle: 'THÀNH VIÊN',
-      avatarUrl:
-        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
-    },
-    {
-      id: 'm-3',
-      name: 'Hoàng Nam',
-      roleTitle: 'THÀNH VIÊN',
-      avatarUrl:
-        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
-    },
-    {
-      id: 'm-4',
-      name: 'An Nhiên',
-      roleTitle: 'THÀNH VIÊN',
-      avatarUrl:
-        'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=200&q=80',
-    },
-    {
-      id: 'm-5',
-      name: 'Quốc Bảo',
-      roleTitle: 'THÀNH VIÊN',
-      avatarUrl:
-        'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
-    },
-    {
-      id: 'm-6',
-      name: 'Thanh Thảo',
-      roleTitle: 'THÀNH VIÊN',
-      avatarUrl:
-        'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80',
-    },
-  ];
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#FBF8F3] flex flex-col items-center justify-center p-6">
+        <Loader2 className="w-10 h-10 text-emerald-800 animate-spin mb-4" />
+        <p className="text-sm font-semibold text-slate-600">
+          Đang tải thông tin chi tiết nhóm ghép...
+        </p>
+      </div>
+    );
+  }
+
+  if (isError || !groupData) {
+    return (
+      <div className="min-h-screen bg-[#FBF8F3] px-4 py-16 text-center">
+        <div className="max-w-md mx-auto bg-white p-8 rounded-3xl border border-red-200 shadow-sm">
+          <AlertTriangle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
+          <h3 className="text-lg font-bold text-slate-900">Không thể tải thông tin nhóm</h3>
+          <p className="text-xs text-slate-500 mt-2 mb-6">
+            {error instanceof Error
+              ? error.message
+              : 'Nhóm ghép không tồn tại hoặc đã bị giải tán.'}
+          </p>
+          <div className="flex items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => navigate(PATHS.GROUPS)}
+              className="px-5 py-2 rounded-full border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Quay lại danh sách
+            </button>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="px-5 py-2 rounded-full bg-[#0D3B2E] text-xs font-semibold text-white hover:bg-emerald-950"
+            >
+              Thử lại
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Filter accepted members from API response
+  const acceptedMembers = groupData.members.filter((m) => m.status === 'ACCEPTED');
 
   return (
     <div className="min-h-screen bg-[#FBF8F3] px-4 py-6 md:px-10 lg:px-16 text-slate-800 font-sans">
@@ -207,7 +221,7 @@ export default function CompanionGroupDetailPage() {
           <div className="relative h-[340px] md:h-[400px] w-full">
             <img
               src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1600&q=80"
-              alt="Pha Luông"
+              alt={groupData.groupName}
               className="h-full w-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
@@ -216,22 +230,35 @@ export default function CompanionGroupDetailPage() {
           <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 space-y-3.5 text-white">
             <div className="flex flex-wrap items-center gap-2.5">
               <span className="rounded-full bg-[#0D3B2E]/90 px-3.5 py-1 text-xs font-bold text-emerald-300 border border-emerald-500/30 backdrop-blur-md">
-                Active Trek
+                Trạng thái:{' '}
+                {groupData.status === 'OPEN'
+                  ? 'Đang tuyển'
+                  : groupData.status === 'FULL'
+                    ? 'Đã đủ'
+                    : 'Đã đóng'}
               </span>
               <span className="flex items-center gap-1.5 text-xs font-medium text-slate-200">
                 <Calendar className="h-3.5 w-3.5 text-emerald-400" />
-                Oct 12 - Oct 15
+                Khởi hành: {groupData.targetDate}
               </span>
             </div>
 
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-extrabold tracking-tight">
-              Đỉnh Pha Luông: Chinh Phục Sống Lưng Khủng Long
+              {groupData.groupName}
             </h2>
 
-            <p className="max-w-3xl text-xs md:text-sm text-slate-200 leading-relaxed opacity-90">
-              Nhóm leo núi trải nghiệm cung đường biên giới Việt - Lào, khám phá mây mù và vách đá
-              hùng vĩ.
-            </p>
+            {groupData.tourName && (
+              <p className="flex items-center gap-1.5 text-xs md:text-sm text-emerald-300 font-semibold">
+                <MapPin className="h-4 w-4 shrink-0" />
+                <span>Tour: {groupData.tourName}</span>
+              </p>
+            )}
+
+            {groupData.description && (
+              <p className="max-w-3xl text-xs md:text-sm text-slate-200 leading-relaxed opacity-90">
+                {groupData.description}
+              </p>
+            )}
           </div>
         </div>
 
@@ -245,55 +272,64 @@ export default function CompanionGroupDetailPage() {
                 <div>
                   <h3 className="text-lg font-extrabold text-slate-900">Thành viên nhóm</h3>
                   <p className="text-xs text-slate-500 font-medium mt-0.5">
-                    12 người đồng hành trong chuyến đi này
+                    {acceptedMembers.length}/{groupData.maxSize} người đồng hành đã tham gia
                   </p>
                 </div>
                 <span className="rounded-full bg-emerald-100 px-3.5 py-1 text-xs font-bold text-emerald-800">
-                  Trưởng nhóm: Minh Quân
+                  Trưởng nhóm: {groupData.ownerName}
                 </span>
               </div>
 
-              {/* Members Avatar Cards Grid (3 Columns) */}
+              {/* Members Avatar Cards Grid */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                {allGroupMembers.map((member) => (
-                  <div
-                    key={member.id}
-                    className="flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-2xs border border-slate-100"
-                  >
-                    <div className="relative shrink-0">
-                      <img
-                        src={member.avatarUrl}
-                        alt={member.name}
-                        className="h-11 w-11 rounded-full object-cover border border-slate-200"
-                      />
-                      {member.isLeader && (
-                        <div className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#0D3B2E] text-white">
-                          <CheckCircle2 className="h-3 w-3 fill-emerald-400 text-[#0D3B2E]" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <h4 className="text-xs font-bold text-slate-900 truncate">{member.name}</h4>
-                      <p
-                        className={`text-[10px] tracking-wider font-extrabold ${
-                          member.isLeader ? 'text-[#0D3B2E]' : 'text-slate-400'
-                        }`}
-                      >
-                        {member.roleTitle}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                {acceptedMembers.map((member) => {
+                  const isLeader = member.role === 'OWNER';
+                  const initials = member.fullName
+                    .split(' ')
+                    .map((n) => n[0])
+                    .join('')
+                    .substring(0, 2)
+                    .toUpperCase();
 
-              {/* Dotted See More Button */}
-              <button
-                type="button"
-                onClick={() => showToast('Đang tải thêm danh sách thành viên...')}
-                className="w-full rounded-full border-2 border-dashed border-slate-300 bg-white/40 py-3.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-white"
-              >
-                Xem thêm 6 thành viên khác
-              </button>
+                  return (
+                    <div
+                      key={member.matchingMemberId}
+                      className="flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-2xs border border-slate-100"
+                    >
+                      <div className="relative shrink-0">
+                        {member.avatarUrl ? (
+                          <img
+                            src={member.avatarUrl}
+                            alt={member.fullName}
+                            className="h-11 w-11 rounded-full object-cover border border-slate-200"
+                          />
+                        ) : (
+                          <div className="h-11 w-11 rounded-full bg-emerald-100 text-emerald-900 flex items-center justify-center font-bold text-xs">
+                            {initials}
+                          </div>
+                        )}
+                        {isLeader && (
+                          <div className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#0D3B2E] text-white">
+                            <CheckCircle2 className="h-3 w-3 fill-emerald-400 text-[#0D3B2E]" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="text-xs font-bold text-slate-900 truncate">
+                          {member.fullName}
+                        </h4>
+                        <p
+                          className={`text-[10px] tracking-wider font-extrabold ${
+                            isLeader ? 'text-[#0D3B2E]' : 'text-slate-400'
+                          }`}
+                        >
+                          {isLeader ? 'TRƯỞNG NHÓM' : 'THÀNH VIÊN'}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Box 2: Quản lý Yêu cầu xin vào nhóm (Nếu là Trưởng nhóm) */}
@@ -304,28 +340,70 @@ export default function CompanionGroupDetailPage() {
                     Duyệt thành viên xin vào nhóm
                   </h3>
                   <span className="text-xs font-semibold text-rose-600">
-                    {group.joinRequests.length} yêu cầu chờ xử lý
+                    {joinRequestsData?.totalElements ?? 0} yêu cầu chờ xử lý
                   </span>
                 </div>
 
-                {group.joinRequests.length === 0 ? (
-                  <p className="text-xs text-slate-500">Chưa có yêu cầu tham gia mới nào.</p>
-                ) : (
-                  group.joinRequests.map((req) => (
+                {/* Loading state */}
+                {isJoinRequestsLoading && (
+                  <div className="flex items-center justify-center py-8 gap-2 text-slate-500">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span className="text-xs font-medium">Đang tải danh sách yêu cầu...</span>
+                  </div>
+                )}
+
+                {/* Error state */}
+                {isJoinRequestsError && (
+                  <div className="rounded-2xl bg-rose-50 border border-rose-200 p-4 flex items-center justify-between gap-3">
+                    <p className="text-xs text-rose-700 font-medium">
+                      Không thể tải danh sách yêu cầu.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => refetchJoinRequests()}
+                      className="text-xs font-bold text-rose-700 underline"
+                    >
+                      Thử lại
+                    </button>
+                  </div>
+                )}
+
+                {/* Empty state */}
+                {!isJoinRequestsLoading &&
+                  !isJoinRequestsError &&
+                  (joinRequestsData?.content.length ?? 0) === 0 && (
+                    <p className="text-xs text-slate-500">Chưa có yêu cầu tham gia mới nào.</p>
+                  )}
+
+                {/* Join requests list */}
+                {!isJoinRequestsLoading &&
+                  !isJoinRequestsError &&
+                  (joinRequestsData?.content ?? []).map((req) => (
                     <div
-                      key={req.id}
+                      key={req.matchingMemberId}
                       className="rounded-2xl border border-slate-100 bg-[#FBF9F5] p-5 space-y-3"
                     >
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
-                          <img
-                            src={req.avatarUrl}
-                            alt={req.userName}
-                            className="h-11 w-11 rounded-full object-cover border border-slate-200"
-                          />
+                          {req.avatarUrl ? (
+                            <img
+                              src={req.avatarUrl}
+                              alt={req.fullName}
+                              className="h-11 w-11 rounded-full object-cover border border-slate-200"
+                            />
+                          ) : (
+                            <div className="h-11 w-11 rounded-full bg-slate-200 flex items-center justify-center font-bold text-xs">
+                              {req.fullName.substring(0, 2).toUpperCase()}
+                            </div>
+                          )}
                           <div>
-                            <h4 className="text-xs font-bold text-slate-900">{req.userName}</h4>
-                            <p className="text-[11px] text-slate-500">{req.experienceInfo}</p>
+                            <h4 className="text-xs font-bold text-slate-900">{req.fullName}</h4>
+                            <p className="text-[11px] text-slate-500">
+                              Yêu cầu gia nhập •{' '}
+                              <span className="text-slate-400">
+                                {new Date(req.createdAt).toLocaleDateString('vi-VN')}
+                              </span>
+                            </p>
                           </div>
                         </div>
 
@@ -333,7 +411,14 @@ export default function CompanionGroupDetailPage() {
                           <button
                             type="button"
                             onClick={() => {
-                              setSelectedRequest(req);
+                              setSelectedRequest({
+                                id: req.matchingMemberId,
+                                userName: req.fullName,
+                                avatarUrl: req.avatarUrl,
+                                initials: req.fullName.substring(0, 2).toUpperCase(),
+                                experienceInfo: '',
+                                message: 'Mong muốn tham gia nhóm',
+                              });
                               setActiveModal('approve');
                             }}
                             className="rounded-full bg-[#0D3B2E] px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-950 transition-colors"
@@ -343,7 +428,14 @@ export default function CompanionGroupDetailPage() {
                           <button
                             type="button"
                             onClick={() => {
-                              setSelectedRequest(req);
+                              setSelectedRequest({
+                                id: req.matchingMemberId,
+                                userName: req.fullName,
+                                avatarUrl: req.avatarUrl,
+                                initials: req.fullName.substring(0, 2).toUpperCase(),
+                                experienceInfo: '',
+                                message: 'Mong muốn tham gia nhóm',
+                              });
                               setActiveModal('reject');
                             }}
                             className="rounded-full border border-slate-300 bg-white px-4 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
@@ -352,56 +444,51 @@ export default function CompanionGroupDetailPage() {
                           </button>
                         </div>
                       </div>
-
-                      <p className="rounded-xl bg-white p-3 text-xs italic text-slate-600 border border-slate-100">
-                        {req.message}
-                      </p>
                     </div>
-                  ))
-                )}
+                  ))}
+
+                {/* Pagination */}
+                {!isJoinRequestsLoading &&
+                  !isJoinRequestsError &&
+                  (joinRequestsData?.totalPages ?? 0) > 1 && (
+                    <div className="flex items-center justify-between pt-2">
+                      <span className="text-xs text-slate-500">
+                        Trang {joinRequestsPage} / {joinRequestsData?.totalPages}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          disabled={joinRequestsPage <= 1}
+                          onClick={() => setJoinRequestsPage((p) => p - 1)}
+                          className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={joinRequestsData?.last}
+                          onClick={() => setJoinRequestsPage((p) => p + 1)}
+                          className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
               </div>
             )}
-
-            {/* Box 3: Lộ trình dự kiến */}
-            <div className="rounded-[32px] bg-[#F4EFE6]/60 p-6 md:p-8 border border-[#EBE3D5] space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="flex items-center gap-2 text-base font-extrabold text-slate-900">
-                  <MapPin className="h-4 w-4 text-[#0D3B2E]" />
-                  <span>Lộ trình dự kiến</span>
-                </h3>
-              </div>
-
-              {/* Route Map Preview Card */}
-              <div className="relative overflow-hidden rounded-2xl bg-white p-4 border border-slate-200/70 shadow-2xs">
-                <div className="absolute top-4 left-4 z-10 rounded-xl bg-white/90 backdrop-blur-md px-3.5 py-2 border border-slate-200 shadow-xs">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    Điểm dừng tiếp theo
-                  </p>
-                  <p className="text-xs font-extrabold text-slate-900 mt-0.5">
-                    Trạm kiểm lâm số 1 (2.1km)
-                  </p>
-                </div>
-
-                <div className="relative h-48 w-full overflow-hidden rounded-xl bg-slate-100">
-                  <img
-                    src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=1200&q=80"
-                    alt="Map Trail Preview"
-                    className="h-full w-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-slate-900/10" />
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Right Column: Chat Nhóm & Yêu cầu chuyến đi */}
           <div className="lg:col-span-4 space-y-6">
-            {/* Card 1: Chat Nhóm (Đen lá đậm) */}
+            {/* Card 1: Chat Nhóm */}
             <div className="rounded-[32px] bg-[#1B362D] p-7 text-white shadow-md space-y-6">
               <div className="flex items-start justify-between">
                 <div>
                   <h3 className="text-lg font-extrabold text-white">Chat Nhóm</h3>
-                  <p className="text-xs text-slate-300 mt-1">3 tin nhắn mới từ Linh Chi</p>
+                  <p className="text-xs text-slate-300 mt-1">
+                    Kết nối với thành viên trong chuyến đi
+                  </p>
                 </div>
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#26483D] text-white">
                   <MessageSquare className="h-5 w-5" />
@@ -411,91 +498,78 @@ export default function CompanionGroupDetailPage() {
               <button
                 type="button"
                 onClick={() => navigate(PATHS.CHAT)}
-                className="w-full rounded-full bg-white py-3.5 text-xs font-bold text-slate-900 transition-all hover:bg-slate-100 active:scale-[0.99] shadow-xs"
+                className="w-full rounded-full bg-white py-3.5 text-xs font-bold text-slate-900 transition-all hover:bg-slate-100 active:scale-[0.99] shadow-xs cursor-pointer"
               >
                 Nhắn tin cho nhóm
               </button>
             </div>
 
-            {/* Card 2: Yêu cầu chuyến đi (Checklist) */}
-            <div className="rounded-[32px] bg-white p-7 border border-slate-200/80 shadow-2xs space-y-5">
-              <h3 className="text-base font-extrabold text-slate-900">Yêu cầu chuyến đi</h3>
-
-              <div className="space-y-4">
-                {checklist.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => toggleChecklistItem(item.id)}
-                    className="flex items-start gap-3 w-full text-left group"
-                  >
-                    <div className="mt-0.5 shrink-0">
-                      {item.completed ? (
-                        <CheckCircle2 className="h-5 w-5 text-slate-800 fill-slate-800 stroke-white" />
-                      ) : (
-                        <Circle className="h-5 w-5 text-slate-300 group-hover:text-slate-400" />
-                      )}
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-900">{item.label}</h4>
-                      <p className="text-[11px] text-slate-500 mt-0.5">{item.detail}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Card 3: Nút tác vụ nhóm phụ thuộc vào vai trò */}
+            {currentUserRole === 'pending' && (
+              <div className="rounded-[32px] bg-amber-50 border border-amber-200 p-6 text-left space-y-2 shadow-2xs">
+                <h4 className="text-xs font-bold text-amber-800 uppercase tracking-wider">
+                  Yêu cầu đang chờ duyệt
+                </h4>
+                <p className="text-xs text-amber-700 leading-relaxed font-medium">
+                  Yêu cầu gia nhập nhóm ghép của bạn đã được gửi thành công và đang chờ trưởng nhóm
+                  phê duyệt.
+                </p>
+              </div>
+            )}
+
             <div className="space-y-3 pt-2 text-center">
               {currentUserRole === 'leader' && (
-                <div className="space-y-3">
+                <>
                   <button
                     type="button"
                     onClick={() => setActiveModal('hide')}
-                    className="w-full rounded-full border border-amber-300 bg-white py-3.5 text-xs font-bold text-amber-700 hover:bg-amber-50 transition-colors shadow-2xs flex items-center justify-center gap-2"
+                    className="w-full flex items-center justify-center gap-2 rounded-full border border-slate-300 bg-white py-3 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
                   >
-                    {group.isHidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                    <span>{group.isHidden ? 'Hiện nhóm ghép' : 'Ẩn nhóm ghép'}</span>
+                    {isHidden ? (
+                      <>
+                        <Eye className="h-4 w-4 text-emerald-700" />
+                        <span>Hiện nhóm công khai</span>
+                      </>
+                    ) : (
+                      <>
+                        <EyeOff className="h-4 w-4 text-slate-500" />
+                        <span>Ẩn nhóm ghép</span>
+                      </>
+                    )}
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setActiveModal('dissolve')}
-                    className="w-full rounded-full border border-rose-600 bg-white py-3.5 text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors shadow-2xs flex items-center justify-center gap-2"
+                    className="w-full flex items-center justify-center gap-2 rounded-full bg-rose-50 border border-rose-200 py-3 text-xs font-bold text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer"
                   >
                     <ShieldAlert className="h-4 w-4" />
-                    <span>Giải tán nhóm này</span>
+                    <span>Giải tán nhóm</span>
                   </button>
-                  <p className="text-[10px] text-slate-400">
-                    Lưu ý: Chỉ Trưởng nhóm mới có quyền giải tán hoặc ẩn nhóm.
-                  </p>
-                </div>
+                </>
               )}
 
-              {currentUserRole === 'member' && (
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => setActiveModal('leave')}
-                    className="w-full rounded-full border border-rose-600 bg-white py-3.5 text-xs font-bold text-rose-600 transition-colors hover:bg-rose-50 shadow-2xs flex items-center justify-center gap-2"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span>Rời khỏi nhóm</span>
-                  </button>
-                  <p className="text-[10px] text-slate-400 mt-2">
-                    Lưu ý: Rời nhóm trước 48h khởi hành để được hoàn cọc.
-                  </p>
-                </div>
+              {(currentUserRole === 'member' || currentUserRole === 'pending') && (
+                <button
+                  type="button"
+                  onClick={() => setActiveModal('leave')}
+                  className="w-full flex items-center justify-center gap-2 rounded-full bg-rose-50 border border-rose-200 py-3 text-xs font-bold text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>
+                    {currentUserRole === 'pending' ? 'Hủy yêu cầu tham gia' : 'Rời khỏi nhóm'}
+                  </span>
+                </button>
               )}
 
               {currentUserRole === 'guest' && (
                 <button
                   type="button"
-                  onClick={() => navigate(PATHS.GROUPS_JOIN)}
-                  className="w-full rounded-full bg-[#0D3B2E] py-3.5 text-xs font-bold text-white transition-all hover:bg-emerald-950 shadow-md flex items-center justify-center gap-2"
+                  onClick={() => navigate(`/groups/${groupId}/join`)}
+                  className="w-full flex items-center justify-center gap-2 rounded-full bg-[#0D3B2E] py-3.5 text-xs font-extrabold text-white hover:bg-emerald-950 transition-colors cursor-pointer shadow-md"
                 >
                   <UserPlus className="h-4 w-4" />
-                  <span>Gửi yêu cầu tham gia</span>
+                  <span>Xin tham gia nhóm ghép này</span>
                 </button>
               )}
             </div>
@@ -503,202 +577,236 @@ export default function CompanionGroupDetailPage() {
         </div>
       </div>
 
-      {/* ========================================================================= */}
-      {/* MODALS SECTION */}
-      {/* ========================================================================= */}
-
-      {/* Dissolve Group Modal (Giữ nguyên thiết kế chuẩn) */}
-      {activeModal === 'dissolve' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md rounded-[32px] bg-[#FAF8F5] p-8 text-center shadow-2xl border border-slate-100 space-y-6 animate-in zoom-in-95 duration-200">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-rose-100 text-rose-600">
-              <AlertTriangle className="h-8 w-8 stroke-[2.2]" />
-            </div>
-
-            <div className="space-y-3">
-              <h3 className="text-2xl font-bold text-slate-900 tracking-tight">
-                Giải tán nhóm này?
-              </h3>
-              <p className="text-xs text-slate-600 leading-relaxed px-4">
-                Khi giải tán, nhóm sẽ bị xóa vĩnh viễn và tất cả thành viên sẽ nhận được thông báo.
-                Bạn có chắc chắn không?
-              </p>
-            </div>
-
-            <div className="space-y-3 pt-2">
-              <button
-                type="button"
-                onClick={handleConfirmDissolveGroup}
-                className="w-full rounded-full bg-[#07241A] py-3.5 text-xs font-bold text-white transition-all hover:bg-emerald-950 active:scale-[0.99] shadow-sm"
-              >
-                Xác nhận giải tán
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveModal(null)}
-                className="w-full rounded-full border border-slate-400/80 bg-transparent py-3.5 text-xs font-bold text-slate-800 transition-colors hover:bg-slate-200/50 active:scale-[0.99]"
-              >
-                Quay lại
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Leave Group Modal */}
-      {activeModal === 'leave' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md rounded-[32px] bg-[#FAF8F5] p-8 text-center shadow-2xl border border-slate-100 space-y-6 animate-in zoom-in-95 duration-200">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-600">
-              <LogOut className="h-7 w-7 stroke-[2.2]" />
-            </div>
-
-            <div className="space-y-3">
-              <h3 className="text-2xl font-bold text-slate-900 tracking-tight">
-                Rời khỏi nhóm ghép?
-              </h3>
-              <p className="text-xs text-slate-600 leading-relaxed px-4">
-                Bạn có chắc chắn muốn rời khỏi nhóm ghép này? Vị trí của bạn sẽ nhường lại cho
-                Trekker khác.
-              </p>
-            </div>
-
-            <div className="space-y-3 pt-2">
-              <button
-                type="button"
-                onClick={handleConfirmLeaveGroup}
-                className="w-full rounded-full bg-rose-600 py-3.5 text-xs font-bold text-white transition-all hover:bg-rose-700 active:scale-[0.99] shadow-sm"
-              >
-                Xác nhận rời nhóm
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveModal(null)}
-                className="w-full rounded-full border border-slate-400/80 bg-transparent py-3.5 text-xs font-bold text-slate-800 transition-colors hover:bg-slate-200/50 active:scale-[0.99]"
-              >
-                Hủy bỏ
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Reject Modal */}
-      {activeModal === 'reject' && selectedRequest && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md rounded-[32px] bg-[#FAF8F5] p-8 text-center shadow-2xl border border-slate-100 space-y-6 animate-in zoom-in-95 duration-200">
-            <button
-              type="button"
-              onClick={() => setActiveModal(null)}
-              className="absolute top-5 right-5 text-slate-400 hover:text-slate-600"
-            >
-              <X className="h-5 w-5" />
-            </button>
-
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-rose-100 text-rose-600">
-              <ShieldAlert className="h-7 w-7 stroke-[2.2]" />
-            </div>
-
-            <div className="space-y-2">
-              <h3 className="text-xl font-bold text-slate-900">Từ chối yêu cầu tham gia?</h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Từ chối yêu cầu tham gia nhóm của{' '}
-                <span className="font-bold text-slate-900">{selectedRequest.userName}</span>.
-              </p>
-            </div>
-
-            <div className="space-y-3 pt-2">
-              <button
-                type="button"
-                onClick={handleConfirmReject}
-                className="w-full rounded-full bg-[#07241A] py-3.5 text-xs font-bold text-white hover:bg-emerald-950 transition-all"
-              >
-                Xác nhận từ chối
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveModal(null)}
-                className="w-full rounded-full border border-slate-400/80 bg-transparent py-3.5 text-xs font-bold text-slate-800 hover:bg-slate-200/50"
-              >
-                Quay lại
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Approve Modal */}
+      {/* --- MODALS --- */}
+      {/* 1. Modal duyệt thành viên */}
       {activeModal === 'approve' && selectedRequest && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md rounded-[32px] bg-[#FAF8F5] p-8 text-center shadow-2xl border border-slate-100 space-y-6 animate-in zoom-in-95 duration-200">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-              <UserCheck className="h-7 w-7 stroke-[2.2]" />
-            </div>
-
-            <div className="space-y-2">
-              <h3 className="text-xl font-bold text-slate-900">Duyệt thành viên vào nhóm?</h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Đồng ý cho{' '}
-                <span className="font-bold text-slate-900">{selectedRequest.userName}</span> gia
-                nhập nhóm ghép này?
-              </p>
-            </div>
-
-            <div className="space-y-3 pt-2">
-              <button
-                type="button"
-                onClick={handleConfirmApprove}
-                className="w-full rounded-full bg-[#07241A] py-3.5 text-xs font-bold text-white hover:bg-emerald-950 transition-all"
-              >
-                Chấp nhận cho vào nhóm
-              </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="w-full max-w-sm rounded-[28px] bg-white p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-[#0D3B2E]">
+                <UserCheck className="h-5 w-5" />
+              </div>
               <button
                 type="button"
                 onClick={() => setActiveModal(null)}
-                className="w-full rounded-full border border-slate-400/80 bg-transparent py-3.5 text-xs font-bold text-slate-800 hover:bg-slate-200/50"
+                className="text-slate-400 hover:text-slate-600"
               >
-                Đóng
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold text-slate-900">Duyệt thành viên gia nhập</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Bạn có chắc chắn muốn duyệt <strong>{selectedRequest.userName}</strong> tham gia vào
+                nhóm ghép này?
+              </p>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                disabled={approveMemberMutation.isPending}
+                onClick={() => setActiveModal(null)}
+                className="flex-1 rounded-full border border-slate-300 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                disabled={approveMemberMutation.isPending}
+                onClick={handleConfirmApprove}
+                className="flex-1 rounded-full bg-[#0D3B2E] py-2.5 text-xs font-bold text-white hover:bg-emerald-950 disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                {approveMemberMutation.isPending && (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                )}
+                {approveMemberMutation.isPending ? 'Đang duyệt...' : 'Xác nhận duyệt'}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Hide Modal */}
-      {activeModal === 'hide' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md rounded-[32px] bg-[#FAF8F5] p-8 text-center shadow-2xl border border-slate-100 space-y-6 animate-in zoom-in-95 duration-200">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-700">
-              {group.isHidden ? <Eye className="h-7 w-7" /> : <EyeOff className="h-7 w-7" />}
+      {/* 2. Modal từ chối yêu cầu */}
+      {activeModal === 'reject' && selectedRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="w-full max-w-sm rounded-[28px] bg-white p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-rose-100 text-rose-600">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveModal(null)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
-
-            <div className="space-y-2">
-              <h3 className="text-xl font-bold text-slate-900">
-                {group.isHidden ? 'Hiện nhóm ghép?' : 'Ẩn nhóm ghép này?'}
-              </h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                {group.isHidden
-                  ? 'Nhóm ghép sẽ được hiển thị công khai để các Trekker khác tìm thấy và xin gia nhập.'
-                  : 'Khi ẩn nhóm, các Trekker khác sẽ không thể tìm thấy nhóm trên danh sách công khai nữa.'}
+            <div>
+              <h3 className="text-base font-extrabold text-slate-900">Từ chối yêu cầu</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Từ chối <strong>{selectedRequest.userName}</strong> gia nhập nhóm? Hành động này
+                không thể hoàn tác.
               </p>
             </div>
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                disabled={rejectMemberMutation.isPending}
+                onClick={() => setActiveModal(null)}
+                className="flex-1 rounded-full border border-slate-300 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                disabled={rejectMemberMutation.isPending}
+                onClick={handleConfirmReject}
+                className="flex-1 rounded-full bg-rose-600 py-2.5 text-xs font-bold text-white hover:bg-rose-700 disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                {rejectMemberMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {rejectMemberMutation.isPending ? 'Đang từ chối...' : 'Xác nhận từ chối'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-            <div className="space-y-3 pt-2">
+      {/* 3. Modal Ẩn nhóm ghép */}
+      {activeModal === 'hide' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="w-full max-w-sm rounded-[28px] bg-white p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+                {isHidden ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveModal(null)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold text-slate-900">
+                {isHidden ? 'Hiện nhóm ghép public' : 'Ẩn nhóm ghép công khai'}
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">
+                {isHidden
+                  ? 'Nhóm của bạn sẽ hiển thị công khai trở lại cho các trekker khác tìm thấy.'
+                  : 'Nhóm sẽ tạm thời bị ẩn khỏi danh sách tìm kiếm công khai và không nhận thêm yêu cầu gia nhập mới.'}
+              </p>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setActiveModal(null)}
+                className="flex-1 rounded-full border border-slate-300 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50"
+              >
+                Hủy
+              </button>
               <button
                 type="button"
                 onClick={handleToggleHideGroup}
-                className="w-full rounded-full bg-[#07241A] py-3.5 text-xs font-bold text-white hover:bg-emerald-950 transition-all"
+                className="flex-1 rounded-full bg-slate-900 py-2.5 text-xs font-bold text-white hover:bg-slate-800"
               >
-                {group.isHidden ? 'Xác nhận hiện nhóm' : 'Xác nhận ẩn nhóm'}
+                {isHidden ? 'Xác nhận hiện' : 'Xác nhận ẩn'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. Modal Giải tán nhóm */}
+      {activeModal === 'dissolve' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="w-full max-w-sm rounded-[28px] bg-white p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-rose-100 text-rose-600">
+                <ShieldAlert className="h-5 w-5" />
+              </div>
               <button
                 type="button"
                 onClick={() => setActiveModal(null)}
-                className="w-full rounded-full border border-slate-400/80 bg-transparent py-3.5 text-xs font-bold text-slate-800 hover:bg-slate-200/50"
+                className="text-slate-400 hover:text-slate-600"
               >
-                Quay lại
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold text-slate-900">Xác nhận giải tán nhóm</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Hành động này sẽ giải tán toàn bộ nhóm ghép và thông báo tới tất cả thành viên. Hành
+                động này không thể hoàn tác.
+              </p>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                disabled={deleteGroupMutation.isPending}
+                onClick={() => setActiveModal(null)}
+                className="flex-1 rounded-full border border-slate-300 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                disabled={deleteGroupMutation.isPending}
+                onClick={handleConfirmDissolveGroup}
+                className="flex-1 rounded-full bg-rose-600 py-2.5 text-xs font-bold text-white hover:bg-rose-700 disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                {deleteGroupMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {deleteGroupMutation.isPending ? 'Đang giải tán...' : 'Giải tán ngay'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. Modal Rời khỏi nhóm */}
+      {activeModal === 'leave' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="w-full max-w-sm rounded-[28px] bg-white p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-rose-100 text-rose-600">
+                <LogOut className="h-5 w-5" />
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveModal(null)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold text-slate-900">
+                {currentUserRole === 'pending' ? 'Hủy yêu cầu tham gia' : 'Rời khỏi nhóm ghép'}
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">
+                {currentUserRole === 'pending'
+                  ? 'Bạn có chắc chắn muốn hủy yêu cầu xin tham gia nhóm ghép này?'
+                  : 'Bạn có chắc chắn muốn rời khỏi chuyến đi này?'}
+              </p>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                disabled={leaveGroupMutation.isPending}
+                onClick={() => setActiveModal(null)}
+                className="flex-1 rounded-full border border-slate-300 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                disabled={leaveGroupMutation.isPending}
+                onClick={handleConfirmLeaveGroup}
+                className="flex-1 rounded-full bg-rose-600 py-2.5 text-xs font-bold text-white hover:bg-rose-700 disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                {leaveGroupMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {leaveGroupMutation.isPending ? 'Đang thực hiện...' : 'Xác nhận rời'}
               </button>
             </div>
           </div>

@@ -8,7 +8,7 @@ export interface CompanionLeader {
   role?: string;
 }
 
-export type UserRoleInGroup = 'leader' | 'member' | 'guest';
+export type UserRoleInGroup = 'leader' | 'member' | 'pending' | 'guest';
 
 export interface CompanionGroup {
   id: string;

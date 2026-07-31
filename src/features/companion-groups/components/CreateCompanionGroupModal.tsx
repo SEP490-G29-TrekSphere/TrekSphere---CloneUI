@@ -1,49 +1,70 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Calendar, MapPin, Send, ShieldCheck, Users } from 'lucide-react';
+import {
+  Calendar,
+  Clock,
+  FileText,
+  Loader2,
+  MapPin,
+  Send,
+  ShieldCheck,
+  Tag,
+  Users,
+} from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { PATHS } from '@/constants/paths';
+import { useTours } from '@/features/tours/hooks/useTours';
 import { toast } from '@/store/useToastStore';
+import { useCreateMatchingGroup } from '../hooks/useCreateMatchingGroup';
 
-const createGroupSchema = z.object({
-  tourId: z.string().min(1, 'Vui lòng chọn Tour bạn muốn đi'),
-  departureDate: z.string().min(1, 'Vui lòng chọn ngày khởi hành'),
-  neededMembers: z.preprocess(
-    (val) => (typeof val === 'string' && val.trim() !== '' ? Number(val) : val),
-    z
-      .number({ message: 'Số lượng phải là con số' })
-      .min(1, 'Cần tuyển ít nhất 1 người')
-      .max(20, 'Tối đa 20 người')
-  ),
-  description: z.string().optional(),
-});
+// ---------------------------------------------------------------------------
+// Validation Schema — maps 1-to-1 with POST /api/v1/matching-groups body
+// ---------------------------------------------------------------------------
+const createGroupSchema = z
+  .object({
+    tourId: z.string().uuid('Vui lòng chọn Tour hợp lệ').min(1, 'Vui lòng chọn Tour bạn muốn đi'),
+    groupName: z
+      .string()
+      .min(3, 'Tên nhóm phải có ít nhất 3 ký tự')
+      .max(100, 'Tên nhóm tối đa 100 ký tự'),
+    description: z.string().optional(),
+    maxSize: z.preprocess(
+      (val) => (typeof val === 'string' && val.trim() !== '' ? Number(val) : val),
+      z
+        .number({ message: 'Số lượng phải là con số' })
+        .min(2, 'Tối thiểu 2 người')
+        .max(100, 'Tối đa 100 người')
+        .int()
+    ),
+    targetDate: z.string().min(1, 'Vui lòng chọn ngày khởi hành'),
+    matchingDeadline: z.string().min(1, 'Vui lòng chọn hạn chót đăng ký'),
+  })
+  .refine(
+    (data) => {
+      if (!data.targetDate || !data.matchingDeadline) return true;
+      return new Date(data.matchingDeadline) <= new Date(data.targetDate);
+    },
+    {
+      message: 'Hạn chót đăng ký phải trước hoặc bằng ngày khởi hành',
+      path: ['matchingDeadline'],
+    }
+  );
 
 type CreateGroupFormValues = z.infer<typeof createGroupSchema>;
 
 interface CreateCompanionGroupModalProps {
   isOpen: boolean;
   onClose: () => void;
-  tours?: Array<{ id: string; name: string }>;
-  onSuccess?: (newGroupData: CreateGroupFormValues) => void;
 }
 
-const DEFAULT_TOURS = [
-  { id: '1', name: 'Trekking Tà Năng - Phan Dũng (Lâm Đồng - Bình Thuận)' },
-  { id: '2', name: 'Chinh phục Đỉnh Fansipan 2N1Đ (Lào Cai)' },
-  { id: '3', name: 'Khám phá Vườn Quốc Gia Cát Tiên (Đồng Nai)' },
-  { id: '4', name: 'Chinh phục Đỉnh Pù Luông (Thanh Hóa)' },
-  { id: '5', name: 'Trekking Lảo Thẩn - Săn Mây Y Tý (Lào Cai)' },
-  { id: '6', name: 'Trekking Sống lưng khủng long Tà Xùa (Sơn La)' },
-];
-
-export function CreateCompanionGroupModal({
-  isOpen,
-  onClose,
-  tours = DEFAULT_TOURS,
-  onSuccess,
-}: CreateCompanionGroupModalProps) {
+export function CreateCompanionGroupModal({ isOpen, onClose }: CreateCompanionGroupModalProps) {
   const navigate = useNavigate();
+  const createMutation = useCreateMatchingGroup();
+
+  // Fetch real tour list — load a generous page to populate the dropdown
+  const { tours, isLoading: toursLoading } = useTours({ page: 0, size: 100 });
+
   const form = useForm<
     z.input<typeof createGroupSchema>,
     undefined,
@@ -52,23 +73,43 @@ export function CreateCompanionGroupModal({
     resolver: zodResolver(createGroupSchema),
     defaultValues: {
       tourId: '',
-      departureDate: '',
-      neededMembers: 4,
+      groupName: '',
       description: '',
+      maxSize: 4,
+      targetDate: '',
+      matchingDeadline: '',
     },
   });
 
   if (!isOpen) return null;
 
-  const onSubmit = (data: CreateGroupFormValues) => {
-    toast.success('Tạo nhóm đồng hành thành công! Bài viết đang chờ duyệt bởi Quản trị viên.');
-    if (onSuccess) {
-      onSuccess(data);
+  const onSubmit = async (data: CreateGroupFormValues) => {
+    // Build ISO date-time for matchingDeadline (the form gives 'yyyy-MM-ddTHH:mm')
+    const matchingDeadlineIso = data.matchingDeadline.includes('T')
+      ? `${data.matchingDeadline}:00.000Z`
+      : `${data.matchingDeadline}T00:00:00.000Z`;
+
+    try {
+      const newGroup = await createMutation.mutateAsync({
+        tourId: data.tourId,
+        groupName: data.groupName,
+        description: data.description,
+        maxSize: data.maxSize,
+        targetDate: data.targetDate,
+        matchingDeadline: matchingDeadlineIso,
+      });
+
+      toast.success('Tạo nhóm đồng hành thành công! Nhóm của bạn đã được đăng công khai.');
+      form.reset();
+      onClose();
+      navigate(`${PATHS.GROUPS}/${newGroup.matchingGroupId}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Tạo nhóm thất bại. Vui lòng thử lại.';
+      toast.error(message);
     }
-    form.reset();
-    onClose();
-    navigate(PATHS.GROUPS);
   };
+
+  const isPending = createMutation.isPending;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto">
@@ -79,7 +120,6 @@ export function CreateCompanionGroupModal({
           <div className="lg:col-span-5 flex flex-col justify-between gap-6">
             {/* Green Scenic Banner */}
             <div className="relative rounded-[2rem] overflow-hidden min-h-[320px] lg:min-h-[420px] flex flex-col justify-end p-6 sm:p-8 text-white group shadow-lg">
-              {/* Background Image with Overlay */}
               <img
                 src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1000&q=80"
                 alt="Chuyến đi trekking"
@@ -100,7 +140,7 @@ export function CreateCompanionGroupModal({
               </div>
             </div>
 
-            {/* Note box matching mockup bottom-left */}
+            {/* Note box */}
             <div className="bg-[#F5F2EA] dark:bg-muted/40 border border-stone-200/70 dark:border-border/60 rounded-[1.5rem] p-5 space-y-3">
               <span className="text-[11px] font-bold tracking-wider text-stone-500 dark:text-muted-foreground uppercase block">
                 Lưu ý cho bạn
@@ -115,6 +155,12 @@ export function CreateCompanionGroupModal({
                 <Users className="w-4 h-4 text-emerald-800 dark:text-emerald-400 shrink-0 mt-0.5" />
                 <p className="text-xs text-stone-700 dark:text-stone-300 font-medium leading-relaxed">
                   Số lượng người nên cân đối với độ khó của tour trekking.
+                </p>
+              </div>
+              <div className="flex items-start gap-3">
+                <Clock className="w-4 h-4 text-emerald-800 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <p className="text-xs text-stone-700 dark:text-stone-300 font-medium leading-relaxed">
+                  Hạn chót đăng ký nên đặt trước ngày khởi hành để có thời gian chuẩn bị.
                 </p>
               </div>
             </div>
@@ -134,11 +180,11 @@ export function CreateCompanionGroupModal({
               </div>
 
               {/* Form Inputs */}
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 {/* Field 1: Tour Select */}
                 <div>
                   <label className="block text-[11px] font-bold tracking-wider text-stone-500 dark:text-muted-foreground uppercase mb-2">
-                    CHỌN TOUR MUỐN ĐI
+                    CHỌN TOUR MUỐN ĐI <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none">
@@ -146,10 +192,11 @@ export function CreateCompanionGroupModal({
                     </div>
                     <select
                       {...form.register('tourId')}
-                      className="w-full bg-[#F3F0E6] dark:bg-muted/60 border-none rounded-2xl py-3.5 pl-12 pr-10 text-sm font-medium text-stone-800 dark:text-foreground appearance-none focus:outline-none focus:ring-2 focus:ring-[#1f3933] cursor-pointer"
+                      disabled={toursLoading}
+                      className="w-full bg-[#F3F0E6] dark:bg-muted/60 border-none rounded-2xl py-3.5 pl-12 pr-10 text-sm font-medium text-stone-800 dark:text-foreground appearance-none focus:outline-none focus:ring-2 focus:ring-[#1f3933] cursor-pointer disabled:opacity-60"
                     >
                       <option value="" disabled>
-                        Tìm điểm đến của bạn...
+                        {toursLoading ? 'Đang tải danh sách tour...' : 'Tìm điểm đến của bạn...'}
                       </option>
                       {tours.map((t) => (
                         <option key={t.id} value={t.id}>
@@ -168,12 +215,35 @@ export function CreateCompanionGroupModal({
                   )}
                 </div>
 
-                {/* Grid row: Date & Needed Members */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Field 2: Date */}
+                {/* Field 2: Group Name */}
+                <div>
+                  <label className="block text-[11px] font-bold tracking-wider text-stone-500 dark:text-muted-foreground uppercase mb-2">
+                    TÊN NHÓM <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none">
+                      <Tag className="w-5 h-5" />
+                    </div>
+                    <input
+                      type="text"
+                      {...form.register('groupName')}
+                      placeholder="Ví dụ: Nhóm Fansipan tháng 8 🏔️"
+                      className="w-full bg-[#F3F0E6] dark:bg-muted/60 border-none rounded-2xl py-3.5 pl-12 pr-4 text-sm font-medium text-stone-800 dark:text-foreground placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#1f3933]"
+                    />
+                  </div>
+                  {form.formState.errors.groupName && (
+                    <p className="text-xs text-red-500 mt-1 pl-2">
+                      {form.formState.errors.groupName.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Grid row: Date & Deadline & Members */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {/* Field 3: Target Date */}
                   <div>
                     <label className="block text-[11px] font-bold tracking-wider text-stone-500 dark:text-muted-foreground uppercase mb-2">
-                      CHỌN NGÀY KHỞI HÀNH
+                      NGÀY KHỞI HÀNH <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <div className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none">
@@ -181,21 +251,43 @@ export function CreateCompanionGroupModal({
                       </div>
                       <input
                         type="date"
-                        {...form.register('departureDate')}
+                        {...form.register('targetDate')}
                         className="w-full bg-[#F3F0E6] dark:bg-muted/60 border-none rounded-2xl py-3.5 pl-12 pr-4 text-sm font-medium text-stone-800 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-[#1f3933]"
                       />
                     </div>
-                    {form.formState.errors.departureDate && (
+                    {form.formState.errors.targetDate && (
                       <p className="text-xs text-red-500 mt-1 pl-2">
-                        {form.formState.errors.departureDate.message}
+                        {form.formState.errors.targetDate.message}
                       </p>
                     )}
                   </div>
 
-                  {/* Field 3: Members Count */}
+                  {/* Field 4: Matching Deadline */}
                   <div>
                     <label className="block text-[11px] font-bold tracking-wider text-stone-500 dark:text-muted-foreground uppercase mb-2">
-                      SỐ LƯỢNG NGƯỜI CẦN TUYỂN
+                      HẠN ĐĂNG KÝ <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none">
+                        <Clock className="w-5 h-5" />
+                      </div>
+                      <input
+                        type="datetime-local"
+                        {...form.register('matchingDeadline')}
+                        className="w-full bg-[#F3F0E6] dark:bg-muted/60 border-none rounded-2xl py-3.5 pl-12 pr-4 text-sm font-medium text-stone-800 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-[#1f3933]"
+                      />
+                    </div>
+                    {form.formState.errors.matchingDeadline && (
+                      <p className="text-xs text-red-500 mt-1 pl-2">
+                        {form.formState.errors.matchingDeadline.message}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Field 5: Max Size */}
+                  <div>
+                    <label className="block text-[11px] font-bold tracking-wider text-stone-500 dark:text-muted-foreground uppercase mb-2">
+                      SỐ NGƯỜI TỐI ĐA <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <div className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none">
@@ -203,45 +295,60 @@ export function CreateCompanionGroupModal({
                       </div>
                       <input
                         type="number"
-                        min={1}
-                        max={20}
-                        {...form.register('neededMembers')}
-                        placeholder="Ví dụ: 4"
+                        min={2}
+                        max={100}
+                        {...form.register('maxSize')}
+                        placeholder="Ví dụ: 8"
                         className="w-full bg-[#F3F0E6] dark:bg-muted/60 border-none rounded-2xl py-3.5 pl-12 pr-4 text-sm font-medium text-stone-800 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-[#1f3933]"
                       />
                     </div>
-                    {form.formState.errors.neededMembers && (
+                    {form.formState.errors.maxSize && (
                       <p className="text-xs text-red-500 mt-1 pl-2">
-                        {form.formState.errors.neededMembers.message}
+                        {form.formState.errors.maxSize.message}
                       </p>
                     )}
                   </div>
                 </div>
 
-                {/* Field 4: Description */}
+                {/* Field 6: Description */}
                 <div>
                   <label className="block text-[11px] font-bold tracking-wider text-stone-500 dark:text-muted-foreground uppercase mb-2">
                     MÔ TẢ LỜI MỜI
                   </label>
-                  <textarea
-                    rows={4}
-                    {...form.register('description')}
-                    placeholder="Chia sẻ thêm về bản thân, yêu cầu về thể lực hoặc kinh nghiệm của thành viên bạn muốn tìm..."
-                    className="w-full bg-[#F3F0E6] dark:bg-muted/60 border-none rounded-2xl p-4 text-sm font-medium text-stone-800 dark:text-foreground placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#1f3933] resize-none"
-                  />
+                  <div className="relative">
+                    <div className="absolute left-4 top-4 text-stone-500 pointer-events-none">
+                      <FileText className="w-5 h-5" />
+                    </div>
+                    <textarea
+                      rows={4}
+                      {...form.register('description')}
+                      placeholder="Chia sẻ thêm về bản thân, yêu cầu về thể lực hoặc kinh nghiệm của thành viên bạn muốn tìm..."
+                      className="w-full bg-[#F3F0E6] dark:bg-muted/60 border-none rounded-2xl p-4 pl-12 text-sm font-medium text-stone-800 dark:text-foreground placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#1f3933] resize-none"
+                    />
+                  </div>
                 </div>
 
-                {/* Submit Action Pill Button */}
+                {/* Submit Button */}
                 <div className="pt-2">
                   <button
                     type="submit"
-                    className="w-full py-4 bg-[#0a231c] hover:bg-[#071914] text-white rounded-full font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl cursor-pointer"
+                    disabled={isPending}
+                    className="w-full py-4 bg-[#0a231c] hover:bg-[#071914] text-white rounded-full font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    <Send className="w-4 h-4" />
-                    <span>Đăng bài</span>
+                    {isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Đang tạo nhóm...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        <span>Đăng bài</span>
+                      </>
+                    )}
                   </button>
                   <p className="text-center text-[11px] text-stone-500 dark:text-muted-foreground mt-3">
-                    Bài viết sẽ được duyệt bởi quản trị viên trước khi hiển thị công khai.
+                    Nhóm sẽ được hiển thị công khai ngay sau khi tạo.
                   </p>
                 </div>
               </form>
@@ -252,7 +359,8 @@ export function CreateCompanionGroupModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="text-xs text-stone-500 hover:text-stone-800 dark:text-muted-foreground dark:hover:text-foreground font-semibold underline cursor-pointer"
+                disabled={isPending}
+                className="text-xs text-stone-500 hover:text-stone-800 dark:text-muted-foreground dark:hover:text-foreground font-semibold underline cursor-pointer disabled:opacity-50"
               >
                 Hủy bỏ / Đóng lại
               </button>

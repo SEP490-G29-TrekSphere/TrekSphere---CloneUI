@@ -1,32 +1,30 @@
 import { Calendar, Compass, MapPin, SlidersHorizontal } from 'lucide-react';
 import { useState } from 'react';
-import type { CompanionDifficulty } from '../types';
+import { useTours } from '@/features/tours/hooks/useTours';
 
 interface CompanionHeroFilterProps {
   searchQuery: string;
   onSearchChange: (val: string) => void;
-  selectedLocation: string;
-  onLocationChange: (val: string) => void;
+  selectedTourId: string;
+  onTourChange: (val: string) => void;
   selectedDate: string;
   onDateChange: (val: string) => void;
-  selectedDifficulty: CompanionDifficulty | 'All';
-  onDifficultyChange: (val: CompanionDifficulty | 'All') => void;
 }
 
 export function CompanionHeroFilter({
   searchQuery,
   onSearchChange,
-  selectedLocation,
-  onLocationChange,
+  selectedTourId,
+  onTourChange,
   selectedDate,
   onDateChange,
-  selectedDifficulty,
-  onDifficultyChange,
 }: CompanionHeroFilterProps) {
   const [showFilters, setShowFilters] = useState(false);
 
-  const LOCATIONS = ['Tất cả', 'Lào Cai', 'Lâm Đồng', 'Đồng Nai', 'Thanh Hóa', 'Sơn La'];
-  const DIFFICULTIES: Array<CompanionDifficulty | 'All'> = ['All', 'Dễ', 'Vừa', 'Khó', 'Rất khó'];
+  // Fetch list of active tours for filtering
+  const { tours } = useTours({ size: 50 });
+
+  const selectedTour = tours.find((t) => t.id === selectedTourId);
 
   return (
     <div className="pt-28 pb-12 px-4 sm:px-6 max-w-5xl mx-auto text-center">
@@ -49,30 +47,32 @@ export function CompanionHeroFilter({
               type="text"
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Bạn muốn đi đâu?"
+              placeholder="Bạn muốn tìm từ khóa gì?"
               className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
             />
           </div>
 
           {/* Filter Pills button group */}
           <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 justify-center">
-            {/* Location Filter Pill */}
+            {/* Tour Select Pill */}
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setShowFilters((prev) => !prev)}
                 className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold transition-colors cursor-pointer border ${
-                  selectedLocation !== 'Tất cả'
+                  selectedTourId
                     ? 'bg-primary text-primary-foreground border-primary'
                     : 'bg-emerald-100/70 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 border-emerald-200/60 dark:border-emerald-800/40 hover:bg-emerald-200/70'
                 }`}
               >
                 <MapPin className="w-3.5 h-3.5 shrink-0" />
-                <span>{selectedLocation !== 'Tất cả' ? selectedLocation : 'Địa điểm'}</span>
+                <span className="max-w-[120px] truncate">
+                  {selectedTour ? selectedTour.name : 'Chọn Tour'}
+                </span>
               </button>
             </div>
 
-            {/* Date Filter Pill */}
+            {/* Target Date Pill */}
             <div className="relative">
               <button
                 type="button"
@@ -84,27 +84,19 @@ export function CompanionHeroFilter({
                 }`}
               >
                 <Calendar className="w-3.5 h-3.5 shrink-0" />
-                <span>{selectedDate || 'Thời gian'}</span>
+                <span>{selectedDate || 'Ngày đi'}</span>
               </button>
             </div>
 
-            {/* Difficulty Filter Pill */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowFilters((prev) => !prev)}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold transition-colors cursor-pointer border ${
-                  selectedDifficulty !== 'All'
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-emerald-100/70 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 border-emerald-200/60 dark:border-emerald-800/40 hover:bg-emerald-200/70'
-                }`}
-              >
-                <SlidersHorizontal className="w-3.5 h-3.5 shrink-0" />
-                <span>
-                  {selectedDifficulty !== 'All' ? `Khó: ${selectedDifficulty}` : 'Độ khó'}
-                </span>
-              </button>
-            </div>
+            {/* Filter Panel Toggle */}
+            <button
+              type="button"
+              onClick={() => setShowFilters((prev) => !prev)}
+              className="p-2 rounded-full bg-muted hover:bg-muted/80 text-foreground transition-colors cursor-pointer"
+              aria-label="Mở bộ lọc chi tiết"
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </div>
@@ -112,69 +104,51 @@ export function CompanionHeroFilter({
       {/* Expandable Filter Panel */}
       {showFilters && (
         <div className="mt-4 p-5 bg-card border border-border rounded-2xl shadow-lg max-w-3xl mx-auto text-left animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {/* Location selector */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {/* Tour selector dropdown */}
             <div>
               <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                Lọc Địa Điểm
+                Lọc Theo Tour
               </label>
-              <div className="flex flex-wrap gap-1.5">
-                {LOCATIONS.map((loc) => (
-                  <button
-                    key={loc}
-                    type="button"
-                    onClick={() => onLocationChange(loc)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      selectedLocation === loc
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted hover:bg-muted/80 text-foreground'
-                    }`}
-                  >
-                    {loc}
-                  </button>
+              <select
+                value={selectedTourId}
+                onChange={(e) => onTourChange(e.target.value)}
+                className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+              >
+                <option value="">-- Tất cả các Tour --</option>
+                {tours.map((tour) => (
+                  <option key={tour.id} value={tour.id}>
+                    {tour.name} ({tour.location})
+                  </option>
                 ))}
-              </div>
-            </div>
-
-            {/* Difficulty selector */}
-            <div>
-              <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                Mức Độ Khó
-              </label>
-              <div className="flex flex-wrap gap-1.5">
-                {DIFFICULTIES.map((diff) => (
-                  <button
-                    key={diff}
-                    type="button"
-                    onClick={() => onDifficultyChange(diff)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      selectedDifficulty === diff
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted hover:bg-muted/80 text-foreground'
-                    }`}
-                  >
-                    {diff === 'All' ? 'Tất cả' : diff}
-                  </button>
-                ))}
-              </div>
+              </select>
+              {selectedTourId && (
+                <button
+                  type="button"
+                  onClick={() => onTourChange('')}
+                  className="mt-2 text-[11px] text-muted-foreground underline hover:text-foreground cursor-pointer"
+                >
+                  Xóa lọc Tour
+                </button>
+              )}
             </div>
 
             {/* Date filter selector */}
             <div>
               <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                Thời Gian Khởi Hành
+                Ngày Khởi Hành Dự Kiến (targetDate)
               </label>
               <input
                 type="date"
                 value={selectedDate}
                 onChange={(e) => onDateChange(e.target.value)}
-                className="w-full bg-muted border border-border rounded-lg px-3 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
               />
               {selectedDate && (
                 <button
                   type="button"
                   onClick={() => onDateChange('')}
-                  className="mt-2 text-[11px] text-muted-foreground underline hover:text-foreground"
+                  className="mt-2 text-[11px] text-muted-foreground underline hover:text-foreground cursor-pointer"
                 >
                   Xóa lọc ngày
                 </button>
@@ -182,11 +156,11 @@ export function CompanionHeroFilter({
             </div>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-border flex justify-end">
+          <div className="mt-5 pt-3 border-t border-border flex justify-end">
             <button
               type="button"
               onClick={() => setShowFilters(false)}
-              className="px-4 py-1.5 bg-primary text-primary-foreground rounded-full text-xs font-semibold hover:opacity-90 transition-opacity"
+              className="px-5 py-1.5 bg-primary text-primary-foreground rounded-full text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer"
             >
               Hoàn tất
             </button>
