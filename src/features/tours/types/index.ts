@@ -21,6 +21,7 @@ export type {
   Tour,
   TourApiItem,
   TourCategory,
+  TourCheckpoint,
   TourDetail,
   TourDetailFromApi,
   TourDetailImageApi,

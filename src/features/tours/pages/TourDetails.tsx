@@ -15,8 +15,14 @@ import {
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { getBookTourPath, PATHS } from '@/constants';
+import { useTourCheckpoints } from '@/features/tours/hooks/useTourCheckpoints';
 import { useTourDetail } from '@/features/tours/hooks/useTourDetail';
-import type { TourDetailFromApi, TourDetailScheduleApi } from '@/features/tours/types';
+import { useTourSchedules } from '@/features/tours/hooks/useTourSchedules';
+import type {
+  TourCheckpoint,
+  TourDetailFromApi,
+  TourDetailScheduleApi,
+} from '@/features/tours/types';
 import { useAppStore } from '@/store/useAppStore';
 
 // ============================================================
@@ -470,6 +476,74 @@ function ScheduleSection({
   );
 }
 
+/** Route checkpoints section */
+function CheckpointsSection({ checkpoints }: { checkpoints?: TourCheckpoint[] }) {
+  if (!checkpoints || checkpoints.length === 0) return null;
+
+  // Sort checkpoints by order
+  const sortedCheckpoints = [...checkpoints].sort((a, b) => a.checkpointOrder - b.checkpointOrder);
+
+  return (
+    <section>
+      <h2 className="mb-6 text-xl font-bold text-foreground md:text-2xl">Lộ trình các trạm dừng</h2>
+
+      <div className="relative flex flex-col gap-8 pl-8">
+        {/* Timeline line */}
+        <div className="absolute bottom-0 left-3 top-0 w-px bg-border" aria-hidden="true" />
+
+        {sortedCheckpoints.map((cp) => (
+          <div key={cp.checkpointId} className="relative group">
+            {/* Dot indicator */}
+            <div className="absolute -left-8 top-0 flex h-6 w-6 items-center justify-center rounded-full border-2 border-primary bg-background text-[10px] font-bold text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+              {cp.checkpointOrder}
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <div className="flex items-baseline justify-between gap-2 flex-wrap">
+                <h3 className="text-base font-bold text-foreground">{cp.checkpointName}</h3>
+                {cp.altitude !== null && cp.altitude !== undefined && cp.altitude !== 0 && (
+                  <span className="text-xs text-muted-foreground bg-secondary/80 px-2 py-0.5 rounded font-mono">
+                    Độ cao: {cp.altitude}m
+                  </span>
+                )}
+              </div>
+
+              {cp.description && (
+                <p className="text-sm text-muted-foreground leading-relaxed">{cp.description}</p>
+              )}
+
+              {cp.checkpointImageUrl && (
+                <img
+                  src={cp.checkpointImageUrl}
+                  alt={cp.checkpointName}
+                  onError={(e) => {
+                    if (e.currentTarget.src !== FALLBACK_IMAGE) {
+                      e.currentTarget.src = FALLBACK_IMAGE;
+                    }
+                  }}
+                  className="mt-1 h-44 w-full rounded-xl object-cover shadow-sm sm:h-56 sm:max-w-md"
+                  loading="lazy"
+                />
+              )}
+
+              {(cp.latitude || cp.longitude) && (
+                <div className="text-[11px] text-muted-foreground font-mono flex gap-3">
+                  {cp.latitude !== null && cp.latitude !== undefined && (
+                    <span>Vĩ độ: {cp.latitude.toFixed(5)}</span>
+                  )}
+                  {cp.longitude !== null && cp.longitude !== undefined && (
+                    <span>Kinh độ: {cp.longitude.toFixed(5)}</span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 /** Excludes section */
 function ExcludesSection({ excludes }: { excludes: string | null }) {
   const items = splitField(excludes);
@@ -607,6 +681,8 @@ export default function TourDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const user = useAppStore((s) => s.user);
   const { data: tour, isLoading, error, refetch, isFetching } = useTourDetail(id);
+  const { data: checkpoints } = useTourCheckpoints(id);
+  const { data: apiSchedules } = useTourSchedules(id);
 
   // Loading
   if (isLoading) {
@@ -656,6 +732,9 @@ export default function TourDetailsPage() {
             {/* Day-by-day itinerary */}
             <ItinerarySection tour={tour} />
 
+            {/* Checkpoints timeline */}
+            <CheckpointsSection checkpoints={checkpoints} />
+
             {/* Image gallery */}
             <ImageGallery key={tour.tourId} tour={tour} />
 
@@ -666,7 +745,11 @@ export default function TourDetailsPage() {
           {/* Right column — vendor + schedule */}
           <div className="lg:sticky lg:top-24 flex flex-col gap-6 self-start">
             <VendorCard tour={tour} />
-            <ScheduleSection schedules={tour.schedules} tourId={tour.tourId} isLoggedIn={!!user} />
+            <ScheduleSection
+              schedules={apiSchedules || tour.schedules}
+              tourId={tour.tourId}
+              isLoggedIn={!!user}
+            />
           </div>
         </div>
 

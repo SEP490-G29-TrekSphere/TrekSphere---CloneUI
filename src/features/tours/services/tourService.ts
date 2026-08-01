@@ -4,6 +4,7 @@ import type {
   BookingHistoryApiResponse,
   BookingHistoryParams,
   CreateBookingRequest,
+  TourCheckpoint,
   TourDetailFromApi,
   TourListApiResponse,
   TourListParams,
@@ -331,6 +332,16 @@ export const tourService = {
       undefined,
       queryParams
     );
+    return unwrapResponse(response);
+  },
+
+  async getTourCheckpoints(tourId: string): Promise<TourCheckpoint[]> {
+    const response = await ApiService<TourCheckpoint[]>(`/tours/${tourId}/checkpoints`, 'GET');
+    return unwrapResponse(response);
+  },
+
+  async getTourSchedules(tourId: string): Promise<TourDetailScheduleApi[]> {
+    const response = await ApiService<TourDetailScheduleApi[]>(`/tours/${tourId}/schedules`, 'GET');
     return unwrapResponse(response);
   },
 };
