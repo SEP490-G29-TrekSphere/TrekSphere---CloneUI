@@ -287,12 +287,20 @@ export interface TourDetailImageApi {
  */
 export interface TourDetailScheduleApi {
   scheduleId: string;
+  tourId: string;
   departureDate: string;
   returnDate: string;
   availableSlots: number;
   bookedSlots: number;
   price: number;
   status: 'OPEN' | 'CLOSED' | 'CANCELLED' | 'COMPLETED';
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+  updatedBy: string;
+  deletedAt: string | null;
+  deletedBy: string | null;
 }
 
 /**
@@ -309,8 +317,9 @@ export interface TourDetailFromApi {
   location: string;
   durationDays: number;
   basePrice: number;
-  minCapacity?: number;
+  minCapacity: number;
   maxCapacity: number;
+  totalDistanceKm: number;
   highlights: string | null;
   includes: string | null;
   excludes: string | null;
@@ -323,6 +332,9 @@ export interface TourDetailFromApi {
   vendorLogoUrl: string | null;
   vendorContactEmail: string | null;
   vendorContactPhone: string | null;
+  creatorId: string;
+  creatorName: string;
+  creatorEmail: string;
   images: TourDetailImageApi[];
   schedules: TourDetailScheduleApi[];
   averageRating: number | null;
@@ -459,4 +471,16 @@ export interface ApiResponseBookingDetailResponse {
     timestamp?: string;
   }>;
   timestamp?: string;
+}
+
+export interface TourCheckpoint {
+  checkpointId: string;
+  tourId: string;
+  checkpointName: string;
+  description: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  altitude: number | null;
+  checkpointOrder: number;
+  checkpointImageUrl: string | null;
 }
