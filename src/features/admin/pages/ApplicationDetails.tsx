@@ -1,9 +1,23 @@
 import { ArrowLeft, ExternalLink, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import { PATHS, ROLES } from '@/constants';
-import { AppBadge, AppButton, AppCard, AppSpinner } from '@/shared/ui';
+import { AppBadge, AppButton, AppCard, AppSpinner, ConfirmActionDialog } from '@/shared/ui';
 import { useAppStore } from '@/store/useAppStore';
-import { useVendorApplicationDetail } from '../hooks/useVendorApplications';
+import { toast } from '@/store/useToastStore';
+import {
+  useReviewVendorApplication,
+  useVendorApplicationDetail,
+} from '../hooks/useVendorApplications';
 import type { ApplicationStatus } from '../services/vendorApplicationService';
 
 export default function ApplicationDetails() {
@@ -11,6 +25,54 @@ export default function ApplicationDetails() {
   const currentUser = useAppStore((state) => state.user);
 
   const { data: application, isLoading, isError, error, refetch } = useVendorApplicationDetail(id);
+
+  const [confirmApproveOpen, setConfirmApproveOpen] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [rejectionError, setRejectionError] = useState('');
+
+  const { mutate: reviewApplication, isPending: isReviewing } = useReviewVendorApplication();
+
+  const handleApprove = () => {
+    if (!id) return;
+    reviewApplication(
+      { id, status: 'APPROVED' },
+      {
+        onSuccess: () => {
+          toast.success('Phê duyệt đơn đăng ký đối tác thành công.');
+          setConfirmApproveOpen(false);
+        },
+        onError: (err) => {
+          toast.error(err instanceof Error ? err.message : 'Phê duyệt thất bại. Vui lòng thử lại.');
+        },
+      }
+    );
+  };
+
+  const handleReject = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!id) return;
+    if (!rejectionReason.trim()) {
+      setRejectionError('Vui lòng nhập lý do từ chối.');
+      return;
+    }
+    setRejectionError('');
+    reviewApplication(
+      { id, status: 'REJECTED', rejectionReason: rejectionReason.trim() },
+      {
+        onSuccess: () => {
+          toast.success('Đã từ chối đơn đăng ký đối tác.');
+          setRejectOpen(false);
+          setRejectionReason('');
+        },
+        onError: (err) => {
+          toast.error(
+            err instanceof Error ? err.message : 'Từ chối đơn thất bại. Vui lòng thử lại.'
+          );
+        },
+      }
+    );
+  };
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return '—';
@@ -151,6 +213,30 @@ export default function ApplicationDetails() {
               </span>
             </div>
           </div>
+
+          {isAdmin && application.applicationStatus === 'PENDING' && (
+            <div className="flex flex-wrap items-center gap-3 self-start sm:self-center">
+              <AppButton
+                onClick={() => setConfirmApproveOpen(true)}
+                disabled={isReviewing}
+                className="bg-[#059669] hover:bg-[#047857] text-white font-bold rounded-xl text-xs px-4 py-2 border-none cursor-pointer"
+              >
+                Phê duyệt
+              </AppButton>
+              <AppButton
+                onClick={() => {
+                  setRejectionReason('');
+                  setRejectionError('');
+                  setRejectOpen(true);
+                }}
+                disabled={isReviewing}
+                variant="outline"
+                className="border-red-200 text-red-600 hover:bg-red-50 font-bold rounded-xl text-xs px-4 py-2 cursor-pointer"
+              >
+                Từ chối
+              </AppButton>
+            </div>
+          )}
         </div>
         {application.rejectionReason && (
           <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 font-medium">
@@ -346,6 +432,75 @@ export default function ApplicationDetails() {
           </AppCard>
         </div>
       </div>
+
+      {confirmApproveOpen && (
+        <ConfirmActionDialog
+          title="Xác nhận phê duyệt"
+          description={`Bạn có chắc chắn muốn phê duyệt đơn đăng ký đối tác cho công ty ${application.companyName}?`}
+          confirmLabel="Phê duyệt"
+          isPending={isReviewing}
+          onConfirm={handleApprove}
+          onCancel={() => setConfirmApproveOpen(false)}
+        />
+      )}
+
+      <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
+        <DialogContent className="max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">Từ chối đơn đăng ký</DialogTitle>
+            <DialogDescription>
+              Vui lòng nhập lý do từ chối đơn đăng ký của{' '}
+              <span className="font-semibold">{application.companyName}</span>.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleReject} className="space-y-4">
+            <div className="space-y-1.5">
+              <Textarea
+                placeholder="Nhập lý do từ chối..."
+                value={rejectionReason}
+                onChange={(e) => {
+                  setRejectionReason(e.target.value);
+                  if (e.target.value.trim()) {
+                    setRejectionError('');
+                  }
+                }}
+                className={`min-h-24 w-full ${rejectionError ? 'border-red-500 focus-visible:ring-red-200' : ''}`}
+                disabled={isReviewing}
+              />
+              {rejectionError && (
+                <p className="text-xs font-semibold text-red-600">{rejectionError}</p>
+              )}
+            </div>
+
+            <DialogFooter className="!mt-4 gap-2">
+              <AppButton
+                type="button"
+                variant="outline"
+                className="flex-1 rounded-full py-2.5"
+                onClick={() => setRejectOpen(false)}
+                disabled={isReviewing}
+              >
+                Hủy
+              </AppButton>
+              <AppButton
+                type="submit"
+                disabled={isReviewing}
+                className="flex-1 rounded-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 border-none cursor-pointer"
+              >
+                {isReviewing ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    Đang xử lý...
+                  </span>
+                ) : (
+                  'Từ chối'
+                )}
+              </AppButton>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

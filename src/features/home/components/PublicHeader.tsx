@@ -1,8 +1,8 @@
-import { Bell, Compass, FileText, Key, LogOut, User } from 'lucide-react';
+import { Bell, ClipboardList, Compass, FileText, Key, LogOut, User } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { queryClient } from '@/config/queryClient';
-import { PATHS } from '@/constants';
+import { PATHS, ROLES } from '@/constants';
 import { authService } from '@/features/auth';
 import { mockNotifications } from '@/features/notifications/data/mockNotifications';
 import { profileKeys } from '@/features/profile/hooks/useProfile';
@@ -64,6 +64,7 @@ export default function PublicHeader() {
 
   const initial = user?.name?.charAt(0).toUpperCase() ?? 'A';
   const unreadCount = mockNotifications.filter((n) => !n.read).length;
+  const isTrekker = user?.roles?.map((r) => r.toLowerCase()).includes(ROLES.TREKKER);
 
   // On the home page the header starts transparent over the cinematic hero
   const isHome = location.pathname === PATHS.HOME;
@@ -178,6 +179,16 @@ export default function PublicHeader() {
                       <Compass className="h-4 w-4" />
                       Tour của tôi
                     </Link>
+                    {isTrekker && (
+                      <Link
+                        to={PATHS.MY_VENDOR_APPLICATIONS}
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                      >
+                        <ClipboardList className="h-4 w-4" />
+                        Lịch sử đăng ký Vendor
+                      </Link>
+                    )}
                     <Link
                       to={PATHS.BLOG_LIST}
                       onClick={() => setDropdownOpen(false)}

@@ -32,6 +32,7 @@ export const PATHS = {
   BOOKING_DETAIL: '/bookings/:bookingId',
   BOOKING_PAYMENT: '/bookings/:bookingId/payment',
   MY_TOURS: '/my-tours',
+  MY_VENDOR_APPLICATIONS: '/my-vendor-applications',
   GROUPS: '/groups',
   GROUPS_CREATE: '/groups/create',
   GROUPS_JOIN: '/groups/:groupId/join',

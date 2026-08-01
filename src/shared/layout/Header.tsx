@@ -1,8 +1,8 @@
-import { Bell, Compass, FileText, Key, LogOut, Menu, User, X } from 'lucide-react';
+import { Bell, ClipboardList, Compass, FileText, Key, LogOut, Menu, User, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { queryClient } from '@/config/queryClient';
-import { PATHS } from '@/constants';
+import { PATHS, ROLES } from '@/constants';
 import { authService } from '@/features/auth';
 import { profileKeys } from '@/features/profile/hooks/useProfile';
 import { AppLogo } from '@/shared/ui';
@@ -84,6 +84,7 @@ export default function Header() {
   const avatarUrl = user?.avatarUrl;
   const initial = user?.name?.charAt(0).toUpperCase() ?? 'A';
   const showAvatar = Boolean(avatarUrl);
+  const isTrekker = user?.roles?.map((r) => r.toLowerCase()).includes(ROLES.TREKKER);
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background border-border px-4 shadow-sm md:px-6">
@@ -168,6 +169,16 @@ export default function Header() {
                   <Compass className="h-4 w-4" />
                   Tour của tôi
                 </Link>
+                {isTrekker && (
+                  <Link
+                    to={PATHS.MY_VENDOR_APPLICATIONS}
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  >
+                    <ClipboardList className="h-4 w-4" />
+                    Lịch sử đăng ký Vendor
+                  </Link>
+                )}
                 <Link
                   to={PATHS.BLOG_LIST}
                   onClick={() => setDropdownOpen(false)}

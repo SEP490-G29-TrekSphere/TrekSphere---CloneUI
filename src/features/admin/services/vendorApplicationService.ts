@@ -1,4 +1,4 @@
-import { type ApiResponse, ApiService } from '@/config/apiClient';
+import { type ApiResponse, ApiService, ApiUpload } from '@/config/apiClient';
 
 /**
  * Trạng thái của đơn đăng ký Vendor.
@@ -137,6 +137,101 @@ export const vendorApplicationService = {
     const response = await ApiService<VendorApplicationDetail>(
       `/vendors/applications/${id}`,
       'GET'
+    );
+    return unwrapResponse(response);
+  },
+
+  /**
+   * Lấy danh sách đơn đăng ký làm Vendor của chính user hiện tại (Trekker).
+   * GET /vendors/applications/my-history
+   */
+  async getMyApplications(
+    filter: VendorApplicationFilter = {}
+  ): Promise<VendorApplicationsResponse> {
+    const { status, keyword, page = 0, size = 10, sortBy = 'createdAt', sortDir = 'desc' } = filter;
+
+    const params: Record<string, string> = {
+      page: String(page),
+      size: String(size),
+      sortBy,
+      sortDir,
+    };
+
+    if (status && status !== 'ALL') {
+      params.status = status;
+    }
+    if (keyword && keyword.trim() !== '') {
+      params.keyword = keyword.trim();
+    }
+
+    const response = await ApiService<VendorApplicationsResponse>(
+      '/vendors/applications/my-history',
+      'GET',
+      undefined,
+      params
+    );
+
+    return unwrapResponse(response);
+  },
+
+  /**
+   * Tạo đơn đăng ký bản nháp (Trekker).
+   * POST /vendors/applications
+   */
+  async createDraftApplication(formData: FormData): Promise<VendorApplicationDetail> {
+    const response = await ApiUpload<VendorApplicationDetail>('/vendors/applications', formData);
+    return unwrapResponse(response);
+  },
+
+  /**
+   * Cập nhật thông tin đơn đăng ký (Trekker).
+   * PUT /vendors/applications/{id}
+   */
+  async updateApplication(id: string, formData: FormData): Promise<VendorApplicationDetail> {
+    const response = await ApiUpload<VendorApplicationDetail>(
+      `/vendors/applications/${id}`,
+      formData,
+      'PUT'
+    );
+    return unwrapResponse(response);
+  },
+
+  /**
+   * Nộp đơn đăng ký (DRAFT -> PENDING).
+   * POST /vendors/applications/{id}/submit
+   */
+  async submitApplication(id: string): Promise<VendorApplicationDetail> {
+    const response = await ApiService<VendorApplicationDetail>(
+      `/vendors/applications/${id}/submit`,
+      'POST'
+    );
+    return unwrapResponse(response);
+  },
+
+  /**
+   * Nộp lại đơn đăng ký bị từ chối (REJECTED -> PENDING).
+   * POST /vendors/applications/{id}/resubmit
+   */
+  async resubmitApplication(id: string): Promise<VendorApplicationDetail> {
+    const response = await ApiService<VendorApplicationDetail>(
+      `/vendors/applications/${id}/resubmit`,
+      'POST'
+    );
+    return unwrapResponse(response);
+  },
+
+  /**
+   * Phê duyệt hoặc từ chối đơn đăng ký (Admin).
+   * POST /vendors/applications/{id}/review
+   */
+  async reviewApplication(
+    id: string,
+    payload: { status: ApplicationStatus; rejectionReason?: string }
+  ): Promise<VendorApplicationDetail> {
+    const response = await ApiService<VendorApplicationDetail>(
+      `/vendors/applications/${id}/review`,
+      'POST',
+      payload
     );
     return unwrapResponse(response);
   },

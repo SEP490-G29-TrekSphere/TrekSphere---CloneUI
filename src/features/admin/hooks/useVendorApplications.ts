@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  type ApplicationStatus,
   type VendorApplicationFilter,
   type VendorApplicationsResponse,
   vendorApplicationService,
@@ -46,5 +47,28 @@ export function useVendorApplicationStats() {
     queryKey: vendorApplicationKeys.stats(),
     queryFn: () => vendorApplicationService.getStats(),
     staleTime: 60 * 1000,
+  });
+}
+
+/**
+ * Hook mutation phê duyệt hoặc từ chối đơn đăng ký làm Vendor (Admin).
+ */
+export function useReviewVendorApplication() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      status,
+      rejectionReason,
+    }: {
+      id: string;
+      status: ApplicationStatus;
+      rejectionReason?: string;
+    }) => vendorApplicationService.reviewApplication(id, { status, rejectionReason }),
+    onSuccess: () => {
+      // Invalidate toàn bộ cache liên quan đến đơn đăng ký của admin để làm mới dữ liệu
+      queryClient.invalidateQueries({ queryKey: vendorApplicationKeys.all });
+    },
   });
 }

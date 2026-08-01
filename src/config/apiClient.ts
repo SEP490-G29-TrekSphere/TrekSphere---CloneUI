@@ -348,14 +348,24 @@ const handleError = (error: unknown): ApiResponse<never> => {
 export const ApiUpload = async <T>(
   path: string,
   formData: FormData,
+  methodOrProgress?: 'POST' | 'PUT' | 'PATCH' | ((progressEvent: AxiosProgressEvent) => void),
   onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
 ): Promise<ApiResponse<T>> => {
+  let method: 'POST' | 'PUT' | 'PATCH' = 'POST';
+  let progress = onUploadProgress;
+
+  if (typeof methodOrProgress === 'string') {
+    method = methodOrProgress;
+  } else if (typeof methodOrProgress === 'function') {
+    progress = methodOrProgress;
+  }
+
   try {
     const response = await apiClient.request({
       url: path,
-      method: 'POST',
+      method,
       data: formData,
-      onUploadProgress,
+      onUploadProgress: progress,
     });
     return handleResponse<T>(response);
   } catch (error) {
