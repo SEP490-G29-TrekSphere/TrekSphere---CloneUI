@@ -10,6 +10,7 @@ import {
   PenSquare,
   Phone,
   ShieldCheck,
+  Star,
   Upload,
   User,
   Users,
@@ -26,7 +27,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { getBookingPaymentPath } from '@/constants/paths';
-import { profileService } from '@/features/profile/services/profileService';
 import { useBookingCountdown } from '@/features/tours/hooks/useBookingCountdown';
 import { PAYMENT_DEADLINE_SECONDS, tourService } from '@/features/tours/services/tourService';
 import type { BookingDetailResponse } from '@/features/tours/types';
@@ -58,6 +58,12 @@ export default function BookingDetail() {
   const [proofPreviewUrl, setProofPreviewUrl] = useState<string>('');
   const [updatingProof, setUpdatingProof] = useState(false);
   const [proofError, setProofError] = useState('');
+
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewContent, setReviewContent] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewError, setReviewError] = useState('');
 
   const isPendingPayment =
     booking?.bookingStatus === 'PENDING' &&
@@ -100,7 +106,40 @@ export default function BookingDetail() {
   }, [bookingId]);
 
   const handleWriteReview = () => {
-    toast.info('Tính năng đánh giá tour đang được phát triển!');
+    setReviewRating(5);
+    setReviewContent('');
+    setReviewError('');
+    setIsReviewModalOpen(true);
+  };
+
+  const handleConfirmReview = async () => {
+    if (!booking) return;
+    const trimmedContent = reviewContent.trim();
+    if (!trimmedContent) {
+      setReviewError('Vui lòng nhập nội dung đánh giá.');
+      return;
+    }
+
+    setReviewError('');
+    setSubmittingReview(true);
+    try {
+      await tourService.createReview({
+        bookingId: booking.bookingId,
+        rating: reviewRating,
+        content: trimmedContent,
+      });
+      // Update local booking state so review button updates to "Đã đánh giá"
+      setBooking({
+        ...booking,
+        reviewed: true,
+      });
+      setIsReviewModalOpen(false);
+      toast.success('Gửi đánh giá thành công! Đánh giá đang được kiểm duyệt.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Không thể gửi đánh giá. Vui lòng thử lại.');
+    } finally {
+      setSubmittingReview(false);
+    }
   };
 
   const handleConfirmCancel = async () => {
@@ -145,7 +184,7 @@ export default function BookingDetail() {
 
   const handleConfirmUpdateProof = async () => {
     if (!booking) return;
-    if (!proofFile && !proofPreviewUrl) {
+    if (!proofFile) {
       setProofError('Vui lòng chọn ảnh minh chứng thanh toán.');
       return;
     }
@@ -153,22 +192,7 @@ export default function BookingDetail() {
     setProofError('');
     setUpdatingProof(true);
     try {
-      let finalProofUrl = proofPreviewUrl;
-
-      if (proofFile) {
-        const uploadRes = await profileService.uploadFile(proofFile, 'payment-proofs');
-        if (uploadRes.data) {
-          finalProofUrl = uploadRes.data;
-        } else if (uploadRes.error) {
-          throw new Error(uploadRes.error);
-        }
-      }
-
-      if (!finalProofUrl || finalProofUrl.startsWith('blob:')) {
-        throw new Error('Không thể tải ảnh minh chứng lên hệ thống');
-      }
-
-      const updatedBooking = await tourService.updatePaymentProof(booking.bookingId, finalProofUrl);
+      const updatedBooking = await tourService.updatePaymentProof(booking.bookingId, proofFile);
       setBooking(updatedBooking);
       setIsProofModalOpen(false);
       setProofFile(null);
@@ -606,10 +630,15 @@ export default function BookingDetail() {
               {booking.bookingStatus === 'COMPLETED' && (
                 <AppButton
                   onClick={handleWriteReview}
-                  className="w-full bg-[#0B3025] hover:bg-[#072019] text-white font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-sm transition-colors border-none text-xs cursor-pointer"
+                  disabled={booking.reviewed}
+                  className={`w-full font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-sm transition-colors border-none text-xs cursor-pointer ${
+                    booking.reviewed
+                      ? 'bg-zinc-200 text-zinc-500 cursor-not-allowed hover:bg-zinc-200'
+                      : 'bg-[#0B3025] hover:bg-[#072019] text-white'
+                  }`}
                 >
                   <PenSquare className="h-4 w-4" />
-                  Viết đánh giá
+                  {booking.reviewed ? 'Đã đánh giá' : 'Viết đánh giá'}
                 </AppButton>
               )}
 
@@ -789,6 +818,100 @@ export default function BookingDetail() {
                 </>
               ) : (
                 'Lưu minh chứng'
+              )}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Review Writing Dialog */}
+      <Dialog open={isReviewModalOpen} onOpenChange={setIsReviewModalOpen}>
+        <DialogContent className="max-w-md bg-white rounded-3xl p-6 border border-[#E5E4DE]">
+          <DialogHeader className="space-y-2">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-500 border border-amber-100 mb-1">
+              <Star className="h-6 w-6 fill-current" />
+            </div>
+            <DialogTitle className="text-xl font-extrabold text-[#0B3025]">
+              Viết đánh giá tour
+            </DialogTitle>
+            <DialogDescription className="text-xs text-zinc-500 font-medium leading-relaxed">
+              Chia sẻ trải nghiệm thực tế của bạn về chuyến đi để giúp cộng đồng Trekker có thêm
+              thông tin tham khảo. Đánh giá của bạn sẽ hiển thị công khai sau khi được phê duyệt.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 my-3 text-xs">
+            {/* Star Rating Select */}
+            <div>
+              <span className="block text-zinc-700 font-bold mb-2">Đánh giá của bạn</span>
+              <div className="flex items-center gap-1.5">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setReviewRating(star)}
+                    className="p-1 cursor-pointer transition-transform hover:scale-110 focus:outline-none"
+                  >
+                    <Star
+                      className={`h-7 w-7 ${
+                        star <= reviewRating
+                          ? 'fill-amber-400 text-amber-400'
+                          : 'text-zinc-300 hover:text-amber-300'
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Content Textarea */}
+            <div>
+              <label htmlFor="review-content-input" className="block text-zinc-700 font-bold mb-2">
+                Nội dung đánh giá <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                id="review-content-input"
+                rows={4}
+                value={reviewContent}
+                onChange={(e) => {
+                  setReviewContent(e.target.value);
+                  if (e.target.value.trim()) setReviewError('');
+                }}
+                placeholder="Chia sẻ cảm nhận của bạn về hướng dẫn viên, cung đường trekking, chất lượng dịch vụ..."
+                className={`w-full p-3 rounded-2xl border bg-zinc-50/50 text-xs font-semibold text-zinc-800 focus:outline-none focus:bg-white transition-colors ${
+                  reviewError
+                    ? 'border-red-500 focus:border-red-600'
+                    : 'border-[#E5E4DE] focus:border-[#0B3025]'
+                }`}
+              />
+              {reviewError && (
+                <p className="text-[11px] text-red-500 font-bold mt-1">{reviewError}</p>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-4">
+            <button
+              type="button"
+              onClick={() => setIsReviewModalOpen(false)}
+              disabled={submittingReview}
+              className="flex-1 py-3 px-4 rounded-2xl border border-[#E5E4DE] text-zinc-700 font-bold text-xs hover:bg-zinc-50 transition-colors cursor-pointer disabled:opacity-50"
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmReview}
+              disabled={submittingReview}
+              className="flex-1 py-3 px-4 rounded-2xl bg-[#0B3025] hover:bg-[#072019] text-white font-bold text-xs transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {submittingReview ? (
+                <>
+                  <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <span>Đang gửi...</span>
+                </>
+              ) : (
+                'Gửi đánh giá'
               )}
             </button>
           </DialogFooter>

@@ -83,6 +83,29 @@ export function ConfirmPaymentModal({
           </div>
         </div>
 
+        {/* Proof of Payment Image Section */}
+        {booking.proofImageUrl ? (
+          <div className="mb-5 rounded-2xl border border-gray-200 bg-white p-3">
+            <span className="block text-[11px] font-bold text-gray-400 mb-2 uppercase tracking-wide">
+              Hình ảnh minh chứng thanh toán
+            </span>
+            <div className="overflow-hidden rounded-xl border border-gray-100 max-h-56 bg-zinc-50 flex justify-center">
+              <img
+                src={booking.proofImageUrl}
+                alt="Minh chứng thanh toán từ khách hàng"
+                className="max-h-52 object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="mb-5 rounded-2xl bg-amber-50 border border-amber-100 p-4 text-xs text-amber-800 text-center">
+            Khách hàng chưa tải lên hình ảnh minh chứng.
+          </div>
+        )}
+
         {/* Notice Callout Box */}
         <div className="mb-8 flex items-start gap-3 rounded-2xl bg-[#E4EBE6] p-4 text-xs text-[#06261D]">
           <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#06261D]" />

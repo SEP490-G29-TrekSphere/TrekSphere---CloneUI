@@ -5,7 +5,6 @@ import { useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 import * as z from 'zod';
 import { getBookingDetailPath } from '@/constants/paths';
-import { profileService } from '@/features/profile/services/profileService';
 import { useBookingCountdown } from '@/features/tours/hooks/useBookingCountdown';
 import { PAYMENT_DEADLINE_SECONDS, tourService } from '@/features/tours/services/tourService';
 import type { BookingDetailResponse } from '@/features/tours/types';
@@ -154,19 +153,7 @@ export default function PayBooking() {
 
     setIsMutating(true);
     try {
-      let proofImageUrl = '';
-      const uploadRes = await profileService.uploadFile(data.paymentProof, 'payment-proofs');
-      if (uploadRes.data) {
-        proofImageUrl = uploadRes.data;
-      } else if (uploadRes.error) {
-        throw new Error(uploadRes.error);
-      }
-
-      if (!proofImageUrl) {
-        throw new Error('Không thể tải ảnh minh chứng lên hệ thống');
-      }
-
-      await tourService.updatePaymentProof(bookingId, proofImageUrl);
+      await tourService.updatePaymentProof(bookingId, data.paymentProof);
 
       toast.success('Cập nhật minh chứng thanh toán thành công!');
       navigate(getBookingDetailPath(bookingId));

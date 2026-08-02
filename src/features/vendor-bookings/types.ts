@@ -17,6 +17,7 @@ export interface VendorBookingItem {
   paymentStatus: PaymentStatus;
   createdAt: string;
   customerName?: string; // bổ sung hỗ trợ nếu BE/mock có
+  proofImageUrl?: string;
 }
 
 export interface VendorBookingFilter {

@@ -433,6 +433,7 @@ export interface BookingDetailResponse {
   userFullName: string;
   userPhone: string;
   participants: BookingParticipantFromApi[];
+  reviewed?: boolean;
 }
 
 export interface BookingCancelRequest {
@@ -483,4 +484,75 @@ export interface TourCheckpoint {
   altitude: number | null;
   checkpointOrder: number;
   checkpointImageUrl: string | null;
+}
+
+export interface ReviewItem {
+  reviewId: string;
+  rating: number;
+  content: string;
+  status: 'PENDING' | 'APPROVED' | 'HIDDEN';
+  userId: string;
+  userFullName: string;
+  userAvatarUrl: string | null;
+  tourId: string;
+  tourName: string;
+  tourCoverImageUrl: string | null;
+  bookingId: string;
+  bookingCode: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReviewSummaryResponse {
+  averageRating: number;
+  totalReviews: number;
+  fiveStar: number;
+  fourStar: number;
+  threeStar: number;
+  twoStar: number;
+  oneStar: number;
+  reviews: {
+    content: ReviewItem[];
+    pageNumber: number;
+    pageSize: number;
+    totalElements: number;
+    totalPages: number;
+    last: boolean;
+  };
+}
+
+export interface ReviewListParams {
+  rating?: number;
+  keyword?: string;
+  page?: number;
+  size?: number;
+  sortBy?: string;
+  sortDir?: string;
+}
+
+export interface CreateReviewRequest {
+  bookingId: string;
+  rating: number;
+  content: string;
+}
+
+export interface ReviewResponse {
+  reviewId: string;
+  rating: number;
+  content: string;
+  status: 'PENDING' | 'APPROVED' | 'HIDDEN';
+  userId: string;
+  userFullName: string;
+  userAvatarUrl: string | null;
+  tourId: string;
+  tourName: string;
+  tourCoverImageUrl: string | null;
+  bookingId: string;
+  bookingCode: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateReviewStatusRequest {
+  status: 'PENDING' | 'APPROVED' | 'HIDDEN';
 }

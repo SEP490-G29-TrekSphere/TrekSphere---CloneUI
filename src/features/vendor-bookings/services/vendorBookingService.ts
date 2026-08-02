@@ -20,6 +20,7 @@ interface ApiBookingDto {
   paymentStatus: 'PENDING' | 'PAID' | 'REFUNDED' | 'PARTIALLY_REFUNDED';
   createdAt: string;
   customerName?: string;
+  proofImageUrl?: string | null;
 }
 
 interface PaginationBookingDto {
@@ -55,6 +56,7 @@ function mapBookingItem(dto: ApiBookingDto): VendorBookingItem {
     paymentStatus: dto.paymentStatus,
     createdAt: dto.createdAt,
     customerName: dto.customerName,
+    proofImageUrl: dto.proofImageUrl ?? undefined,
   };
 }
 

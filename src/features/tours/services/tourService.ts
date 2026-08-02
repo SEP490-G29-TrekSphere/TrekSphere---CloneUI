@@ -1,9 +1,13 @@
-import { type ApiResponse, ApiService } from '@/config/apiClient';
+import { type ApiResponse, ApiService, ApiUpload } from '@/config/apiClient';
 import type {
   BookingDetailResponse,
   BookingHistoryApiResponse,
   BookingHistoryParams,
   CreateBookingRequest,
+  CreateReviewRequest,
+  ReviewListParams,
+  ReviewResponse,
+  ReviewSummaryResponse,
   TourCheckpoint,
   TourDetailFromApi,
   TourDetailScheduleApi,
@@ -279,14 +283,14 @@ export const tourService = {
     });
   },
 
-  async updatePaymentProof(
-    bookingId: string,
-    proofImageUrl: string
-  ): Promise<BookingDetailResponse> {
-    const response = await ApiService<BookingDetailResponse>(
+  async updatePaymentProof(bookingId: string, file: File): Promise<BookingDetailResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await ApiUpload<BookingDetailResponse>(
       `/bookings/${bookingId}/payment-proof`,
-      'PUT',
-      { proofImageUrl }
+      formData,
+      'POST'
     );
     return unwrapResponse(response);
   },
@@ -343,6 +347,52 @@ export const tourService = {
 
   async getTourSchedules(tourId: string): Promise<TourDetailScheduleApi[]> {
     const response = await ApiService<TourDetailScheduleApi[]>(`/tours/${tourId}/schedules`, 'GET');
+    return unwrapResponse(response);
+  },
+
+  async getTourReviews(
+    tourId: string,
+    params: ReviewListParams = {}
+  ): Promise<ReviewSummaryResponse> {
+    const searchParams = new URLSearchParams();
+    if (params.rating !== undefined) {
+      searchParams.set('rating', String(params.rating));
+    }
+    if (params.keyword !== undefined && params.keyword !== '') {
+      searchParams.set('keyword', params.keyword);
+    }
+    if (params.page !== undefined) {
+      searchParams.set('page', String(params.page));
+    }
+    if (params.size !== undefined) {
+      searchParams.set('size', String(params.size));
+    }
+    if (params.sortBy) {
+      searchParams.set('sortBy', params.sortBy);
+    }
+    if (params.sortDir) {
+      searchParams.set('sortDir', params.sortDir);
+    }
+    const queryString = searchParams.toString();
+    const path = queryString
+      ? `/tours/${tourId}/reviews?${queryString}`
+      : `/tours/${tourId}/reviews`;
+    const response = await ApiService<ReviewSummaryResponse>(path, 'GET');
+    return unwrapResponse(response);
+  },
+
+  async createReview(reviewData: CreateReviewRequest): Promise<ReviewResponse> {
+    const response = await ApiService<ReviewResponse>('/reviews', 'POST', reviewData);
+    return unwrapResponse(response);
+  },
+
+  async updateReviewStatus(
+    reviewId: string,
+    status: 'PENDING' | 'APPROVED' | 'HIDDEN'
+  ): Promise<ReviewResponse> {
+    const response = await ApiService<ReviewResponse>(`/reviews/${reviewId}/status`, 'PATCH', {
+      status,
+    });
     return unwrapResponse(response);
   },
 };

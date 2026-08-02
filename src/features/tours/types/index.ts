@@ -13,11 +13,16 @@ export type {
   BookingParticipantRequest,
   BookingStatus,
   CreateBookingRequest,
+  CreateReviewRequest,
   GalleryImage,
   LevelBadgeVariant,
   LevelClass,
   ParticipantGender,
   PaymentStatus,
+  ReviewItem,
+  ReviewListParams,
+  ReviewResponse,
+  ReviewSummaryResponse,
   Tour,
   TourApiItem,
   TourCategory,
@@ -36,6 +41,7 @@ export type {
   TourTabId,
   TourTabState,
   TourWithDefaults,
+  UpdateReviewStatusRequest,
 } from './tour';
 
 export { levelBadgeVariants } from './tour';
