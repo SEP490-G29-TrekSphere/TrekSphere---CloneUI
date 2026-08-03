@@ -22,7 +22,7 @@ import {
   Settings as SettingsIcon,
   Smile,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import * as z from 'zod';
@@ -54,7 +54,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PATHS } from '@/constants';
 import type { Conversation, DetailMessage } from '@/features/chat/types/types';
+import { AppSpinner } from '@/shared/ui';
+import { useAppStore } from '@/store/useAppStore';
 import { toast } from '@/store/useToastStore';
+import { useChatConversations } from '../hooks/useChatConversations';
+import { useChatMessages } from '../hooks/useChatMessages';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -84,97 +88,6 @@ function getBadgeVariant(
   }
 }
 
-// ─── Mock Data ───────────────────────────────────────────────────────────────
-
-const mockConversations: Conversation[] = [
-  {
-    id: '1',
-    userName: 'Nguyễn Văn A',
-    avatarUrl: '',
-    lastMessage: 'Cảm ơn, mình đã nhận...',
-    lastMessageTime: '2m',
-    unread: false,
-    tag: { text: 'TÀ NĂNG - PHAN DŨNG', variant: 'accent' },
-    timestamp: '2026-07-13T10:45:00Z',
-    online: true,
-    startDate: 'Oct 12, 2025',
-  },
-  {
-    id: '2',
-    userName: 'Lê Thị B',
-    avatarUrl: '',
-    lastMessage: 'Khi nào đoàn mình xuất phát vậy ạ?',
-    lastMessageTime: '1h',
-    unread: true,
-    tag: { text: 'CHUẨN BỊ', variant: 'accent' },
-    timestamp: '2026-07-13T09:12:00Z',
-    online: false,
-    startDate: 'Oct 14, 2025',
-  },
-  {
-    id: '3',
-    userName: 'Trần Văn C',
-    avatarUrl: '',
-    lastMessage: 'Tôi muốn nâng cấp gói bảo hiểm du lịch...',
-    lastMessageTime: '4h',
-    unread: false,
-    tag: { text: 'FEEDBACK', variant: 'outline' },
-    timestamp: '2026-07-13T06:20:00Z',
-    online: true,
-    startDate: 'Oct 15, 2025',
-  },
-];
-
-const initialMockMessages: Record<string, DetailMessage[]> = {
-  '1': [
-    {
-      id: 'm1_1',
-      sender: 'user',
-      text: 'Chào bạn, mình muốn xác nhận lại lịch trình Tour Tà Năng - Phan Dũng vào cuối tuần này.',
-      time: '10:30 AM',
-    },
-    {
-      id: 'm1_2',
-      sender: 'agent',
-      text: 'Chào anh A! TrekSphere đã nhận được yêu cầu của anh. Em gửi anh bản lịch trình chi tiết đã được cập nhật nhé.',
-      time: '10:32 AM',
-    },
-    {
-      id: 'm1_3',
-      sender: 'agent',
-      time: '10:32 AM',
-      isSeen: true,
-      attachment: {
-        name: 'Lich-trinh-Ta-Nang.pdf',
-        size: '2.4 MB',
-        type: 'PDF Document',
-      },
-    },
-    {
-      id: 'm1_4',
-      sender: 'user',
-      text: 'Cảm ơn, mình đã nhận được file. Cho mình hỏi thêm về danh sách đồ dùng cá nhân cần mang theo được không?',
-      time: '10:35 AM',
-    },
-  ],
-  '2': [
-    {
-      id: 'm2_1',
-      sender: 'user',
-      text: 'Khi nào đoàn mình xuất phát vậy ạ?',
-      time: '09:12 AM',
-    },
-  ],
-  '3': [
-    {
-      id: 'm3_1',
-      sender: 'user',
-      text: 'Tôi muốn nâng cấp gói bảo hiểm du lịch lên hạng VIP được không?',
-      time: '06:20 AM',
-    },
-  ],
-};
-
 // ─── Form schema ─────────────────────────────────────────────────────────────
 
 const chatMessageSchema = z.object({
@@ -189,12 +102,26 @@ type ChatMessageFormValues = z.infer<typeof chatMessageSchema>;
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function ChatList() {
-  const [conversations, setConversations] = useState<Conversation[]>(mockConversations);
-  const [messagesMap, setMessagesMap] =
-    useState<Record<string, DetailMessage[]>>(initialMockMessages);
-  const [selectedId, setSelectedId] = useState<string | null>('1');
+  const { user } = useAppStore();
+  const [page, _setPage] = useState(1);
+  const [size, _setSize] = useState(10);
+  const { data: apiResponse, isLoading, error } = useChatConversations({ page, size });
+
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [localMessages, setLocalMessages] = useState<Record<string, DetailMessage[]>>({});
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
+
+  const {
+    data: messagesResponse,
+    isLoading: isLoadingMessages,
+    error: messagesError,
+  } = useChatMessages({
+    id: selectedId || '',
+    page: 1,
+    size: 50,
+  });
 
   const {
     register,
@@ -211,8 +138,85 @@ export default function ChatList() {
     reset({ message: '' });
   }, [selectedId, reset]);
 
+  // Sync API response to local state
+  useEffect(() => {
+    if (apiResponse?.content) {
+      const mapped: Conversation[] = apiResponse.content.map((item) => {
+        const date = new Date(item.lastMessageAt);
+        const lastMessageTime = !Number.isNaN(date.getTime())
+          ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          : '';
+
+        return {
+          id: item.conversationId,
+          userName: item.title,
+          avatarUrl: item.avatarUrl || '',
+          lastMessage: item.lastMessageContent || '',
+          lastMessageTime,
+          unread: item.unreadCount > 0,
+          timestamp: item.lastMessageAt,
+          online: false,
+          startDate: undefined,
+          tag: {
+            text: item.conversationType === 'DIRECT' ? 'DIRECT' : 'GROUP',
+            variant: item.conversationType === 'DIRECT' ? 'secondary' : 'accent',
+          },
+        };
+      });
+      setConversations(mapped);
+
+      if (mapped.length > 0) {
+        setSelectedId((prev) => {
+          if (prev && mapped.some((c) => c.id === prev)) return prev;
+          return mapped[0].id;
+        });
+      } else {
+        setSelectedId(null);
+      }
+    }
+  }, [apiResponse]);
+
+  // Error toast feedback
+  useEffect(() => {
+    if (error) {
+      toast.error('Không thể tải danh sách phòng chat');
+    }
+  }, [error]);
+
+  useEffect(() => {
+    if (messagesError) {
+      toast.error('Không thể tải lịch sử tin nhắn');
+    }
+  }, [messagesError]);
+
   const selectedConversation = conversations.find((c) => c.id === selectedId);
-  const currentMessages = selectedId ? messagesMap[selectedId] || [] : [];
+
+  const currentMessages = useMemo(() => {
+    if (!selectedId) return [];
+
+    const apiMsgs: DetailMessage[] = (messagesResponse?.content || [])
+      .map((msg) => {
+        const date = new Date(msg.createdAt);
+        const time = !Number.isNaN(date.getTime())
+          ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          : '';
+
+        const isSelf = user?.id === msg.senderId;
+        const sender: 'user' | 'agent' = isSelf ? 'agent' : 'user';
+
+        return {
+          id: msg.messageId,
+          sender,
+          text: msg.content,
+          time,
+          isSeen: msg.isRead,
+        };
+      })
+      .reverse();
+
+    const localMsgs = localMessages[selectedId] || [];
+    return [...apiMsgs, ...localMsgs];
+  }, [messagesResponse, selectedId, user?.id, localMessages]);
 
   const filteredConversations = conversations
     .filter((c) => {
@@ -238,7 +242,7 @@ export default function ChatList() {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       isSeen: false,
     };
-    setMessagesMap((prev) => ({
+    setLocalMessages((prev) => ({
       ...prev,
       [selectedId]: [...(prev[selectedId] || []), newMsg],
     }));
@@ -400,7 +404,11 @@ export default function ChatList() {
 
             {/* Conversation list */}
             <ScrollArea className="flex-1">
-              {filteredConversations.length === 0 ? (
+              {isLoading ? (
+                <div className="flex h-32 items-center justify-center">
+                  <AppSpinner size="lg" className="text-primary" />
+                </div>
+              ) : filteredConversations.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
                   <MessageSquare className="mb-2 h-8 w-8 stroke-1" />
                   <p className="text-sm">Không tìm thấy cuộc trò chuyện nào</p>
@@ -549,90 +557,101 @@ export default function ChatList() {
                   <MessageScroller className="flex-1 bg-muted/5">
                     <MessageScrollerViewport className="px-6 py-6">
                       <MessageScrollerContent>
-                        {/* Date divider */}
-                        {selectedConversation.startDate && (
-                          <MessageScrollerItem messageId="start-marker">
-                            <Marker variant="separator">
-                              <MarkerContent className="text-[11px] font-bold">
-                                Cuộc hội thoại bắt đầu • {(() => {
-                                  const d = new Date(selectedConversation.startDate!);
-                                  return Number.isNaN(d.getTime())
-                                    ? selectedConversation.startDate
-                                    : new Intl.DateTimeFormat('vi-VN').format(d);
-                                })()}
-                              </MarkerContent>
-                            </Marker>
-                          </MessageScrollerItem>
+                        {isLoadingMessages ? (
+                          <div className="flex h-32 items-center justify-center">
+                            <AppSpinner size="lg" className="text-primary" />
+                          </div>
+                        ) : (
+                          <>
+                            {/* Date divider */}
+                            {selectedConversation.startDate && (
+                              <MessageScrollerItem messageId="start-marker">
+                                <Marker variant="separator">
+                                  <MarkerContent className="text-[11px] font-bold">
+                                    Cuộc hội thoại bắt đầu • {(() => {
+                                      const d = new Date(selectedConversation.startDate!);
+                                      return Number.isNaN(d.getTime())
+                                        ? selectedConversation.startDate
+                                        : new Intl.DateTimeFormat('vi-VN').format(d);
+                                    })()}
+                                  </MarkerContent>
+                                </Marker>
+                              </MessageScrollerItem>
+                            )}
+
+                            {/* Messages */}
+                            {currentMessages.map((msg) => {
+                              const isAgent = msg.sender === 'agent';
+                              const align = isAgent ? 'end' : 'start';
+
+                              return (
+                                <MessageScrollerItem
+                                  key={msg.id}
+                                  messageId={msg.id}
+                                  scrollAnchor={!isAgent}
+                                >
+                                  <Message align={align}>
+                                    {/* Avatar (user/customer side only) */}
+                                    {!isAgent && (
+                                      <MessageAvatar>
+                                        <Avatar className="bg-primary/10 text-primary font-bold text-xs">
+                                          {selectedConversation.avatarUrl ? (
+                                            <AvatarImage
+                                              src={selectedConversation.avatarUrl}
+                                              alt={selectedConversation.userName}
+                                            />
+                                          ) : null}
+                                          <AvatarFallback>
+                                            {getInitials(selectedConversation.userName)}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                      </MessageAvatar>
+                                    )}
+
+                                    <MessageContent>
+                                      {/* Attachment message */}
+                                      {msg.attachment ? (
+                                        <Attachment state="done">
+                                          <AttachmentMedia
+                                            variant="icon"
+                                            className="bg-red-100 text-red-600"
+                                          >
+                                            <FileText />
+                                          </AttachmentMedia>
+                                          <AttachmentContent>
+                                            <AttachmentTitle>{msg.attachment.name}</AttachmentTitle>
+                                            <AttachmentDescription>
+                                              {msg.attachment.size} · {msg.attachment.type}
+                                            </AttachmentDescription>
+                                          </AttachmentContent>
+                                          <AttachmentActions>
+                                            <AttachmentAction aria-label="Tải về">
+                                              <Download />
+                                            </AttachmentAction>
+                                          </AttachmentActions>
+                                        </Attachment>
+                                      ) : (
+                                        /* Text message bubble */
+                                        <Bubble
+                                          variant={isAgent ? 'default' : 'muted'}
+                                          align={align}
+                                        >
+                                          <BubbleContent>{msg.text}</BubbleContent>
+                                        </Bubble>
+                                      )}
+
+                                      {/* Timestamp footer */}
+                                      <MessageFooter>
+                                        {msg.time}
+                                        {isAgent && msg.isSeen && ' · SEEN'}
+                                      </MessageFooter>
+                                    </MessageContent>
+                                  </Message>
+                                </MessageScrollerItem>
+                              );
+                            })}
+                          </>
                         )}
-
-                        {/* Messages */}
-                        {currentMessages.map((msg) => {
-                          const isAgent = msg.sender === 'agent';
-                          const align = isAgent ? 'end' : 'start';
-
-                          return (
-                            <MessageScrollerItem
-                              key={msg.id}
-                              messageId={msg.id}
-                              scrollAnchor={!isAgent}
-                            >
-                              <Message align={align}>
-                                {/* Avatar (user/customer side only) */}
-                                {!isAgent && (
-                                  <MessageAvatar>
-                                    <Avatar className="bg-primary/10 text-primary font-bold text-xs">
-                                      {selectedConversation.avatarUrl ? (
-                                        <AvatarImage
-                                          src={selectedConversation.avatarUrl}
-                                          alt={selectedConversation.userName}
-                                        />
-                                      ) : null}
-                                      <AvatarFallback>
-                                        {getInitials(selectedConversation.userName)}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                  </MessageAvatar>
-                                )}
-
-                                <MessageContent>
-                                  {/* Attachment message */}
-                                  {msg.attachment ? (
-                                    <Attachment state="done">
-                                      <AttachmentMedia
-                                        variant="icon"
-                                        className="bg-red-100 text-red-600"
-                                      >
-                                        <FileText />
-                                      </AttachmentMedia>
-                                      <AttachmentContent>
-                                        <AttachmentTitle>{msg.attachment.name}</AttachmentTitle>
-                                        <AttachmentDescription>
-                                          {msg.attachment.size} · {msg.attachment.type}
-                                        </AttachmentDescription>
-                                      </AttachmentContent>
-                                      <AttachmentActions>
-                                        <AttachmentAction aria-label="Tải về">
-                                          <Download />
-                                        </AttachmentAction>
-                                      </AttachmentActions>
-                                    </Attachment>
-                                  ) : (
-                                    /* Text message bubble */
-                                    <Bubble variant={isAgent ? 'default' : 'muted'} align={align}>
-                                      <BubbleContent>{msg.text}</BubbleContent>
-                                    </Bubble>
-                                  )}
-
-                                  {/* Timestamp footer */}
-                                  <MessageFooter>
-                                    {msg.time}
-                                    {isAgent && msg.isSeen && ' · SEEN'}
-                                  </MessageFooter>
-                                </MessageContent>
-                              </Message>
-                            </MessageScrollerItem>
-                          );
-                        })}
                       </MessageScrollerContent>
                     </MessageScrollerViewport>
                     <MessageScrollerButton />

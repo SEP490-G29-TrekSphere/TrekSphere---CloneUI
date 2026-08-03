@@ -29,3 +29,55 @@ export interface DetailMessage {
     type: string;
   };
 }
+
+export interface ConversationResponse {
+  conversationId: string;
+  title: string;
+  avatarUrl?: string;
+  conversationType: 'DIRECT' | 'GROUP';
+  lastMessageAt: string;
+  lastMessageContent: string;
+  unreadCount: number;
+}
+
+export interface PaginationResponse<T> {
+  content: T[];
+  pageNumber: number;
+  pageSize: number;
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
+}
+
+export interface ChatConversationsParams {
+  page?: number;
+  size?: number;
+}
+
+export interface MessageResponse {
+  messageId: string;
+  conversationId: string;
+  senderId: string;
+  senderName: string;
+  senderAvatarUrl?: string;
+  content: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface ChatMessagesParams {
+  id: string;
+  page?: number;
+  size?: number;
+}
+
+export interface ConversationCreateRequest {
+  conversationType: 'DIRECT' | 'GROUP';
+  title?: string;
+  participantIds: string[];
+}
+
+export interface MessageCreateRequest {
+  conversationId: string;
+  content: string;
+}

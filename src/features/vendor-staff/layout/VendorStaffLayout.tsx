@@ -10,6 +10,7 @@ import {
   PenSquare,
   Search,
   Settings,
+  Tag,
   Ticket,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -28,6 +29,7 @@ const navItems = [
   { name: 'Lịch trình', path: PATHS.PARTNER_SESSIONS, icon: CalendarClock, disabled: false },
   { name: 'Tour', path: PATHS.PARTNER_TOURS, icon: MapIcon, disabled: false },
   { name: 'Đặt tour', path: PATHS.PARTNER_BOOKINGS, icon: Ticket, disabled: false },
+  { name: 'Voucher', path: PATHS.PARTNER_VOUCHERS, icon: Tag, disabled: false },
   { name: 'Thiết bị', path: PATHS.PARTNER_EQUIPMENT, icon: Backpack, disabled: false },
   { name: 'Porter', path: PATHS.PARTNER_PORTERS, icon: Footprints, disabled: false },
   { name: 'Viết Blog', path: PATHS.PARTNER_BLOG_CREATE, icon: PenSquare, disabled: false },
