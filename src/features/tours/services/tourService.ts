@@ -183,28 +183,31 @@ export const tourService = {
 
   async validateVoucher(
     code: string,
-    subtotal: number
+    subtotal: number,
+    vendorId?: string
   ): Promise<{ discountAmount: number; isValid: boolean }> {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const uppercaseCode = code.toUpperCase();
-        if (uppercaseCode === 'TREKNEW') {
-          resolve({ discountAmount: 200000, isValid: true });
-        } else if (uppercaseCode === 'SUMMER50') {
-          if (subtotal < 3000000) {
-            reject(
-              new Error('Đơn hàng chưa đạt giá trị tối thiểu 3.000.000đ để áp dụng voucher này')
-            );
-          } else {
-            resolve({ discountAmount: 500000, isValid: true });
-          }
-        } else if (uppercaseCode === 'LIMITEXCEEDED') {
-          reject(new Error('Voucher này đã hết lượt sử dụng'));
-        } else {
-          reject(new Error('Voucher không hợp lệ hoặc đã hết hạn'));
-        }
-      }, 500);
+    const response = await ApiService<{
+      discountAmount: number;
+      message: string;
+      valid: boolean;
+    }>('/vouchers/validate', 'POST', {
+      code,
+      orderValue: subtotal,
+      vendorId: vendorId || '',
     });
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    if (!response.data) {
+      throw new Error(response.message || 'Mã giảm giá không hợp lệ hoặc đã hết hạn');
+    }
+
+    return {
+      discountAmount: response.data.discountAmount,
+      isValid: response.data.valid,
+    };
   },
 
   async createBooking(bookingData: CreateBookingRequest): Promise<BookingDetailResponse> {

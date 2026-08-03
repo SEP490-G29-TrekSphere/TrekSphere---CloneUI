@@ -80,6 +80,7 @@ const VendorProfileEdit = lazy(() => import('@/features/vendor-profile/pages/Ven
 const CoordinatorSchedulesPage = lazy(
   () => import('@/features/coordinator/pages/CoordinatorSchedulesPage')
 );
+const VendorVoucherList = lazy(() => import('@/features/vendor-vouchers/pages/VendorVoucherList'));
 
 function PageLoader() {
   return (
@@ -202,6 +203,7 @@ export default function AppRoutes() {
           <Route path={PATHS.VENDOR_MANAGER_PORTER_EDIT} element={<PorterEdit />} />
           <Route path={PATHS.VENDOR_MANAGER_SESSIONS} element={<SessionList />} />
           <Route path={PATHS.VENDOR_MANAGER_SESSION_DETAIL} element={<SessionDetail />} />
+          <Route path={PATHS.VENDOR_MANAGER_VOUCHERS} element={<VendorVoucherList />} />
         </Route>
 
         {/* Vendor Staff routes — yêu cầu role vendor_staff, dùng VendorStaffLayout riêng */}
@@ -227,6 +229,7 @@ export default function AppRoutes() {
           <Route path={PATHS.PARTNER_SESSIONS} element={<SessionList />} />
           <Route path={PATHS.PARTNER_SESSION_DETAIL} element={<SessionDetail />} />
           <Route path={PATHS.PARTNER_BLOG_CREATE} element={<CreateBlogPost />} />
+          <Route path={PATHS.PARTNER_VOUCHERS} element={<VendorVoucherList />} />
         </Route>
 
         {/* Coordinator routes — dùng MainLayout */}

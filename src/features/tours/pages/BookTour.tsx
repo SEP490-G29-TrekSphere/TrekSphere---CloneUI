@@ -1,13 +1,25 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertCircle, Calendar, Info, Plus, ShieldCheck, Trash2, User, Users } from 'lucide-react';
+import {
+  AlertCircle,
+  Calendar,
+  Gift,
+  Info,
+  Plus,
+  ShieldCheck,
+  Trash2,
+  User,
+  Users,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import * as z from 'zod';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { getBookingPaymentPath } from '@/constants/paths';
 import { useTourDetail } from '@/features/tours/hooks/useTourDetail';
 import { tourService } from '@/features/tours/services/tourService';
 import type { ParticipantGender } from '@/features/tours/types';
+import { useVendorActiveVouchers } from '@/features/vendor-vouchers';
 import { AppButton, AppCard, AppFormInput } from '@/shared/ui';
 import { toast } from '@/store/useToastStore';
 
@@ -57,6 +69,14 @@ export default function BookTour() {
   const preSelectedParticipantsCount = Number.isNaN(parsedPart) || parsedPart < 1 ? 1 : parsedPart;
 
   const { data: tour, isLoading, error } = useTourDetail(id);
+
+  // Fetch active vouchers for this vendor (page = 0, size = 50)
+  const { data: activeVouchersData } = useVendorActiveVouchers(tour?.vendorId || '', {
+    page: 0,
+    size: 50,
+  });
+
+  const activeVouchers = activeVouchersData?.content || [];
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -184,7 +204,7 @@ export default function BookTour() {
     setIsValidatingVoucher(true);
     setVoucherError(null);
     try {
-      const response = await tourService.validateVoucher(code, subtotal);
+      const response = await tourService.validateVoucher(code, subtotal, tour?.vendorId);
       if (response.isValid) {
         setAppliedVoucher({
           code: code,
@@ -533,6 +553,54 @@ export default function BookTour() {
                   {isValidatingVoucher ? '...' : 'Áp dụng'}
                 </button>
               </div>
+
+              {/* Danh sách voucher có sẵn */}
+              {activeVouchers.length > 0 && (
+                <div className="mt-2">
+                  <Popover>
+                    <PopoverTrigger className="text-xs font-bold text-[#0B3025] hover:underline flex items-center gap-1.5 cursor-pointer">
+                      <Gift className="h-3.5 w-3.5" />
+                      Xem các mã giảm giá có sẵn ({activeVouchers.length})
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80 bg-white border border-[#E5E4DE] rounded-2xl shadow-xl p-4 space-y-3 z-50">
+                      <h4 className="font-extrabold text-sm text-[#0B3025] border-b pb-2">
+                        Ưu đãi dành cho bạn
+                      </h4>
+                      <div className="max-h-60 overflow-y-auto space-y-2.5 pr-1">
+                        {activeVouchers.map((voucher) => (
+                          <button
+                            type="button"
+                            key={voucher.voucherId}
+                            onClick={() => {
+                              setVoucherCode(voucher.code);
+                              handleApplyVoucher(voucher.code);
+                            }}
+                            className="w-full group flex flex-col p-3 rounded-xl border border-[#E5E4DE] hover:border-[#0B3025] hover:bg-slate-50 transition-all cursor-pointer text-left focus:outline-none focus:ring-1 focus:ring-[#0B3025]"
+                          >
+                            <div className="flex justify-between items-center w-full mb-1">
+                              <span className="font-mono font-extrabold text-xs bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-md border border-emerald-100 group-hover:bg-[#0B3025] group-hover:text-white transition-all">
+                                {voucher.code}
+                              </span>
+                              <span className="text-xs font-bold text-[#0B3025]">
+                                {voucher.discountType === 'PERCENTAGE'
+                                  ? `Giảm ${voucher.discountValue}%`
+                                  : `Giảm ${formatPrice(voucher.discountValue)}đ`}
+                              </span>
+                            </div>
+                            <p className="text-[11px] font-semibold text-zinc-500">
+                              Đơn tối thiểu: {formatPrice(voucher.minOrderValue)}đ
+                            </p>
+                            <p className="text-[10px] text-zinc-400 mt-1">
+                              HSD: {new Date(voucher.validUntil).toLocaleDateString('vi-VN')}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              )}
+
               {voucherError && (
                 <p className="text-xs text-red-500 mt-2 font-medium">{voucherError}</p>
               )}
