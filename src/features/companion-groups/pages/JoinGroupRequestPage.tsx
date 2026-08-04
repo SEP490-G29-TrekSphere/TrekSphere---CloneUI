@@ -104,25 +104,18 @@ export default function JoinGroupRequestPage() {
           {/* CỘT TRÁI: Thông tin Tour & Danh sách thành viên hiện tại */}
           <div className="lg:col-span-5 space-y-6">
             {/* Card Tour */}
-            <div className="bg-[#F0EBE1] dark:bg-muted/40 rounded-[2rem] p-4 border border-stone-200/60 dark:border-border/50 shadow-xs space-y-4">
-              {/* Ảnh Thumbnail + Badge */}
-              <div className="relative aspect-[16/10] w-full overflow-hidden rounded-[1.5rem]">
-                <img
-                  src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1000&q=80"
-                  alt={groupData.groupName}
-                  className="h-full w-full object-cover"
-                />
-                <span className="absolute top-3 left-3 bg-[#A3E6BA] text-[#0D3B2E] text-xs font-bold px-3 py-1 rounded-full shadow-xs">
-                  {groupData.status === 'OPEN'
-                    ? 'Đang tuyển'
-                    : groupData.status === 'FULL'
-                      ? 'Đã đủ'
-                      : 'Đã đóng'}
-                </span>
-              </div>
-
+            <div className="bg-[#F0EBE1] dark:bg-muted/40 rounded-[2rem] p-5 border border-stone-200/60 dark:border-border/50 shadow-xs space-y-4">
               {/* Chi tiết Tour */}
-              <div className="px-1 space-y-2">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="bg-[#A3E6BA] text-[#0D3B2E] text-xs font-bold px-3 py-1 rounded-full shadow-xs">
+                    {groupData.status === 'OPEN'
+                      ? 'Đang tuyển'
+                      : groupData.status === 'FULL'
+                        ? 'Đã đủ'
+                        : 'Đã đóng'}
+                  </span>
+                </div>
                 <h2 className="text-xl sm:text-2xl font-bold text-stone-900 dark:text-foreground leading-snug">
                   {groupData.groupName}
                 </h2>

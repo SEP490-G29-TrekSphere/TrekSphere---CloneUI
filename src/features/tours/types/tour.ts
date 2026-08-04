@@ -166,15 +166,11 @@ export interface TourFilter {
   /**
    * Map-friendly UI sort key. Each value translates to a (sortBy, sortDir)
    * pair sent to the API.
+   *
+   * Không có key `rating`: backend không sort được theo điểm đánh giá
+   * (xem ghi chú ở `ApiSortField`).
    */
-  sortBy?:
-    | 'price-asc'
-    | 'price-desc'
-    | 'rating'
-    | 'newest'
-    | 'duration-asc'
-    | 'duration-desc'
-    | 'name-asc';
+  sortBy?: 'price-asc' | 'price-desc' | 'newest' | 'duration-asc' | 'duration-desc' | 'name-asc';
 }
 
 // ============================================================
@@ -197,16 +193,14 @@ export type ApiStatus = 'DRAFT' | 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' |
 export type ApiSortDir = 'asc' | 'desc';
 
 /**
- * Allowed sort fields. The API defaults to `createdAt`; other useful
- * fields exposed in the schema (averageRating, basePrice, etc.) are
- * surfaced as UI options below.
+ * Allowed sort fields. The API defaults to `createdAt`.
+ *
+ * `averageRating` KHÔNG có trong danh sách này: entity `Tour` phía backend
+ * không khai báo thuộc tính đó (điểm trung bình tính từ bảng review), nên
+ * `sortBy=averageRating` khiến Hibernate ném `UnknownPathException` → 500.
+ * Muốn xếp theo điểm đánh giá thì phải sort ở client.
  */
-export type ApiSortField =
-  | 'createdAt'
-  | 'averageRating'
-  | 'basePrice'
-  | 'durationDays'
-  | 'tourName';
+export type ApiSortField = 'createdAt' | 'basePrice' | 'durationDays' | 'tourName';
 
 /**
  * Query params for fetching tours list.

@@ -37,7 +37,7 @@ export const PATHS = {
   GROUPS_CREATE: '/groups/create',
   GROUPS_JOIN: '/groups/:groupId/join',
   GROUPS_DETAIL: '/groups/:groupId',
-  COMMUNITY: '/community',
+  COMMUNITY: '/groups',
   NEWS: '/news',
   NEWS_DETAIL: '/news/:blogId',
   NOTIFICATIONS: '/notifications',

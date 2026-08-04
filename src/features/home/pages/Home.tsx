@@ -1,5 +1,4 @@
 import HomeCompanions from '@/features/home/components/HomeCompanions';
-import HomeDestinations from '@/features/home/components/HomeDestinations';
 import HomeHero from '@/features/home/components/HomeHero';
 import HomeStories from '@/features/home/components/HomeStories';
 import HomeTours from '@/features/home/components/HomeTours';
@@ -14,7 +13,6 @@ export default function Home() {
   return (
     <>
       <HomeHero />
-      <HomeDestinations />
       <HomeTours />
       <HomeCompanions />
       <HomeStories />

@@ -30,8 +30,6 @@ function resolveSort(sortBy: TourFilter['sortBy']): { sortBy: ApiSortField; sort
       return { sortBy: 'basePrice', sortDir: 'asc' };
     case 'price-desc':
       return { sortBy: 'basePrice', sortDir: 'desc' };
-    case 'rating':
-      return { sortBy: 'averageRating', sortDir: 'desc' };
     case 'newest':
       return { sortBy: 'createdAt', sortDir: 'desc' };
     case 'duration-asc':

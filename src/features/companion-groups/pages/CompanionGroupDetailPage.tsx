@@ -4,15 +4,12 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  Eye,
-  EyeOff,
   Loader2,
   LogOut,
   MapPin,
   MessageSquare,
   ShieldAlert,
   UserCheck,
-  UserPlus,
   X,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -76,12 +73,9 @@ export default function CompanionGroupDetailPage() {
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Local state toggles
-  const [isHidden, setIsHidden] = useState(false);
-
   // Active Modals
   const [activeModal, setActiveModal] = useState<
-    'dissolve' | 'leave' | 'reject' | 'approve' | 'hide' | null
+    'dissolve' | 'leave' | 'reject' | 'approve' | null
   >(null);
   const [selectedRequest, setSelectedRequest] = useState<JoinRequest | null>(null);
 
@@ -151,15 +145,6 @@ export default function CompanionGroupDetailPage() {
     });
   };
 
-  const handleToggleHideGroup = () => {
-    const nextState = !isHidden;
-    setIsHidden(nextState);
-    setActiveModal(null);
-    showToast(
-      nextState ? 'Đã ẩn nhóm ghép khỏi danh sách công khai!' : 'Đã hiện lại nhóm ghép công khai!'
-    );
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#FBF8F3] flex flex-col items-center justify-center p-6">
@@ -207,7 +192,7 @@ export default function CompanionGroupDetailPage() {
   const acceptedMembers = groupData.members.filter((m) => m.status === 'ACCEPTED');
 
   return (
-    <div className="min-h-screen bg-[#FBF8F3] px-4 py-6 md:px-10 lg:px-16 text-slate-800 font-sans">
+    <div className="min-h-screen bg-[#FBF8F3] px-4 pt-24 pb-12 md:px-10 lg:px-16 text-slate-800 font-sans">
       {/* Toast Alert */}
       {toastMessage && (
         <div className="fixed top-6 right-6 z-50 rounded-2xl bg-[#0D3B2E] px-6 py-3 text-sm font-semibold text-white shadow-xl animate-in fade-in slide-in-from-top-4">
@@ -217,49 +202,38 @@ export default function CompanionGroupDetailPage() {
 
       <div className="mx-auto max-w-6xl space-y-7">
         {/* Hero Banner Section */}
-        <div className="relative overflow-hidden rounded-[36px] bg-slate-900 shadow-sm">
-          <div className="relative h-[340px] md:h-[400px] w-full">
-            <img
-              src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1600&q=80"
-              alt={groupData.groupName}
-              className="h-full w-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
+        <div className="relative overflow-hidden rounded-[36px] bg-[#0d2a22] shadow-sm p-6 md:p-10 text-white space-y-3.5">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="rounded-full bg-[#0D3B2E]/90 px-3.5 py-1 text-xs font-bold text-emerald-300 border border-emerald-500/30 backdrop-blur-md">
+              Trạng thái:{' '}
+              {groupData.status === 'OPEN'
+                ? 'Đang tuyển'
+                : groupData.status === 'FULL'
+                  ? 'Đã đủ'
+                  : 'Đã đóng'}
+            </span>
+            <span className="flex items-center gap-1.5 text-xs font-medium text-slate-200">
+              <Calendar className="h-3.5 w-3.5 text-emerald-400" />
+              Khởi hành: {groupData.targetDate}
+            </span>
           </div>
 
-          <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 space-y-3.5 text-white">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <span className="rounded-full bg-[#0D3B2E]/90 px-3.5 py-1 text-xs font-bold text-emerald-300 border border-emerald-500/30 backdrop-blur-md">
-                Trạng thái:{' '}
-                {groupData.status === 'OPEN'
-                  ? 'Đang tuyển'
-                  : groupData.status === 'FULL'
-                    ? 'Đã đủ'
-                    : 'Đã đóng'}
-              </span>
-              <span className="flex items-center gap-1.5 text-xs font-medium text-slate-200">
-                <Calendar className="h-3.5 w-3.5 text-emerald-400" />
-                Khởi hành: {groupData.targetDate}
-              </span>
-            </div>
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-extrabold tracking-tight">
+            {groupData.groupName}
+          </h2>
 
-            <h2 className="text-2xl md:text-3xl lg:text-4xl font-extrabold tracking-tight">
-              {groupData.groupName}
-            </h2>
+          {groupData.tourName && (
+            <p className="flex items-center gap-1.5 text-xs md:text-sm text-emerald-300 font-semibold">
+              <MapPin className="h-4 w-4 shrink-0" />
+              <span>Tour: {groupData.tourName}</span>
+            </p>
+          )}
 
-            {groupData.tourName && (
-              <p className="flex items-center gap-1.5 text-xs md:text-sm text-emerald-300 font-semibold">
-                <MapPin className="h-4 w-4 shrink-0" />
-                <span>Tour: {groupData.tourName}</span>
-              </p>
-            )}
-
-            {groupData.description && (
-              <p className="max-w-3xl text-xs md:text-sm text-slate-200 leading-relaxed opacity-90">
-                {groupData.description}
-              </p>
-            )}
-          </div>
+          {groupData.description && (
+            <p className="max-w-3xl text-xs md:text-sm text-slate-200 leading-relaxed opacity-90">
+              {groupData.description}
+            </p>
+          )}
         </div>
 
         {/* Main Grid Content (2 Columns) */}
@@ -516,63 +490,6 @@ export default function CompanionGroupDetailPage() {
                 </p>
               </div>
             )}
-
-            <div className="space-y-3 pt-2 text-center">
-              {currentUserRole === 'leader' && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setActiveModal('hide')}
-                    className="w-full flex items-center justify-center gap-2 rounded-full border border-slate-300 bg-white py-3 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
-                  >
-                    {isHidden ? (
-                      <>
-                        <Eye className="h-4 w-4 text-emerald-700" />
-                        <span>Hiện nhóm công khai</span>
-                      </>
-                    ) : (
-                      <>
-                        <EyeOff className="h-4 w-4 text-slate-500" />
-                        <span>Ẩn nhóm ghép</span>
-                      </>
-                    )}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setActiveModal('dissolve')}
-                    className="w-full flex items-center justify-center gap-2 rounded-full bg-rose-50 border border-rose-200 py-3 text-xs font-bold text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer"
-                  >
-                    <ShieldAlert className="h-4 w-4" />
-                    <span>Giải tán nhóm</span>
-                  </button>
-                </>
-              )}
-
-              {(currentUserRole === 'member' || currentUserRole === 'pending') && (
-                <button
-                  type="button"
-                  onClick={() => setActiveModal('leave')}
-                  className="w-full flex items-center justify-center gap-2 rounded-full bg-rose-50 border border-rose-200 py-3 text-xs font-bold text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer"
-                >
-                  <LogOut className="h-4 w-4" />
-                  <span>
-                    {currentUserRole === 'pending' ? 'Hủy yêu cầu tham gia' : 'Rời khỏi nhóm'}
-                  </span>
-                </button>
-              )}
-
-              {currentUserRole === 'guest' && (
-                <button
-                  type="button"
-                  onClick={() => navigate(`/groups/${groupId}/join`)}
-                  className="w-full flex items-center justify-center gap-2 rounded-full bg-[#0D3B2E] py-3.5 text-xs font-extrabold text-white hover:bg-emerald-950 transition-colors cursor-pointer shadow-md"
-                >
-                  <UserPlus className="h-4 w-4" />
-                  <span>Xin tham gia nhóm ghép này</span>
-                </button>
-              )}
-            </div>
           </div>
         </div>
       </div>
@@ -666,52 +583,6 @@ export default function CompanionGroupDetailPage() {
               >
                 {rejectMemberMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 {rejectMemberMutation.isPending ? 'Đang từ chối...' : 'Xác nhận từ chối'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 3. Modal Ẩn nhóm ghép */}
-      {activeModal === 'hide' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="w-full max-w-sm rounded-[28px] bg-white p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
-                {isHidden ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveModal(null)}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div>
-              <h3 className="text-base font-extrabold text-slate-900">
-                {isHidden ? 'Hiện nhóm ghép public' : 'Ẩn nhóm ghép công khai'}
-              </h3>
-              <p className="text-xs text-slate-500 mt-1">
-                {isHidden
-                  ? 'Nhóm của bạn sẽ hiển thị công khai trở lại cho các trekker khác tìm thấy.'
-                  : 'Nhóm sẽ tạm thời bị ẩn khỏi danh sách tìm kiếm công khai và không nhận thêm yêu cầu gia nhập mới.'}
-              </p>
-            </div>
-            <div className="flex gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setActiveModal(null)}
-                className="flex-1 rounded-full border border-slate-300 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={handleToggleHideGroup}
-                className="flex-1 rounded-full bg-slate-900 py-2.5 text-xs font-bold text-white hover:bg-slate-800"
-              >
-                {isHidden ? 'Xác nhận hiện' : 'Xác nhận ẩn'}
               </button>
             </div>
           </div>

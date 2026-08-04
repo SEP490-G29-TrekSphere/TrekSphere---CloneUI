@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom';
 import { PATHS } from '@/constants';
-import { useTours } from '@/features/tours/hooks/useTours';
+import { useFeaturedTours } from '@/features/tours/hooks/useFeaturedTours';
 import { ScrollReveal, Slider } from '@/shared/ui';
 
 export default function HomeTours() {
-  const { tours, isLoading } = useTours({ page: 0, size: 6, sortBy: 'createdAt', sortDir: 'desc' });
+  const { tours, isLoading } = useFeaturedTours();
 
   return (
     <section className="py-24 bg-muted/40">
@@ -50,7 +50,7 @@ export default function HomeTours() {
           </div>
         ) : tours.length === 0 ? (
           <div className="mt-10 text-center py-12 bg-card border border-border/50 rounded-3xl">
-            <p className="text-muted-foreground text-sm">Hiện tại chưa có tour nổi bật nào.</p>
+            <p className="text-muted-foreground text-sm">Hiện chưa có tour nào được đánh giá.</p>
           </div>
         ) : (
           <ScrollReveal variant="fade-up" scrollOptions={{ delay: 100 }}>
@@ -78,7 +78,12 @@ export default function HomeTours() {
                         <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="#F59E0B">
                           <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                         </svg>
-                        <span className="text-xs font-bold text-white">{tour.rating}</span>
+                        <span className="text-xs font-bold text-white">
+                          {tour.rating.toFixed(1)}
+                        </span>
+                        <span className="text-xs font-medium text-white/70">
+                          ({tour.reviewCount})
+                        </span>
                       </div>
                     </div>
 

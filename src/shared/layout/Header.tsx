@@ -4,6 +4,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { queryClient } from '@/config/queryClient';
 import { PATHS, ROLES } from '@/constants';
 import { authService } from '@/features/auth';
+import { mockNotifications } from '@/features/notifications/data/mockNotifications';
 import { profileKeys } from '@/features/profile/hooks/useProfile';
 import { AppLogo } from '@/shared/ui';
 import { useAppStore } from '@/store/useAppStore';
@@ -11,7 +12,8 @@ import { toast } from '@/store/useToastStore';
 import { storage } from '@/utils/storage';
 
 const NAV_ITEMS = [
-  { label: 'Khám phá', path: PATHS.HOME },
+  { label: 'Trang chủ', path: PATHS.HOME },
+  { label: 'Nhóm', path: PATHS.GROUPS },
   { label: 'Tin tức', path: PATHS.NEWS },
 ];
 
@@ -85,6 +87,7 @@ export default function Header() {
   const initial = user?.name?.charAt(0).toUpperCase() ?? 'A';
   const showAvatar = Boolean(avatarUrl);
   const isTrekker = user?.roles?.map((r) => r.toLowerCase()).includes(ROLES.TREKKER);
+  const unreadCount = mockNotifications.filter((n) => !n.read).length;
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background border-border px-4 shadow-sm md:px-6">
@@ -114,9 +117,11 @@ export default function Header() {
             className="relative flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Bell className="size-5" />
-            <span className="absolute -right-0.5 -top-0.5 flex size-5 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-primary ring-2 ring-background">
-              4
-            </span>
+            {unreadCount > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex size-5 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-primary ring-2 ring-background">
+                {unreadCount}
+              </span>
+            )}
           </Link>
 
           {/* User avatar + dropdown */}
@@ -124,7 +129,7 @@ export default function Header() {
             <button
               type="button"
               onClick={() => setDropdownOpen((prev) => !prev)}
-              className="flex size-9 items-center justify-center overflow-hidden rounded-full bg-primary text-sm font-bold text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
+              className="flex size-9 items-center justify-center overflow-hidden rounded-full bg-primary text-sm font-bold text-primary-foreground shadow-sm transition-opacity hover:opacity-90 cursor-pointer"
               aria-label="Mở menu cá nhân"
             >
               {showAvatar ? (
@@ -199,7 +204,7 @@ export default function Header() {
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10"
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10 cursor-pointer"
                 >
                   <LogOut className="h-4 w-4" />
                   Đăng xuất

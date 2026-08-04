@@ -12,7 +12,7 @@ import { toast } from '@/store/useToastStore';
 import { storage } from '@/utils/storage';
 
 const NAV_ITEMS = [
-  { label: 'Khám phá', path: PATHS.HOME },
+  { label: 'Trang chủ', path: PATHS.HOME },
   { label: 'Nhóm', path: PATHS.GROUPS },
   { label: 'Tin tức', path: PATHS.NEWS },
 ];

@@ -14,7 +14,7 @@ function formatPrice(price: number): string {
   return `${price.toLocaleString('vi-VN')}đ`;
 }
 
-function mapApiItemToTour(item: TourApiItem): Tour {
+export function mapApiItemToTour(item: TourApiItem): Tour {
   return {
     id: item.tourId,
     name: item.tourName,

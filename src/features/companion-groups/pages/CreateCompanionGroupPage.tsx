@@ -62,15 +62,7 @@ export default function CreateCompanionGroupPage() {
           {/* Left Column (Banner & Tips) */}
           <div className="lg:col-span-5 flex flex-col justify-between gap-6">
             {/* Green Scenic Banner */}
-            <div className="relative rounded-[2rem] overflow-hidden min-h-[320px] lg:min-h-[420px] flex flex-col justify-end p-6 sm:p-8 text-white group shadow-lg">
-              {/* Background Image with Overlay */}
-              <img
-                src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1000&q=80"
-                alt="Chuyến đi trekking"
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-
+            <div className="relative rounded-[2rem] overflow-hidden min-h-[320px] lg:min-h-[420px] flex flex-col justify-end p-6 sm:p-8 text-white bg-[#0d2a22] shadow-lg">
               <div className="relative z-10 space-y-3">
                 <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight">
                   Kết nối đam mê,

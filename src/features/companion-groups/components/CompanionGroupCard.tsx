@@ -1,5 +1,4 @@
-import { Calendar, Eye, Heart, MapPin, Users } from 'lucide-react';
-import { useState } from 'react';
+import { Calendar, Eye, MapPin, Users } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import type { MatchingGroupItem } from '../services/companionGroupService';
 import type { CompanionGroup } from '../types';
@@ -18,15 +17,6 @@ interface CompanionGroupCardProps {
 
 export function CompanionGroupCard({ group, onJoinGroup, onViewDetail }: CompanionGroupCardProps) {
   const user = useAppStore((state) => state.user);
-  const [isBookmarked, setIsBookmarked] = useState(
-    isMatchingGroupItem(group) ? false : (group.isBookmarked ?? false)
-  );
-
-  const toggleBookmark = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsBookmarked((prev) => !prev);
-  };
-
   const isApiData = isMatchingGroupItem(group);
 
   const title = isApiData ? group.groupName : group.title;
@@ -47,9 +37,6 @@ export function CompanionGroupCard({ group, onJoinGroup, onViewDetail }: Compani
         .toUpperCase()
     : group.leader.initials;
   const departureDate = isApiData ? group.targetDate : group.departureDate;
-  const thumbnailUrl = isApiData
-    ? 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80'
-    : group.thumbnailUrl;
   const status = isApiData ? group.status : 'OPEN';
 
   const handleCardClick = () => {
@@ -72,31 +59,23 @@ export function CompanionGroupCard({ group, onJoinGroup, onViewDetail }: Compani
       className="group relative bg-[#FAF8F5] dark:bg-card border border-stone-200/80 dark:border-border rounded-[2rem] p-3 transition-all duration-300 hover:shadow-xl flex flex-col justify-between cursor-pointer"
     >
       <div>
-        {/* Thumbnail Image Container */}
-        <div className="relative aspect-[16/10] w-full overflow-hidden rounded-[1.5rem]">
-          <img
-            src={thumbnailUrl}
-            alt={title}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            loading="lazy"
-          />
-
-          {/* Status Badge */}
-          <div
-            className={`absolute top-3 right-3 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold shadow-sm ${
-              status === 'OPEN'
-                ? 'bg-emerald-500/90 text-white'
-                : status === 'FULL'
-                  ? 'bg-amber-500/90 text-white'
-                  : 'bg-stone-500/90 text-white'
-            }`}
-          >
-            {status === 'OPEN' ? 'Đang mở' : status === 'FULL' ? 'Đã đủ' : 'Đã đóng'}
-          </div>
-        </div>
-
         {/* Card Body */}
         <div className="p-4 sm:p-5">
+          {/* Status Badge */}
+          <div className="flex items-center gap-2 mb-3">
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-semibold shadow-sm ${
+                status === 'OPEN'
+                  ? 'bg-emerald-500/90 text-white'
+                  : status === 'FULL'
+                    ? 'bg-amber-500/90 text-white'
+                    : 'bg-stone-500/90 text-white'
+              }`}
+            >
+              {status === 'OPEN' ? 'Đang mở' : status === 'FULL' ? 'Đã đủ' : 'Đã đóng'}
+            </span>
+          </div>
+
           {/* Title & Favorite Heart */}
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -110,18 +89,6 @@ export function CompanionGroupCard({ group, onJoinGroup, onViewDetail }: Compani
                 </div>
               )}
             </div>
-            <button
-              type="button"
-              onClick={toggleBookmark}
-              aria-label="Lưu chuyến đi yêu thích"
-              className="text-stone-400 hover:text-red-500 transition-colors p-1 shrink-0 cursor-pointer"
-            >
-              <Heart
-                className={`w-5 h-5 ${
-                  isBookmarked ? 'fill-red-500 text-red-500' : 'text-stone-400 hover:text-red-500'
-                }`}
-              />
-            </button>
           </div>
 
           {/* Meta Info List */}

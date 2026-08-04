@@ -59,6 +59,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { toast } from '@/store/useToastStore';
 import { useChatConversations } from '../hooks/useChatConversations';
 import { useChatMessages } from '../hooks/useChatMessages';
+import { useSendMessage } from '../hooks/useSendMessage';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -106,9 +107,9 @@ export default function ChatList() {
   const [page, _setPage] = useState(1);
   const [size, _setSize] = useState(10);
   const { data: apiResponse, isLoading, error } = useChatConversations({ page, size });
+  const sendMessageMutation = useSendMessage();
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [localMessages, setLocalMessages] = useState<Record<string, DetailMessage[]>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
@@ -214,9 +215,8 @@ export default function ChatList() {
       })
       .reverse();
 
-    const localMsgs = localMessages[selectedId] || [];
-    return [...apiMsgs, ...localMsgs];
-  }, [messagesResponse, selectedId, user?.id, localMessages]);
+    return apiMsgs;
+  }, [messagesResponse, selectedId, user?.id]);
 
   const filteredConversations = conversations
     .filter((c) => {
@@ -235,30 +235,20 @@ export default function ChatList() {
   const onSubmitMessage = (data: ChatMessageFormValues) => {
     if (!selectedId) return;
     const msgText = data.message;
-    const newMsg: DetailMessage = {
-      id: `m_${selectedId}_${Date.now()}`,
-      sender: 'agent',
-      text: msgText,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      isSeen: false,
-    };
-    setLocalMessages((prev) => ({
-      ...prev,
-      [selectedId]: [...(prev[selectedId] || []), newMsg],
-    }));
-    setConversations((prev) =>
-      prev.map((c) =>
-        c.id === selectedId
-          ? {
-              ...c,
-              lastMessage: msgText.length > 22 ? `${msgText.substring(0, 22)}...` : msgText,
-              lastMessageTime: 'Vừa xong',
-              timestamp: new Date().toISOString(),
-            }
-          : c
-      )
+    sendMessageMutation.mutate(
+      {
+        conversationId: selectedId,
+        content: msgText,
+      },
+      {
+        onSuccess: () => {
+          reset({ message: '' });
+        },
+        onError: (err: any) => {
+          toast.error(err.message || 'Không thể gửi tin nhắn');
+        },
+      }
     );
-    reset({ message: '' });
   };
 
   return (
@@ -707,16 +697,22 @@ export default function ChatList() {
                     <div className="flex items-end gap-3">
                       <textarea
                         rows={2}
-                        placeholder="Nhập tin nhắn của bạn tại đây..."
+                        placeholder={
+                          sendMessageMutation.isPending
+                            ? 'Đang gửi...'
+                            : 'Nhập tin nhắn của bạn tại đây...'
+                        }
                         {...register('message')}
+                        disabled={sendMessageMutation.isPending}
                         aria-invalid={errors.message ? 'true' : 'false'}
                         aria-describedby={errors.message ? 'chat-message-error' : undefined}
-                        className="flex-1 resize-none bg-transparent text-sm outline-none placeholder:text-muted-foreground py-1"
+                        className="flex-1 resize-none bg-transparent text-sm outline-none placeholder:text-muted-foreground py-1 disabled:opacity-50"
                       />
                       <Button
                         type="submit"
                         size="icon"
                         aria-label="Gửi"
+                        disabled={sendMessageMutation.isPending}
                         className="rounded-full flex-shrink-0 transition-transform hover:scale-105 active:scale-95"
                       >
                         <Send className="h-4 w-4" />
