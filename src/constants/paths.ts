@@ -56,6 +56,20 @@ export const PATHS = {
   BLOG_CREATE: '/blog/create',
   BLOG_EDIT: '/blog/edit/:blogId',
 
+  // Trekker portal
+  TREKKER: '/trekker',
+  TREKKER_PROFILE: '/trekker/profile',
+  TREKKER_PROFILE_EDIT: '/trekker/profile/edit',
+  TREKKER_MY_TOURS: '/trekker/my-tours',
+  TREKKER_VENDOR_APPLICATIONS: '/trekker/vendor-applications',
+  TREKKER_BLOG_LIST: '/trekker/blog',
+  TREKKER_BLOG_CREATE: '/trekker/blog/create',
+  TREKKER_BLOG_EDIT: '/trekker/blog/edit/:blogId',
+  TREKKER_CHANGE_PASSWORD: '/trekker/change-password',
+  TREKKER_BOOKING_DETAIL: '/trekker/bookings/:bookingId',
+  TREKKER_BOOKING_PAYMENT: '/trekker/bookings/:bookingId/payment',
+  TREKKER_BOOK_TOUR: '/tours/:id/book',
+
   // Admin
   ADMIN: '/admin',
   ADMIN_DASHBOARD: '/admin/dashboard',
@@ -142,3 +156,7 @@ export const getPartnerSessionDetailPath = (sessionId: string) =>
   PATHS.PARTNER_SESSION_DETAIL.replace(':sessionId', sessionId);
 export const getCoordinatorSessionOperationsPath = (sessionId: string) =>
   PATHS.COORDINATOR_SESSION_OPERATIONS.replace(':sessionId', sessionId);
+export const getTrekkerBookingDetailPath = (bookingId: string) =>
+  PATHS.TREKKER_BOOKING_DETAIL.replace(':bookingId', bookingId);
+export const getTrekkerBookingPaymentPath = (bookingId: string) =>
+  PATHS.TREKKER_BOOKING_PAYMENT.replace(':bookingId', bookingId);

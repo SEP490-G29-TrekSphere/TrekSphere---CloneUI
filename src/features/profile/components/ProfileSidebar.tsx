@@ -8,6 +8,8 @@ interface ProfileSidebarProps {
   profile: UserProfile;
   /** Chế độ hiện tại: view hay edit. */
   mode?: 'view' | 'edit';
+  /** Override đường dẫn trang edit (mặc định PATHS.EDIT_PROFILE). */
+  editPath?: string;
   /** Khi user bấm "Thay đổi ảnh" — handler nhận file vừa chọn. */
   onAvatarChange?: (file: File) => void;
 }
@@ -32,6 +34,7 @@ const formatJoinedMonth = (iso?: string): string => {
 export default function ProfileSidebar({
   profile,
   mode = 'view',
+  editPath,
   onAvatarChange,
 }: ProfileSidebarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -127,7 +130,7 @@ export default function ProfileSidebar({
       <div className="mt-6 w-full">
         {mode === 'view' ? (
           <Link
-            to={PATHS.EDIT_PROFILE}
+            to={editPath ?? PATHS.EDIT_PROFILE}
             className="block w-full rounded-xl bg-primary px-4 py-2.5 text-center text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary-hover"
           >
             Chỉnh sửa hồ sơ

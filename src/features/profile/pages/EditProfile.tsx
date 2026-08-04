@@ -27,7 +27,7 @@ import { profileService } from '../services/profileService';
  * 2. User bấm "Lưu thay đổi" → tạo FormData với file + các fields khác → gửi 1 lần qua PUT /users/me
  * 3. Nếu user không đổi ảnh → không gửi field avatar
  */
-export default function EditProfile() {
+export default function EditProfile({ returnPath }: { returnPath?: string }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const setUser = useAppStore((state) => state.setUser);
@@ -107,7 +107,7 @@ export default function EditProfile() {
         });
       }
       queryClient.invalidateQueries({ queryKey: profileKeys.me() });
-      navigate(PATHS.PROFILE);
+      navigate(returnPath ?? PATHS.PROFILE);
     },
     onError: () => {
       toast.error('Có lỗi xảy ra. Vui lòng thử lại.');
@@ -119,7 +119,7 @@ export default function EditProfile() {
   };
 
   const handleCancel = () => {
-    navigate(PATHS.PROFILE);
+    navigate(returnPath ?? PATHS.PROFILE);
   };
 
   // Chọn avatar: preview ngay bằng createObjectURL, lưu file để gửi cùng form

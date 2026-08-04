@@ -45,7 +45,13 @@ const GENDER_MAP: Record<string, string> = {
   OTHER: 'Khác',
 };
 
-export default function BookingDetail() {
+export default function BookingDetail({
+  backPath = '/my-tours',
+  paymentPath,
+}: {
+  backPath?: string;
+  paymentPath?: (bookingId: string) => string;
+}) {
   const { bookingId } = useParams<{ bookingId: string }>();
   const navigate = useNavigate();
   const [booking, setBooking] = useState<BookingDetailResponse | null>(null);
@@ -251,7 +257,7 @@ export default function BookingDetail() {
         <p className="text-zinc-500 font-semibold text-sm mt-2">
           Vui lòng kiểm tra lại mã đơn hoặc quay về danh sách đơn đặt.
         </p>
-        <AppButton onClick={() => navigate('/my-tours')} className="mt-6">
+        <AppButton onClick={() => navigate(backPath)} className="mt-6">
           Quay lại danh sách tour
         </AppButton>
       </div>
@@ -265,7 +271,7 @@ export default function BookingDetail() {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => navigate('/my-tours')}
+            onClick={() => navigate(backPath)}
             aria-label="Quay lại danh sách tour"
             className="p-2 hover:bg-white border border-transparent hover:border-[#E5E4DE] rounded-full transition-all cursor-pointer"
           >
@@ -358,7 +364,7 @@ export default function BookingDetail() {
               {formatCountdown(timeLeft)}
             </span>
             <AppButton
-              onClick={() => navigate(getBookingPaymentPath(booking.bookingId))}
+              onClick={() => navigate((paymentPath ?? getBookingPaymentPath)(booking.bookingId))}
               className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 py-2 rounded-xl text-xs border-none"
             >
               Thanh toán ngay
@@ -647,7 +653,9 @@ export default function BookingDetail() {
             <div className="space-y-3 pt-2">
               {isPendingPayment && (
                 <AppButton
-                  onClick={() => navigate(getBookingPaymentPath(booking.bookingId))}
+                  onClick={() =>
+                    navigate((paymentPath ?? getBookingPaymentPath)(booking.bookingId))
+                  }
                   className="w-full bg-[#0B3025] hover:bg-[#072019] text-white font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-sm transition-colors border-none text-xs"
                 >
                   <CreditCard className="h-4 w-4" />

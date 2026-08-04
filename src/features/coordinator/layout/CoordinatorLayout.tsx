@@ -25,19 +25,24 @@ export default function CoordinatorLayout() {
         style={{ backgroundColor: '#EFECE6', borderRight: '1px solid #E0DCD1' }}
       >
         <div className="flex flex-col py-6">
-          <div className="px-6 mb-8 flex items-center gap-2">
-            <MountainSnow className="h-7 w-7" style={{ color: '#06261D' }} />
-            <div className="flex flex-col">
-              <h1
-                className="text-2xl font-extrabold tracking-tight leading-none"
-                style={{ color: '#06261D' }}
-              >
-                SummitGuard
-              </h1>
-              <span className="text-xs font-medium tracking-wide" style={{ color: '#6F7B75' }}>
-                Điều phối viên hiện trường
-              </span>
-            </div>
+          <div className="px-6 mb-8">
+            <Link
+              to={PATHS.HOME}
+              className="flex items-center gap-2 hover:opacity-85 transition-opacity block"
+            >
+              <MountainSnow className="h-7 w-7" style={{ color: '#06261D' }} />
+              <div className="flex flex-col">
+                <h1
+                  className="text-2xl font-extrabold tracking-tight leading-none"
+                  style={{ color: '#06261D' }}
+                >
+                  SummitGuard
+                </h1>
+                <span className="text-xs font-medium tracking-wide" style={{ color: '#6F7B75' }}>
+                  Điều phối viên hiện trường
+                </span>
+              </div>
+            </Link>
           </div>
 
           <nav className="px-4 space-y-1">

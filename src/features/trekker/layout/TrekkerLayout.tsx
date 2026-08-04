@@ -1,78 +1,69 @@
-import {
-  Backpack,
-  BarChart3,
-  CalendarClock,
-  ClipboardCheck,
-  Footprints,
-  LayoutGrid,
-  LogOut,
-  Map as MapIcon,
-  Siren,
-  Tag,
-  Ticket,
-  UserRound,
-  Users,
-} from 'lucide-react';
+import { ClipboardList, Compass, FileText, Key, LogOut, User } from 'lucide-react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { PATHS } from '@/constants';
 import { useLogout } from '@/features/auth/hooks/useLogout';
 import { useAppStore } from '@/store/useAppStore';
 
 const navItems = [
-  { name: 'Tổng quan', path: PATHS.VENDOR_MANAGER_PROFILE, icon: LayoutGrid, disabled: false },
-  { name: 'Lịch trình', path: PATHS.VENDOR_MANAGER_SESSIONS, icon: CalendarClock, disabled: false },
-  { name: 'Nhân viên', path: PATHS.VENDOR_MANAGER_STAFF, icon: Users, disabled: false },
-  { name: 'Tour', path: PATHS.VENDOR_MANAGER_TOURS, icon: MapIcon, disabled: false },
+  { name: 'Hồ sơ', path: PATHS.TREKKER_PROFILE, icon: User, disabled: false },
+  { name: 'Tour của tôi', path: PATHS.TREKKER_MY_TOURS, icon: Compass, disabled: false },
   {
-    name: 'Duyệt tour',
-    path: PATHS.VENDOR_MANAGER_TOUR_APPROVALS,
-    icon: ClipboardCheck,
+    name: 'Lịch sử đăng ký Vendor',
+    path: PATHS.TREKKER_VENDOR_APPLICATIONS,
+    icon: ClipboardList,
     disabled: false,
   },
-  { name: 'Đặt tour', path: PATHS.VENDOR_MANAGER_BOOKINGS, icon: Ticket, disabled: false },
-  { name: 'Voucher', path: PATHS.VENDOR_MANAGER_VOUCHERS, icon: Tag, disabled: false },
-  { name: 'Khách hàng', path: '', icon: UserRound, disabled: true },
-  { name: 'Thiết bị', path: PATHS.VENDOR_MANAGER_EQUIPMENT, icon: Backpack, disabled: false },
-  { name: 'Porter', path: PATHS.VENDOR_MANAGER_PORTERS, icon: Footprints, disabled: false },
-  { name: 'Khẩn cấp (SOS)', path: PATHS.VENDOR_MANAGER_EMERGENCY, icon: Siren, disabled: false },
-  { name: 'Báo cáo', path: '', icon: BarChart3, disabled: true },
+  {
+    name: 'Bài viết của tôi',
+    path: PATHS.TREKKER_BLOG_LIST,
+    icon: FileText,
+    disabled: false,
+  },
+  {
+    name: 'Đổi mật khẩu',
+    path: PATHS.TREKKER_CHANGE_PASSWORD,
+    icon: Key,
+    disabled: false,
+  },
 ];
 
-export default function VendorManagerLayout() {
+export default function TrekkerLayout() {
   const location = useLocation();
   const user = useAppStore((state) => state.user);
   const { logout } = useLogout({ redirectTo: PATHS.LOGIN });
 
-  const vendorName = user?.name || 'Vendor Manager';
-  const vendorInitial = vendorName.charAt(0).toUpperCase();
+  const userName = user?.name || 'Trekker';
+  const userInitial = userName.charAt(0).toUpperCase();
 
-  // Nhiều mục có thể cùng khớp prefix (vd "Tour" và "Duyệt tour" đều bắt đầu bằng
-  // "/vendor-manager/tours") — chỉ mục có path khớp DÀI NHẤT được coi là active.
+  // Active item: longest matching path wins
   const activeItem = navItems
     .filter((item) => !item.disabled && location.pathname.startsWith(item.path))
     .sort((a, b) => b.path.length - a.path.length)[0];
 
   return (
     <div className="flex h-screen w-full overflow-hidden" style={{ backgroundColor: '#FAF8F1' }}>
+      {/* Sidebar */}
       <aside
         className="hidden md:flex w-72 flex-col justify-between"
         style={{ backgroundColor: '#EFECE6', borderRight: '1px solid #E0DCD1' }}
       >
         <div className="flex flex-col py-6">
+          {/* Header / Logo */}
           <div className="px-6 mb-8">
             <Link to={PATHS.HOME} className="hover:opacity-85 transition-opacity block">
               <h1
                 className="text-3xl font-extrabold tracking-tight leading-none mb-1"
                 style={{ color: '#06261D' }}
               >
-                TrekManager
+                TrekSphere
               </h1>
               <span className="text-xs font-medium tracking-wide" style={{ color: '#6F7B75' }}>
-                Quản lý đoàn leo núi
+                Tài khoản cá nhân
               </span>
             </Link>
           </div>
 
+          {/* Navigation Items */}
           <nav className="px-4 space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -110,6 +101,7 @@ export default function VendorManagerLayout() {
           </nav>
         </div>
 
+        {/* User card at bottom */}
         <div className="p-4" style={{ borderTop: '1px solid #E0DCD1' }}>
           <div className="flex items-center justify-between p-2 rounded-xl">
             <div className="flex items-center gap-3">
@@ -120,19 +112,19 @@ export default function VendorManagerLayout() {
                 {user?.avatarUrl ? (
                   <img
                     src={user.avatarUrl}
-                    alt={vendorName}
+                    alt={userName}
                     className="h-full w-full rounded-full object-cover"
                   />
                 ) : (
-                  <span>{vendorInitial}</span>
+                  <span>{userInitial}</span>
                 )}
               </div>
               <div className="flex flex-col">
                 <span className="text-sm font-bold leading-tight" style={{ color: '#06261D' }}>
-                  {vendorName}
+                  {userName}
                 </span>
                 <span className="text-[11px] font-medium" style={{ color: '#6F7B75' }}>
-                  Quản lý
+                  Trekker
                 </span>
               </div>
             </div>
@@ -148,6 +140,7 @@ export default function VendorManagerLayout() {
         </div>
       </aside>
 
+      {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <main className="flex-1 overflow-y-auto p-6 md:p-8">
           <Outlet />

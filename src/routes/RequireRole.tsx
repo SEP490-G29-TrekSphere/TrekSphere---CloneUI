@@ -54,7 +54,7 @@ export default function RequireRole({ children, allowedRoles = [ROLES.ADMIN] }: 
     // Tìm trang mặc định phù hợp với role của user
     const redirectPath =
       primaryRole === ROLES.TREKKER
-        ? PATHS.DASHBOARD
+        ? PATHS.TREKKER
         : primaryRole === ROLES.VENDOR_STAFF
           ? '/partner'
           : primaryRole === ROLES.VENDOR_MANAGER

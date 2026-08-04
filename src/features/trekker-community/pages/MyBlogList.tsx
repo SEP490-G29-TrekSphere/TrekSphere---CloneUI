@@ -84,12 +84,12 @@ export default function MyBlogList() {
   const isActionPending = toggleVisibility.isPending || deleteBlog.isPending;
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#FAF8F1' }}>
-      <main className="mx-auto max-w-none w-full px-4 pb-16 pt-6 sm:px-6">
+    <div className="w-full">
+      <div className="mx-auto max-w-none w-full px-4 pb-16 pt-2 sm:px-6">
         {/* Page Header */}
         <div
           className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
-          style={{ marginBottom: '32px', marginTop: '55px' }}
+          style={{ marginBottom: '32px' }}
         >
           <div>
             <h2 className="text-3xl font-bold" style={{ color: '#06261D' }}>
@@ -207,7 +207,7 @@ export default function MyBlogList() {
             )}
           </div>
         )}
-      </main>
+      </div>
 
       {pendingAction && (
         <ConfirmActionDialog

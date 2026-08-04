@@ -61,15 +61,17 @@ export default function VendorStaffLayout() {
       >
         <div className="flex flex-col py-6">
           <div className="px-6 mb-8">
-            <h1
-              className="text-3xl font-extrabold tracking-tight leading-none mb-1"
-              style={{ color: '#06261D' }}
-            >
-              TrekPartner
-            </h1>
-            <span className="text-xs font-medium tracking-wide" style={{ color: '#6F7B75' }}>
-              Quản lý tour của bạn
-            </span>
+            <Link to={PATHS.HOME} className="hover:opacity-85 transition-opacity block">
+              <h1
+                className="text-3xl font-extrabold tracking-tight leading-none mb-1"
+                style={{ color: '#06261D' }}
+              >
+                TrekPartner
+              </h1>
+              <span className="text-xs font-medium tracking-wide" style={{ color: '#6F7B75' }}>
+                Quản lý tour của bạn
+              </span>
+            </Link>
           </div>
 
           <nav className="px-4 space-y-1">

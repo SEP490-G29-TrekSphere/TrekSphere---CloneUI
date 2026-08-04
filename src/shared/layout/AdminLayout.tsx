@@ -78,10 +78,14 @@ export default function AdminLayout() {
         <div className="flex flex-col py-6">
           {/* Header/Logo */}
           <div className="px-6 mb-8">
-            <h1 className="text-3xl font-extrabold tracking-tight text-[#0B3025] leading-none mb-1">
-              TrekSphere
-            </h1>
-            <span className="text-xs text-zinc-500 font-medium tracking-wide">TRANG QUẢN TRỊ</span>
+            <Link to={PATHS.HOME} className="hover:opacity-85 transition-opacity block">
+              <h1 className="text-3xl font-extrabold tracking-tight text-[#0B3025] leading-none mb-1">
+                TrekSphere
+              </h1>
+              <span className="text-xs text-zinc-500 font-medium tracking-wide">
+                TRANG QUẢN TRỊ
+              </span>
+            </Link>
           </div>
 
           {/* Navigation Items */}

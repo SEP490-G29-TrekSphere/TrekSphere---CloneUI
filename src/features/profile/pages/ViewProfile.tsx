@@ -1,6 +1,4 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { PATHS } from '@/constants';
 import { AppButton, AppSpinner } from '@/shared/ui';
 import { storage } from '@/utils/storage';
@@ -28,10 +26,9 @@ function InfoCell({ label, value }: InfoCellProps) {
  * - Cột phải (70%): Thông tin chi tiết, tiểu sử, sở thích.
  * - Responsive: dưới lg sẽ xếp chồng 1 cột dọc.
  */
-export default function ViewProfile() {
+export default function ViewProfile({ editPath }: { editPath?: string }) {
   const { data: profile, isLoading, isError, error, refetch } = useProfile();
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const errorMessage = error instanceof Error ? error.message : null;
 
   if (isLoading) {
@@ -45,18 +42,6 @@ export default function ViewProfile() {
   if (isError || !profile) {
     return (
       <div className="mx-auto w-full max-w-6xl space-y-6 pb-8">
-        <div>
-          <AppButton
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate(-1)}
-            className="gap-2 px-2 text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="size-4" />
-            Quay lại
-          </AppButton>
-        </div>
         <header className="space-y-1">
           <h1 className="text-2xl font-bold text-primary md:text-3xl">Hồ sơ của tôi</h1>
           <p className="text-sm text-muted-foreground">Xem và quản lý thông tin cá nhân của bạn</p>
@@ -92,19 +77,6 @@ export default function ViewProfile() {
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 pb-8">
-      <div>
-        <AppButton
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate(-1)}
-          className="gap-2 px-2 text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="size-4" />
-          Quay lại
-        </AppButton>
-      </div>
-
       {/* Page title */}
       <header className="space-y-1">
         <h1 className="text-2xl font-bold text-primary md:text-3xl">Hồ sơ của tôi</h1>
@@ -115,7 +87,7 @@ export default function ViewProfile() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-10">
         {/* Sidebar */}
         <div className="lg:col-span-3">
-          <ProfileSidebar profile={profile} mode="view" />
+          <ProfileSidebar profile={profile} mode="view" editPath={editPath} />
         </div>
 
         {/* Main content */}

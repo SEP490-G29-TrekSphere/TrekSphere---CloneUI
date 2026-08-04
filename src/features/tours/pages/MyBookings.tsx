@@ -1,7 +1,7 @@
 import { Calendar, ChevronDown, Search, ShieldAlert, Users } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getBookingDetailPath } from '@/constants';
+import { getBookingDetailPath, getTrekkerBookingDetailPath } from '@/constants';
 import { tourService } from '@/features/tours/services/tourService';
 import type { BookingItemFromApi, BookingStatus } from '@/features/tours/types';
 import { AppCard } from '@/shared/ui';
@@ -20,7 +20,7 @@ const TAB_OPTIONS: Array<{ label: string; value: TabType }> = [
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80';
 
-export default function MyBookings() {
+export default function MyBookings({ useTrekkerPaths = false }: { useTrekkerPaths?: boolean }) {
   const navigate = useNavigate();
   const [bookings, setBookings] = useState<BookingItemFromApi[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>(() => {
@@ -110,7 +110,10 @@ export default function MyBookings() {
     if (mainEl) {
       sessionStorage.setItem('myBookingsScrollTop', String(mainEl.scrollTop));
     }
-    navigate(getBookingDetailPath(bookingId));
+    const path = useTrekkerPaths
+      ? getTrekkerBookingDetailPath(bookingId)
+      : getBookingDetailPath(bookingId);
+    navigate(path);
   };
 
   const handleLoadMore = () => {

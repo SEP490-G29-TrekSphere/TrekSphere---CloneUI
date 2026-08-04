@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
-import { PATHS, ROLES } from '@/constants';
+import { getTrekkerBookingPaymentPath, PATHS, ROLES } from '@/constants';
 import { AccountDetail, AccountList, AdminDashboard, BlogManagement } from '@/features/admin';
 import ProtectedRoute from '@/routes/ProtectedRoute';
 import RequireRole from '@/routes/RequireRole';
@@ -43,6 +43,9 @@ const JoinGroupRequestPage = lazy(
   () => import('@/features/companion-groups/pages/JoinGroupRequestPage')
 );
 const AdminLayout = lazy(() => import('@/shared/layout/AdminLayout'));
+const TrekkerLayout = lazy(() => import('@/features/trekker/layout/TrekkerLayout'));
+const TrekkerViewProfile = lazy(() => import('@/features/trekker/pages/TrekkerViewProfile'));
+const TrekkerChangePassword = lazy(() => import('@/features/trekker/pages/TrekkerChangePassword'));
 
 const Applications = lazy(() => import('@/features/admin/pages/Applications'));
 const ApplicationDetails = lazy(() => import('@/features/admin/pages/ApplicationDetails'));
@@ -156,6 +159,42 @@ export default function AppRoutes() {
           <Route path={PATHS.BOOKING_PAYMENT} element={<PayBooking />} />
           <Route path={PATHS.MY_TOURS} element={<MyBookings />} />
           <Route path={PATHS.MY_VENDOR_APPLICATIONS} element={<MyApplications />} />
+        </Route>
+
+        {/* Trekker routes — sidebar riêng (TrekSphere portal) */}
+        <Route
+          path={PATHS.TREKKER}
+          element={
+            <RequireRole allowedRoles={[ROLES.TREKKER]}>
+              <TrekkerLayout />
+            </RequireRole>
+          }
+        >
+          <Route index element={<Navigate to={PATHS.TREKKER_PROFILE} replace />} />
+          <Route path={PATHS.TREKKER_PROFILE} element={<TrekkerViewProfile />} />
+          <Route
+            path={PATHS.TREKKER_PROFILE_EDIT}
+            element={<EditProfile returnPath={PATHS.TREKKER_PROFILE} />}
+          />
+          <Route path={PATHS.TREKKER_MY_TOURS} element={<MyBookings useTrekkerPaths />} />
+          <Route path={PATHS.TREKKER_VENDOR_APPLICATIONS} element={<MyApplications />} />
+          <Route path={PATHS.TREKKER_BLOG_LIST} element={<MyBlogList />} />
+          <Route path={PATHS.TREKKER_BLOG_CREATE} element={<CreateBlogPost />} />
+          <Route path={PATHS.TREKKER_BLOG_EDIT} element={<CreateBlogPost editMode />} />
+          <Route path={PATHS.TREKKER_CHANGE_PASSWORD} element={<TrekkerChangePassword />} />
+          <Route
+            path={PATHS.TREKKER_BOOKING_DETAIL}
+            element={
+              <BookingDetail
+                backPath={PATHS.TREKKER_MY_TOURS}
+                paymentPath={getTrekkerBookingPaymentPath}
+              />
+            }
+          />
+          <Route
+            path={PATHS.TREKKER_BOOKING_PAYMENT}
+            element={<PayBooking backPath={PATHS.TREKKER_BOOKING_DETAIL} />}
+          />
         </Route>
 
         {/* Admin routes — yêu cầu role admin, dùng AdminLayout với sidebar riêng */}

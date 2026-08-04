@@ -47,7 +47,7 @@ const paymentSchema = z.object({
     }, 'Nội dung file không hợp lệ. Vui lòng tải lên ảnh PNG hoặc JPG/JPEG hợp lệ.'),
 });
 
-export default function PayBooking() {
+export default function PayBooking({ backPath }: { backPath?: string }) {
   const { bookingId } = useParams<{ bookingId: string }>();
   const navigate = useNavigate();
 
@@ -97,7 +97,7 @@ export default function PayBooking() {
         // If it's already awaiting confirmation, confirmed, cancelled or proof is already uploaded, we shouldn't show the pay screen
         if (data.bookingStatus !== 'PENDING' || data.proofImageUrl) {
           toast.info('Đơn hàng đã gửi minh chứng hoặc đang chờ Vendor xác nhận.');
-          navigate(getBookingDetailPath(bookingId));
+          navigate(backPath ?? getBookingDetailPath(bookingId));
           return;
         }
 
@@ -117,7 +117,7 @@ export default function PayBooking() {
       }
     }
     fetchBooking();
-  }, [bookingId, navigate]);
+  }, [bookingId, navigate, backPath]);
 
   // Handle timer expiration side effects
   useEffect(() => {
@@ -156,7 +156,7 @@ export default function PayBooking() {
       await tourService.updatePaymentProof(bookingId, data.paymentProof);
 
       toast.success('Cập nhật minh chứng thanh toán thành công!');
-      navigate(getBookingDetailPath(bookingId));
+      navigate(backPath ?? getBookingDetailPath(bookingId));
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : 'Đã xảy ra lỗi khi gửi minh chứng.';
       toast.error(errMsg);
@@ -179,7 +179,7 @@ export default function PayBooking() {
         <AlertCircle className="mx-auto mb-4 h-12 w-12 text-destructive" />
         <h2 className="text-xl font-bold">Không tìm thấy thông tin đặt chỗ</h2>
         <p className="text-muted-foreground mt-2">Vui lòng kiểm tra lại mã đặt chỗ.</p>
-        <AppButton onClick={() => navigate('/my-tours')} className="mt-4">
+        <AppButton onClick={() => navigate(backPath ?? '/my-tours')} className="mt-4">
           Quay lại danh sách tour đã đặt
         </AppButton>
       </div>
@@ -212,7 +212,7 @@ export default function PayBooking() {
       <div className="flex items-center gap-3 mb-6">
         <button
           type="button"
-          onClick={() => navigate(`/my-tours/${bookingId}`)}
+          onClick={() => navigate(backPath ?? `/my-tours/${bookingId}`)}
           aria-label="Quay lại chi tiết đặt tour"
           className="p-2 hover:bg-zinc-100 rounded-full transition-colors"
         >

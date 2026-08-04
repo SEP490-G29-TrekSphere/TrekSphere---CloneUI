@@ -29,7 +29,7 @@ import { PATHS } from './paths';
  */
 export const ROLE_PROTECTED_ROUTES: Record<Role, readonly string[]> = {
   [ROLES.GUEST]: [],
-  [ROLES.TREKKER]: ['/dashboard', '/my-tours', '/blog'],
+  [ROLES.TREKKER]: ['/trekker', '/dashboard', '/my-tours', '/blog'],
   [ROLES.VENDOR_STAFF]: ['/partner'],
   [ROLES.VENDOR_MANAGER]: ['/vendor-manager'],
   [ROLES.ADMIN]: ['/admin'],
@@ -105,6 +105,8 @@ export function getPostLoginRoute(roles: string[]): string {
       return '/partner';
     case ROLES.COORDINATOR:
       return PATHS.COORDINATOR_SCHEDULES;
+    case ROLES.TREKKER:
+      return PATHS.TREKKER;
     default:
       return PATHS.HOME;
   }
