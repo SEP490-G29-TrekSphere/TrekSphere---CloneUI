@@ -24,6 +24,9 @@ export default defineConfig(({ mode }) => {
     .replace(/\/api$/, '');
 
   return {
+    define: {
+      global: 'window',
+    },
     plugins: [react(), tailwindcss(), svgr()],
     resolve: {
       alias: {
@@ -49,6 +52,12 @@ export default defineConfig(({ mode }) => {
               console.log(`[proxy] ${req.method} ${req.url} -> ${apiTarget}${req.url}`);
             });
           },
+        },
+        '/ws': {
+          target: apiTarget,
+          ws: true,
+          changeOrigin: true,
+          secure: true,
         },
       },
     },

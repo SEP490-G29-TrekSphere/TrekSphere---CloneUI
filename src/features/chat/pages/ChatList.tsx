@@ -49,14 +49,17 @@ import {
   MessageScrollerItem,
   MessageScrollerProvider,
   MessageScrollerViewport,
+  useMessageScroller,
 } from '@/components/ui/message-scroller';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { queryClient } from '@/config/queryClient';
 import { PATHS } from '@/constants';
 import type { Conversation, DetailMessage } from '@/features/chat/types/types';
 import { AppSpinner } from '@/shared/ui';
 import { useAppStore } from '@/store/useAppStore';
 import { toast } from '@/store/useToastStore';
+import { useChatWebSocket } from '../context/ChatWebSocketContext';
 import { useChatConversations } from '../hooks/useChatConversations';
 import { useChatMessages } from '../hooks/useChatMessages';
 import { useSendMessage } from '../hooks/useSendMessage';
@@ -100,6 +103,24 @@ const chatMessageSchema = z.object({
 
 type ChatMessageFormValues = z.infer<typeof chatMessageSchema>;
 
+function ChatAutoScroller({ dependencies }: { dependencies: unknown[] }) {
+  const { scrollToBottom } = useMessageScroller();
+
+  useEffect(
+    () => {
+      // Small timeout to allow DOM to update before scrolling
+      const timeoutId = setTimeout(() => {
+        scrollToBottom();
+      }, 10);
+      return () => clearTimeout(timeoutId);
+    },
+    // biome-ignore lint/correctness/useExhaustiveDependencies: Custom dependency array passed as prop
+    dependencies
+  );
+
+  return null;
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function ChatList() {
@@ -110,9 +131,13 @@ export default function ChatList() {
   const sendMessageMutation = useSendMessage();
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [_localMessages, _setLocalMessages] = useState<Record<string, DetailMessage[]>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
+
+  const { client, isConnected } = useChatWebSocket();
+  const { mutate: sendMessage } = useSendMessage();
 
   const {
     data: messagesResponse,
@@ -138,6 +163,65 @@ export default function ChatList() {
   useEffect(() => {
     reset({ message: '' });
   }, [selectedId, reset]);
+
+  // WebSocket Subscription
+  useEffect(() => {
+    if (!client || !isConnected || !selectedId) return;
+
+    const subscription = client.subscribe(
+      `/topic/chat/conversations/${selectedId}/messages`,
+      (message) => {
+        if (message.body) {
+          try {
+            const parsed = JSON.parse(message.body);
+
+            // Cập nhật React Query cache
+            // biome-ignore lint/suspicious/noExplicitAny: React Query cache structure
+            queryClient.setQueryData(['chatMessages', selectedId, 1, 50], (oldData: any) => {
+              if (!oldData) return oldData;
+
+              // Tránh duplicate tin nhắn
+              const isExist = oldData.content?.some(
+                (msg: DetailMessage) => msg.messageId === parsed.messageId
+              );
+              if (isExist) return oldData;
+
+              return {
+                ...oldData,
+                content: [parsed, ...oldData.content],
+              };
+            });
+
+            // Cập nhật last message trong danh sách conversation
+            setConversations((prev) =>
+              prev.map((c) =>
+                c.id === selectedId
+                  ? {
+                      ...c,
+                      lastMessage:
+                        parsed.content?.length > 22
+                          ? `${parsed.content.substring(0, 22)}...`
+                          : parsed.content,
+                      lastMessageTime: new Date(parsed.createdAt).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      }),
+                      timestamp: parsed.createdAt,
+                    }
+                  : c
+              )
+            );
+          } catch (e) {
+            console.error('Failed to parse incoming message', e);
+          }
+        }
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [client, isConnected, selectedId]);
 
   // Sync API response to local state
   useEffect(() => {
@@ -235,19 +319,25 @@ export default function ChatList() {
   const onSubmitMessage = (data: ChatMessageFormValues) => {
     if (!selectedId) return;
     const msgText = data.message;
-    sendMessageMutation.mutate(
-      {
-        conversationId: selectedId,
-        content: msgText,
-      },
-      {
-        onSuccess: () => {
-          reset({ message: '' });
-        },
-        onError: (err: any) => {
-          toast.error(err.message || 'Không thể gửi tin nhắn');
-        },
-      }
+
+    // Gọi API để gửi tin nhắn
+    sendMessage({
+      conversationId: selectedId,
+      content: msgText,
+    });
+
+    // Optimistic UI updates
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.id === selectedId
+          ? {
+              ...c,
+              lastMessage: msgText.length > 22 ? `${msgText.substring(0, 22)}...` : msgText,
+              lastMessageTime: 'Vừa xong',
+              timestamp: new Date().toISOString(),
+            }
+          : c
+      )
     );
   };
 
@@ -544,6 +634,9 @@ export default function ChatList() {
 
                 {/* ── Messages ─────────────────────────────────────────── */}
                 <MessageScrollerProvider autoScroll>
+                  <ChatAutoScroller
+                    dependencies={[currentMessages.length, selectedId, isLoadingMessages]}
+                  />
                   <MessageScroller className="flex-1 bg-muted/5">
                     <MessageScrollerViewport className="px-6 py-6">
                       <MessageScrollerContent>
