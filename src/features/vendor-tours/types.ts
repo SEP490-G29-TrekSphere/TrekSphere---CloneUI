@@ -115,4 +115,6 @@ export interface UpdateSchedulePayload {
   price: number;
   availableSlots: number;
   status: ApiScheduleStatus;
+  /** Bắt buộc khi lịch đã có khách đặt (`bookedSlots > 0`) — BE gửi notification cho khách dựa vào đây. */
+  reason?: string;
 }

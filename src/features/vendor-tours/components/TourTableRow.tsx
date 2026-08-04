@@ -1,7 +1,7 @@
-import { CalendarClock, Check, Pencil, Send, Trash2, X } from 'lucide-react';
+import { CalendarClock, Eye, EyeOff, Pencil, RefreshCw, Send, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { formatPrice } from '@/utils/format';
-import type { VendorTourListItem } from '../types';
+import type { ApiStatus, VendorTourListItem } from '../types';
 import { TourDifficultyBadge } from './TourDifficultyBadge';
 import { TourStatusBadge } from './TourStatusBadge';
 
@@ -11,11 +11,16 @@ const FALLBACK_COVER =
 /** Chỉ tour đang bản nháp hoặc bị từ chối mới gửi kiểm duyệt được (khớp mô tả API). */
 const SUBMITTABLE_STATUSES = new Set(['DRAFT', 'REJECTED']);
 
-/**
- * Sửa tour chỉ được phép khi đang DRAFT/REJECTED — BE trả lỗi nếu sửa lúc đang chờ duyệt,
- * đã duyệt, hoặc đã ẩn (cùng 1 API PUT /vendor/tours/{id} dùng chung cho Manager và Staff).
- */
-const EDITABLE_STATUSES = new Set(['DRAFT', 'REJECTED']);
+/** Chỉ tour đã duyệt hoặc đang ẩn mới tạo được lịch khởi hành. */
+const SCHEDULABLE_STATUSES = new Set(['APPROVED', 'HIDDEN']);
+
+/** "Chuyển trạng thái / Sửa lại" (revert-to-draft) chỉ áp dụng cho tour bị từ chối, cả 2 role. */
+const REVERTABLE_STATUSES = new Set(['REJECTED']);
+
+/** Staff chỉ sửa được tour của chính mình lúc còn nháp hoặc bị từ chối. */
+export const STAFF_EDITABLE_STATUSES = new Set<ApiStatus>(['DRAFT', 'REJECTED']);
+/** Manager chỉ sửa được tour đang chờ duyệt (trước khi tự duyệt/từ chối). */
+export const MANAGER_EDITABLE_STATUSES = new Set<ApiStatus>(['PENDING_APPROVAL']);
 
 interface TourTableRowProps {
   tour: VendorTourListItem;
@@ -23,31 +28,38 @@ interface TourTableRowProps {
   editPath: string;
   /** Đường dẫn màn Lịch khởi hành cho đúng tour này — do trang cha tính sẵn (khác nhau giữa Manager/Staff). */
   schedulesPath: string;
-  onDeleteClick: (tour: VendorTourListItem) => void;
-  /** Chỉ truyền prop này (vd: từ màn Staff) nếu muốn hiện nút "Gửi kiểm duyệt". */
+  /** Set trạng thái được phép Sửa — page cha truyền đúng bộ theo role của mình. */
+  editableStatuses: Set<ApiStatus>;
+  /** Chỉ Manager truyền — Staff không còn quyền xóa tour. */
+  onDeleteClick?: (tour: VendorTourListItem) => void;
+  /** Chỉ Staff truyền — hiện nút "Gửi kiểm duyệt". */
   onSubmitApprovalClick?: (tour: VendorTourListItem) => void;
-  /**
-   * Chỉ truyền 2 prop này (vd: từ màn Manager) nếu muốn hiện nút Duyệt/Từ chối
-   * cho tour đang PENDING_APPROVAL. BE chưa có API duyệt/từ chối tour — hiện
-   * tại 2 handler này chỉ là placeholder (toast "đang phát triển").
-   */
-  onApproveClick?: (tour: VendorTourListItem) => void;
-  onRejectClick?: (tour: VendorTourListItem) => void;
+  /** Cả 2 role đều truyền — hiện trên tour REJECTED, copy dialog xác nhận khác nhau theo trang gọi. */
+  onRevertClick?: (tour: VendorTourListItem) => void;
+  /** Chỉ Manager truyền — hiện khi tour đang APPROVED. */
+  onHideClick?: (tour: VendorTourListItem) => void;
+  /** Chỉ Manager truyền — hiện khi tour đang HIDDEN. */
+  onUnhideClick?: (tour: VendorTourListItem) => void;
 }
 
 export function TourTableRow({
   tour,
   editPath,
   schedulesPath,
+  editableStatuses,
   onDeleteClick,
   onSubmitApprovalClick,
-  onApproveClick,
-  onRejectClick,
+  onRevertClick,
+  onHideClick,
+  onUnhideClick,
 }: TourTableRowProps) {
   const navigate = useNavigate();
+  const canEdit = editableStatuses.has(tour.status);
   const canSubmitApproval = onSubmitApprovalClick && SUBMITTABLE_STATUSES.has(tour.status);
-  const canReview = (onApproveClick || onRejectClick) && tour.status === 'PENDING_APPROVAL';
-  const canEdit = EDITABLE_STATUSES.has(tour.status);
+  const canSchedule = SCHEDULABLE_STATUSES.has(tour.status);
+  const canRevert = onRevertClick && REVERTABLE_STATUSES.has(tour.status);
+  const canHide = onHideClick && tour.status === 'APPROVED';
+  const canUnhide = onUnhideClick && tour.status === 'HIDDEN';
 
   return (
     <tr className="border-b transition-colors last:border-b-0" style={{ borderColor: '#E6E2D1' }}>
@@ -86,39 +98,6 @@ export function TourTableRow({
 
       <td className="px-6 py-4" style={{ verticalAlign: 'middle' }}>
         <div className="flex items-center gap-3">
-          {canSubmitApproval && (
-            <button
-              type="button"
-              onClick={() => onSubmitApprovalClick(tour)}
-              className="transition-opacity hover:opacity-70"
-              style={{ color: '#0E7C6B' }}
-              title="Gửi yêu cầu kiểm duyệt"
-            >
-              <Send className="h-4 w-4" />
-            </button>
-          )}
-          {canReview && onApproveClick && (
-            <button
-              type="button"
-              onClick={() => onApproveClick(tour)}
-              className="transition-opacity hover:opacity-70"
-              style={{ color: '#16A34A' }}
-              title="Duyệt tour"
-            >
-              <Check className="h-4 w-4" />
-            </button>
-          )}
-          {canReview && onRejectClick && (
-            <button
-              type="button"
-              onClick={() => onRejectClick(tour)}
-              className="transition-opacity hover:opacity-70"
-              style={{ color: '#DC2626' }}
-              title="Từ chối tour"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
           {canEdit && (
             <button
               type="button"
@@ -130,23 +109,72 @@ export function TourTableRow({
               <Pencil className="h-4 w-4" />
             </button>
           )}
+          {canSubmitApproval && (
+            <button
+              type="button"
+              onClick={() => onSubmitApprovalClick(tour)}
+              className="transition-opacity hover:opacity-70"
+              style={{ color: '#0E7C6B' }}
+              title="Gửi yêu cầu kiểm duyệt"
+            >
+              <Send className="h-4 w-4" />
+            </button>
+          )}
+          {canRevert && (
+            <button
+              type="button"
+              onClick={() => onRevertClick(tour)}
+              className="transition-opacity hover:opacity-70"
+              style={{ color: '#0E7C6B' }}
+              title="Chuyển trạng thái / Sửa lại"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </button>
+          )}
+          {canHide && (
+            <button
+              type="button"
+              onClick={() => onHideClick(tour)}
+              className="transition-opacity hover:opacity-70"
+              style={{ color: '#EA580C' }}
+              title="Ẩn tour"
+            >
+              <EyeOff className="h-4 w-4" />
+            </button>
+          )}
+          {canUnhide && (
+            <button
+              type="button"
+              onClick={() => onUnhideClick(tour)}
+              className="transition-opacity hover:opacity-70"
+              style={{ color: '#16A34A' }}
+              title="Mở lại tour"
+            >
+              <Eye className="h-4 w-4" />
+            </button>
+          )}
           <button
             type="button"
             onClick={() => navigate(schedulesPath)}
-            className="transition-opacity hover:opacity-70"
+            disabled={!canSchedule}
+            className="transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-30"
             style={{ color: '#0E7C6B' }}
-            title="Lịch khởi hành"
+            title={
+              canSchedule ? 'Lịch khởi hành' : 'Tour cần được duyệt trước khi tạo lịch khởi hành'
+            }
           >
             <CalendarClock className="h-4 w-4" />
           </button>
-          <button
-            type="button"
-            onClick={() => onDeleteClick(tour)}
-            className="text-red-500 transition-colors hover:text-red-600"
-            title="Xóa tour"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+          {onDeleteClick && (
+            <button
+              type="button"
+              onClick={() => onDeleteClick(tour)}
+              className="text-red-500 transition-colors hover:text-red-600"
+              title="Xóa tour"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </td>
     </tr>

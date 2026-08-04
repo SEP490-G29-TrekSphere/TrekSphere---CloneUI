@@ -50,8 +50,30 @@ export default function SessionDetail() {
   const [assignPorterOpen, setAssignPorterOpen] = useState(false);
   const [assignEquipmentOpen, setAssignEquipmentOpen] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<RemoveTarget | null>(null);
+  const [equipmentChecked, setEquipmentChecked] = useState<Record<string, boolean>>({});
+  const [pendingCheckId, setPendingCheckId] = useState<string | undefined>(undefined);
 
   const handleBack = () => navigate(listPath);
+
+  const handleToggleEquipmentCheck = (equipment: SessionEquipment, next: boolean) => {
+    setPendingCheckId(equipment.sessionEquipmentId);
+    mutations.checkEquipment.mutate(
+      { sessionEquipmentId: equipment.sessionEquipmentId, isChecked: next },
+      {
+        onSuccess: (result) => {
+          setEquipmentChecked((prev) => ({
+            ...prev,
+            [result.sessionEquipmentId]: result.isChecked,
+          }));
+        },
+        onError: (err) =>
+          toast.error(
+            err instanceof Error ? err.message : 'Không thể cập nhật trạng thái kiểm tra.'
+          ),
+        onSettled: () => setPendingCheckId(undefined),
+      }
+    );
+  };
 
   const handleRemoveCoordinatorClick = (coordinator: SessionCoordinator) =>
     setRemoveTarget({
@@ -189,6 +211,10 @@ export default function SessionDetail() {
         equipments={session.equipments}
         onAddClick={() => setAssignEquipmentOpen(true)}
         onRemoveClick={handleRemoveEquipmentClick}
+        canCheck={!isManager}
+        checkedMap={equipmentChecked}
+        pendingCheckId={pendingCheckId}
+        onToggleCheck={handleToggleEquipmentCheck}
       />
 
       <AssignCoordinatorDialog

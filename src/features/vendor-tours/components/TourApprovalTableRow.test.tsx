@@ -14,7 +14,6 @@ const tour: VendorTourListItem = {
 interface RenderRowProps {
   onApproveClick?: (tour: VendorTourListItem) => void;
   onRejectClick?: (tour: VendorTourListItem) => void;
-  onHideClick?: (tour: VendorTourListItem) => void;
 }
 
 function renderRow(props: RenderRowProps = {}) {
@@ -27,18 +26,10 @@ function renderRow(props: RenderRowProps = {}) {
   );
 }
 
-test('tab Chờ duyệt: hiện nút Duyệt + Từ chối, không hiện nút Ẩn', () => {
+test('hiện nút Duyệt + Từ chối khi có đủ 2 handler', () => {
   renderRow({ onApproveClick: jest.fn(), onRejectClick: jest.fn() });
   expect(screen.getByTitle('Duyệt tour')).toBeTruthy();
   expect(screen.getByTitle('Từ chối tour')).toBeTruthy();
-  expect(screen.queryByTitle('Ẩn tour')).toBeNull();
-});
-
-test('tab Đã duyệt: chỉ hiện nút Ẩn', () => {
-  renderRow({ onHideClick: jest.fn() });
-  expect(screen.queryByTitle('Duyệt tour')).toBeNull();
-  expect(screen.queryByTitle('Từ chối tour')).toBeNull();
-  expect(screen.getByTitle('Ẩn tour')).toBeTruthy();
 });
 
 test('bấm nút Duyệt gọi onApproveClick kèm đúng tour', () => {

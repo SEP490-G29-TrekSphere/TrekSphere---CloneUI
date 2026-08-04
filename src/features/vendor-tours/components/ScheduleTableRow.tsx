@@ -3,15 +3,25 @@ import { formatDate, formatPrice } from '@/utils/format';
 import type { TourSchedule } from '../types';
 import { ScheduleStatusBadge } from './ScheduleStatusBadge';
 
+/** Lịch đã hoàn thành hoặc đã hủy thì không sửa được nữa (khớp mã lỗi `SCHEDULE_NOT_EDITABLE` của BE). */
+const EDITABLE_SCHEDULE_STATUSES = new Set(['OPEN', 'CLOSED']);
+
 interface ScheduleTableRowProps {
   schedule: TourSchedule;
-  onEditClick: (schedule: TourSchedule) => void;
+  /** Chỉ truyền (màn Manager) nếu muốn hiện nút Sửa — Staff không có quyền này. */
+  onEditClick?: (schedule: TourSchedule) => void;
   /** Chỉ truyền (màn Manager) nếu muốn hiện nút Hủy lịch — Staff không có quyền này. */
   onDeleteClick?: (schedule: TourSchedule) => void;
 }
 
 export function ScheduleTableRow({ schedule, onEditClick, onDeleteClick }: ScheduleTableRowProps) {
   const hasBookings = schedule.bookedSlots > 0;
+  const isEditable = EDITABLE_SCHEDULE_STATUSES.has(schedule.status);
+  // `availableSlots` là TỔNG số chỗ của lịch (đặt lúc tạo/sửa lịch), KHÔNG tự giảm khi có
+  // khách đặt — số chỗ còn trống thực tế phải tự tính = tổng - đã đặt (khớp cách tính đang
+  // dùng ở trang Trekker: `TourDetails.tsx`/`BookTour.tsx`). Kẹp về 0 để phòng dữ liệu lệch
+  // (vd tổng bị sửa thấp hơn số đã đặt) không hiện số âm.
+  const remainingSlots = Math.max(0, schedule.availableSlots - schedule.bookedSlots);
 
   return (
     <tr className="border-b transition-colors last:border-b-0" style={{ borderColor: '#E6E2D1' }}>
@@ -35,7 +45,10 @@ export function ScheduleTableRow({ schedule, onEditClick, onDeleteClick }: Sched
 
       <td className="px-6 py-4" style={{ verticalAlign: 'middle' }}>
         <span className="text-sm font-medium" style={{ color: '#06261D' }}>
-          {schedule.bookedSlots}/{schedule.availableSlots}
+          {schedule.bookedSlots}/{schedule.availableSlots} chỗ
+        </span>
+        <span className="block text-xs" style={{ color: '#6F7B75' }}>
+          Còn trống {remainingSlots} chỗ
         </span>
       </td>
 
@@ -45,15 +58,22 @@ export function ScheduleTableRow({ schedule, onEditClick, onDeleteClick }: Sched
 
       <td className="px-6 py-4" style={{ verticalAlign: 'middle' }}>
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => onEditClick(schedule)}
-            className="transition-opacity hover:opacity-70"
-            style={{ color: '#06261D' }}
-            title="Sửa lịch khởi hành"
-          >
-            <Pencil className="h-4 w-4" />
-          </button>
+          {onEditClick && (
+            <button
+              type="button"
+              onClick={() => onEditClick(schedule)}
+              disabled={!isEditable}
+              className="transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-30"
+              style={{ color: '#06261D' }}
+              title={
+                isEditable
+                  ? 'Sửa lịch khởi hành'
+                  : 'Lịch đã hoàn thành hoặc đã hủy, không thể chỉnh sửa'
+              }
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+          )}
           {onDeleteClick && (
             <button
               type="button"

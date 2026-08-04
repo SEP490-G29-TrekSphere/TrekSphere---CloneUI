@@ -410,6 +410,12 @@ export interface BookingDetailResponse {
   bookingId: string;
   bookingCode: string;
   tourId: string;
+  /**
+   * ID của Tour Session thực địa tương ứng — cần để gửi SOS (`POST /tracking/sos`).
+   * Optional vì BE hiện chưa trả field này ở `GET /bookings/{id}`; khi có, panel
+   * SOS ở `BookingDetail.tsx` sẽ tự hiện ra mà không cần sửa code thêm.
+   */
+  tourSessionId?: string;
   tourName: string;
   coverImageUrl: string;
   departureDate: string;

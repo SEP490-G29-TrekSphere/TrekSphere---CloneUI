@@ -197,6 +197,7 @@ export default function TourSchedules() {
             : { price: tour.basePrice }
         }
         bookedSlots={isEditingExisting ? formTarget.bookedSlots : 0}
+        maxCapacity={tour.maxCapacity}
         isPending={createSchedule.isPending || updateSchedule.isPending}
         onSubmit={handleFormSubmit}
       />

@@ -1,5 +1,5 @@
-import { EyeOff, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { X } from 'lucide-react';
+import { useState } from 'react';
 import { ApproveTourConfirmDialog } from '@/features/vendor-tours/components/ApproveTourConfirmDialog';
 import { TourApprovalTableRow } from '@/features/vendor-tours/components/TourApprovalTableRow';
 import { TourPagination } from '@/features/vendor-tours/components/TourPagination';
@@ -17,39 +17,24 @@ const PAGE_SIZE = 10;
  */
 const SAMPLE_SIZE = 200;
 
-type ApprovalTab = 'pending' | 'approved';
-
-const TAB_STATUS: Record<ApprovalTab, VendorTourListItem['status']> = {
-  pending: 'PENDING_APPROVAL',
-  approved: 'APPROVED',
-};
-
-const TAB_OPTIONS: Array<{ value: ApprovalTab; label: string }> = [
-  { value: 'pending', label: 'Chờ duyệt' },
-  { value: 'approved', label: 'Đã duyệt' },
-];
-
+/**
+ * Duyệt tour đang PENDING_APPROVAL — chỉ còn 1 danh sách (đã bỏ tab "Đã duyệt"; Ẩn tour giờ
+ * nằm trực tiếp trên Danh sách Tour, xem `vendor-manager/tours/pages/TourList.tsx`).
+ */
 export default function TourApprovals() {
-  const [tab, setTab] = useState<ApprovalTab>('pending');
   const [page, setPage] = useState(1);
   const [approveTarget, setApproveTarget] = useState<VendorTourListItem | null>(null);
   const [rejectTarget, setRejectTarget] = useState<VendorTourListItem | null>(null);
-  const [hideTarget, setHideTarget] = useState<VendorTourListItem | null>(null);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: chỉ cần trigger reset khi đổi tab
-  useEffect(() => {
-    setPage(1);
-  }, [tab]);
 
   const { data, isLoading, isError, error } = useVendorTourList({}, 1, SAMPLE_SIZE);
   const { data: stats } = useVendorTourStats();
-  const { approveTour, rejectTour, hideTour } = useVendorTourMutations();
+  const { approveTour, rejectTour } = useVendorTourMutations();
 
   const allTours = data?.tours ?? [];
-  const filteredTours = allTours.filter((tour) => tour.status === TAB_STATUS[tab]);
-  const total = filteredTours.length;
+  const pendingTours = allTours.filter((tour) => tour.status === 'PENDING_APPROVAL');
+  const total = pendingTours.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const tours = filteredTours.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const tours = pendingTours.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const handleApproveConfirm = () => {
     if (!approveTarget) return;
@@ -77,20 +62,6 @@ export default function TourApprovals() {
     );
   };
 
-  const handleHideConfirm = (reason: string) => {
-    if (!hideTarget) return;
-    hideTour.mutate(
-      { tourId: hideTarget.id, reason },
-      {
-        onSuccess: () => {
-          setHideTarget(null);
-          toast.success('Đã ẩn tour.');
-        },
-        onError: (err) => toast.error(err instanceof Error ? err.message : 'Không thể ẩn tour.'),
-      }
-    );
-  };
-
   return (
     <div className="space-y-6">
       <div>
@@ -98,26 +69,8 @@ export default function TourApprovals() {
           Duyệt tour
         </h2>
         <p className="text-sm font-medium mt-1" style={{ color: '#6F7B75' }}>
-          Xét duyệt tour do nhân viên gửi lên, hoặc ẩn tour đã duyệt nếu phát hiện vi phạm.
+          Xét duyệt tour do nhân viên gửi lên.
         </p>
-      </div>
-
-      <div className="inline-flex gap-2 rounded-full p-1.5" style={{ backgroundColor: '#F0EEE6' }}>
-        {TAB_OPTIONS.map((item) => (
-          <button
-            key={item.value}
-            type="button"
-            onClick={() => setTab(item.value)}
-            className="rounded-full px-5 py-2 text-sm font-semibold transition-colors"
-            style={
-              tab === item.value
-                ? { backgroundColor: '#06261D', color: '#FFFFFF' }
-                : { color: '#6F7B75' }
-            }
-          >
-            {item.label}
-          </button>
-        ))}
       </div>
 
       <div
@@ -168,24 +121,18 @@ export default function TourApprovals() {
                     className="px-6 py-16 text-center text-sm"
                     style={{ color: '#6F7B75' }}
                   >
-                    {tab === 'pending'
-                      ? 'Không có tour nào đang chờ duyệt.'
-                      : 'Không có tour nào đã duyệt.'}
+                    Không có tour nào đang chờ duyệt.
                   </td>
                 </tr>
               ) : (
-                tours.map((tour) =>
-                  tab === 'pending' ? (
-                    <TourApprovalTableRow
-                      key={tour.id}
-                      tour={tour}
-                      onApproveClick={setApproveTarget}
-                      onRejectClick={setRejectTarget}
-                    />
-                  ) : (
-                    <TourApprovalTableRow key={tour.id} tour={tour} onHideClick={setHideTarget} />
-                  )
-                )
+                tours.map((tour) => (
+                  <TourApprovalTableRow
+                    key={tour.id}
+                    tour={tour}
+                    onApproveClick={setApproveTarget}
+                    onRejectClick={setRejectTarget}
+                  />
+                ))
               )}
             </tbody>
           </table>
@@ -257,21 +204,6 @@ export default function TourApprovals() {
         confirmPendingLabel="Đang từ chối..."
         onConfirm={handleRejectConfirm}
         isPending={rejectTour.isPending}
-      />
-
-      <TourReasonDialog
-        open={hideTarget !== null}
-        onOpenChange={(open) => !open && setHideTarget(null)}
-        icon={EyeOff}
-        iconColor="#EA580C"
-        iconBgColor="rgba(234, 88, 12, 0.1)"
-        title="Ẩn tour vi phạm"
-        description={`Ẩn tour "${hideTarget?.name ?? ''}"? Tour sẽ không còn hiển thị cho khách hàng. Vui lòng nhập lý do.`}
-        placeholder="Vd: Phát hiện thông tin sai lệch, vi phạm chính sách tour..."
-        confirmLabel="Ẩn tour"
-        confirmPendingLabel="Đang ẩn..."
-        onConfirm={handleHideConfirm}
-        isPending={hideTour.isPending}
       />
     </div>
   );

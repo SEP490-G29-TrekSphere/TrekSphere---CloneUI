@@ -1,4 +1,4 @@
-import { type ApiResponse, ApiService } from '@/config/apiClient';
+import { type ApiResponse, ApiService, ApiUpload } from '@/config/apiClient';
 import type {
   ApiDifficulty,
   ApiStatus,
@@ -32,6 +32,12 @@ import type {
  *   PUT    /vendor/tours/{id}/approve                — Manager duyệt tour đang PENDING_APPROVAL
  *   PUT    /vendor/tours/{id}/reject                 — Manager từ chối tour PENDING_APPROVAL (kèm reason)
  *   PUT    /vendor/tours/{id}/hide                   — Manager ẩn tour APPROVED nếu vi phạm (kèm reason)
+ *   POST   /vendor/tours/{id}/revert-to-draft         — chuyển REJECTED về DRAFT (Staff) hoặc
+ *                                                        PENDING_APPROVAL (Manager), BE tự quyết theo role
+ *   PUT    /vendor/tours/{id}/unhide                  — Manager mở lại tour HIDDEN, đưa về APPROVED
+ *   POST   /vendor/tours/{id}/restore                 — Manager khôi phục tour đã xóa mềm, đưa về
+ *                                                        PENDING_APPROVAL (chưa có UI gọi, xem ghi chú
+ *                                                        tại định nghĩa hàm `restoreTour` bên dưới)
  *
  * LƯU Ý: `/vendor/tours/{id}` KHÔNG có method GET (đã xác nhận qua OpenAPI spec —
  * path đó chỉ khai báo `put`/`delete`). Muốn lấy chi tiết 1 tour để đổ vào form
@@ -39,6 +45,15 @@ import type {
  * nhập) — response cùng schema `TourDetailResponse`. Tương tự, danh sách checkpoint
  * của tour cũng chỉ có bản public `GET /tours/{tourId}/checkpoints` (không có bản
  * `/vendor/...`), dùng chung cho cả 2 role.
+ *
+ * LƯU Ý QUAN TRỌNG: `createTour`/`updateTour`/`createCheckpoint`/`updateCheckpoint`
+ * bắt buộc `Content-Type: multipart/form-data` (đã xác nhận qua `/v3/api-docs` — cả
+ * 4 request này khai báo `requestBody.content["multipart/form-data"]`, KHÔNG phải
+ * JSON — gửi JSON thẳng sẽ bị BE từ chối 415/400, đây chính là lỗi tạo tour trước
+ * đây). `CreateTourRequest`/`UpdateTourRequest` hiện KHÔNG có field ảnh bìa
+ * (`coverImage`/`coverImageUrl`) dù response `TourDetailResponse` có `coverImageUrl`
+ * — có vẻ BE chưa nối field này ở request. FE vẫn gửi kèm `coverImageUrl` (BE sẽ bỏ
+ * qua field lạ, không lỗi) để tự chạy được ngay khi BE bổ sung field.
  */
 
 interface VendorTourResponseDto {
@@ -67,6 +82,18 @@ interface PaginationResponseDto<T> {
   totalElements: number;
   totalPages: number;
   last: boolean;
+}
+
+/** Build FormData cho các request multipart/form-data — bỏ qua field undefined/null. */
+function toFormData(
+  fields: Record<string, string | number | boolean | undefined | null>
+): FormData {
+  const formData = new FormData();
+  for (const [key, value] of Object.entries(fields)) {
+    if (value === undefined || value === null) continue;
+    formData.append(key, String(value));
+  }
+  return formData;
 }
 
 function unwrapResponse<T>(response: ApiResponse<T>): T {
@@ -124,7 +151,18 @@ export const vendorTourService = {
 
   /** Tạo tour mới — BE trả về status mặc định DRAFT. */
   async createTour(payload: CreateTourPayload): Promise<CreatedTour> {
-    const response = await ApiService<TourDetailResponseDto>('/vendor/tours', 'POST', payload);
+    const formData = toFormData({
+      tourName: payload.tourName,
+      description: payload.description,
+      difficulty: payload.difficulty,
+      location: payload.location,
+      durationDays: payload.durationDays,
+      basePrice: payload.basePrice,
+      minCapacity: payload.minCapacity,
+      maxCapacity: payload.maxCapacity,
+      coverImageUrl: payload.coverImageUrl,
+    });
+    const response = await ApiUpload<TourDetailResponseDto>('/vendor/tours', formData);
     const data = unwrapResponse(response);
     return { id: data.tourId, status: data.status };
   },
@@ -140,10 +178,21 @@ export const vendorTourService = {
 
   /** Cập nhật tour đã tồn tại — gửi nguyên payload hiện tại của form (không diff field). */
   async updateTour(tourId: string, payload: UpdateTourPayload): Promise<CreatedTour> {
-    const response = await ApiService<TourDetailResponseDto>(
+    const formData = toFormData({
+      tourName: payload.tourName,
+      description: payload.description,
+      difficulty: payload.difficulty,
+      location: payload.location,
+      durationDays: payload.durationDays,
+      basePrice: payload.basePrice,
+      minCapacity: payload.minCapacity,
+      maxCapacity: payload.maxCapacity,
+      coverImageUrl: payload.coverImageUrl,
+    });
+    const response = await ApiUpload<TourDetailResponseDto>(
       `/vendor/tours/${tourId}`,
-      'PUT',
-      payload
+      formData,
+      'PUT'
     );
     const data = unwrapResponse(response);
     return { id: data.tourId, status: data.status };
@@ -151,10 +200,18 @@ export const vendorTourService = {
 
   /** Thêm 1 checkpoint vào tour đã tồn tại. */
   async createCheckpoint(tourId: string, payload: TourCheckpointPayload): Promise<void> {
-    const response = await ApiService<TourCheckpointResponseDto>(
+    const formData = toFormData({
+      checkpointName: payload.checkpointName,
+      description: payload.description,
+      checkpointOrder: payload.checkpointOrder,
+      latitude: payload.latitude,
+      longitude: payload.longitude,
+      altitude: payload.altitude,
+      checkpointImageUrl: payload.checkpointImageUrl,
+    });
+    const response = await ApiUpload<TourCheckpointResponseDto>(
       `/vendor/tours/${tourId}/checkpoints`,
-      'POST',
-      payload
+      formData
     );
     unwrapResponse(response);
   },
@@ -170,10 +227,19 @@ export const vendorTourService = {
 
   /** Sửa 1 checkpoint đã tồn tại. */
   async updateCheckpoint(checkpointId: string, payload: TourCheckpointPayload): Promise<void> {
-    const response = await ApiService<TourCheckpointResponseDto>(
+    const formData = toFormData({
+      checkpointName: payload.checkpointName,
+      description: payload.description,
+      checkpointOrder: payload.checkpointOrder,
+      latitude: payload.latitude,
+      longitude: payload.longitude,
+      altitude: payload.altitude,
+      checkpointImageUrl: payload.checkpointImageUrl,
+    });
+    const response = await ApiUpload<TourCheckpointResponseDto>(
       `/vendor/tours/checkpoints/${checkpointId}`,
-      'PUT',
-      payload
+      formData,
+      'PUT'
     );
     unwrapResponse(response);
   },
@@ -231,6 +297,44 @@ export const vendorTourService = {
       `/vendor/tours/${tourId}/hide`,
       'PUT',
       { reason }
+    );
+    const data = unwrapResponse(response);
+    return { id: data.tourId, status: data.status };
+  },
+
+  /**
+   * Chuyển tour REJECTED về DRAFT (Staff) hoặc PENDING_APPROVAL (Manager) — BE tự quyết định
+   * trạng thái đích theo role của người gọi, FE gọi chung 1 API cho cả 2 role, không cần body.
+   */
+  async revertTourToDraft(tourId: string): Promise<CreatedTour> {
+    const response = await ApiService<TourDetailResponseDto>(
+      `/vendor/tours/${tourId}/revert-to-draft`,
+      'POST'
+    );
+    const data = unwrapResponse(response);
+    return { id: data.tourId, status: data.status };
+  },
+
+  /** Mở lại tour đang HIDDEN — đưa về APPROVED. Chỉ Manager. */
+  async unhideTour(tourId: string): Promise<CreatedTour> {
+    const response = await ApiService<TourDetailResponseDto>(
+      `/vendor/tours/${tourId}/unhide`,
+      'PUT'
+    );
+    const data = unwrapResponse(response);
+    return { id: data.tourId, status: data.status };
+  },
+
+  /**
+   * Khôi phục 1 tour đã xóa mềm — đưa về PENDING_APPROVAL. Chỉ Manager.
+   * LƯU Ý: chưa có UI nào gọi hàm này — BE chưa xác nhận cách FE xem được danh sách tour đã
+   * xóa mềm (không có param lọc hay field đánh dấu trên `GET /vendor/tours`). Thêm sẵn để dùng
+   * ngay khi có entry point.
+   */
+  async restoreTour(tourId: string): Promise<CreatedTour> {
+    const response = await ApiService<TourDetailResponseDto>(
+      `/vendor/tours/${tourId}/restore`,
+      'POST'
     );
     const data = unwrapResponse(response);
     return { id: data.tourId, status: data.status };

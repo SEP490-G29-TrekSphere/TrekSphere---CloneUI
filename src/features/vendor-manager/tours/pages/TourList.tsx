@@ -1,4 +1,4 @@
-import { Filter } from 'lucide-react';
+import { EyeOff, Filter } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -7,8 +7,14 @@ import {
   PATHS,
 } from '@/constants';
 import { DeleteTourConfirmDialog } from '@/features/vendor-tours/components/DeleteTourConfirmDialog';
+import { RevertToDraftConfirmDialog } from '@/features/vendor-tours/components/RevertToDraftConfirmDialog';
 import { TourPagination } from '@/features/vendor-tours/components/TourPagination';
-import { TourTableRow } from '@/features/vendor-tours/components/TourTableRow';
+import { TourReasonDialog } from '@/features/vendor-tours/components/TourReasonDialog';
+import {
+  MANAGER_EDITABLE_STATUSES,
+  TourTableRow,
+} from '@/features/vendor-tours/components/TourTableRow';
+import { UnhideTourConfirmDialog } from '@/features/vendor-tours/components/UnhideTourConfirmDialog';
 import { useVendorTourList } from '@/features/vendor-tours/hooks/useVendorTourList';
 import { useVendorTourMutations } from '@/features/vendor-tours/hooks/useVendorTourMutations';
 import { useVendorTourStats } from '@/features/vendor-tours/hooks/useVendorTourStats';
@@ -24,6 +30,12 @@ const PAGE_SIZE = 10;
  */
 const CLIENT_FILTER_SAMPLE_SIZE = 200;
 
+/** Nhãn hiển thị trong toast sau khi "Chuyển trạng thái" — BE trả status thật, không đoán theo role. */
+const REVERT_STATUS_LABELS: Partial<Record<ApiStatus, string>> = {
+  DRAFT: 'Bản nháp',
+  PENDING_APPROVAL: 'Chờ duyệt',
+};
+
 const DIFFICULTY_OPTIONS: Array<{ value: ApiDifficulty | ''; label: string }> = [
   { value: '', label: 'Tất cả' },
   { value: 'EASY', label: 'Dễ' },
@@ -33,7 +45,6 @@ const DIFFICULTY_OPTIONS: Array<{ value: ApiDifficulty | ''; label: string }> = 
 
 const STATUS_OPTIONS: Array<{ value: ApiStatus | ''; label: string }> = [
   { value: '', label: 'Tất cả' },
-  { value: 'DRAFT', label: 'Bản nháp' },
   { value: 'PENDING_APPROVAL', label: 'Đang chờ duyệt' },
   { value: 'APPROVED', label: 'Đã duyệt' },
   { value: 'REJECTED', label: 'Bị từ chối' },
@@ -47,6 +58,9 @@ export default function TourList() {
   const [difficulty, setDifficulty] = useState<ApiDifficulty | ''>('');
   const [status, setStatus] = useState<ApiStatus | ''>('');
   const [deleteTarget, setDeleteTarget] = useState<VendorTourListItem | null>(null);
+  const [hideTarget, setHideTarget] = useState<VendorTourListItem | null>(null);
+  const [unhideTarget, setUnhideTarget] = useState<VendorTourListItem | null>(null);
+  const [revertTarget, setRevertTarget] = useState<VendorTourListItem | null>(null);
 
   const debouncedName = useDebounce(nameFilter, 400);
   const hasClientFilter = Boolean(difficulty || status);
@@ -62,7 +76,7 @@ export default function TourList() {
 
   const { data, isLoading, isError, error } = useVendorTourList(filter, fetchPage, fetchSize);
   const { data: stats } = useVendorTourStats();
-  const { deleteTour } = useVendorTourMutations();
+  const { deleteTour, hideTour, unhideTour, revertTourToDraft } = useVendorTourMutations();
 
   const fetchedTours = data?.tours ?? [];
   const filteredTours = hasClientFilter
@@ -86,6 +100,44 @@ export default function TourList() {
         toast.success('Đã xóa tour.');
       },
       onError: (err) => toast.error(err instanceof Error ? err.message : 'Không thể xóa tour.'),
+    });
+  };
+
+  const handleHideConfirm = (reason: string) => {
+    if (!hideTarget) return;
+    hideTour.mutate(
+      { tourId: hideTarget.id, reason },
+      {
+        onSuccess: () => {
+          setHideTarget(null);
+          toast.success('Đã ẩn tour.');
+        },
+        onError: (err) => toast.error(err instanceof Error ? err.message : 'Không thể ẩn tour.'),
+      }
+    );
+  };
+
+  const handleUnhideConfirm = () => {
+    if (!unhideTarget) return;
+    unhideTour.mutate(unhideTarget.id, {
+      onSuccess: () => {
+        setUnhideTarget(null);
+        toast.success('Đã mở lại tour.');
+      },
+      onError: (err) => toast.error(err instanceof Error ? err.message : 'Không thể mở lại tour.'),
+    });
+  };
+
+  const handleRevertConfirm = () => {
+    if (!revertTarget) return;
+    revertTourToDraft.mutate(revertTarget.id, {
+      onSuccess: (data) => {
+        setRevertTarget(null);
+        const label = REVERT_STATUS_LABELS[data.status] ?? data.status;
+        toast.success(`Đã chuyển tour về ${label}.`);
+      },
+      onError: (err) =>
+        toast.error(err instanceof Error ? err.message : 'Không thể chuyển trạng thái tour.'),
     });
   };
 
@@ -230,7 +282,11 @@ export default function TourList() {
                     tour={tour}
                     editPath={getVendorManagerTourEditPath(tour.id)}
                     schedulesPath={getVendorManagerTourSchedulesPath(tour.id)}
+                    editableStatuses={MANAGER_EDITABLE_STATUSES}
                     onDeleteClick={setDeleteTarget}
+                    onHideClick={setHideTarget}
+                    onUnhideClick={setUnhideTarget}
+                    onRevertClick={setRevertTarget}
                   />
                 ))
               )}
@@ -289,6 +345,37 @@ export default function TourList() {
         tourName={deleteTarget?.name ?? ''}
         onConfirm={handleDeleteConfirm}
         isPending={deleteTour.isPending}
+      />
+
+      <TourReasonDialog
+        open={hideTarget !== null}
+        onOpenChange={(open) => !open && setHideTarget(null)}
+        icon={EyeOff}
+        iconColor="#EA580C"
+        iconBgColor="rgba(234, 88, 12, 0.1)"
+        title="Ẩn tour vi phạm"
+        description={`Ẩn tour "${hideTarget?.name ?? ''}"? Tour sẽ không còn hiển thị cho khách hàng. Vui lòng nhập lý do.`}
+        placeholder="Vd: Phát hiện thông tin sai lệch, vi phạm chính sách tour..."
+        confirmLabel="Ẩn tour"
+        confirmPendingLabel="Đang ẩn..."
+        onConfirm={handleHideConfirm}
+        isPending={hideTour.isPending}
+      />
+
+      <UnhideTourConfirmDialog
+        open={unhideTarget !== null}
+        onOpenChange={(open) => !open && setUnhideTarget(null)}
+        tourName={unhideTarget?.name ?? ''}
+        onConfirm={handleUnhideConfirm}
+        isPending={unhideTour.isPending}
+      />
+
+      <RevertToDraftConfirmDialog
+        open={revertTarget !== null}
+        onOpenChange={(open) => !open && setRevertTarget(null)}
+        description={`Chuyển tour "${revertTarget?.name ?? ''}" về Chờ duyệt để xem xét lại?`}
+        onConfirm={handleRevertConfirm}
+        isPending={revertTourToDraft.isPending}
       />
     </div>
   );

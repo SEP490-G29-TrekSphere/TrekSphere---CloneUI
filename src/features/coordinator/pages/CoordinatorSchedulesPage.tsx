@@ -6,17 +6,20 @@ import {
   ChevronRight,
   Compass,
   Filter,
-  RefreshCw,
+  Radio,
   Search,
   ShieldCheck,
   UserCheck,
   XCircle,
 } from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { getCoordinatorSessionOperationsPath } from '@/constants';
 import { useCoordinatorSchedules } from '../hooks/useCoordinatorSchedules';
 import type { CoordinatorScheduleStatus } from '../types';
 
 export default function CoordinatorSchedulesPage() {
+  const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
   const [status, setStatus] = useState<CoordinatorScheduleStatus | ''>('');
   const [isCancelled, setIsCancelled] = useState<boolean | undefined>(undefined);
@@ -93,24 +96,13 @@ export default function CoordinatorSchedulesPage() {
     <div className="min-h-screen p-6 md:p-8" style={{ backgroundColor: '#FAF8F1' }}>
       <div className="mx-auto max-w-7xl space-y-6">
         {/* Page Header */}
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight" style={{ color: '#06261D' }}>
-              Lịch Dẫn Đoàn Được Phân Công
-            </h1>
-            <p className="mt-1 text-sm font-medium" style={{ color: '#6F7B75' }}>
-              Danh sách các phiên tour bạn được phân công làm Trưởng đoàn hoặc Điều phối viên
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => refetch()}
-            className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95"
-            style={{ backgroundColor: '#0E7C6B' }}
-          >
-            <RefreshCw className="h-4 w-4" />
-            Làm mới
-          </button>
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight" style={{ color: '#06261D' }}>
+            Lịch Dẫn Đoàn Được Phân Công
+          </h1>
+          <p className="mt-1 text-sm font-medium" style={{ color: '#6F7B75' }}>
+            Danh sách các phiên tour bạn được phân công làm Trưởng đoàn hoặc Điều phối viên
+          </p>
         </div>
 
         {/* Filters Card */}
@@ -266,6 +258,7 @@ export default function CoordinatorSchedulesPage() {
                       <th className="px-6 py-4">Ngày Khởi Hành</th>
                       <th className="px-6 py-4">Ngày Kết Thúc</th>
                       <th className="px-6 py-4">Trạng Thái</th>
+                      <th className="px-6 py-4">Thao Tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y" style={{ borderColor: '#F0EEE6' }}>
@@ -311,6 +304,34 @@ export default function CoordinatorSchedulesPage() {
 
                         <td className="px-6 py-4">
                           {getStatusBadge(item.sessionStatus, item.isCancelled)}
+                        </td>
+
+                        <td className="px-6 py-4">
+                          {(() => {
+                            const canOperate =
+                              !item.isCancelled &&
+                              (item.sessionStatus === 'PENDING' ||
+                                item.sessionStatus === 'IN_PROGRESS');
+                            return (
+                              <button
+                                type="button"
+                                disabled={!canOperate}
+                                onClick={() =>
+                                  navigate(getCoordinatorSessionOperationsPath(item.tourSessionId))
+                                }
+                                title={
+                                  canOperate
+                                    ? 'Mở trang điều hành tour thực địa'
+                                    : 'Chỉ khả dụng khi tour sắp hoặc đang diễn ra'
+                                }
+                                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-white transition-all disabled:cursor-not-allowed disabled:opacity-30 hover:opacity-90"
+                                style={{ backgroundColor: '#06261D' }}
+                              >
+                                <Radio className="h-3.5 w-3.5" />
+                                Điều hành
+                              </button>
+                            );
+                          })()}
                         </td>
                       </tr>
                     ))}

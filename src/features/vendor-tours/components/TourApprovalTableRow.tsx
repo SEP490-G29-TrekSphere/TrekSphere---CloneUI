@@ -1,4 +1,4 @@
-import { Check, EyeOff, X } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { formatDate, formatPrice } from '@/utils/format';
 import type { VendorTourListItem } from '../types';
 import { TourDifficultyBadge } from './TourDifficultyBadge';
@@ -8,19 +8,16 @@ const FALLBACK_COVER =
 
 interface TourApprovalTableRowProps {
   tour: VendorTourListItem;
-  /** Chỉ truyền (tab "Chờ duyệt") nếu muốn hiện nút Duyệt. */
+  /** Chỉ truyền nếu muốn hiện nút Duyệt. */
   onApproveClick?: (tour: VendorTourListItem) => void;
-  /** Chỉ truyền (tab "Chờ duyệt") nếu muốn hiện nút Từ chối. */
+  /** Chỉ truyền nếu muốn hiện nút Từ chối. */
   onRejectClick?: (tour: VendorTourListItem) => void;
-  /** Chỉ truyền (tab "Đã duyệt") nếu muốn hiện nút Ẩn. */
-  onHideClick?: (tour: VendorTourListItem) => void;
 }
 
 export function TourApprovalTableRow({
   tour,
   onApproveClick,
   onRejectClick,
-  onHideClick,
 }: TourApprovalTableRowProps) {
   return (
     <tr className="border-b transition-colors last:border-b-0" style={{ borderColor: '#E6E2D1' }}>
@@ -81,17 +78,6 @@ export function TourApprovalTableRow({
               title="Từ chối tour"
             >
               <X className="h-4 w-4" />
-            </button>
-          )}
-          {onHideClick && (
-            <button
-              type="button"
-              onClick={() => onHideClick(tour)}
-              className="transition-opacity hover:opacity-70"
-              style={{ color: '#EA580C' }}
-              title="Ẩn tour"
-            >
-              <EyeOff className="h-4 w-4" />
             </button>
           )}
         </div>

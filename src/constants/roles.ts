@@ -103,6 +103,8 @@ export function getPostLoginRoute(roles: string[]): string {
       return PATHS.VENDOR_MANAGER;
     case ROLES.VENDOR_STAFF:
       return '/partner';
+    case ROLES.COORDINATOR:
+      return PATHS.COORDINATOR_SCHEDULES;
     default:
       return PATHS.HOME;
   }

@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Bold, Eye, ImagePlus, Info, Italic, Link2, List, Sparkles, Zap } from 'lucide-react';
+import { Bold, ImagePlus, Info, Italic, Link2, List } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -94,10 +94,6 @@ export function TourForm({
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(existingCoverImageUrl ?? null);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
-  // 2 công tắc dưới đây chưa có field tương ứng trên BE (CreateTourRequest không có
-  // isPublic/instantBooking) — chỉ là UI hiển thị, không gửi lên API.
-  const [isPublicDisplay, setIsPublicDisplay] = useState(true);
-  const [instantBooking, setInstantBooking] = useState(false);
 
   const {
     register,
@@ -399,36 +395,6 @@ export function TourForm({
             </h3>
             <CheckpointFields checkpoints={checkpoints} onChange={setCheckpoints} />
           </section>
-
-          <section
-            className="space-y-3 rounded-3xl bg-white p-6"
-            style={{ border: '1px solid #E6E2D1' }}
-          >
-            <div className="flex items-center justify-between">
-              <h3
-                className="text-xs font-bold uppercase tracking-wider"
-                style={{ color: '#6F7B75' }}
-              >
-                Lịch trình chi tiết
-              </h3>
-              <div className="flex items-center gap-3" style={{ color: '#6F7B75' }}>
-                <Bold className="h-4 w-4" />
-                <Italic className="h-4 w-4" />
-                <List className="h-4 w-4" />
-                <Link2 className="h-4 w-4" />
-              </div>
-            </div>
-            <textarea
-              {...register('description')}
-              rows={8}
-              placeholder="Mô tả lịch trình chi tiết từng ngày, các điểm dừng chân, dịch vụ bao gồm và lưu ý quan trọng..."
-              className="w-full resize-none rounded-[20px] px-4 py-3 text-sm font-medium focus:outline-none focus:ring-1"
-              style={{ backgroundColor: '#F8F6EF', color: '#06261D' }}
-            />
-            {errors.description && (
-              <p className="text-xs text-red-500">{errors.description.message}</p>
-            )}
-          </section>
         </div>
 
         {/* Cột phải — 40% */}
@@ -502,45 +468,35 @@ export function TourForm({
               Định dạng JPG, PNG.
             </p>
           </section>
-
-          <section
-            className="space-y-4 rounded-3xl bg-white p-6"
-            style={{ border: '1px solid #E6E2D1' }}
-          >
-            <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: '#6F7B75' }}>
-              Cấu hình hiển thị
-            </h3>
-
-            <ToggleRow
-              icon={Eye}
-              title="Hiển thị công khai"
-              subtitle="Cho phép khách hàng tìm thấy tour"
-              checked={isPublicDisplay}
-              onChange={setIsPublicDisplay}
-            />
-            <ToggleRow
-              icon={Zap}
-              title="Đặt chỗ nhanh"
-              subtitle="Xác nhận đơn ngay lập tức"
-              checked={instantBooking}
-              onChange={setInstantBooking}
-            />
-
-            <div className="rounded-2xl p-4" style={{ backgroundColor: '#DFF3E9' }}>
-              <p
-                className="flex items-start gap-2 text-xs font-medium"
-                style={{ color: '#0E7C6B' }}
-              >
-                <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>
-                  <strong>Mẹo cho Vendor:</strong> Tours có độ khó "Vừa" và "Dễ" thường nhận được
-                  lượng booking cao hơn 40% vào các dịp cuối tuần. Hãy đảm bảo bạn có đầy đủ các cấp
-                  độ.
-                </span>
-              </p>
-            </div>
-          </section>
         </div>
+
+        {/* Lịch trình chi tiết — full width */}
+        <section
+          className="space-y-3 rounded-3xl bg-white p-6 lg:col-span-5"
+          style={{ border: '1px solid #E6E2D1' }}
+        >
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: '#6F7B75' }}>
+              Lịch trình chi tiết
+            </h3>
+            <div className="flex items-center gap-3" style={{ color: '#6F7B75' }}>
+              <Bold className="h-4 w-4" />
+              <Italic className="h-4 w-4" />
+              <List className="h-4 w-4" />
+              <Link2 className="h-4 w-4" />
+            </div>
+          </div>
+          <textarea
+            {...register('description')}
+            rows={8}
+            placeholder="Mô tả lịch trình chi tiết từng ngày, các điểm dừng chân, dịch vụ bao gồm và lưu ý quan trọng..."
+            className="w-full resize-none rounded-[20px] px-4 py-3 text-sm font-medium focus:outline-none focus:ring-1"
+            style={{ backgroundColor: '#F8F6EF', color: '#06261D' }}
+          />
+          {errors.description && (
+            <p className="text-xs text-red-500">{errors.description.message}</p>
+          )}
+        </section>
       </div>
 
       <hr style={{ borderColor: '#E6E2D1' }} />
@@ -564,48 +520,5 @@ export function TourForm({
         </button>
       </div>
     </form>
-  );
-}
-
-interface ToggleRowProps {
-  icon: typeof Eye;
-  title: string;
-  subtitle: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}
-
-/**
- * `isPublicDisplay`/`instantBooking` ở trang cha chưa có field tương ứng trên
- * BE (CreateTourRequest không hỗ trợ) — toggle này chỉ đổi UI, không gửi API.
- */
-function ToggleRow({ icon: Icon, title, subtitle, checked, onChange }: ToggleRowProps) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <div className="flex items-center gap-3">
-        <Icon className="h-4 w-4 shrink-0" style={{ color: '#6F7B75' }} />
-        <div>
-          <p className="text-sm font-semibold" style={{ color: '#06261D' }}>
-            {title}
-          </p>
-          <p className="text-xs" style={{ color: '#6F7B75' }}>
-            {subtitle}
-          </p>
-        </div>
-      </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        onClick={() => onChange(!checked)}
-        className="relative h-6 w-11 shrink-0 rounded-full transition-colors"
-        style={{ backgroundColor: checked ? '#06261D' : '#D8D3C4' }}
-      >
-        <span
-          className="absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform"
-          style={{ transform: checked ? 'translateX(22px)' : 'translateX(2px)' }}
-        />
-      </button>
-    </div>
   );
 }

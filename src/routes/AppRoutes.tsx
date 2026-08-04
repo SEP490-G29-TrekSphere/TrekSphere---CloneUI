@@ -80,6 +80,11 @@ const VendorProfileEdit = lazy(() => import('@/features/vendor-profile/pages/Ven
 const CoordinatorSchedulesPage = lazy(
   () => import('@/features/coordinator/pages/CoordinatorSchedulesPage')
 );
+const CoordinatorLayout = lazy(() => import('@/features/coordinator/layout/CoordinatorLayout'));
+const CoordinatorSessionOperationsPage = lazy(
+  () => import('@/features/coordinator/pages/CoordinatorSessionOperationsPage')
+);
+const EmergencySosPage = lazy(() => import('@/features/emergency-sos/pages/EmergencySosPage'));
 const VendorVoucherList = lazy(() => import('@/features/vendor-vouchers/pages/VendorVoucherList'));
 
 function PageLoader() {
@@ -176,6 +181,7 @@ export default function AppRoutes() {
           <Route path={PATHS.ADMIN_REPORT_DETAIL} element={<ReportDetail />} />
           <Route path={PATHS.ADMIN_BLOGS} element={<BlogManagement />} />
           <Route path={PATHS.ADMIN_SETTINGS} element={<SystemSettings />} />
+          <Route path={PATHS.ADMIN_EMERGENCY} element={<EmergencySosPage />} />
         </Route>
 
         {/* Vendor Manager routes — yêu cầu role vendor_manager, dùng VendorManagerLayout riêng */}
@@ -203,6 +209,7 @@ export default function AppRoutes() {
           <Route path={PATHS.VENDOR_MANAGER_PORTER_EDIT} element={<PorterEdit />} />
           <Route path={PATHS.VENDOR_MANAGER_SESSIONS} element={<SessionList />} />
           <Route path={PATHS.VENDOR_MANAGER_SESSION_DETAIL} element={<SessionDetail />} />
+          <Route path={PATHS.VENDOR_MANAGER_EMERGENCY} element={<EmergencySosPage />} />
           <Route path={PATHS.VENDOR_MANAGER_VOUCHERS} element={<VendorVoucherList />} />
         </Route>
 
@@ -232,8 +239,9 @@ export default function AppRoutes() {
           <Route path={PATHS.PARTNER_VOUCHERS} element={<VendorVoucherList />} />
         </Route>
 
-        {/* Coordinator routes — dùng MainLayout */}
+        {/* Coordinator routes — sidebar riêng (SummitGuard), không dùng MainLayout nữa */}
         <Route
+          path={PATHS.COORDINATOR}
           element={
             <RequireRole
               allowedRoles={[
@@ -243,11 +251,16 @@ export default function AppRoutes() {
                 ROLES.ADMIN,
               ]}
             >
-              <MainLayout />
+              <CoordinatorLayout />
             </RequireRole>
           }
         >
+          <Route index element={<Navigate to={PATHS.COORDINATOR_SCHEDULES} replace />} />
           <Route path={PATHS.COORDINATOR_SCHEDULES} element={<CoordinatorSchedulesPage />} />
+          <Route
+            path={PATHS.COORDINATOR_SESSION_OPERATIONS}
+            element={<CoordinatorSessionOperationsPage />}
+          />
         </Route>
       </Routes>
     </Suspense>

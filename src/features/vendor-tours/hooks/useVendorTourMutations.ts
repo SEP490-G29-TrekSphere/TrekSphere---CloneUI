@@ -123,6 +123,31 @@ export function useVendorTourMutations() {
     },
   });
 
+  const revertTourToDraft = useMutation({
+    mutationFn: (tourId: string) => vendorTourService.revertTourToDraft(tourId),
+    onSuccess: (_data, tourId) => {
+      invalidate();
+      queryClient.invalidateQueries({ queryKey: vendorTourDetailKeys.detail(tourId) });
+    },
+  });
+
+  const unhideTour = useMutation({
+    mutationFn: (tourId: string) => vendorTourService.unhideTour(tourId),
+    onSuccess: (_data, tourId) => {
+      invalidate();
+      queryClient.invalidateQueries({ queryKey: vendorTourDetailKeys.detail(tourId) });
+    },
+  });
+
+  /** Chưa có UI nào dùng — xem ghi chú tại `vendorTourService.restoreTour`. */
+  const restoreTour = useMutation({
+    mutationFn: (tourId: string) => vendorTourService.restoreTour(tourId),
+    onSuccess: (_data, tourId) => {
+      invalidate();
+      queryClient.invalidateQueries({ queryKey: vendorTourDetailKeys.detail(tourId) });
+    },
+  });
+
   return {
     createTourWithCheckpoints,
     updateTour,
@@ -132,5 +157,8 @@ export function useVendorTourMutations() {
     approveTour,
     rejectTour,
     hideTour,
+    revertTourToDraft,
+    unhideTour,
+    restoreTour,
   };
 }

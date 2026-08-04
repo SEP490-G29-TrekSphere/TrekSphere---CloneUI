@@ -6,27 +6,23 @@ import { ScheduleFormDialog } from '@/features/vendor-tours/components/ScheduleF
 import { ScheduleTableRow } from '@/features/vendor-tours/components/ScheduleTableRow';
 import { useVendorScheduleMutations } from '@/features/vendor-tours/hooks/useVendorScheduleMutations';
 import { useVendorTourDetail } from '@/features/vendor-tours/hooks/useVendorTourDetail';
-import type {
-  CreateSchedulePayload,
-  TourSchedule,
-  UpdateSchedulePayload,
-} from '@/features/vendor-tours/types';
+import type { CreateSchedulePayload, UpdateSchedulePayload } from '@/features/vendor-tours/types';
 import { toast } from '@/store/useToastStore';
 
 const TABLE_COLUMNS = ['Ngày đi', 'Ngày về', 'Giá', 'Chỗ (đã đặt/tổng)', 'Trạng thái', 'Thao tác'];
 
 /**
- * Quản lý lịch khởi hành của 1 tour — bản Staff, giống hệt màn Manager nhưng KHÔNG
- * có nút Hủy lịch (`DELETE .../schedules/{scheduleId}` chỉ dành riêng cho VendorManager,
- * xem `vendor-manager/tours/pages/TourSchedules.tsx`).
+ * Quản lý lịch khởi hành của 1 tour — bản Staff, giống hệt màn Manager nhưng KHÔNG có nút Sửa
+ * lẫn nút Hủy lịch (`PUT`/`DELETE .../schedules/{scheduleId}` chỉ dành riêng cho VendorManager,
+ * xem `vendor-manager/tours/pages/TourSchedules.tsx`) — Staff chỉ tạo lịch mới được.
  */
 export default function TourSchedules() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: tour, isLoading, isError, error } = useVendorTourDetail(id);
-  const { createSchedule, updateSchedule } = useVendorScheduleMutations(id ?? '');
+  const { createSchedule } = useVendorScheduleMutations(id ?? '');
 
-  const [formTarget, setFormTarget] = useState<TourSchedule | 'create' | null>(null);
+  const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
 
   const handleBack = () => navigate(PATHS.PARTNER_TOURS);
 
@@ -35,28 +31,14 @@ export default function TourSchedules() {
   );
 
   const handleFormSubmit = (payload: CreateSchedulePayload | UpdateSchedulePayload) => {
-    if (formTarget === 'create') {
-      createSchedule.mutate(payload as CreateSchedulePayload, {
-        onSuccess: () => {
-          setFormTarget(null);
-          toast.success('Đã tạo lịch khởi hành.');
-        },
-        onError: (err) =>
-          toast.error(err instanceof Error ? err.message : 'Không thể tạo lịch khởi hành.'),
-      });
-    } else if (formTarget) {
-      updateSchedule.mutate(
-        { scheduleId: formTarget.scheduleId, payload: payload as UpdateSchedulePayload },
-        {
-          onSuccess: () => {
-            setFormTarget(null);
-            toast.success('Đã cập nhật lịch khởi hành.');
-          },
-          onError: (err) =>
-            toast.error(err instanceof Error ? err.message : 'Không thể cập nhật lịch khởi hành.'),
-        }
-      );
-    }
+    createSchedule.mutate(payload as CreateSchedulePayload, {
+      onSuccess: () => {
+        setCreateDialogOpen(false);
+        toast.success('Đã tạo lịch khởi hành.');
+      },
+      onError: (err) =>
+        toast.error(err instanceof Error ? err.message : 'Không thể tạo lịch khởi hành.'),
+    });
   };
 
   if (isLoading) {
@@ -89,8 +71,6 @@ export default function TourSchedules() {
     );
   }
 
-  const isEditingExisting = formTarget !== null && formTarget !== 'create';
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -114,7 +94,7 @@ export default function TourSchedules() {
 
         <button
           type="button"
-          onClick={() => setFormTarget('create')}
+          onClick={() => setCreateDialogOpen(true)}
           className="inline-flex items-center rounded-full px-5 py-2.5 text-sm font-semibold text-white"
           style={{ backgroundColor: '#06261D' }}
         >
@@ -154,11 +134,7 @@ export default function TourSchedules() {
                 </tr>
               ) : (
                 schedules.map((schedule) => (
-                  <ScheduleTableRow
-                    key={schedule.scheduleId}
-                    schedule={schedule}
-                    onEditClick={setFormTarget}
-                  />
+                  <ScheduleTableRow key={schedule.scheduleId} schedule={schedule} />
                 ))
               )}
             </tbody>
@@ -167,22 +143,12 @@ export default function TourSchedules() {
       </div>
 
       <ScheduleFormDialog
-        open={formTarget !== null}
-        onOpenChange={(open) => !open && setFormTarget(null)}
-        mode={isEditingExisting ? 'edit' : 'create'}
-        defaultValues={
-          isEditingExisting
-            ? {
-                departureDate: formTarget.departureDate,
-                returnDate: formTarget.returnDate,
-                price: formTarget.price,
-                availableSlots: formTarget.availableSlots,
-                status: formTarget.status,
-              }
-            : { price: tour.basePrice }
-        }
-        bookedSlots={isEditingExisting ? formTarget.bookedSlots : 0}
-        isPending={createSchedule.isPending || updateSchedule.isPending}
+        open={isCreateDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        mode="create"
+        defaultValues={{ price: tour.basePrice }}
+        maxCapacity={tour.maxCapacity}
+        isPending={createSchedule.isPending}
         onSubmit={handleFormSubmit}
       />
     </div>

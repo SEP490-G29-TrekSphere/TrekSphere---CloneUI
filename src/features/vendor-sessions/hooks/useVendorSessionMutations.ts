@@ -53,6 +53,11 @@ export function useVendorSessionMutations(sessionId: string) {
     onSuccess: invalidate,
   });
 
+  const checkEquipment = useMutation({
+    mutationFn: (payload: { sessionEquipmentId: string; isChecked: boolean }) =>
+      vendorSessionService.checkEquipment(payload.sessionEquipmentId, payload.isChecked),
+  });
+
   return {
     assignCoordinator,
     removeCoordinator,
@@ -60,5 +65,6 @@ export function useVendorSessionMutations(sessionId: string) {
     removePorter,
     assignEquipment,
     removeEquipment,
+    checkEquipment,
   };
 }

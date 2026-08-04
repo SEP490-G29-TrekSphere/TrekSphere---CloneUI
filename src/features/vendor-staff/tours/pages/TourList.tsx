@@ -2,10 +2,13 @@ import { Filter } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getPartnerTourEditPath, getPartnerTourSchedulesPath, PATHS } from '@/constants';
-import { DeleteTourConfirmDialog } from '@/features/vendor-tours/components/DeleteTourConfirmDialog';
+import { RevertToDraftConfirmDialog } from '@/features/vendor-tours/components/RevertToDraftConfirmDialog';
 import { SubmitApprovalConfirmDialog } from '@/features/vendor-tours/components/SubmitApprovalConfirmDialog';
 import { TourPagination } from '@/features/vendor-tours/components/TourPagination';
-import { TourTableRow } from '@/features/vendor-tours/components/TourTableRow';
+import {
+  STAFF_EDITABLE_STATUSES,
+  TourTableRow,
+} from '@/features/vendor-tours/components/TourTableRow';
 import { useVendorTourList } from '@/features/vendor-tours/hooks/useVendorTourList';
 import { useVendorTourMutations } from '@/features/vendor-tours/hooks/useVendorTourMutations';
 import { useVendorTourStats } from '@/features/vendor-tours/hooks/useVendorTourStats';
@@ -43,8 +46,8 @@ export default function TourList() {
   const [nameFilter, setNameFilter] = useState('');
   const [difficulty, setDifficulty] = useState<ApiDifficulty | ''>('');
   const [status, setStatus] = useState<ApiStatus | ''>('');
-  const [deleteTarget, setDeleteTarget] = useState<VendorTourListItem | null>(null);
   const [submitApprovalTarget, setSubmitApprovalTarget] = useState<VendorTourListItem | null>(null);
+  const [revertTarget, setRevertTarget] = useState<VendorTourListItem | null>(null);
 
   const debouncedName = useDebounce(nameFilter, 400);
   const hasClientFilter = Boolean(difficulty || status);
@@ -60,7 +63,7 @@ export default function TourList() {
 
   const { data, isLoading, isError, error } = useVendorTourList(filter, fetchPage, fetchSize);
   const { data: stats } = useVendorTourStats();
-  const { deleteTour, submitTourForApproval } = useVendorTourMutations();
+  const { submitTourForApproval, revertTourToDraft } = useVendorTourMutations();
 
   const fetchedTours = data?.tours ?? [];
   const filteredTours = hasClientFilter
@@ -76,17 +79,6 @@ export default function TourList() {
     ? filteredTours.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
     : filteredTours;
 
-  const handleDeleteConfirm = () => {
-    if (!deleteTarget) return;
-    deleteTour.mutate(deleteTarget.id, {
-      onSuccess: () => {
-        setDeleteTarget(null);
-        toast.success('Đã xóa tour.');
-      },
-      onError: (err) => toast.error(err instanceof Error ? err.message : 'Không thể xóa tour.'),
-    });
-  };
-
   const handleSubmitApprovalConfirm = () => {
     if (!submitApprovalTarget) return;
     submitTourForApproval.mutate(submitApprovalTarget.id, {
@@ -96,6 +88,18 @@ export default function TourList() {
       },
       onError: (err) =>
         toast.error(err instanceof Error ? err.message : 'Không thể gửi yêu cầu kiểm duyệt.'),
+    });
+  };
+
+  const handleRevertConfirm = () => {
+    if (!revertTarget) return;
+    revertTourToDraft.mutate(revertTarget.id, {
+      onSuccess: () => {
+        setRevertTarget(null);
+        toast.success('Đã chuyển tour về Bản nháp.');
+      },
+      onError: (err) =>
+        toast.error(err instanceof Error ? err.message : 'Không thể chuyển trạng thái tour.'),
     });
   };
 
@@ -240,8 +244,9 @@ export default function TourList() {
                     tour={tour}
                     editPath={getPartnerTourEditPath(tour.id)}
                     schedulesPath={getPartnerTourSchedulesPath(tour.id)}
-                    onDeleteClick={setDeleteTarget}
+                    editableStatuses={STAFF_EDITABLE_STATUSES}
                     onSubmitApprovalClick={setSubmitApprovalTarget}
+                    onRevertClick={setRevertTarget}
                   />
                 ))
               )}
@@ -294,20 +299,20 @@ export default function TourList() {
         </div>
       </div>
 
-      <DeleteTourConfirmDialog
-        open={deleteTarget !== null}
-        onOpenChange={(open) => !open && setDeleteTarget(null)}
-        tourName={deleteTarget?.name ?? ''}
-        onConfirm={handleDeleteConfirm}
-        isPending={deleteTour.isPending}
-      />
-
       <SubmitApprovalConfirmDialog
         open={submitApprovalTarget !== null}
         onOpenChange={(open) => !open && setSubmitApprovalTarget(null)}
         tourName={submitApprovalTarget?.name ?? ''}
         onConfirm={handleSubmitApprovalConfirm}
         isPending={submitTourForApproval.isPending}
+      />
+
+      <RevertToDraftConfirmDialog
+        open={revertTarget !== null}
+        onOpenChange={(open) => !open && setRevertTarget(null)}
+        description={`Chuyển tour "${revertTarget?.name ?? ''}" về Bản nháp để chỉnh sửa lại?`}
+        onConfirm={handleRevertConfirm}
+        isPending={revertTourToDraft.isPending}
       />
     </div>
   );

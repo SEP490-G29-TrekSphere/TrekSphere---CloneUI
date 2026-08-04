@@ -312,6 +312,21 @@ export const tourService = {
     });
   },
 
+  /** `POST /tracking/sos` — gửi tín hiệu cấp cứu kèm toạ độ GPS thực tế. */
+  async sendSos(payload: {
+    tourSessionId: string;
+    latitude: number;
+    longitude: number;
+    message?: string;
+  }): Promise<{ sosAlertId: string; status: 'PENDING' | 'RESOLVED'; createdAt: string }> {
+    const response = await ApiService<{
+      sosAlertId: string;
+      status: 'PENDING' | 'RESOLVED';
+      createdAt: string;
+    }>('/tracking/sos', 'POST', payload);
+    return unwrapResponse(response);
+  },
+
   async getMyBookings(params: BookingHistoryParams = {}): Promise<BookingHistoryApiResponse> {
     const queryParams: Record<string, string> = {};
 

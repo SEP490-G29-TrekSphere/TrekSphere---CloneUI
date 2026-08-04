@@ -4,7 +4,10 @@ import axios, {
   type AxiosProgressEvent,
   type AxiosResponse,
 } from 'axios';
+import { useAppStore } from '@/store/useAppStore';
+import { toast } from '@/store/useToastStore';
 import { storage } from '@/utils/storage';
+import { queryClient } from './queryClient';
 
 /**
  * baseURL cho môi trường dev vs prod.
@@ -93,6 +96,25 @@ const onTokenRefreshed = (token: string): void => {
 
 const onRefreshFailed = (): void => {
   refreshSubscribers = [];
+};
+
+/**
+ * Dọn sạch session khi token hết hạn hẳn (không refresh được nữa) — không chỉ
+ * xóa token trong storage mà còn phải reset `useAppStore.user` (vì
+ * `useAuthCheck` coi `isAuthenticated = Boolean(user) || hasToken`, còn user
+ * là còn coi như đã login) và clear cache React Query (nếu không, các trang
+ * đang mount vẫn hiển thị dữ liệu cũ từ cache dù đã "mất" đăng nhập).
+ *
+ * Guard theo `accessToken` còn tồn tại không — tránh nhiều request 401 cùng
+ * lúc (cùng 1 đợt hết hạn) gọi clear/toast lặp lại nhiều lần.
+ */
+const clearExpiredSession = (): void => {
+  if (!storage.get<string>('accessToken')) return;
+  storage.remove('accessToken');
+  storage.remove('refreshToken');
+  useAppStore.getState().setUser(null);
+  queryClient.clear();
+  toast.warning('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.');
 };
 
 function buildAbsoluteBaseURL(): string {
@@ -234,6 +256,7 @@ apiClient.interceptors.response.use(
     const hasRefreshToken = Boolean(storage.get<string>('refreshToken'));
     if (!hasRefreshToken) {
       console.warn('[apiClient] 401 received, no refresh token available:', originalConfig?.url);
+      clearExpiredSession();
       return Promise.reject(error);
     }
 
@@ -245,9 +268,8 @@ apiClient.interceptors.response.use(
       isRefreshing = false;
 
       if (!newToken) {
-        // Refresh thất bại → xóa token, báo lỗi, để user phải login lại
-        storage.remove('accessToken');
-        storage.remove('refreshToken');
+        // Refresh thất bại → xóa token + user + cache, để user phải login lại
+        clearExpiredSession();
         onRefreshFailed();
         return Promise.reject(error);
       }

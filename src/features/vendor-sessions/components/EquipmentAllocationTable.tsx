@@ -1,20 +1,35 @@
-import { Package, X } from 'lucide-react';
+import { Loader2, Package, X } from 'lucide-react';
 import type { SessionEquipment } from '../types';
 
 interface EquipmentAllocationTableProps {
   equipments: SessionEquipment[];
   onAddClick: () => void;
   onRemoveClick: (equipment: SessionEquipment) => void;
+  /**
+   * Chỉ Vendor Staff (không phải Manager) được BE cấp quyền gọi
+   * `PUT /tracking/sessions/equipments/{id}/check` — Manager không thấy cột này.
+   */
+  canCheck: boolean;
+  /** Trạng thái "đã kiểm tra" theo `sessionEquipmentId` — chỉ lưu tạm trên UI (BE không trả field này ở API allocations). */
+  checkedMap: Record<string, boolean>;
+  pendingCheckId?: string;
+  onToggleCheck: (equipment: SessionEquipment, next: boolean) => void;
 }
-
-const COLUMNS = ['Tên thiết bị', 'Số lượng', 'Ghi chú', ''];
 
 /** Khối "Phân Bổ Trang Thiết Bị" — bảng full-width phía dưới cùng trang Chi tiết. */
 export function EquipmentAllocationTable({
   equipments,
   onAddClick,
   onRemoveClick,
+  canCheck,
+  checkedMap,
+  pendingCheckId,
+  onToggleCheck,
 }: EquipmentAllocationTableProps) {
+  const columns = canCheck
+    ? ['Tên thiết bị', 'Số lượng', 'Ghi chú', 'Đã kiểm tra', '']
+    : ['Tên thiết bị', 'Số lượng', 'Ghi chú', ''];
+
   return (
     <div className="rounded-[32px] p-6" style={{ backgroundColor: '#F0EEE6' }}>
       <div className="mb-4 flex items-center justify-between">
@@ -39,7 +54,7 @@ export function EquipmentAllocationTable({
           <table className="w-full">
             <thead style={{ backgroundColor: '#F8F6EF' }}>
               <tr>
-                {COLUMNS.map((col) => (
+                {columns.map((col) => (
                   <th
                     key={col}
                     className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider"
@@ -54,7 +69,7 @@ export function EquipmentAllocationTable({
               {equipments.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={COLUMNS.length}
+                    colSpan={columns.length}
                     className="px-6 py-10 text-center text-sm"
                     style={{ color: '#6F7B75' }}
                   >
@@ -77,6 +92,27 @@ export function EquipmentAllocationTable({
                     <td className="px-6 py-4 text-sm" style={{ color: '#6F7B75' }}>
                       {equipment.note || '—'}
                     </td>
+                    {canCheck && (
+                      <td className="px-6 py-4">
+                        {pendingCheckId === equipment.sessionEquipmentId ? (
+                          <Loader2 className="h-4 w-4 animate-spin" style={{ color: '#6F7B75' }} />
+                        ) : (
+                          <label className="inline-flex cursor-pointer items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={checkedMap[equipment.sessionEquipmentId] ?? false}
+                              onChange={(e) => onToggleCheck(equipment, e.target.checked)}
+                              className="h-4 w-4 accent-emerald-700"
+                            />
+                            <span className="text-xs font-semibold" style={{ color: '#06261D' }}>
+                              {checkedMap[equipment.sessionEquipmentId]
+                                ? 'Đã kiểm tra'
+                                : 'Chưa kiểm tra'}
+                            </span>
+                          </label>
+                        )}
+                      </td>
+                    )}
                     <td className="px-6 py-4 text-right">
                       <button
                         type="button"

@@ -216,4 +216,22 @@ export const vendorSessionService = {
     );
     throwIfError(response);
   },
+
+  /**
+   * Đánh dấu đã kiểm tra/mang theo thiết bị đi tour thành công.
+   * Thuộc BE tag "Tracking Management" (không phải "Vendor Logistics" như các
+   * hàm khác trong file này) — chỉ Vendor Staff (không phải Manager) được cấp
+   * quyền gọi API này.
+   */
+  async checkEquipment(
+    sessionEquipmentId: string,
+    isChecked: boolean
+  ): Promise<{ sessionEquipmentId: string; isChecked: boolean }> {
+    const response = await ApiService<{ sessionEquipmentId: string; isChecked: boolean }>(
+      `/tracking/sessions/equipments/${sessionEquipmentId}/check`,
+      'PUT',
+      { isChecked }
+    );
+    return unwrapResponse(response);
+  },
 };

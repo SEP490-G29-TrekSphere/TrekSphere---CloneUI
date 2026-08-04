@@ -27,6 +27,7 @@ const scheduleFormSchema = z
     price: z.coerce.number().min(0, 'Giá tiền không hợp lệ'),
     availableSlots: z.coerce.number().int().min(1, 'Tối thiểu 1 chỗ'),
     status: z.enum(['OPEN', 'CLOSED', 'CANCELLED', 'COMPLETED']),
+    reason: z.string().trim().optional(),
   })
   .refine((data) => data.returnDate >= data.departureDate, {
     message: 'Ngày kết thúc phải sau ngày khởi hành',
@@ -52,6 +53,7 @@ const EMPTY_DEFAULTS: ScheduleFormInput = {
   price: 0,
   availableSlots: 1,
   status: 'OPEN',
+  reason: '',
 };
 
 export interface ScheduleFormDialogProps {
@@ -62,6 +64,8 @@ export interface ScheduleFormDialogProps {
   defaultValues?: Partial<ScheduleFormDefaultValues>;
   /** Số chỗ đã đặt của lịch đang sửa — chặn không cho hạ `availableSlots` xuống dưới số này. */
   bookedSlots?: number;
+  /** Sức chứa tối đa của tour (`tour.maxCapacity`) — chặn không cho đặt `availableSlots` vượt quá. */
+  maxCapacity: number;
   isPending?: boolean;
   onSubmit: (payload: CreateSchedulePayload | UpdateSchedulePayload) => void;
 }
@@ -70,6 +74,9 @@ export interface ScheduleFormDialogProps {
  * Dialog dùng chung cho Tạo lịch khởi hành (`POST .../schedules`) và Sửa lịch
  * (`PUT .../schedules/{scheduleId}`) — chỉ mode 'edit' mới hiện ô Trạng thái,
  * vì `CreateScheduleRequest` không có field này (BE luôn tạo mới ở OPEN).
+ *
+ * Khi sửa lịch đã có khách đặt (`bookedSlots > 0`), bắt buộc thêm lý do điều chỉnh — BE dùng
+ * để gửi notification cho từng khách đã đặt (mã lỗi `SCHEDULE_CHANGE_REASON_REQUIRED` nếu thiếu).
  */
 export function ScheduleFormDialog({
   open,
@@ -77,10 +84,12 @@ export function ScheduleFormDialog({
   mode,
   defaultValues,
   bookedSlots = 0,
+  maxCapacity,
   isPending = false,
   onSubmit: onSubmitProp,
 }: ScheduleFormDialogProps) {
   const isEdit = mode === 'edit';
+  const requiresReason = isEdit && bookedSlots > 0;
 
   const {
     register,
@@ -107,6 +116,18 @@ export function ScheduleFormDialog({
       return;
     }
 
+    if (values.availableSlots > maxCapacity) {
+      setError('availableSlots', {
+        message: `Không thể vượt quá sức chứa tối đa của tour (${maxCapacity}).`,
+      });
+      return;
+    }
+
+    if (requiresReason && !values.reason?.trim()) {
+      setError('reason', { message: 'Vui lòng nhập lý do điều chỉnh' });
+      return;
+    }
+
     if (isEdit) {
       const payload: UpdateSchedulePayload = {
         departureDate: values.departureDate,
@@ -114,6 +135,7 @@ export function ScheduleFormDialog({
         price: values.price,
         availableSlots: values.availableSlots,
         status: values.status,
+        ...(requiresReason ? { reason: values.reason } : {}),
       };
       onSubmitProp(payload);
     } else {
@@ -135,9 +157,11 @@ export function ScheduleFormDialog({
             {isEdit ? 'Sửa lịch khởi hành' : 'Tạo lịch khởi hành mới'}
           </DialogTitle>
           <DialogDescription>
-            {isEdit
-              ? 'Điều chỉnh ngày đi, giá, số chỗ hoặc trạng thái của lịch khởi hành này.'
-              : 'Thiết lập ngày đi, ngày về, giá riêng và giới hạn số chỗ cho lịch khởi hành mới.'}
+            {requiresReason
+              ? 'Lịch này đã có khách đặt — vui lòng nhập lý do điều chỉnh, hệ thống sẽ tự động gửi thông báo tới từng khách hàng đã đặt.'
+              : isEdit
+                ? 'Điều chỉnh ngày đi, giá, số chỗ hoặc trạng thái của lịch khởi hành này.'
+                : 'Thiết lập ngày đi, ngày về, giá riêng và giới hạn số chỗ cho lịch khởi hành mới.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -214,13 +238,14 @@ export function ScheduleFormDialog({
                 id="availableSlots"
                 type="number"
                 min={isEdit ? bookedSlots : 1}
+                max={maxCapacity}
                 {...register('availableSlots')}
                 className="w-full rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-1"
                 style={{ backgroundColor: '#F8F6EF', color: '#06261D' }}
               />
               {isEdit && (
                 <p className="mt-1 text-xs" style={{ color: '#6F7B75' }}>
-                  Đã đặt: {bookedSlots} chỗ
+                  Đã đặt: {bookedSlots} chỗ — Sức chứa tối đa: {maxCapacity} chỗ
                 </p>
               )}
               {errors.availableSlots && (
@@ -250,6 +275,29 @@ export function ScheduleFormDialog({
                   </option>
                 ))}
               </select>
+            </div>
+          )}
+
+          {requiresReason && (
+            <div>
+              <label
+                htmlFor="reason"
+                className="mb-1.5 block text-sm font-semibold"
+                style={{ color: '#06261D' }}
+              >
+                Lý do điều chỉnh <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                id="reason"
+                {...register('reason')}
+                rows={3}
+                placeholder="Vd: Điều chỉnh do dự báo thời tiết xấu..."
+                className="w-full resize-none rounded-2xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-1"
+                style={{ backgroundColor: '#F8F6EF', color: '#06261D' }}
+              />
+              {errors.reason && (
+                <p className="mt-1 text-xs text-red-500">{errors.reason.message}</p>
+              )}
             </div>
           )}
         </div>
