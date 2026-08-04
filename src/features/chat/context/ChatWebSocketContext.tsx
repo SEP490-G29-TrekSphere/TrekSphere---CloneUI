@@ -41,7 +41,7 @@ export const ChatWebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     stompClient.onStompError = (frame) => {
-      console.error('[STOMP] Broker Error:', frame.headers['message'], frame.body);
+      console.error('[STOMP] Broker Error:', frame.headers.message, frame.body);
     };
 
     // Bắt đầu kết nối

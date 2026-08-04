@@ -1,4 +1,4 @@
-import { ClipboardList, Compass, FileText, Key, LogOut, User } from 'lucide-react';
+import { ClipboardList, Compass, FileText, Key, LogOut, MessageSquare, User } from 'lucide-react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { PATHS } from '@/constants';
 import { useLogout } from '@/features/auth/hooks/useLogout';
@@ -25,12 +25,19 @@ const navItems = [
     icon: Key,
     disabled: false,
   },
+  {
+    name: 'Trò chuyện',
+    path: PATHS.TREKKER_CHAT,
+    icon: MessageSquare,
+    disabled: false,
+  },
 ];
 
 export default function TrekkerLayout() {
   const location = useLocation();
   const user = useAppStore((state) => state.user);
   const { logout } = useLogout({ redirectTo: PATHS.LOGIN });
+  const isChatPage = location.pathname === PATHS.TREKKER_CHAT;
 
   const userName = user?.name || 'Trekker';
   const userInitial = userName.charAt(0).toUpperCase();
@@ -142,7 +149,9 @@ export default function TrekkerLayout() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <main className="flex-1 overflow-y-auto p-6 md:p-8">
+        <main
+          className={`flex-1 ${isChatPage ? 'overflow-hidden p-0' : 'overflow-y-auto p-6 md:p-8'}`}
+        >
           <Outlet />
         </main>
       </div>

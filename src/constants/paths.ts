@@ -69,6 +69,7 @@ export const PATHS = {
   TREKKER_BOOKING_DETAIL: '/trekker/bookings/:bookingId',
   TREKKER_BOOKING_PAYMENT: '/trekker/bookings/:bookingId/payment',
   TREKKER_BOOK_TOUR: '/tours/:id/book',
+  TREKKER_CHAT: '/trekker/chat',
 
   // Admin
   ADMIN: '/admin',
@@ -85,6 +86,7 @@ export const PATHS = {
   ADMIN_VOUCHERS: '/admin/vouchers',
   ADMIN_SETTINGS: '/admin/settings',
   ADMIN_EMERGENCY: '/admin/emergency',
+  ADMIN_CHAT: '/admin/chat',
 
   // Vendor Manager (TrekManager portal)
   VENDOR_MANAGER: '/vendor-manager',
@@ -105,6 +107,7 @@ export const PATHS = {
   VENDOR_MANAGER_SESSION_DETAIL: '/vendor-manager/sessions/:sessionId',
   VENDOR_MANAGER_EMERGENCY: '/vendor-manager/emergency',
   VENDOR_MANAGER_VOUCHERS: '/vendor-manager/vouchers',
+  VENDOR_MANAGER_CHAT: '/vendor-manager/chat',
 
   // Vendor Staff (TrekPartner portal)
   PARTNER: '/partner',
@@ -122,6 +125,7 @@ export const PATHS = {
   PARTNER_SESSION_DETAIL: '/partner/sessions/:sessionId',
   PARTNER_BLOG_CREATE: '/partner/blog/create',
   PARTNER_VOUCHERS: '/partner/vouchers',
+  PARTNER_CHAT: '/partner/chat',
 
   // Admin — Blog moderation
   ADMIN_BLOGS: '/admin/blogs',
@@ -130,6 +134,7 @@ export const PATHS = {
   COORDINATOR: '/coordinator',
   COORDINATOR_SCHEDULES: '/coordinator/schedules',
   COORDINATOR_SESSION_OPERATIONS: '/coordinator/sessions/:sessionId',
+  COORDINATOR_CHAT: '/coordinator/chat',
 } as const;
 
 export type AppPath = (typeof PATHS)[keyof typeof PATHS];

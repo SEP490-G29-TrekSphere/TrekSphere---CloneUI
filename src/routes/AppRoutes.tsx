@@ -118,14 +118,7 @@ export default function AppRoutes() {
           }
         />
         <Route path={PATHS.NOTIFICATIONS} element={<Notifications />} />
-        <Route
-          path={PATHS.CHAT}
-          element={
-            <ProtectedRoute>
-              <ChatList />
-            </ProtectedRoute>
-          }
-        />
+        <Route path={PATHS.CHAT} element={<Navigate to={PATHS.TREKKER_CHAT} replace />} />
 
         {/* Public routes — chung khung Header + Footer qua PublicLayout */}
         <Route element={<PublicLayout />}>
@@ -195,6 +188,7 @@ export default function AppRoutes() {
             path={PATHS.TREKKER_BOOKING_PAYMENT}
             element={<PayBooking backPath={PATHS.TREKKER_BOOKING_DETAIL} />}
           />
+          <Route path={PATHS.TREKKER_CHAT} element={<ChatList hideSidebar />} />
         </Route>
 
         {/* Admin routes — yêu cầu role admin, dùng AdminLayout với sidebar riêng */}
@@ -221,6 +215,7 @@ export default function AppRoutes() {
           <Route path={PATHS.ADMIN_BLOGS} element={<BlogManagement />} />
           <Route path={PATHS.ADMIN_SETTINGS} element={<SystemSettings />} />
           <Route path={PATHS.ADMIN_EMERGENCY} element={<EmergencySosPage />} />
+          <Route path={PATHS.ADMIN_CHAT} element={<ChatList hideSidebar />} />
         </Route>
 
         {/* Vendor Manager routes — yêu cầu role vendor_manager, dùng VendorManagerLayout riêng */}
@@ -250,6 +245,7 @@ export default function AppRoutes() {
           <Route path={PATHS.VENDOR_MANAGER_SESSION_DETAIL} element={<SessionDetail />} />
           <Route path={PATHS.VENDOR_MANAGER_EMERGENCY} element={<EmergencySosPage />} />
           <Route path={PATHS.VENDOR_MANAGER_VOUCHERS} element={<VendorVoucherList />} />
+          <Route path={PATHS.VENDOR_MANAGER_CHAT} element={<ChatList hideSidebar />} />
         </Route>
 
         {/* Vendor Staff routes — yêu cầu role vendor_staff, dùng VendorStaffLayout riêng */}
@@ -276,6 +272,7 @@ export default function AppRoutes() {
           <Route path={PATHS.PARTNER_SESSION_DETAIL} element={<SessionDetail />} />
           <Route path={PATHS.PARTNER_BLOG_CREATE} element={<CreateBlogPost />} />
           <Route path={PATHS.PARTNER_VOUCHERS} element={<VendorVoucherList />} />
+          <Route path={PATHS.PARTNER_CHAT} element={<ChatList hideSidebar />} />
         </Route>
 
         {/* Coordinator routes — sidebar riêng (SummitGuard), không dùng MainLayout nữa */}
@@ -300,6 +297,7 @@ export default function AppRoutes() {
             path={PATHS.COORDINATOR_SESSION_OPERATIONS}
             element={<CoordinatorSessionOperationsPage />}
           />
+          <Route path={PATHS.COORDINATOR_CHAT} element={<ChatList hideSidebar />} />
         </Route>
       </Routes>
     </Suspense>

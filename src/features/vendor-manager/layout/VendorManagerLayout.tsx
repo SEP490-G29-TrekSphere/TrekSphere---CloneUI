@@ -7,6 +7,7 @@ import {
   LayoutGrid,
   LogOut,
   Map as MapIcon,
+  MessageSquare,
   Siren,
   Tag,
   Ticket,
@@ -35,6 +36,7 @@ const navItems = [
   { name: 'Thiết bị', path: PATHS.VENDOR_MANAGER_EQUIPMENT, icon: Backpack, disabled: false },
   { name: 'Porter', path: PATHS.VENDOR_MANAGER_PORTERS, icon: Footprints, disabled: false },
   { name: 'Khẩn cấp (SOS)', path: PATHS.VENDOR_MANAGER_EMERGENCY, icon: Siren, disabled: false },
+  { name: 'Trò chuyện', path: PATHS.VENDOR_MANAGER_CHAT, icon: MessageSquare, disabled: false },
   { name: 'Báo cáo', path: '', icon: BarChart3, disabled: true },
 ];
 
@@ -42,6 +44,7 @@ export default function VendorManagerLayout() {
   const location = useLocation();
   const user = useAppStore((state) => state.user);
   const { logout } = useLogout({ redirectTo: PATHS.LOGIN });
+  const isChatPage = location.pathname === PATHS.VENDOR_MANAGER_CHAT;
 
   const vendorName = user?.name || 'Vendor Manager';
   const vendorInitial = vendorName.charAt(0).toUpperCase();
@@ -149,7 +152,9 @@ export default function VendorManagerLayout() {
       </aside>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <main className="flex-1 overflow-y-auto p-6 md:p-8">
+        <main
+          className={`flex-1 ${isChatPage ? 'overflow-hidden p-0' : 'overflow-y-auto p-6 md:p-8'}`}
+        >
           <Outlet />
         </main>
       </div>
