@@ -67,6 +67,11 @@ export interface TourCheckpointPayload {
   latitude?: number;
   longitude?: number;
   altitude?: number;
+  /**
+   * TOÀN BỘ ảnh của checkpoint gộp trong 1 chuỗi, phân tách bởi dấu phẩy — BE lưu vào đúng
+   * 1 cột TEXT `tour_checkpoint.checkpoint_image_url` chứ không có bảng ảnh riêng.
+   * Vd: `"https://.../img1.jpg,https://.../img2.jpg"`.
+   */
   checkpointImageUrl?: string;
 }
 
@@ -74,6 +79,8 @@ export interface TourCheckpointPayload {
 export interface VendorTourCheckpoint extends TourCheckpointPayload {
   checkpointId: string;
   tourId: string;
+  /** Bản đã tách sẵn của `checkpointImageUrl` — chỉ có ở response, không gửi lên khi ghi. */
+  checkpointImageUrls?: string[];
 }
 
 /**

@@ -45,6 +45,21 @@ export const profileService = {
     if (typeof res.message === 'string' && res.message) return { ...res, data: res.message };
     return res;
   },
+  /**
+   * Upload nhiều file trong 1 request → trả về mảng URL theo đúng thứ tự file gửi lên.
+   * Endpoint: POST /files/upload/batch?folder=<folder>, body FormData với field `files` lặp lại.
+   *
+   * Khác với `/files/upload` (trả URL qua `message`), endpoint này theo đúng envelope chuẩn
+   * (`ApiResponseListString`) nên `handleResponse` unwrap được `data` — không cần fallback.
+   */
+  uploadFiles: async (files: File[], folder = 'general') => {
+    const formData = new FormData();
+    for (const file of files) formData.append('files', file);
+    return ApiUpload<string[]>(
+      `/files/upload/batch?folder=${encodeURIComponent(folder)}`,
+      formData
+    );
+  },
 };
 
 /**

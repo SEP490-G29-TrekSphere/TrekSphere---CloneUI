@@ -1,6 +1,9 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { PATHS } from '@/constants';
-import type { CheckpointDraft } from '@/features/vendor-tours/components/CheckpointFields';
+import {
+  type CheckpointDraft,
+  parseCheckpointImageUrls,
+} from '@/features/vendor-tours/components/CheckpointFields';
 import { TourForm } from '@/features/vendor-tours/components/TourForm';
 import { useVendorTourCheckpoints } from '@/features/vendor-tours/hooks/useVendorTourCheckpoints';
 import { useVendorTourDetail } from '@/features/vendor-tours/hooks/useVendorTourDetail';
@@ -49,7 +52,11 @@ function toCheckpointDraft(checkpoint: VendorTourCheckpoint): CheckpointDraft {
     latitude: checkpoint.latitude?.toString() ?? '',
     longitude: checkpoint.longitude?.toString() ?? '',
     altitude: checkpoint.altitude?.toString() ?? '',
-    imageUrl: checkpoint.checkpointImageUrl ?? undefined,
+    // BE trả cả `checkpointImageUrls` (mảng) lẫn `checkpointImageUrl` (chuỗi gộp bởi dấu phẩy) —
+    // ưu tiên mảng, không có thì tự tách chuỗi.
+    imageUrls:
+      checkpoint.checkpointImageUrls ?? parseCheckpointImageUrls(checkpoint.checkpointImageUrl),
+    imageFiles: [],
   };
 }
 

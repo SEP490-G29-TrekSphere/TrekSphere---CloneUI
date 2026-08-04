@@ -151,17 +151,17 @@ export function TourForm({
     const checkpointItems: CheckpointSubmitItem[] = [];
 
     for (const [index, checkpoint] of activeCheckpoints.entries()) {
-      let checkpointImageUrl = checkpoint.imageUrl;
+      const imageUrls = [...checkpoint.imageUrls];
 
-      if (checkpoint.imageFile) {
+      if (checkpoint.imageFiles.length > 0) {
         setIsUploadingImages(true);
-        const uploadRes = await profileService.uploadFile(checkpoint.imageFile, 'checkpoints');
+        const uploadRes = await profileService.uploadFiles(checkpoint.imageFiles, 'checkpoints');
         setIsUploadingImages(false);
         if (uploadRes.error || !uploadRes.data) {
           toast.error(uploadRes.error || 'Không thể tải ảnh checkpoint lên.');
           return;
         }
-        checkpointImageUrl = uploadRes.data;
+        imageUrls.push(...uploadRes.data);
       }
 
       checkpointItems.push({
@@ -173,7 +173,8 @@ export function TourForm({
           latitude: checkpoint.latitude.trim() ? Number(checkpoint.latitude) : undefined,
           longitude: checkpoint.longitude.trim() ? Number(checkpoint.longitude) : undefined,
           altitude: checkpoint.altitude.trim() ? Number(checkpoint.altitude) : undefined,
-          checkpointImageUrl,
+          // BE lưu tất cả ảnh của checkpoint vào 1 cột TEXT, phân tách bởi dấu phẩy.
+          checkpointImageUrl: imageUrls.length > 0 ? imageUrls.join(',') : undefined,
         },
       });
     }
