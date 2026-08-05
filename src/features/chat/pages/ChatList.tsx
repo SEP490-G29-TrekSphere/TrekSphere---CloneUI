@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import * as z from 'zod';
 import {
   Attachment,
@@ -123,6 +123,8 @@ export default function ChatList({ hideSidebar = false }: ChatListProps) {
   const [size, _setSize] = useState(10);
   const { data: apiResponse, isLoading, error } = useChatConversations({ page, size });
   const sendMessageMutation = useSendMessage();
+  const location = useLocation();
+  const stateConversationId = location.state?.conversationId as string | undefined;
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [_localMessages, _setLocalMessages] = useState<Record<string, DetailMessage[]>>({});
@@ -246,6 +248,8 @@ export default function ChatList({ hideSidebar = false }: ChatListProps) {
 
       if (mapped.length > 0) {
         setSelectedId((prev) => {
+          if (stateConversationId && mapped.some((c) => c.id === stateConversationId))
+            return stateConversationId;
           if (prev && mapped.some((c) => c.id === prev)) return prev;
           return mapped[0].id;
         });
@@ -253,7 +257,7 @@ export default function ChatList({ hideSidebar = false }: ChatListProps) {
         setSelectedId(null);
       }
     }
-  }, [apiResponse]);
+  }, [apiResponse, stateConversationId]);
 
   // Error toast feedback
   useEffect(() => {

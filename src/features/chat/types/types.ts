@@ -38,6 +38,7 @@ export interface ConversationResponse {
   lastMessageAt: string;
   lastMessageContent: string;
   unreadCount: number;
+  isNew?: boolean;
 }
 
 export interface PaginationResponse<T> {

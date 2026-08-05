@@ -15,8 +15,9 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { getBookTourPath, PATHS, ROLES } from '@/constants';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { getBookTourPath, getPrimaryRole, PATHS, ROLES } from '@/constants';
+import { chatService } from '@/features/chat/services/chatService';
 import { useAdminReviewMutations } from '@/features/tours/hooks/useAdminReviewMutations';
 import { useTourCheckpoints } from '@/features/tours/hooks/useTourCheckpoints';
 import { useTourDetail } from '@/features/tours/hooks/useTourDetail';
@@ -28,6 +29,7 @@ import type {
   TourDetailScheduleApi,
 } from '@/features/tours/types';
 import { useAppStore } from '@/store/useAppStore';
+import { toast } from '@/store/useToastStore';
 
 // ============================================================
 // Helpers
@@ -243,6 +245,39 @@ function MemberBanner({ isLoggedIn }: { isLoggedIn: boolean }) {
 /** Vendor sidebar card */
 function VendorCard({ tour }: { tour: TourDetailFromApi }) {
   const includes = splitField(tour.includes);
+  const navigate = useNavigate();
+  const { user } = useAppStore();
+
+  const handleChatWithVendor = async () => {
+    if (!user) {
+      toast.warning('Vui lòng đăng nhập để chat với nhà cung cấp.');
+      return;
+    }
+
+    try {
+      const response = await chatService.createConversation({
+        conversationType: 'DIRECT',
+        participantIds: [tour.vendorManagerId],
+      });
+
+      const role = getPrimaryRole(user.roles);
+      let chatPath: string = PATHS.CHAT;
+      if (role === ROLES.ADMIN) chatPath = PATHS.ADMIN_CHAT;
+      else if (role === ROLES.VENDOR_MANAGER) chatPath = PATHS.VENDOR_MANAGER_CHAT;
+      else if (role === ROLES.VENDOR_STAFF) chatPath = PATHS.PARTNER_CHAT;
+      else if (role === ROLES.COORDINATOR) chatPath = PATHS.COORDINATOR_CHAT;
+      else if (role === ROLES.TREKKER) chatPath = PATHS.TREKKER_CHAT;
+
+      if (response.isNew) {
+        toast.success('Đã tạo cuộc trò chuyện');
+      } else {
+        toast.info('Chuyển đến cuộc trò chuyện hiện tại');
+      }
+      navigate(chatPath, { state: { conversationId: response.conversationId } });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Không thể tạo cuộc trò chuyện');
+    }
+  };
 
   return (
     <aside className="flex flex-col gap-5 rounded-2xl border border-border bg-card p-5 shadow-sm">
@@ -302,6 +337,7 @@ function VendorCard({ tour }: { tour: TourDetailFromApi }) {
       {/* CTA */}
       <button
         type="button"
+        onClick={handleChatWithVendor}
         className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
       >
         <MessageCircle className="h-4 w-4" />
