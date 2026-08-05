@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { AppDatePicker } from '@/shared/ui';
 import type { CreateVoucherRequest } from '../types';
 import {
   type VoucherFormInput,
@@ -46,6 +47,7 @@ export function CreateVoucherDialog({
     reset,
     watch,
     setValue,
+    control,
     formState: { errors },
   } = useForm<VoucherFormInput, unknown, VoucherFormValues>({
     resolver: zodResolver(voucherSchema),
@@ -231,12 +233,31 @@ export function CreateVoucherDialog({
               >
                 Bắt đầu từ ngày <span className="text-red-500">*</span>
               </label>
-              <input
-                id="validFrom"
-                type="datetime-local"
-                {...register('validFrom')}
-                className="w-full rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-1"
-                style={{ backgroundColor: '#F8F6EF', color: '#06261D' }}
+              <Controller
+                name="validFrom"
+                control={control}
+                render={({ field }) => (
+                  <AppDatePicker
+                    id="validFrom"
+                    selected={field.value ? new Date(field.value) : null}
+                    onChange={(date: Date | null) => {
+                      if (!date) {
+                        field.onChange('');
+                        return;
+                      }
+                      const offset = date.getTimezoneOffset();
+                      const localDate = new Date(date.getTime() - offset * 60 * 1000);
+                      field.onChange(localDate.toISOString().slice(0, 16));
+                    }}
+                    showTimeSelect
+                    timeFormat="HH:mm"
+                    timeIntervals={15}
+                    timeCaption="Thời gian"
+                    className="w-full rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-1 cursor-pointer"
+                    style={{ backgroundColor: '#F8F6EF', color: '#06261D' }}
+                    placeholderText="Chọn ngày bắt đầu"
+                  />
+                )}
               />
               {errors.validFrom && (
                 <p className="mt-1 text-xs text-red-500">{errors.validFrom.message}</p>
@@ -252,12 +273,31 @@ export function CreateVoucherDialog({
               >
                 Hết hạn vào ngày <span className="text-red-500">*</span>
               </label>
-              <input
-                id="validUntil"
-                type="datetime-local"
-                {...register('validUntil')}
-                className="w-full rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-1"
-                style={{ backgroundColor: '#F8F6EF', color: '#06261D' }}
+              <Controller
+                name="validUntil"
+                control={control}
+                render={({ field }) => (
+                  <AppDatePicker
+                    id="validUntil"
+                    selected={field.value ? new Date(field.value) : null}
+                    onChange={(date: Date | null) => {
+                      if (!date) {
+                        field.onChange('');
+                        return;
+                      }
+                      const offset = date.getTimezoneOffset();
+                      const localDate = new Date(date.getTime() - offset * 60 * 1000);
+                      field.onChange(localDate.toISOString().slice(0, 16));
+                    }}
+                    showTimeSelect
+                    timeFormat="HH:mm"
+                    timeIntervals={15}
+                    timeCaption="Thời gian"
+                    className="w-full rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-1 cursor-pointer"
+                    style={{ backgroundColor: '#F8F6EF', color: '#06261D' }}
+                    placeholderText="Chọn ngày hết hạn"
+                  />
+                )}
               />
               {errors.validUntil && (
                 <p className="mt-1 text-xs text-red-500">{errors.validUntil.message}</p>

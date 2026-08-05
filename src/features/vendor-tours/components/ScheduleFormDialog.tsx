@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { AppInput } from '@/shared/ui';
 import type { ApiScheduleStatus, CreateSchedulePayload, UpdateSchedulePayload } from '../types';
 
 const STATUS_OPTIONS: Array<{ value: ApiScheduleStatus; label: string }> = [
@@ -175,7 +176,7 @@ export function ScheduleFormDialog({
               >
                 Ngày khởi hành <span className="text-red-500">*</span>
               </label>
-              <input
+              <AppInput
                 id="departureDate"
                 type="date"
                 {...register('departureDate')}
@@ -194,7 +195,7 @@ export function ScheduleFormDialog({
               >
                 Ngày kết thúc <span className="text-red-500">*</span>
               </label>
-              <input
+              <AppInput
                 id="returnDate"
                 type="date"
                 {...register('returnDate')}

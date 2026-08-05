@@ -68,7 +68,6 @@ export default function HomeStories() {
         {/* Header */}
         <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-4 mb-12">
           <div>
-            <span className="section-eyebrow">Từ cộng đồng</span>
             <h2 className="text-3xl md:text-5xl font-black text-primary leading-tight">
               Câu chuyện hành trình
             </h2>
@@ -135,10 +134,6 @@ export default function HomeStories() {
                     }}
                     className="w-full h-full object-cover transition-transform duration-500 hover:scale-106"
                   />
-                  {/* Category badge */}
-                  <div className="absolute top-3 left-3 bg-black/55 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider">
-                    {story.categoryName || 'Kinh nghiệm'}
-                  </div>
 
                   {/* Views count */}
                   <div className="absolute bottom-3 right-3 flex items-center gap-1 bg-black/40 backdrop-blur-sm rounded-full px-2.5 py-1 text-white text-xs font-bold">
@@ -164,8 +159,6 @@ export default function HomeStories() {
                       </div>
                     )}
                     <span className="font-semibold text-primary/80">{story.authorName}</span>
-                    <span>•</span>
-                    <span>{new Date(story.publishedAt).toLocaleDateString('vi-VN')}</span>
                   </div>
 
                   {/* Title */}
@@ -180,18 +173,12 @@ export default function HomeStories() {
                     {story.excerpt}
                   </p>
 
-                  {/* Bottom row with reading time & button */}
-                  <div className="flex items-center justify-between mt-auto pt-3 border-t border-border/50">
-                    <span className="text-xs text-muted-foreground font-medium">
-                      {story.readingTimeMinutes || 5} phút đọc
-                    </span>
-                    <Link
-                      to={PATHS.NEWS_DETAIL.replace(':blogId', story.blogId)}
-                      className="px-5 py-2 rounded-full text-xs font-semibold text-white bg-primary hover:opacity-90 transition-opacity cursor-pointer"
-                    >
-                      Đọc thêm
-                    </Link>
-                  </div>
+                  <Link
+                    to={PATHS.NEWS_DETAIL.replace(':blogId', story.blogId)}
+                    className="w-fit px-5 py-2 rounded-full text-xs font-semibold text-white bg-primary hover:opacity-90 transition-opacity cursor-pointer"
+                  >
+                    Đọc thêm
+                  </Link>
                 </div>
               </article>
             ))}

@@ -1,4 +1,4 @@
-import type { StrengthScore, usePasswordStrength } from '../hooks/usePasswordStrength';
+import type { StrengthScore } from '../hooks/usePasswordStrength';
 
 export const strengthBarColor: Record<StrengthScore, string> = {
   0: 'bg-destructive',
@@ -34,7 +34,6 @@ export const strengthLabelColor: Record<StrengthScore, string> = {
 
 interface PasswordStrengthMeterProps {
   score: StrengthScore;
-  feedback: ReturnType<typeof usePasswordStrength>['feedback'];
   isLoading?: boolean;
   hasError?: boolean;
   visible?: boolean;
@@ -42,7 +41,6 @@ interface PasswordStrengthMeterProps {
 
 export function PasswordStrengthMeter({
   score,
-  feedback,
   isLoading = false,
   hasError = false,
   visible = true,
@@ -90,22 +88,6 @@ export function PasswordStrengthMeter({
           style={{ width: strengthBarWidth[score] }}
         />
       </div>
-
-      {feedback?.warning && (
-        <p className="text-xs text-destructive font-medium flex items-center gap-1">
-          <span aria-hidden="true">⚠️</span>
-          <span>{feedback.warning}</span>
-        </p>
-      )}
-
-      {feedback?.suggestions && feedback.suggestions.length > 0 && (
-        <ul className="text-xs list-disc pl-4 space-y-0.5 text-muted-foreground">
-          {feedback.suggestions.map((s, index) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: index is preferred key here
-            <li key={index}>{s}</li>
-          ))}
-        </ul>
-      )}
     </div>
   );
 }

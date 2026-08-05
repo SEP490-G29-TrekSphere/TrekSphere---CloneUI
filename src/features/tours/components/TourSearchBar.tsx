@@ -80,7 +80,7 @@ export default function TourSearchBar({
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className={`relative z-20 mx-auto -mt-20 w-full max-w-[1100px] rounded-2xl bg-white p-3 shadow-xl ring-1 ring-black/5 sm:-mt-24 sm:p-4 lg:p-3 ${className}`}
+      className={`relative z-20 mx-auto mt-6 w-full max-w-[1100px] rounded-2xl bg-white p-3 shadow-xl ring-1 ring-black/5 sm:mt-8 sm:p-4 lg:p-3 ${className}`}
     >
       <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:gap-0">
         {/* Từ khóa */}

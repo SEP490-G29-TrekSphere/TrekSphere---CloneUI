@@ -55,6 +55,7 @@ export {
 export { AppGlobalLoadingSpinner } from './feedback/AppGlobalLoadingSpinner';
 export { AppSpinner, type AppSpinnerProps, type AppSpinnerSize } from './feedback/AppSpinner';
 export { AppGlobalToast } from './feedback/AppToast';
+export { AppFormDatePicker, type AppFormDatePickerProps } from './form/AppFormDatePicker';
 // Form
 export { AppFormInput, type AppFormInputProps } from './form/AppFormInput';
 export {
@@ -72,6 +73,7 @@ export {
   type AppButtonVariant,
 } from './primitives/AppButton';
 export { AppCheckbox, type AppCheckboxProps } from './primitives/AppCheckbox';
+export { AppDatePicker, type AppDatePickerProps } from './primitives/AppDatePicker';
 export { AppIcon, type AppIconProps, type AppIconSize } from './primitives/AppIcon';
 export { AppInput, type AppInputProps } from './primitives/AppInput';
 export { AppLabel, type AppLabelProps } from './primitives/AppLabel';

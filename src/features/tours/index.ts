@@ -7,7 +7,9 @@ export { default as PromoBanner } from './components/PromoBanner';
 // Components
 export { default as TourCard } from './components/TourCard';
 export { default as TourCategoriesRow } from './components/TourCategoriesRow';
+export { default as TourFilterPanel } from './components/TourFilterPanel';
 export { default as TourPagination } from './components/TourPagination';
+export { default as TourResultsHeader } from './components/TourResultsHeader';
 export { default as TourSearchBar } from './components/TourSearchBar';
 export { default as ToursHero } from './components/ToursHero';
 
@@ -18,6 +20,7 @@ export { useFeaturedTours } from './hooks/useFeaturedTours';
 export { useTourCheckpoints } from './hooks/useTourCheckpoints';
 // Hooks
 export { useTourDetail } from './hooks/useTourDetail';
+export { useTourPriceRange } from './hooks/useTourPriceRange';
 export { useTourReviews } from './hooks/useTourReviews';
 export { useTourSchedules } from './hooks/useTourSchedules';
 export { useTours } from './hooks/useTours';

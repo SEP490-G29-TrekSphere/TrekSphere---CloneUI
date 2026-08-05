@@ -58,12 +58,11 @@ export function PasswordStrengthField({
     return inputs;
   }, [watchedValues, additionalUserInputs]);
 
-  const { score, feedback, isLoading, hasError } = usePasswordStrength(password, userInputs);
+  const { score, isLoading, hasError } = usePasswordStrength(password, userInputs);
 
   return (
     <PasswordStrengthMeter
       score={score}
-      feedback={feedback}
       isLoading={isLoading}
       hasError={hasError}
       visible={password.length > 0}

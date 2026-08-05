@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { PATHS } from '@/constants/paths';
+import { AppInput } from '@/shared/ui';
 import { toast } from '@/store/useToastStore';
 
 const createGroupSchema = z.object({
@@ -155,7 +156,7 @@ export default function CreateCompanionGroupPage() {
                       <div className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none">
                         <Calendar className="w-5 h-5" />
                       </div>
-                      <input
+                      <AppInput
                         type="date"
                         {...form.register('departureDate')}
                         className="w-full bg-[#F3F0E6] dark:bg-muted/60 border-none rounded-2xl py-3.5 pl-12 pr-4 text-sm font-medium text-stone-800 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-[#1f3933]"

@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useDebounce } from '@/shared/hooks';
-import { AppBadge, AppEmptyState, AppSpinner } from '@/shared/ui';
+import { AppBadge, AppEmptyState, AppInput, AppSpinner } from '@/shared/ui';
 import { toast } from '@/store/useToastStore';
 import { formatDate, formatPrice } from '@/utils/format';
 import { ConfirmDeleteDialog } from '../components/ConfirmDeleteDialog';
@@ -283,7 +283,7 @@ export default function VendorVoucherList() {
             >
               <Calendar className="h-4 w-4" />
             </span>
-            <input
+            <AppInput
               type="date"
               value={validUntil}
               onChange={(e) => setValidUntil(e.target.value)}

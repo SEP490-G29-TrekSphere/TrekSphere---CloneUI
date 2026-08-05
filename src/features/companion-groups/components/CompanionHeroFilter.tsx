@@ -1,6 +1,7 @@
 import { Calendar, Compass, MapPin, SlidersHorizontal } from 'lucide-react';
 import { useState } from 'react';
 import { useTours } from '@/features/tours/hooks/useTours';
+import { AppInput } from '@/shared/ui';
 
 interface CompanionHeroFilterProps {
   searchQuery: string;
@@ -138,7 +139,7 @@ export function CompanionHeroFilter({
               <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
                 Ngày Khởi Hành Dự Kiến (targetDate)
               </label>
-              <input
+              <AppInput
                 type="date"
                 value={selectedDate}
                 onChange={(e) => onDateChange(e.target.value)}

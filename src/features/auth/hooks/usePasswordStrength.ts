@@ -154,6 +154,5 @@ export function usePasswordStrength(password: string, userInputs?: string[]) {
     isLoading,
     hasError,
     score: (result ? result.score : 0) as StrengthScore,
-    feedback: result ? result.feedback : null,
   };
 }

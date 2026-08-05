@@ -15,6 +15,7 @@ import {
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCoordinatorSessionOperationsPath } from '@/constants';
+import { AppInput } from '@/shared/ui';
 import { useCoordinatorSchedules } from '../hooks/useCoordinatorSchedules';
 import type { CoordinatorScheduleStatus } from '../types';
 
@@ -176,7 +177,7 @@ export default function CoordinatorSchedulesPage() {
               <label className="mb-1 block text-xs font-bold" style={{ color: '#06261D' }}>
                 Khởi hành từ ngày
               </label>
-              <input
+              <AppInput
                 type="date"
                 value={departureDateFrom}
                 onChange={(e) => {
@@ -193,7 +194,7 @@ export default function CoordinatorSchedulesPage() {
               <label className="mb-1 block text-xs font-bold" style={{ color: '#06261D' }}>
                 Đến ngày
               </label>
-              <input
+              <AppInput
                 type="date"
                 value={departureDateTo}
                 onChange={(e) => {

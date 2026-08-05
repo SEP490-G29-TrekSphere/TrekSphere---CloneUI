@@ -90,24 +90,57 @@ export function getPrimaryRole(roles: string[] | undefined | null): Role | null 
 }
 
 /**
- * Trả về trang đích sau login dựa trên role của user.
- *
- * Ưu tiên theo thứ tự: admin → vendor_manager → vendor_staff → trekker.
- * Nếu không nhận diện được role nào, fallback về trang chủ.
+ * Trang "Bảng điều khiển" của từng role — đích của mục duy nhất trong menu
+ * avatar ở header. Trả `null` nếu user không có role nào đã biết (khi đó menu
+ * chỉ còn nút Đăng xuất).
  */
-export function getPostLoginRoute(roles: string[]): string {
+export function getRoleDashboardPath(roles: string[] | undefined | null): string | null {
   switch (getPrimaryRole(roles)) {
     case ROLES.ADMIN:
       return PATHS.ADMIN_ACCOUNTS;
     case ROLES.VENDOR_MANAGER:
       return PATHS.VENDOR_MANAGER;
     case ROLES.VENDOR_STAFF:
-      return '/partner';
+      return PATHS.PARTNER;
     case ROLES.COORDINATOR:
       return PATHS.COORDINATOR_SCHEDULES;
     case ROLES.TREKKER:
       return PATHS.TREKKER;
     default:
-      return PATHS.HOME;
+      return null;
+  }
+}
+
+/**
+ * Trả về trang đích sau login dựa trên role của user.
+ *
+ * Ưu tiên theo thứ tự: admin → vendor_manager → vendor_staff → coordinator →
+ * trekker. Nếu không nhận diện được role nào, fallback về trang chủ.
+ *
+ * Riêng TREKKER: về thẳng trang chủ chứ KHÔNG vào `/trekker`. Trekker là người
+ * dùng cuối — sau khi đăng nhập họ cần duyệt tour/nhóm/bài viết ở trang public
+ * trước. Portal `/trekker` vẫn truy cập được qua mục "Bảng điều khiển" trong
+ * menu avatar (`getRoleDashboardPath`).
+ */
+export function getPostLoginRoute(roles: string[]): string {
+  if (getPrimaryRole(roles) === ROLES.TREKKER) return PATHS.HOME;
+  return getRoleDashboardPath(roles) ?? PATHS.HOME;
+}
+
+/**
+ * Trả về trang chat tương ứng với role của user.
+ */
+export function getRoleChatPath(roles: string[] | undefined | null): string {
+  switch (getPrimaryRole(roles)) {
+    case ROLES.ADMIN:
+      return PATHS.ADMIN_CHAT;
+    case ROLES.VENDOR_MANAGER:
+      return PATHS.VENDOR_MANAGER_CHAT;
+    case ROLES.VENDOR_STAFF:
+      return PATHS.PARTNER_CHAT;
+    case ROLES.COORDINATOR:
+      return PATHS.COORDINATOR_CHAT;
+    default:
+      return PATHS.TREKKER_CHAT;
   }
 }

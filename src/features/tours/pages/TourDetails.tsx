@@ -15,8 +15,9 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { getBookTourPath, PATHS, ROLES } from '@/constants';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { getBookTourPath, getRoleChatPath, PATHS, ROLES } from '@/constants';
+import { chatService } from '@/features/chat/services/chatService';
 import { useAdminReviewMutations } from '@/features/tours/hooks/useAdminReviewMutations';
 import { useTourCheckpoints } from '@/features/tours/hooks/useTourCheckpoints';
 import { useTourDetail } from '@/features/tours/hooks/useTourDetail';
@@ -28,6 +29,7 @@ import type {
   TourDetailScheduleApi,
 } from '@/features/tours/types';
 import { useAppStore } from '@/store/useAppStore';
+import { toast } from '@/store/useToastStore';
 
 // ============================================================
 // Helpers
@@ -243,6 +245,34 @@ function MemberBanner({ isLoggedIn }: { isLoggedIn: boolean }) {
 /** Vendor sidebar card */
 function VendorCard({ tour }: { tour: TourDetailFromApi }) {
   const includes = splitField(tour.includes);
+  const user = useAppStore((s) => s.user);
+  const navigate = useNavigate();
+  const [isChatLoading, setIsChatLoading] = useState(false);
+
+  const handleChatWithVendor = async () => {
+    if (!user) {
+      toast.error('Vui lòng đăng nhập để chat với nhà cung cấp');
+      navigate(PATHS.LOGIN);
+      return;
+    }
+
+    try {
+      setIsChatLoading(true);
+      const res = await chatService.createConversation({
+        conversationType: 'DIRECT',
+        title: tour.creatorName,
+        participantIds: [tour.creatorId],
+      });
+
+      const chatPath = getRoleChatPath(user.roles);
+      navigate(`${chatPath}?conversationId=${res.conversationId}`);
+    } catch (error) {
+      console.error(error);
+      toast.error('Không thể kết nối với nhà cung cấp. Vui lòng thử lại sau.');
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
 
   return (
     <aside className="flex flex-col gap-5 rounded-2xl border border-border bg-card p-5 shadow-sm">
@@ -255,19 +285,19 @@ function VendorCard({ tour }: { tour: TourDetailFromApi }) {
         {tour.vendorLogoUrl ? (
           <img
             src={tour.vendorLogoUrl}
-            alt={tour.vendorName}
+            alt={tour.creatorName}
             className="h-10 w-10 rounded-full object-cover"
           />
         ) : (
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
-            {tour.vendorName.charAt(0)}
+            {tour.creatorName ? tour.creatorName.charAt(0) : 'N'}
           </div>
         )}
         <div>
-          <p className="text-sm font-bold text-foreground">{tour.vendorName}</p>
+          <p className="text-sm font-bold text-foreground">{tour.creatorName || 'Chủ tour'}</p>
           <p className="text-xs text-muted-foreground">
             <MapPin className="mr-0.5 inline h-3 w-3" />
-            Đơn vị lữ hành uy tín
+            Chủ tour / Nhà cung cấp
           </p>
         </div>
       </div>
@@ -302,10 +332,12 @@ function VendorCard({ tour }: { tour: TourDetailFromApi }) {
       {/* CTA */}
       <button
         type="button"
-        className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+        onClick={handleChatWithVendor}
+        disabled={isChatLoading}
+        className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-75"
       >
         <MessageCircle className="h-4 w-4" />
-        Chat với nhà cung cấp
+        {isChatLoading ? 'Đang kết nối...' : 'Chat với nhà cung cấp'}
       </button>
 
       <p className="text-center text-[11px] text-muted-foreground">Phản hồi trong vòng 30 phút</p>

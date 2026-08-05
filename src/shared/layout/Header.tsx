@@ -1,8 +1,9 @@
-import { Bell, ClipboardList, Compass, FileText, Key, LogOut, Menu, User, X } from 'lucide-react';
+import { Bell, LayoutDashboard, LogOut, Menu, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { queryClient } from '@/config/queryClient';
-import { PATHS, ROLES } from '@/constants';
+import { PATHS } from '@/constants';
+import { getRoleDashboardPath } from '@/constants/roles';
 import { authService } from '@/features/auth';
 import { mockNotifications } from '@/features/notifications/data/mockNotifications';
 import { profileKeys } from '@/features/profile/hooks/useProfile';
@@ -86,7 +87,7 @@ export default function Header() {
   const avatarUrl = user?.avatarUrl;
   const initial = user?.name?.charAt(0).toUpperCase() ?? 'A';
   const showAvatar = Boolean(avatarUrl);
-  const isTrekker = user?.roles?.map((r) => r.toLowerCase()).includes(ROLES.TREKKER);
+  const dashboardPath = getRoleDashboardPath(user?.roles);
   const unreadCount = mockNotifications.filter((n) => !n.read).length;
 
   return (
@@ -158,48 +159,16 @@ export default function Header() {
                   <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
                 </div>
                 <div className="my-1 h-px bg-border" />
-                <Link
-                  to={PATHS.PROFILE}
-                  onClick={() => setDropdownOpen(false)}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
-                  <User className="h-4 w-4" />
-                  Hồ sơ
-                </Link>
-                <Link
-                  to={PATHS.MY_TOURS}
-                  onClick={() => setDropdownOpen(false)}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
-                  <Compass className="h-4 w-4" />
-                  Tour của tôi
-                </Link>
-                {isTrekker && (
+                {dashboardPath && (
                   <Link
-                    to={PATHS.MY_VENDOR_APPLICATIONS}
+                    to={dashboardPath}
                     onClick={() => setDropdownOpen(false)}
                     className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                   >
-                    <ClipboardList className="h-4 w-4" />
-                    Lịch sử đăng ký Vendor
+                    <LayoutDashboard className="h-4 w-4" />
+                    Bảng điều khiển
                   </Link>
                 )}
-                <Link
-                  to={PATHS.BLOG_LIST}
-                  onClick={() => setDropdownOpen(false)}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
-                  <FileText className="h-4 w-4" />
-                  Bài viết của tôi
-                </Link>
-                <Link
-                  to={PATHS.CHANGE_PASSWORD}
-                  onClick={() => setDropdownOpen(false)}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
-                  <Key className="h-4 w-4" />
-                  Đổi mật khẩu
-                </Link>
                 <div className="my-1 h-px bg-border" />
                 <button
                   type="button"
