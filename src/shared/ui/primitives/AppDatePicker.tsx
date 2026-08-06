@@ -44,7 +44,7 @@ export const AppDatePicker = forwardRef<DatePicker, AppDatePickerProps>(
           className={combinedClassName}
           popperClassName={`z-[9999] ${props.popperClassName || ''}`}
           portalId="react-datepicker-portal"
-          {...(props as any)}
+          {...(props as unknown as DatePickerProps)}
         />
       </div>
     );

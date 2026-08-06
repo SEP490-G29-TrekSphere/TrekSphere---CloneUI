@@ -2,6 +2,7 @@ import { Calendar, Clock, Eye, MapPin, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/useAppStore';
+import { formatDate } from '@/utils/format';
 import type { MatchingGroupItem, MatchingGroupStatus } from '../services/companionGroupService';
 import type { CompanionGroup } from '../types';
 
@@ -107,7 +108,7 @@ export function CompanionGroupCard({
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Calendar className="h-3.5 w-3.5 text-primary/70" />
-                <span>Khởi hành: {departureDate}</span>
+                <span>Khởi hành: {formatDate(departureDate)}</span>
               </span>
               <span className="flex items-center gap-1">
                 <Users className="h-3.5 w-3.5 text-primary/70" />
@@ -192,7 +193,7 @@ export function CompanionGroupCard({
         <div className="flex flex-col gap-1.5 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <Calendar className="h-3.5 w-3.5 text-primary/70" />
-            Khởi hành: {departureDate}
+            Khởi hành: {formatDate(departureDate)}
           </span>
           <span className="flex items-center gap-1.5">
             <Users className="h-3.5 w-3.5 text-primary/70" />

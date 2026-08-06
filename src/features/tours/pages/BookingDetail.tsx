@@ -243,7 +243,7 @@ export default function BookingDetail({
 
   if (loading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-[#FAF9F5]">
+      <div className="flex min-h-[calc(100vh-4rem)] w-full items-center justify-center bg-[#FAF9F5]">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#0B3025] border-t-transparent" />
       </div>
     );
@@ -251,21 +251,30 @@ export default function BookingDetail({
 
   if (!booking) {
     return (
-      <div className="mx-auto max-w-md py-20 text-center bg-[#FAF9F5] px-4">
-        <AlertCircle className="mx-auto mb-4 h-12 w-12 text-destructive" />
-        <h2 className="text-xl font-extrabold text-[#0B3025]">Không tìm thấy thông tin đặt chỗ</h2>
-        <p className="text-zinc-500 font-semibold text-sm mt-2">
-          Vui lòng kiểm tra lại mã đơn hoặc quay về danh sách đơn đặt.
-        </p>
-        <AppButton onClick={() => navigate(backPath)} className="mt-6">
-          Quay lại danh sách tour
-        </AppButton>
+      <div className="min-h-[calc(100vh-4rem)] w-full flex flex-col items-center justify-center p-6 text-center bg-[#FAF9F5]">
+        <div className="max-w-md w-full bg-white p-8 rounded-3xl border border-red-100 shadow-lg space-y-4">
+          <AlertCircle className="w-12 h-12 text-rose-500 mx-auto" />
+          <h2 className="text-xl font-extrabold text-[#0B3025]">
+            Không tìm thấy thông tin đặt chỗ
+          </h2>
+          <p className="text-xs text-zinc-500 leading-relaxed">
+            Vui lòng kiểm tra lại mã đơn hoặc quay về danh sách đơn đặt.
+          </p>
+          <div className="pt-2">
+            <AppButton
+              onClick={() => navigate(backPath)}
+              className="bg-[#0B3025] hover:bg-[#072019] text-white font-bold px-6 py-2.5 rounded-full text-xs shadow-sm border-none cursor-pointer"
+            >
+              Quay lại danh sách tour
+            </AppButton>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full space-y-6">
+    <div className="mx-auto max-w-[1400px] w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Back navigation & Page Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E5E4DE] pb-4">
         <div className="flex items-center gap-3">
@@ -395,52 +404,60 @@ export default function BookingDetail({
         {/* Main Details Left Column */}
         <div className="space-y-6">
           {/* Tour Banner Card */}
-          <AppCard className="overflow-hidden border-[#E5E4DE] rounded-3xl bg-white shadow-sm">
-            <div className="relative aspect-video w-full bg-zinc-100">
-              <img
-                src={booking.coverImageUrl || FALLBACK_IMAGE}
-                alt={booking.tourName}
-                onError={(e) => {
-                  if (e.currentTarget.src !== FALLBACK_IMAGE) {
-                    e.currentTarget.src = FALLBACK_IMAGE;
-                  }
-                }}
-                className="h-full w-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex items-end p-6">
-                <h2 className="text-xl sm:text-2xl font-extrabold text-white leading-snug">
-                  {booking.tourName}
-                </h2>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5 bg-[#FAF9F5]/50 border-t border-[#F4F4F2]">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white border border-[#E5E4DE] text-zinc-600">
-                  <Calendar className="h-4 w-4" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-extrabold text-zinc-400 block uppercase tracking-wider">
-                    Lịch trình khởi hành
-                  </span>
-                  <span className="text-zinc-800 font-bold text-xs">
-                    {formatDate(booking.departureDate)}
-                    {booking.returnDate ? ` — ${formatDate(booking.returnDate)}` : ''}
-                  </span>
-                </div>
+          <AppCard className="overflow-hidden border-[#E5E4DE] rounded-3xl bg-white shadow-sm p-5">
+            <div className="flex flex-col md:flex-row gap-5">
+              <div className="relative w-full md:w-56 h-36 shrink-0 rounded-2xl overflow-hidden bg-zinc-100 border border-[#E5E4DE]">
+                <img
+                  src={booking.coverImageUrl || FALLBACK_IMAGE}
+                  alt={booking.tourName}
+                  onError={(e) => {
+                    if (e.currentTarget.src !== FALLBACK_IMAGE) {
+                      e.currentTarget.src = FALLBACK_IMAGE;
+                    }
+                  }}
+                  className="h-full w-full object-cover"
+                />
               </div>
 
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white border border-[#E5E4DE] text-zinc-600">
-                  <Users className="h-4 w-4" />
-                </div>
+              <div className="flex-1 flex flex-col justify-between py-1">
                 <div>
-                  <span className="text-[10px] font-extrabold text-zinc-400 block uppercase tracking-wider">
-                    Số lượng chỗ
+                  <span className="text-[10px] font-extrabold text-[#0B3025] block uppercase tracking-wider mb-2 bg-[#0B3025]/10 w-fit px-2.5 py-0.5 rounded-full">
+                    Thông tin Tour
                   </span>
-                  <span className="text-zinc-800 font-bold text-xs">
-                    {booking.numberOfParticipants} người tham gia
-                  </span>
+                  <h2 className="text-xl sm:text-2xl font-extrabold text-[#0B3025] leading-snug">
+                    {booking.tourName}
+                  </h2>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-[#F4F4F2]">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#FAF9F5] border border-[#E5E4DE] text-zinc-600">
+                      <Calendar className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <span className="text-[9px] font-extrabold text-zinc-400 block uppercase tracking-wider">
+                        Lịch trình khởi hành
+                      </span>
+                      <span className="text-zinc-800 font-bold text-xs">
+                        {formatDate(booking.departureDate)}
+                        {booking.returnDate ? ` — ${formatDate(booking.returnDate)}` : ''}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#FAF9F5] border border-[#E5E4DE] text-zinc-600">
+                      <Users className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <span className="text-[9px] font-extrabold text-zinc-400 block uppercase tracking-wider">
+                        Số lượng chỗ
+                      </span>
+                      <span className="text-zinc-800 font-bold text-xs">
+                        {booking.numberOfParticipants} người tham gia
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

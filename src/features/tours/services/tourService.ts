@@ -69,95 +69,6 @@ function unwrapResponse<T>(response: ApiResponse<T>): T {
   return response.data;
 }
 
-export interface MockBooking {
-  bookingId: string;
-  tourId: string;
-  tourName: string;
-  coverImageUrl: string;
-  departureDate: string;
-  returnDate: string;
-  duration: string;
-  participants: Array<{ fullName: string; phone: string; email: string }>;
-  status:
-    | 'PENDING'
-    | 'AWAITING_CONFIRMATION'
-    | 'CONFIRMED'
-    | 'CANCELLED'
-    | 'PENDING_CANCEL'
-    | 'COMPLETED';
-  tourPrice: number;
-  discountAmount: number;
-  totalPrice: number;
-  cancellationDeadline: string;
-  createdAt: string;
-  paymentProofUrl?: string;
-  paymentMethod: string;
-  notes?: string;
-  cancelReason?: string;
-  cancellationRefund?: number;
-}
-
-const mockBookingsDb: Record<string, MockBooking> = Object.assign(Object.create(null), {
-  'TS-10293': {
-    bookingId: 'TS-10293',
-    tourId: '1',
-    tourName: 'Khám phá Tây Bắc Mùa Lúa Chín',
-    coverImageUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80',
-    departureDate: '2026-10-15',
-    returnDate: '2026-10-17',
-    duration: '3 ngày 2 đêm',
-    participants: [
-      { fullName: 'Nguyễn Văn A', phone: '0901234567', email: 'nguyenvana@gmail.com' },
-      { fullName: 'Trần Thị B', phone: '0902345678', email: 'tranthib@gmail.com' },
-    ],
-    status: 'PENDING',
-    tourPrice: 3000000,
-    discountAmount: 200000,
-    totalPrice: 2800000,
-    cancellationDeadline: '2026-10-10',
-    createdAt: new Date().toISOString(),
-    paymentMethod: 'bank',
-  },
-  'TS-09821': {
-    bookingId: 'TS-09821',
-    tourId: '2',
-    tourName: 'Trekking Tà Năng - Phan Dũng',
-    coverImageUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80',
-    departureDate: '2026-05-12',
-    returnDate: '2026-05-14',
-    duration: '3 ngày 2 đêm (28km)',
-    participants: [
-      { fullName: 'Nguyễn Văn A', phone: '0901234567', email: 'nguyenvana@gmail.com' },
-    ],
-    status: 'COMPLETED',
-    tourPrice: 3000000,
-    discountAmount: 0,
-    totalPrice: 3000000,
-    cancellationDeadline: '2026-05-05',
-    createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-    paymentMethod: 'bank',
-  },
-  'TS-08472': {
-    bookingId: 'TS-08472',
-    tourId: '3',
-    tourName: 'Chinh phục đỉnh Fansipan',
-    coverImageUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80',
-    departureDate: '2026-03-20',
-    returnDate: '2026-03-22',
-    duration: '3 ngày 2 đêm',
-    participants: [
-      { fullName: 'Nguyễn Văn A', phone: '0901234567', email: 'nguyenvana@gmail.com' },
-    ],
-    status: 'CANCELLED',
-    tourPrice: 4000000,
-    discountAmount: 0,
-    totalPrice: 4000000,
-    cancellationDeadline: '2026-03-13',
-    createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-    paymentMethod: 'bank',
-  },
-});
-
 export const tourService = {
   async getTours(params: TourListParams = {}): Promise<TourListResponse> {
     const queryString = buildQuery(params);
@@ -220,22 +131,6 @@ export const tourService = {
     return unwrapResponse(response);
   },
 
-  async updateParticipants(
-    bookingId: string,
-    participants: MockBooking['participants']
-  ): Promise<void> {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        if (mockBookingsDb[bookingId]) {
-          mockBookingsDb[bookingId].participants = participants;
-          resolve();
-        } else {
-          reject(new Error('Không tìm thấy đơn đặt chỗ'));
-        }
-      }, 500);
-    });
-  },
-
   async cancelBooking(
     bookingId: string,
     cancellationReason: string
@@ -248,44 +143,6 @@ export const tourService = {
     return unwrapResponse(response);
   },
 
-  async reviewCancelRequest(
-    bookingId: string,
-    approved: boolean
-  ): Promise<{ status: 'CANCELLED' | 'CONFIRMED' }> {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const booking = mockBookingsDb[bookingId];
-        if (!booking) {
-          reject(new Error('Không tìm thấy đơn đặt chỗ'));
-          return;
-        }
-        const nextStatus = approved ? 'CANCELLED' : 'CONFIRMED';
-        booking.status = nextStatus;
-        if (!approved) {
-          booking.cancelReason = undefined;
-          booking.cancellationRefund = undefined;
-        }
-        resolve({ status: nextStatus });
-      }, 500);
-    });
-  },
-
-  async rejectPayment(bookingId: string): Promise<MockBooking> {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const booking = mockBookingsDb[bookingId];
-        if (!booking) {
-          reject(new Error('Không tìm thấy đơn đặt chỗ'));
-          return;
-        }
-        booking.status = 'PENDING';
-        booking.createdAt = new Date().toISOString();
-        booking.paymentProofUrl = undefined;
-        resolve(booking);
-      }, 500);
-    });
-  },
-
   async updatePaymentProof(bookingId: string, file: File): Promise<BookingDetailResponse> {
     const formData = new FormData();
     formData.append('file', file);
@@ -296,20 +153,6 @@ export const tourService = {
       'POST'
     );
     return unwrapResponse(response);
-  },
-
-  async updateBookingStatus(
-    bookingId: string,
-    status: MockBooking['status']
-  ): Promise<{ status: MockBooking['status'] }> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        if (mockBookingsDb[bookingId]) {
-          mockBookingsDb[bookingId].status = status;
-        }
-        resolve({ status });
-      }, 300);
-    });
   },
 
   /** `POST /tracking/sos` — gửi tín hiệu cấp cứu kèm toạ độ GPS thực tế. */
