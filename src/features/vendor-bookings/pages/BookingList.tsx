@@ -7,9 +7,11 @@ import { BookingTableRow } from '../components/BookingTableRow';
 import { ConfirmBookingModal } from '../components/ConfirmBookingModal';
 import { ConfirmPaymentModal } from '../components/ConfirmPaymentModal';
 import { ConfirmRefundModal } from '../components/ConfirmRefundModal';
+import { RejectBookingModal } from '../components/RejectBookingModal';
 import { useConfirmBooking } from '../hooks/useConfirmBooking';
 import { useConfirmPayment } from '../hooks/useConfirmPayment';
 import { useConfirmRefund } from '../hooks/useConfirmRefund';
+import { useRejectBooking } from '../hooks/useRejectBooking';
 import { useVendorBookingStats } from '../hooks/useVendorBookingStats';
 import { useVendorBookings } from '../hooks/useVendorBookings';
 import type { VendorBookingFilter, VendorBookingItem } from '../types';
@@ -30,10 +32,13 @@ export default function BookingList() {
     useState<VendorBookingItem | null>(null);
   const [selectedBookingForConfirmRefund, setSelectedBookingForConfirmRefund] =
     useState<VendorBookingItem | null>(null);
+  const [selectedBookingForReject, setSelectedBookingForReject] =
+    useState<VendorBookingItem | null>(null);
 
   const confirmBookingMutation = useConfirmBooking();
   const confirmPaymentMutation = useConfirmPayment();
   const confirmRefundMutation = useConfirmRefund();
+  const rejectBookingMutation = useRejectBooking();
 
   const { data: stats } = useVendorBookingStats();
 
@@ -92,6 +97,17 @@ export default function BookingList() {
         setSelectedBookingForConfirmRefund(null);
       },
     });
+  };
+
+  const handleRejectSubmit = (bookingId: string, cancellationReason: string) => {
+    rejectBookingMutation.mutate(
+      { bookingId, cancellationReason },
+      {
+        onSuccess: () => {
+          setSelectedBookingForReject(null);
+        },
+      }
+    );
   };
 
   return (
@@ -189,6 +205,7 @@ export default function BookingList() {
                     onConfirm={(b) => setSelectedBookingForConfirm(b)}
                     onConfirmPayment={(b) => setSelectedBookingForConfirmPayment(b)}
                     onConfirmRefund={(b) => setSelectedBookingForConfirmRefund(b)}
+                    onReject={(b) => setSelectedBookingForReject(b)}
                   />
                 ))
               )}
@@ -277,6 +294,15 @@ export default function BookingList() {
         isPending={confirmRefundMutation.isPending}
         onClose={() => setSelectedBookingForConfirmRefund(null)}
         onConfirm={handleConfirmRefundSubmit}
+      />
+
+      {/* Reject Booking Modal */}
+      <RejectBookingModal
+        booking={selectedBookingForReject}
+        isOpen={!!selectedBookingForReject}
+        isPending={rejectBookingMutation.isPending}
+        onClose={() => setSelectedBookingForReject(null)}
+        onConfirm={handleRejectSubmit}
       />
     </div>
   );

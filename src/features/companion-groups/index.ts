@@ -1,8 +1,6 @@
 export { CompanionGroupCard } from './components/CompanionGroupCard';
 export { CompanionHeroFilter } from './components/CompanionHeroFilter';
 export { CreateCompanionGroupModal } from './components/CreateCompanionGroupModal';
-export { MOCK_COMPANION_GROUPS } from './data/mockCompanionGroups';
-export { MOCK_GROUP_DETAIL } from './data/mockGroupDetail';
 export { useApproveMember } from './hooks/useApproveMember';
 export { useCreateMatchingGroup } from './hooks/useCreateMatchingGroup';
 export { useDeleteMatchingGroup } from './hooks/useDeleteMatchingGroup';

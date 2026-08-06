@@ -122,7 +122,7 @@ export default function MyBookings({ useTrekkerPaths = false }: { useTrekkerPath
   };
 
   return (
-    <div className="w-full space-y-6">
+    <div className="mx-auto max-w-[1400px] w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-[#0B3025]">

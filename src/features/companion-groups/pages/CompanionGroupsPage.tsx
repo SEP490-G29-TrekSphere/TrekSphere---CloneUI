@@ -7,7 +7,7 @@ import { TourPagination } from '@/features/tours';
 import { useTours } from '@/features/tours/hooks/useTours';
 import { cn } from '@/lib/utils';
 import { useDebounce } from '@/shared/hooks/useDebounce';
-import { AppButton } from '@/shared/ui';
+import { AppButton, AppDatePicker } from '@/shared/ui';
 import { useAppStore } from '@/store/useAppStore';
 import { CompanionGroupCard, type GroupCardData } from '../components/CompanionGroupCard';
 import { CreateCompanionGroupModal } from '../components/CreateCompanionGroupModal';
@@ -179,11 +179,19 @@ export default function CompanionGroupsPage() {
                   <span className="mb-3 block text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                     Ngày khởi hành
                   </span>
-                  <input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    className="w-full rounded-xl border border-border bg-muted/40 px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  <AppDatePicker
+                    selected={selectedDate ? new Date(selectedDate) : null}
+                    onChange={(date: Date | null) => {
+                      if (!date) {
+                        setSelectedDate('');
+                        return;
+                      }
+                      const offset = date.getTimezoneOffset();
+                      const localDate = new Date(date.getTime() - offset * 60 * 1000);
+                      setSelectedDate(localDate.toISOString().split('T')[0]);
+                    }}
+                    className="w-full rounded-xl border border-border bg-muted/40 px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                    placeholderText="Chọn ngày khởi hành"
                   />
                 </div>
 

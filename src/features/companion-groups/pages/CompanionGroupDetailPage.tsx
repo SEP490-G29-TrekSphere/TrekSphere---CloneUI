@@ -16,7 +16,9 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { PATHS } from '@/constants/paths';
+import { AppButton } from '@/shared/ui';
 import { useAppStore } from '@/store/useAppStore';
+import { formatDate } from '@/utils/format';
 import { useApproveMember } from '../hooks/useApproveMember';
 import { useDeleteMatchingGroup } from '../hooks/useDeleteMatchingGroup';
 import { useJoinRequests } from '../hooks/useJoinRequests';
@@ -147,7 +149,7 @@ export default function CompanionGroupDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#FBF8F3] flex flex-col items-center justify-center p-6">
+      <div className="min-h-[calc(100vh-4rem)] bg-[#FBF8F3] flex flex-col items-center justify-center p-6">
         <Loader2 className="w-10 h-10 text-emerald-800 animate-spin mb-4" />
         <p className="text-sm font-semibold text-slate-600">
           Đang tải thông tin chi tiết nhóm ghép...
@@ -158,30 +160,28 @@ export default function CompanionGroupDetailPage() {
 
   if (isError || !groupData) {
     return (
-      <div className="min-h-screen bg-[#FBF8F3] px-4 py-16 text-center">
-        <div className="max-w-md mx-auto bg-white p-8 rounded-3xl border border-red-200 shadow-sm">
-          <AlertTriangle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
-          <h3 className="text-lg font-bold text-slate-900">Không thể tải thông tin nhóm</h3>
-          <p className="text-xs text-slate-500 mt-2 mb-6">
+      <div className="min-h-[calc(100vh-4rem)] bg-[#FBF8F3] flex flex-col items-center justify-center p-6 text-center">
+        <div className="max-w-md w-full bg-white p-8 rounded-3xl border border-red-100 shadow-lg space-y-4">
+          <AlertTriangle className="w-12 h-12 text-rose-500 mx-auto" />
+          <h2 className="text-xl font-extrabold text-[#0B3025]">Không thể tải thông tin nhóm</h2>
+          <p className="text-xs text-zinc-500 leading-relaxed">
             {error instanceof Error
               ? error.message
               : 'Nhóm ghép không tồn tại hoặc đã bị giải tán.'}
           </p>
-          <div className="flex items-center justify-center gap-3">
-            <button
-              type="button"
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <AppButton
               onClick={() => navigate(PATHS.GROUPS)}
-              className="px-5 py-2 rounded-full border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              className="bg-white hover:bg-zinc-50 text-zinc-700 border border-zinc-200 font-bold px-5 py-2.5 rounded-full text-xs shadow-sm cursor-pointer"
             >
               Quay lại danh sách
-            </button>
-            <button
-              type="button"
+            </AppButton>
+            <AppButton
               onClick={() => refetch()}
-              className="px-5 py-2 rounded-full bg-[#0D3B2E] text-xs font-semibold text-white hover:bg-emerald-950"
+              className="bg-[#0B3025] hover:bg-[#072019] text-white font-bold px-5 py-2.5 rounded-full text-xs shadow-sm border-none cursor-pointer"
             >
               Thử lại
-            </button>
+            </AppButton>
           </div>
         </div>
       </div>
@@ -214,7 +214,7 @@ export default function CompanionGroupDetailPage() {
             </span>
             <span className="flex items-center gap-1.5 text-xs font-medium text-slate-200">
               <Calendar className="h-3.5 w-3.5 text-emerald-400" />
-              Khởi hành: {groupData.targetDate}
+              Khởi hành: {formatDate(groupData.targetDate)}
             </span>
           </div>
 

@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertCircle, Calendar, Gift, Plus, Trash2, User, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import * as z from 'zod';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { getBookingPaymentPath } from '@/constants/paths';
@@ -219,7 +219,7 @@ export default function BookTour() {
     try {
       const formattedParticipants = data.participants.map((p) => {
         let formattedDOB = p.dateOfBirth;
-        if (p.dateOfBirth && p.dateOfBirth.includes('T')) {
+        if (p.dateOfBirth?.includes('T')) {
           formattedDOB = p.dateOfBirth.split('T')[0];
         }
         return {
@@ -252,7 +252,7 @@ export default function BookTour() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center">
+      <div className="flex min-h-[calc(100vh-4rem)] w-full items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#0B3025] border-t-transparent" />
       </div>
     );
@@ -260,15 +260,22 @@ export default function BookTour() {
 
   if (error || !tour) {
     return (
-      <div className="mx-auto max-w-md py-20 text-center">
-        <AlertCircle className="mx-auto mb-4 h-12 w-12 text-destructive" />
-        <h2 className="text-xl font-bold">Không tìm thấy thông tin tour</h2>
-        <p className="text-muted-foreground mt-2">
-          {error?.message || 'Có lỗi xảy ra khi tải dữ liệu.'}
-        </p>
-        <Link to="/tours" className="mt-4 inline-block text-primary hover:underline">
-          Quay lại danh sách tour
-        </Link>
+      <div className="min-h-[calc(100vh-4rem)] w-full flex flex-col items-center justify-center p-6 text-center">
+        <div className="max-w-md w-full bg-white p-8 rounded-3xl border border-red-100 shadow-lg space-y-4">
+          <AlertCircle className="w-12 h-12 text-rose-500 mx-auto" />
+          <h2 className="text-xl font-extrabold text-[#0B3025]">Không tìm thấy thông tin tour</h2>
+          <p className="text-xs text-zinc-500 leading-relaxed">
+            {error?.message || 'Có lỗi xảy ra khi tải dữ liệu.'}
+          </p>
+          <div className="pt-2">
+            <AppButton
+              onClick={() => navigate('/tours')}
+              className="bg-[#0B3025] hover:bg-[#072019] text-white font-bold px-6 py-2.5 rounded-full text-xs shadow-sm border-none cursor-pointer"
+            >
+              Quay lại danh sách tour
+            </AppButton>
+          </div>
+        </div>
       </div>
     );
   }

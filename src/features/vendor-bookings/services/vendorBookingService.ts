@@ -173,4 +173,20 @@ export const vendorBookingService = {
     );
     return unwrapResponse(response);
   },
+
+  /**
+   * Từ chối / Hủy đơn đặt tour của khách.
+   * Endpoint: PUT /api/v1/vendor/bookings/{id}/reject
+   */
+  async rejectBooking(
+    bookingId: string,
+    cancellationReason: string
+  ): Promise<BookingDetailResponse> {
+    const response = await ApiService<BookingDetailResponse>(
+      `/vendor/bookings/${bookingId}/reject`,
+      'PUT',
+      { cancellationReason }
+    );
+    return unwrapResponse(response);
+  },
 };

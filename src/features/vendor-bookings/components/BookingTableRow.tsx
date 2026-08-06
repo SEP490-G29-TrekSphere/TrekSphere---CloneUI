@@ -1,3 +1,6 @@
+import { Check, ChevronDown, CreditCard, RotateCcw, X } from 'lucide-react';
+import { useState } from 'react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { BookingStatus, PaymentStatus, VendorBookingItem } from '../types';
 
 interface BookingTableRowProps {
@@ -5,6 +8,7 @@ interface BookingTableRowProps {
   onConfirm?: (booking: VendorBookingItem) => void;
   onConfirmPayment?: (booking: VendorBookingItem) => void;
   onConfirmRefund?: (booking: VendorBookingItem) => void;
+  onReject?: (booking: VendorBookingItem) => void;
 }
 
 const bookingStatusConfig: Record<BookingStatus, { label: string; bg: string; text: string }> = {
@@ -26,7 +30,10 @@ export function BookingTableRow({
   onConfirm,
   onConfirmPayment,
   onConfirmRefund,
+  onReject,
 }: BookingTableRowProps) {
+  const [popoverOpen, setPopoverOpen] = useState(false);
+
   const bStatus = bookingStatusConfig[booking.bookingStatus] || {
     label: booking.bookingStatus,
     bg: '#F3F4F6',
@@ -62,6 +69,15 @@ export function BookingTableRow({
     }
     return name.substring(0, 2).toUpperCase();
   };
+
+  const showConfirmPayment =
+    booking.bookingStatus !== 'CANCELLED' && booking.paymentStatus === 'PENDING';
+  const showConfirmBooking = booking.bookingStatus === 'PENDING';
+  const showRejectBooking = booking.bookingStatus === 'PENDING';
+  const showConfirmRefund =
+    booking.bookingStatus === 'CANCELLED' && booking.paymentStatus !== 'REFUNDED';
+  const hasActions =
+    showConfirmPayment || showConfirmBooking || showRejectBooking || showConfirmRefund;
 
   return (
     <tr
@@ -138,34 +154,76 @@ export function BookingTableRow({
 
       {/* Actions */}
       <td className="px-6 py-4 text-right whitespace-nowrap">
-        <div className="flex items-center justify-end gap-2">
-          {booking.bookingStatus !== 'CANCELLED' && booking.paymentStatus === 'PENDING' && (
-            <button
-              type="button"
-              onClick={() => onConfirmPayment?.(booking)}
-              className="rounded-full px-3.5 py-1.5 text-xs font-bold text-[#06261D] bg-[#E2EFE9] hover:bg-[#D2E7DD] transition-colors cursor-pointer"
-            >
-              Xác nhận nhận tiền
-            </button>
-          )}
-          {booking.bookingStatus === 'PENDING' && (
-            <button
-              type="button"
-              onClick={() => onConfirm?.(booking)}
-              className="rounded-full px-4 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90 cursor-pointer"
-              style={{ backgroundColor: '#06261D' }}
-            >
-              Duyệt đơn
-            </button>
-          )}
-          {booking.bookingStatus === 'CANCELLED' && booking.paymentStatus !== 'REFUNDED' && (
-            <button
-              type="button"
-              onClick={() => onConfirmRefund?.(booking)}
-              className="rounded-full px-3.5 py-1.5 text-xs font-bold text-[#0F766E] bg-[#CCFBF1] hover:bg-[#99F6E4] transition-colors cursor-pointer"
-            >
-              Xác nhận hoàn tiền
-            </button>
+        <div className="flex items-center justify-end">
+          {hasActions ? (
+            <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+              <PopoverTrigger
+                type="button"
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#E6E2D1] bg-white px-3.5 py-1.5 text-xs font-bold text-[#06261D] hover:bg-[#FAF8F1] transition-colors shadow-xs cursor-pointer focus:outline-hidden"
+              >
+                Thao tác
+                <ChevronDown className="h-3.5 w-3.5 text-gray-500" />
+              </PopoverTrigger>
+              <PopoverContent
+                align="end"
+                className="w-48 p-1 bg-white border border-[#E6E2D1] rounded-2xl shadow-lg isolate z-50 flex flex-col gap-0.5"
+              >
+                {showConfirmPayment && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPopoverOpen(false);
+                      onConfirmPayment?.(booking);
+                    }}
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-bold text-[#06261D] hover:bg-[#E2EFE9] transition-colors cursor-pointer"
+                  >
+                    <CreditCard className="h-4 w-4 text-[#06261D]" />
+                    Xác nhận nhận tiền
+                  </button>
+                )}
+                {showConfirmBooking && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPopoverOpen(false);
+                      onConfirm?.(booking);
+                    }}
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-bold text-[#06261D] hover:bg-[#FAF8F1] transition-colors cursor-pointer"
+                  >
+                    <Check className="h-4 w-4 text-[#06261D]" />
+                    Duyệt đơn
+                  </button>
+                )}
+                {showRejectBooking && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPopoverOpen(false);
+                      onReject?.(booking);
+                    }}
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-bold text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                  >
+                    <X className="h-4 w-4 text-red-600" />
+                    Từ chối
+                  </button>
+                )}
+                {showConfirmRefund && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPopoverOpen(false);
+                      onConfirmRefund?.(booking);
+                    }}
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-bold text-[#0F766E] hover:bg-[#CCFBF1] transition-colors cursor-pointer"
+                  >
+                    <RotateCcw className="h-4 w-4 text-[#0F766E]" />
+                    Xác nhận hoàn tiền
+                  </button>
+                )}
+              </PopoverContent>
+            </Popover>
+          ) : (
+            <span className="text-xs text-gray-400 font-medium italic">Không có thao tác</span>
           )}
         </div>
       </td>

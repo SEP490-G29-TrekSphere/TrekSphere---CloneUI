@@ -27,73 +27,7 @@ export interface ViolationReport {
   status: 'pending' | 'resolved';
 }
 
-const mockReports: ViolationReport[] = [
-  {
-    id: '1',
-    code: '#TG-2041',
-    type: 'blog',
-    targetTitle: '"Hành trình leo Fansipan..."',
-    reporterName: 'Lê Văn Nam',
-    reporterAvatar:
-      'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100',
-    reason: 'Thông tin sai lệch về tuyến đường đi và giấy phép bảo tồn',
-    reasonTag: 'Thông tin sai lệch',
-    submittedAt: '14:20, 24/10/2023',
-    status: 'pending',
-  },
-  {
-    id: '2',
-    code: '#CM-892',
-    type: 'comment',
-    targetTitle: '"Nội dung này thật sự không..."',
-    reporterName: 'Nguyễn Thủy Linh',
-    reporterAvatar:
-      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100',
-    reason: 'Sử dụng ngôn ngữ xúc phạm, kích động thù hận',
-    reasonTag: 'Ngôn ngữ thù ghét',
-    submittedAt: '10:05, 24/10/2023',
-    status: 'resolved',
-  },
-  {
-    id: '3',
-    code: '#RV-112',
-    type: 'review',
-    targetTitle: '"Chất lượng dịch vụ quá..."',
-    reporterName: 'Trần Hoàng Đăng',
-    reporterAvatar:
-      'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&q=80&w=100',
-    reason: 'Spam quảng cáo dịch vụ du lịch bên ngoài',
-    reasonTag: 'Spam',
-    submittedAt: '08:15, 24/10/2023',
-    status: 'pending',
-  },
-  {
-    id: '4',
-    code: '#TG-1988',
-    type: 'blog',
-    targetTitle: '"Kinh nghiệm cắm trại tự túc tại Tà Xùa"',
-    reporterName: 'Phạm Minh Anh',
-    reporterAvatar:
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100',
-    reason: 'Sao chép nội dung từ bản quyền trang báo khác',
-    reasonTag: 'Vi phạm bản quyền',
-    submittedAt: '19:40, 23/10/2023',
-    status: 'resolved',
-  },
-  {
-    id: '5',
-    code: '#CM-754',
-    type: 'comment',
-    targetTitle: '"Hệ thống cho thông tin giả mạo"',
-    reporterName: 'Đặng Quốc Bảo',
-    reporterAvatar:
-      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=100',
-    reason: 'Chứa liên kết độc hại, lừa đảo',
-    reasonTag: 'Spam/Lừa đảo',
-    submittedAt: '16:10, 23/10/2023',
-    status: 'pending',
-  },
-];
+const mockReports: ViolationReport[] = [];
 
 export default function Reports() {
   const [localSearch, setLocalSearch] = useState('');
