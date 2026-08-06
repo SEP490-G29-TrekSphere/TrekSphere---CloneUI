@@ -11,9 +11,8 @@ import {
   Zap,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { Link, useOutletContext } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { PATHS } from '@/constants';
-import type { AdminLayoutContext } from '@/shared/layout/AdminLayout';
 
 export interface ViolationReport {
   id: string;
@@ -97,14 +96,9 @@ const mockReports: ViolationReport[] = [
 ];
 
 export default function Reports() {
-  const context = useOutletContext<AdminLayoutContext>();
-  const topSearch = context?.searchValue || '';
-
   const [localSearch, setLocalSearch] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'resolved'>('all');
   const [reports] = useState<ViolationReport[]>(mockReports);
-
-  const effectiveSearch = topSearch || localSearch;
 
   const filteredReports = useMemo(() => {
     return reports.filter((item) => {
@@ -113,8 +107,8 @@ export default function Reports() {
       if (activeTab === 'resolved' && item.status !== 'resolved') return false;
 
       // Filter by search
-      if (effectiveSearch.trim()) {
-        const query = effectiveSearch.toLowerCase();
+      if (localSearch.trim()) {
+        const query = localSearch.toLowerCase();
         const matchTitle = item.targetTitle.toLowerCase().includes(query);
         const matchReporter = item.reporterName.toLowerCase().includes(query);
         const matchCode = item.code.toLowerCase().includes(query);
@@ -124,7 +118,7 @@ export default function Reports() {
 
       return true;
     });
-  }, [reports, activeTab, effectiveSearch]);
+  }, [reports, activeTab, localSearch]);
 
   const pendingCount = useMemo(
     () => reports.filter((r) => r.status === 'pending').length,

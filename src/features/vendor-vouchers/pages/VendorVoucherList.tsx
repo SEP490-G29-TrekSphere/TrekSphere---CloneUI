@@ -14,8 +14,9 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { parseIsoDate, toIsoDate } from '@/lib';
 import { useDebounce } from '@/shared/hooks';
-import { AppBadge, AppEmptyState, AppInput, AppSpinner } from '@/shared/ui';
+import { AppBadge, AppDatePicker, AppEmptyState, AppSpinner } from '@/shared/ui';
 import { toast } from '@/store/useToastStore';
 import { formatDate, formatPrice } from '@/utils/format';
 import { ConfirmDeleteDialog } from '../components/ConfirmDeleteDialog';
@@ -283,12 +284,13 @@ export default function VendorVoucherList() {
             >
               <Calendar className="h-4 w-4" />
             </span>
-            <AppInput
-              type="date"
-              value={validUntil}
-              onChange={(e) => setValidUntil(e.target.value)}
-              aria-label="Hạn dùng trước ngày"
-              className="w-full rounded-full border-none py-2.5 pl-10 pr-4 text-sm font-medium focus:outline-none focus:ring-1"
+            <AppDatePicker
+              selected={parseIsoDate(validUntil)}
+              onChange={(date: Date | null) => setValidUntil(toIsoDate(date))}
+              isClearable
+              ariaLabel="Hạn dùng trước ngày"
+              placeholderText="Hạn dùng trước ngày..."
+              className="w-full cursor-pointer rounded-full border-none py-2.5 pl-10 pr-4 text-sm font-medium focus:outline-none focus:ring-1"
               style={{ backgroundColor: '#F0EEE6', color: '#06261D' }}
             />
           </div>

@@ -6,6 +6,10 @@
     "esModuleInterop": true,
     "types": ["vite/client", "jest", "node"]
   },
-  "include": ["src/**/*.test.ts", "src/**/*.test.tsx"],
+  // `custom.d.ts` phải nằm trong include: nó chứa `declare module '*.svg?react'`.
+  // Các file test import component có `import Icon from '...svg?react'`, nhưng file
+  // được kéo vào qua import thì không tự nạp khai báo ambient — thiếu dòng này là
+  // `tsc -b` báo TS2307 ở AppEmptyState/AppToast/TrekSphereLogo.
+  "include": ["src/custom.d.ts", "src/**/*.test.ts", "src/**/*.test.tsx"],
   "exclude": []
 }

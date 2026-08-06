@@ -36,9 +36,15 @@ test('Staff: hiện nút Sửa khi tour đang DRAFT', () => {
   expect(screen.getByTitle('Sửa tour')).toBeTruthy();
 });
 
-test('Staff: hiện nút Sửa khi tour bị REJECTED', () => {
-  renderRow('REJECTED', { editableStatuses: STAFF_EDITABLE_STATUSES });
-  expect(screen.getByTitle('Sửa tour')).toBeTruthy();
+// Tour bị từ chối phải revert về DRAFT rồi mới sửa được (theo tài liệu tích hợp của BE),
+// nên nút Sửa phải ẩn và chỉ còn nút "Chuyển trạng thái / Sửa lại".
+test('Staff: ẩn nút Sửa khi tour bị REJECTED, chỉ còn nút Chuyển trạng thái', () => {
+  renderRow('REJECTED', {
+    editableStatuses: STAFF_EDITABLE_STATUSES,
+    onRevertClick: jest.fn(),
+  });
+  expect(screen.queryByTitle('Sửa tour')).toBeNull();
+  expect(screen.getByTitle('Chuyển trạng thái / Sửa lại')).toBeTruthy();
 });
 
 test('Staff: ẩn nút Sửa khi tour đang PENDING_APPROVAL', () => {

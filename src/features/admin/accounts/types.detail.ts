@@ -25,11 +25,11 @@ export interface AdminAccountDetail extends Record<string, unknown> {
   emailVerified: boolean;
 }
 
-/** Labels tiếng Việt cho trạng thái. */
+/** Labels tiếng Việt cho trạng thái — LOCKED và DEACTIVATED đều là "bị khóa". */
 export const ACCOUNT_STATUS_LABELS: Record<AccountStatus, string> = {
   ACTIVE: 'Đang hoạt động',
   LOCKED: 'Bị khóa',
-  DEACTIVATED: 'Đã vô hiệu hóa',
+  DEACTIVATED: 'Bị khóa',
 };
 
 /** Labels tiếng Việt cho giới tính. */

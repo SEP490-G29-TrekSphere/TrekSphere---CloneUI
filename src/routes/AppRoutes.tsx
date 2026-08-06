@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
-import { getTrekkerBookingPaymentPath, PATHS, ROLES } from '@/constants';
+import { Navigate, Route, Routes, useParams } from 'react-router-dom';
+import { getTrekkerBlogEditPath, getTrekkerBookingPaymentPath, PATHS, ROLES } from '@/constants';
 import { AccountDetail, AccountList, AdminDashboard, BlogManagement } from '@/features/admin';
 import ProtectedRoute from '@/routes/ProtectedRoute';
 import RequireRole from '@/routes/RequireRole';
@@ -93,6 +93,17 @@ const CoordinatorSessionOperationsPage = lazy(
 const EmergencySosPage = lazy(() => import('@/features/emergency-sos/pages/EmergencySosPage'));
 const VendorVoucherList = lazy(() => import('@/features/vendor-vouchers/pages/VendorVoucherList'));
 
+/**
+ * Redirect `/blog/edit/:blogId` (path cũ, nằm ngoài portal) sang path trekker
+ * tương ứng — `<Navigate>` không tự nội suy được param nên cần đọc qua hook.
+ */
+function LegacyBlogEditRedirect() {
+  const { blogId } = useParams();
+  return (
+    <Navigate to={blogId ? getTrekkerBlogEditPath(blogId) : PATHS.TREKKER_BLOG_LIST} replace />
+  );
+}
+
 function PageLoader() {
   return (
     <div className="flex h-screen w-full items-center justify-center">
@@ -123,6 +134,16 @@ export default function AppRoutes() {
         <Route path={PATHS.NOTIFICATIONS} element={<Notifications />} />
         <Route path={PATHS.CHAT} element={<Navigate to={PATHS.TREKKER_CHAT} replace />} />
 
+        {/* Blog của tôi chỉ sống trong portal Trekker (TrekkerLayout có sidebar).
+            Các path `/blog*` cũ nằm trong MainLayout nên vào là mất sidebar —
+            giữ lại dưới dạng redirect để link/bookmark cũ không vỡ. */}
+        <Route path={PATHS.BLOG_LIST} element={<Navigate to={PATHS.TREKKER_BLOG_LIST} replace />} />
+        <Route
+          path={PATHS.BLOG_CREATE}
+          element={<Navigate to={PATHS.TREKKER_BLOG_CREATE} replace />}
+        />
+        <Route path={PATHS.BLOG_EDIT} element={<LegacyBlogEditRedirect />} />
+
         {/* Public routes — chung khung Header + Footer qua PublicLayout */}
         <Route element={<PublicLayout />}>
           <Route path={PATHS.HOME} element={<Home />} />
@@ -147,9 +168,6 @@ export default function AppRoutes() {
           <Route path={PATHS.DASHBOARD} element={<Dashboard />} />
           <Route path={PATHS.PROFILE} element={<ViewProfile />} />
           <Route path={PATHS.EDIT_PROFILE} element={<EditProfile />} />
-          <Route path={PATHS.BLOG_LIST} element={<MyBlogList />} />
-          <Route path={PATHS.BLOG_CREATE} element={<CreateBlogPost />} />
-          <Route path={PATHS.BLOG_EDIT} element={<CreateBlogPost editMode />} />
           <Route path={PATHS.BOOK_TOUR} element={<BookTour />} />
           <Route path={PATHS.BOOKING_DETAIL} element={<BookingDetail />} />
           <Route path={PATHS.BOOKING_PAYMENT} element={<PayBooking />} />

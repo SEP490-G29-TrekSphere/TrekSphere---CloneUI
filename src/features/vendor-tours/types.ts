@@ -54,7 +54,13 @@ export interface CreateTourPayload {
   basePrice: number;
   minCapacity: number;
   maxCapacity: number;
+  /**
+   * URL ảnh bìa đã upload sẵn qua `POST /files/upload`. Gửi kèm song song với `coverImage`
+   * — xem ghi chú "ẢNH BÌA" ở đầu `vendorTourService.ts` để biết vì sao gửi cả hai.
+   */
   coverImageUrl?: string;
+  /** File ảnh bìa thô, chỉ có khi user vừa chọn ảnh mới ở form. */
+  coverImage?: File;
 }
 
 /** `PUT /vendor/tours/{id}` nhận đúng cùng shape với tạo tour (đã test qua Swagger). */

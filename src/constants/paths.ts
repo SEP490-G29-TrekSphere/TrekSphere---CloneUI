@@ -162,6 +162,8 @@ export const getPartnerSessionDetailPath = (sessionId: string) =>
   PATHS.PARTNER_SESSION_DETAIL.replace(':sessionId', sessionId);
 export const getCoordinatorSessionOperationsPath = (sessionId: string) =>
   PATHS.COORDINATOR_SESSION_OPERATIONS.replace(':sessionId', sessionId);
+export const getTrekkerBlogEditPath = (blogId: string) =>
+  PATHS.TREKKER_BLOG_EDIT.replace(':blogId', blogId);
 export const getTrekkerBookingDetailPath = (bookingId: string) =>
   PATHS.TREKKER_BOOKING_DETAIL.replace(':bookingId', bookingId);
 export const getTrekkerBookingPaymentPath = (bookingId: string) =>

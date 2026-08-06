@@ -1,7 +1,6 @@
 import {
   Backpack,
   BarChart3,
-  Bell,
   CalendarClock,
   Footprints,
   LayoutGrid,
@@ -9,17 +8,13 @@ import {
   Map as MapIcon,
   MessageSquare,
   PenSquare,
-  Search,
-  Settings,
   Tag,
   Ticket,
 } from 'lucide-react';
-import { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { PATHS } from '@/constants';
 import { useLogout } from '@/features/auth/hooks/useLogout';
 import { useAppStore } from '@/store/useAppStore';
-import type { VendorStaffLayoutContext } from '../types';
 
 /**
  * Menu Vendor Staff — mirror `VendorManagerLayout` nhưng KHÔNG có mục "Nhân
@@ -42,20 +37,10 @@ export default function VendorStaffLayout() {
   const location = useLocation();
   const user = useAppStore((state) => state.user);
   const { logout } = useLogout({ redirectTo: PATHS.LOGIN });
-  const [searchValue, setSearchValue] = useState('');
 
   const staffName = user?.name || 'Vendor Staff';
   const staffInitial = staffName.charAt(0).toUpperCase();
   const isChatPage = location.pathname === PATHS.PARTNER_CHAT;
-  // Header search không liên kết với ô lọc riêng của trang Tour/Thiết bị — ẩn ở
-  // các màn đó (và màn Viết Blog, vốn có thanh action riêng) để tránh trùng lặp.
-  const showHeader =
-    !isChatPage &&
-    !location.pathname.startsWith(PATHS.PARTNER_TOURS) &&
-    !location.pathname.startsWith(PATHS.PARTNER_EQUIPMENT) &&
-    !location.pathname.startsWith(PATHS.PARTNER_PORTERS) &&
-    !location.pathname.startsWith(PATHS.PARTNER_SESSIONS) &&
-    !location.pathname.startsWith(PATHS.PARTNER_BLOG_CREATE);
 
   return (
     <div className="flex h-screen w-full overflow-hidden" style={{ backgroundColor: '#FAF8F1' }}>
@@ -153,54 +138,13 @@ export default function VendorStaffLayout() {
         </div>
       </aside>
 
+      {/* Không có header riêng — mỗi trang tự dựng tiêu đề/thanh công cụ của
+          mình, giống VendorManagerLayout và CoordinatorLayout. */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {showHeader && (
-          <header
-            className="flex h-16 w-full items-center justify-between bg-white px-6 md:px-8 shadow-sm"
-            style={{ borderBottom: '1px solid #E6E2D1' }}
-          >
-            <div className="relative w-72 md:w-96">
-              <span
-                className="absolute inset-y-0 left-3 flex items-center"
-                style={{ color: '#6F7B75' }}
-              >
-                <Search className="h-4 w-4" />
-              </span>
-              <input
-                type="text"
-                value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
-                placeholder="Tìm kiếm tour..."
-                aria-label="Tìm kiếm tour"
-                className="w-full pl-10 pr-4 py-2 text-sm rounded-full border-none focus:outline-none focus:ring-1 transition-all font-medium"
-                style={{ backgroundColor: '#F0EEE6', color: '#06261D' }}
-              />
-            </div>
-
-            <div className="flex items-center gap-6">
-              <button
-                type="button"
-                className="relative flex h-9 w-9 items-center justify-center rounded-full transition-colors focus:outline-none"
-                style={{ color: '#6F7B75' }}
-              >
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
-              </button>
-              <button
-                type="button"
-                className="flex h-9 w-9 items-center justify-center rounded-full transition-colors focus:outline-none"
-                style={{ color: '#6F7B75' }}
-              >
-                <Settings className="h-5 w-5" />
-              </button>
-            </div>
-          </header>
-        )}
-
         <main
           className={`flex-1 ${isChatPage ? 'overflow-hidden p-0' : 'overflow-y-auto p-6 md:p-8'}`}
         >
-          <Outlet context={{ searchValue } satisfies VendorStaffLayoutContext} />
+          <Outlet />
         </main>
       </div>
     </div>

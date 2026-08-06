@@ -41,6 +41,39 @@ type TourFormValues = z.output<typeof tourFormSchema>;
 /** Giá trị trước khi coerce (khớp kiểu input HTML) — dùng cho defaultValues/register. */
 type TourFormInput = z.input<typeof tourFormSchema>;
 
+/**
+ * BE từ chối tour có checkpoint trùng tên hoặc trùng toạ độ, nên chặn sớm ở FE để user
+ * không mất công submit rồi mới thấy lỗi. Thứ tự trạm (`checkpointOrder`) không cần kiểm
+ * tra — form tự đánh số theo vị trí trong danh sách nên không bao giờ trùng.
+ * Trả về câu lỗi đầu tiên tìm thấy, `null` nếu hợp lệ.
+ */
+export function findDuplicateCheckpointError(checkpoints: CheckpointDraft[]): string | null {
+  const seenNames = new Set<string>();
+  const seenCoordinates = new Set<string>();
+
+  for (const [index, checkpoint] of checkpoints.entries()) {
+    const name = checkpoint.name.trim();
+    const nameKey = name.toLowerCase();
+    if (seenNames.has(nameKey)) {
+      return `Checkpoint #${index + 1}: tên "${name}" đã được dùng cho một trạm khác.`;
+    }
+    seenNames.add(nameKey);
+
+    // Chỉ so sánh khi nhập ĐỦ cả vĩ độ lẫn kinh độ — thiếu 1 trong 2 thì chưa xác định được vị trí.
+    const latitude = checkpoint.latitude.trim();
+    const longitude = checkpoint.longitude.trim();
+    if (!latitude || !longitude) continue;
+
+    const coordinateKey = `${Number(latitude)},${Number(longitude)}`;
+    if (seenCoordinates.has(coordinateKey)) {
+      return `Checkpoint #${index + 1}: toạ độ (${latitude}, ${longitude}) đã trùng với một trạm khác.`;
+    }
+    seenCoordinates.add(coordinateKey);
+  }
+
+  return null;
+}
+
 const EMPTY_DEFAULTS: TourFormInput = {
   tourName: '',
   difficulty: 'EASY',
@@ -145,9 +178,18 @@ export function TourForm({
       minCapacity: values.minCapacity,
       maxCapacity: values.maxCapacity,
       coverImageUrl,
+      // Gửi kèm cả file thô — xem ghi chú "ẢNH BÌA" trong `vendorTourService.ts`.
+      coverImage: coverFile ?? undefined,
     };
 
     const activeCheckpoints = checkpoints.filter((checkpoint) => checkpoint.name.trim());
+
+    const duplicateError = findDuplicateCheckpointError(activeCheckpoints);
+    if (duplicateError) {
+      toast.error(duplicateError);
+      return;
+    }
+
     const checkpointItems: CheckpointSubmitItem[] = [];
 
     for (const [index, checkpoint] of activeCheckpoints.entries()) {

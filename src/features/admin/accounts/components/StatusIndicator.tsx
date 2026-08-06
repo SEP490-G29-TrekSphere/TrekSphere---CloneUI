@@ -11,14 +11,16 @@ const STATUS_BADGE_CONFIG: Record<
 > = {
   ACTIVE: { label: 'Hoạt động', color: '#16A34A', bgColor: 'rgba(22, 163, 74, 0.1)' },
   LOCKED: { label: 'Bị khóa', color: '#DC2626', bgColor: 'rgba(220, 38, 38, 0.1)' },
-  DEACTIVATED: { label: 'Đã vô hiệu hóa', color: '#6F7B75', bgColor: 'rgba(111, 123, 117, 0.12)' },
+  DEACTIVATED: { label: 'Bị khóa', color: '#DC2626', bgColor: 'rgba(220, 38, 38, 0.1)' },
 };
 
 /**
  * Hiển thị trạng thái tài khoản với dot indicator + text.
  * - ACTIVE: chấm xanh lá.
- * - LOCKED: chấm đỏ (admin khóa).
- * - DEACTIVATED: chấm xám (người dùng tự vô hiệu hóa tài khoản).
+ * - DEACTIVATED: chấm đỏ — trạng thái admin khóa tài khoản (BE dùng giá trị này
+ *   cho `PUT /users/{id}/status`, xem `adminAccountService.updateStatus`).
+ * - LOCKED: chấm đỏ — chỉ còn ở dữ liệu cũ, BE chưa implement, hiển thị y hệt
+ *   DEACTIVATED để admin không phải phân biệt 2 khái niệm giống nhau.
  */
 export function StatusIndicator({ status }: StatusIndicatorProps) {
   const { label, color, bgColor } = STATUS_BADGE_CONFIG[status];

@@ -49,11 +49,18 @@ import type {
  * LƯU Ý QUAN TRỌNG: `createTour`/`updateTour`/`createCheckpoint`/`updateCheckpoint`
  * bắt buộc `Content-Type: multipart/form-data` (đã xác nhận qua `/v3/api-docs` — cả
  * 4 request này khai báo `requestBody.content["multipart/form-data"]`, KHÔNG phải
- * JSON — gửi JSON thẳng sẽ bị BE từ chối 415/400, đây chính là lỗi tạo tour trước
- * đây). `CreateTourRequest`/`UpdateTourRequest` hiện KHÔNG có field ảnh bìa
- * (`coverImage`/`coverImageUrl`) dù response `TourDetailResponse` có `coverImageUrl`
- * — có vẻ BE chưa nối field này ở request. FE vẫn gửi kèm `coverImageUrl` (BE sẽ bỏ
- * qua field lạ, không lỗi) để tự chạy được ngay khi BE bổ sung field.
+ * JSON — gửi JSON thẳng sẽ bị BE từ chối 415/400, đây chính là lỗi tạo tour trước đây).
+ *
+ * ẢNH BÌA — vì sao gửi CẢ `coverImage` (file) LẪN `coverImageUrl` (string):
+ * Hai nguồn tài liệu của BE đang mâu thuẫn nhau.
+ *   - Tài liệu tích hợp FE (BE gửi) ghi form tạo tour gồm `coverImage` + `tourImages` dạng file.
+ *   - Nhưng `/v3/api-docs` thì `CreateTourRequest`/`UpdateTourRequest` KHÔNG có field ảnh nào,
+ *     kể cả `coverImageUrl` — trong khi springdoc rõ ràng ghi nhận được field file ở các DTO
+ *     khác (`UpdateProfileRequest.avatar`, `VendorProfileUpdateRequest.logo`,
+ *     `PorterProfileRequest.avatarFile` đều có `format: binary`).
+ * Thực tế: tour tạo ngày 01/08 lưu được ảnh qua `coverImageUrl`, tour tạo ngày 04/08 thì mất ảnh.
+ * Spring bỏ qua part lạ mà không báo lỗi, nên gửi cả hai là an toàn: BE đọc field nào cũng chạy.
+ * Khi BE xác nhận tên field thật thì bỏ field thừa đi.
  */
 
 interface VendorTourResponseDto {
@@ -86,12 +93,12 @@ interface PaginationResponseDto<T> {
 
 /** Build FormData cho các request multipart/form-data — bỏ qua field undefined/null. */
 function toFormData(
-  fields: Record<string, string | number | boolean | undefined | null>
+  fields: Record<string, string | number | boolean | File | undefined | null>
 ): FormData {
   const formData = new FormData();
   for (const [key, value] of Object.entries(fields)) {
     if (value === undefined || value === null) continue;
-    formData.append(key, String(value));
+    formData.append(key, value instanceof File ? value : String(value));
   }
   return formData;
 }
@@ -161,6 +168,7 @@ export const vendorTourService = {
       minCapacity: payload.minCapacity,
       maxCapacity: payload.maxCapacity,
       coverImageUrl: payload.coverImageUrl,
+      coverImage: payload.coverImage,
     });
     const response = await ApiUpload<TourDetailResponseDto>('/vendor/tours', formData);
     const data = unwrapResponse(response);
@@ -188,6 +196,7 @@ export const vendorTourService = {
       minCapacity: payload.minCapacity,
       maxCapacity: payload.maxCapacity,
       coverImageUrl: payload.coverImageUrl,
+      coverImage: payload.coverImage,
     });
     const response = await ApiUpload<TourDetailResponseDto>(
       `/vendor/tours/${tourId}`,

@@ -151,7 +151,7 @@ export function CreateBlogPost({ editMode = false }: { editMode?: boolean }) {
         {
           onSuccess: () => {
             toast.success('Đã lưu thay đổi.');
-            navigate(PATHS.BLOG_LIST);
+            navigate(PATHS.TREKKER_BLOG_LIST);
           },
           onError: (err) =>
             toast.error(err instanceof Error ? err.message : 'Không thể lưu thay đổi.'),
@@ -176,7 +176,7 @@ export function CreateBlogPost({ editMode = false }: { editMode?: boolean }) {
             handleRemoveCover();
             setStaffPostsPage(1);
           } else {
-            navigate(PATHS.BLOG_LIST);
+            navigate(PATHS.TREKKER_BLOG_LIST);
           }
         },
         onError: (err) => toast.error(err instanceof Error ? err.message : 'Đăng bài thất bại.'),
@@ -184,7 +184,7 @@ export function CreateBlogPost({ editMode = false }: { editMode?: boolean }) {
     );
   };
 
-  const handleBack = () => navigate(isStaff ? PATHS.PARTNER : PATHS.BLOG_LIST);
+  const handleBack = () => navigate(isStaff ? PATHS.PARTNER : PATHS.TREKKER_BLOG_LIST);
 
   if (editMode && isLoadingBlog) {
     return (
