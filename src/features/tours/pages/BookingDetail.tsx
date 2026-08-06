@@ -504,7 +504,7 @@ export default function BookingDetail({
 
             {booking.participants && booking.participants.length > 0 ? (
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+                <table className="w-full min-w-[760px] text-left text-xs">
                   <thead>
                     <tr className="border-b border-[#F4F4F2] text-zinc-400 font-extrabold uppercase text-[10px]">
                       <th className="py-2.5 px-2">STT</th>

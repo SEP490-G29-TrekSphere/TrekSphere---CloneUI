@@ -95,7 +95,7 @@ export default function HomeStories() {
 
         {/* Editorial grid: styled like Tour card */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {['sb-1', 'sb-2', 'sb-3'].map((skeletonId) => (
               <div
                 key={skeletonId}
@@ -110,7 +110,7 @@ export default function HomeStories() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {stories.map((story, idx) => (
               <article
                 key={story.blogId}

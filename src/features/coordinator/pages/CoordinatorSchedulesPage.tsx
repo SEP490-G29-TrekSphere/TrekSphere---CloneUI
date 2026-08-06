@@ -255,7 +255,7 @@ export default function CoordinatorSchedulesPage() {
           ) : (
             <>
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
+                <table className="w-full min-w-[820px] text-left text-sm">
                   <thead
                     className="border-b text-xs font-bold uppercase"
                     style={{ backgroundColor: '#F9F8F3', borderColor: '#E6E2D1', color: '#06261D' }}

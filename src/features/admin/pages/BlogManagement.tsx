@@ -116,7 +116,7 @@ export default function BlogManagement() {
         style={{ border: '1px solid #E6E2D1' }}
       >
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[720px]">
             <thead style={{ backgroundColor: '#F0EEE6' }}>
               <tr>
                 <Th align="left">Hình ảnh & Tiêu đề</Th>

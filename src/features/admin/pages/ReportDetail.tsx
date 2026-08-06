@@ -206,7 +206,7 @@ export default function ReportDetail() {
 
           {/* Attached Evidence Images */}
           {reportData.target.images && reportData.target.images.length > 0 && (
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
               {reportData.target.images.slice(0, 2).map((img, idx) => (
                 <div
                   key={img}
@@ -416,7 +416,7 @@ export default function ReportDetail() {
           </div>
 
           {/* User Stats Widgets at bottom */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="bg-[#FAF9F5] border border-[#E5E4DE] rounded-2xl p-4 text-center">
               <span className="text-[10px] font-bold tracking-wider text-zinc-400 uppercase block">
                 BÁO CÁO CỦA USER NÀY

@@ -1,4 +1,4 @@
-import { Bell, LayoutDashboard, LogOut } from 'lucide-react';
+import { Bell, LayoutDashboard, LogOut, Menu, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { queryClient } from '@/config/queryClient';
@@ -25,6 +25,7 @@ export default function PublicHeader() {
   const setUser = useAppStore((state) => state.setUser);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -33,6 +34,12 @@ export default function PublicHeader() {
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
+  }, [location.pathname]);
+
+  // Điều hướng xong thì đóng mobile menu, nếu không nó che mất trang vừa mở.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: pathname chỉ dùng để trigger effect, không đọc giá trị trong body
+  useEffect(() => {
+    setMobileMenuOpen(false);
   }, [location.pathname]);
 
   // Close dropdown when clicking outside
@@ -203,8 +210,56 @@ export default function PublicHeader() {
               </Link>
             </>
           )}
+
+          {/* Nút hamburger — chỉ hiện trên mobile, nằm cùng hàng với logo */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
+            className={`-mr-1 flex size-9 items-center justify-center rounded-lg transition-colors md:hidden ${
+              transparent ? 'text-white hover:bg-white/10' : 'text-foreground hover:bg-muted'
+            }`}
+            aria-label="Mở menu điều hướng"
+            aria-expanded={mobileMenuOpen}
+            aria-controls="public-mobile-nav"
+          >
+            {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+          </button>
         </div>
       </div>
+
+      {/* Mobile nav panel — trượt xuống khi mở, ẩn trên ≥ md */}
+      {mobileMenuOpen && (
+        <nav
+          id="public-mobile-nav"
+          className={`md:hidden border-t px-4 py-3 space-y-1 ${
+            transparent
+              ? 'border-white/20 bg-black/20 backdrop-blur-[16px]'
+              : 'border-border/60 bg-background/95 backdrop-blur-[16px]'
+          }`}
+        >
+          {NAV_ITEMS.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                  transparent
+                    ? isActive
+                      ? 'text-white bg-white/10'
+                      : 'text-white/80 hover:text-white hover:bg-white/10'
+                    : isActive
+                      ? 'text-primary bg-primary/5'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+      )}
     </header>
   );
 }

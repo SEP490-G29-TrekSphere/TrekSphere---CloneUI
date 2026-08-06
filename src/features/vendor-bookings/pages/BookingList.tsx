@@ -140,7 +140,7 @@ export default function BookingList() {
         style={{ border: '1px solid #E6E2D1' }}
       >
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[760px]">
             <thead style={{ backgroundColor: '#FAF8F1' }}>
               <tr>
                 {[

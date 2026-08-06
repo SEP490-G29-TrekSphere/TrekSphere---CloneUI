@@ -223,7 +223,7 @@ export default function Reports() {
 
         {/* Table Content */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+          <table className="w-full min-w-[760px] text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-[#E5E4DE] text-zinc-400 font-bold uppercase tracking-wider text-[11px] bg-[#FAF9F5]">
                 <th className="py-3.5 px-6 font-semibold">NỘI DUNG BỊ BÁO CÁO</th>

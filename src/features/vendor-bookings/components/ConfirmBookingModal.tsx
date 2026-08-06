@@ -70,7 +70,7 @@ export function ConfirmBookingModal({
 
         {/* Details Grid Container */}
         <div className="mb-6 rounded-2xl bg-[#F4F0E8] p-5">
-          <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+          <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
             {/* Tour Name */}
             <div>
               <div className="flex items-center gap-1.5 text-xs font-bold text-gray-500 uppercase tracking-wider">

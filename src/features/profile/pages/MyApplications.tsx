@@ -306,7 +306,7 @@ export default function MyApplications() {
                   </div>
 
                   {/* Contacts */}
-                  <div className="grid grid-cols-2 gap-4 pt-1 text-xs font-semibold text-zinc-500 border-t border-[#F4F4F2]">
+                  <div className="grid grid-cols-1 gap-4 pt-1 sm:grid-cols-2 text-xs font-semibold text-zinc-500 border-t border-[#F4F4F2]">
                     <div>
                       <span className="block text-[10px] text-zinc-400 uppercase tracking-wider mb-0.5">
                         Email liên hệ

@@ -68,7 +68,7 @@ export function SosAlertCard({
         </p>
       )}
 
-      <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+      <div className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
         <div>
           <span className="block font-bold uppercase tracking-wide" style={{ color: '#6F7B75' }}>
             Người gửi

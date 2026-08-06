@@ -131,7 +131,7 @@ export function EditVoucherDialog({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {/* Discount Type */}
               <div>
                 <label
@@ -179,7 +179,7 @@ export function EditVoucherDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {/* Minimum Order Value */}
               <div>
                 <label
@@ -227,7 +227,7 @@ export function EditVoucherDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {/* Valid From */}
               <div>
                 <label
