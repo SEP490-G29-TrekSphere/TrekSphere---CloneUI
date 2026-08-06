@@ -31,42 +31,7 @@ export interface ReportDetailData {
   };
 }
 
-const mockReportDetails: Record<string, ReportDetailData> = {
-  '1': {
-    id: '1',
-    code: 'REP-20482',
-    status: 'pending',
-    severity: 'Cao',
-    reporter: {
-      name: 'Nguyễn Văn A',
-      username: '@vanna_95',
-      joinedYear: '2021',
-      avatarUrl:
-        'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100',
-      reportedAt: '14:30, 24/10/2023',
-    },
-    target: {
-      id: 'BLOG-9921',
-      type: 'BLOG',
-      title: 'Review Chuyến đi Hà Giang: Sự thật không như mơ',
-      content: `Hôm nay mình xin phép được bóc phốt một nhà xe tại Hà Giang... [Phần nội dung bị báo cáo: chứa ngôn từ xúc phạm và thông tin cá nhân chưa kiểm chứng].
-
-Hành trình bắt đầu từ 8h tối nhưng thực tế là 10h mới có xe. Nhân viên nhà xe có thái độ rất lồi lõm, đặc biệt là ông tài xế tên T. [Số điện thoại 090xxx] liên tục dùng những lời lẽ khiếm nhã đối với khách nữ trên xe.
-
-Mình khuyên mọi người nên tránh xa cái chỗ này ra nếu không muốn bị lừa đảo và nhục mạ như mình. Thật sự quá thất vọng với cách làm việc của họ. Đừng để những tấm ảnh lung linh trên mạng đánh lừa nhé các bạn...`,
-      tags: ['Ngôn từ gây hấn', 'Lộ thông tin cá nhân', 'Phản ánh tiêu cực'],
-      images: [
-        'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=300',
-        'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&q=80&w=300',
-        'https://images.unsplash.com/photo-1509744645300-a2098b11871a?auto=format&fit=crop&q=80&w=300',
-      ],
-    },
-    userStats: {
-      totalReports: 12,
-      accuracyRate: '92%',
-    },
-  },
-};
+const mockReportDetails: Record<string, ReportDetailData> = {};
 
 // Fallback template for any unknown ID
 const getReportById = (id?: string): ReportDetailData => {

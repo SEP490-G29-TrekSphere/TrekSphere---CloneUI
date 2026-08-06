@@ -11,14 +11,24 @@ const FALLBACK_COVER =
 /** Chỉ tour đang bản nháp hoặc bị từ chối mới gửi kiểm duyệt được (khớp mô tả API). */
 const SUBMITTABLE_STATUSES = new Set(['DRAFT', 'REJECTED']);
 
-/** Chỉ tour đã duyệt hoặc đang ẩn mới tạo được lịch khởi hành. */
-const SCHEDULABLE_STATUSES = new Set(['APPROVED', 'HIDDEN']);
+/**
+ * Chỉ tour đã duyệt hoặc đang ẩn mới tạo được lịch khởi hành — gửi lịch cho tour ở trạng
+ * thái khác sẽ bị BE chặn bằng mã lỗi `TOUR_NOT_APPROVED_FOR_SCHEDULE (4206)`.
+ */
+export const SCHEDULABLE_STATUSES = new Set<ApiStatus>(['APPROVED', 'HIDDEN']);
+
+/** Câu giải thích khi tour chưa đủ điều kiện mở lịch — dùng chung cho tooltip ở mọi màn. */
+export const NOT_SCHEDULABLE_REASON = 'Tour cần được duyệt trước khi tạo lịch khởi hành';
 
 /** "Chuyển trạng thái / Sửa lại" (revert-to-draft) chỉ áp dụng cho tour bị từ chối, cả 2 role. */
 const REVERTABLE_STATUSES = new Set(['REJECTED']);
 
-/** Staff chỉ sửa được tour của chính mình lúc còn nháp hoặc bị từ chối. */
-export const STAFF_EDITABLE_STATUSES = new Set<ApiStatus>(['DRAFT', 'REJECTED']);
+/**
+ * Staff chỉ sửa được tour của chính mình lúc còn là bản nháp.
+ * Tour bị REJECTED KHÔNG sửa trực tiếp được — phải bấm "Chuyển trạng thái / Sửa lại"
+ * (revert-to-draft) đưa về DRAFT trước, theo đúng tài liệu tích hợp của BE.
+ */
+export const STAFF_EDITABLE_STATUSES = new Set<ApiStatus>(['DRAFT']);
 /** Manager chỉ sửa được tour đang chờ duyệt (trước khi tự duyệt/từ chối). */
 export const MANAGER_EDITABLE_STATUSES = new Set<ApiStatus>(['PENDING_APPROVAL']);
 
@@ -159,9 +169,7 @@ export function TourTableRow({
             disabled={!canSchedule}
             className="transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-30"
             style={{ color: '#0E7C6B' }}
-            title={
-              canSchedule ? 'Lịch khởi hành' : 'Tour cần được duyệt trước khi tạo lịch khởi hành'
-            }
+            title={canSchedule ? 'Lịch khởi hành' : NOT_SCHEDULABLE_REASON}
           >
             <CalendarClock className="h-4 w-4" />
           </button>

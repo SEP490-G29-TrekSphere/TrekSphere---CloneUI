@@ -9,7 +9,7 @@ import {
   type UpdateProfileFormValues,
   updateProfileSchema,
 } from '@/features/auth/validations/auth.schema';
-import { AppButton, AppSpinner } from '@/shared/ui';
+import { AppButton, AppInput, AppSpinner } from '@/shared/ui';
 import { useAppStore } from '@/store/useAppStore';
 import { toast } from '@/store/useToastStore';
 import ProfileSidebar from '../components/ProfileSidebar';
@@ -256,7 +256,7 @@ export default function EditProfile({ returnPath }: { returnPath?: string }) {
                     >
                       Ngày sinh
                     </label>
-                    <input
+                    <AppInput
                       id="dateOfBirth"
                       type="date"
                       {...register('dateOfBirth')}

@@ -1,12 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Calendar, CheckCircle2, Loader2, ShieldCheck, Users } from 'lucide-react';
+import { AlertTriangle, Calendar, CheckCircle2, Loader2, ShieldCheck, Users } from 'lucide-react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 import { z } from 'zod';
 import { PATHS } from '@/constants/paths';
+import { AppButton } from '@/shared/ui';
 import { useAppStore } from '@/store/useAppStore';
 import { toast } from '@/store/useToastStore';
+import { formatDate } from '@/utils/format';
 import { useJoinMatchingGroup } from '../hooks/useJoinMatchingGroup';
 import { useMatchingGroupDetail } from '../hooks/useMatchingGroupDetail';
 
@@ -66,7 +68,7 @@ export default function JoinGroupRequestPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#F7F4EB] dark:bg-background flex flex-col items-center justify-center p-6">
+      <div className="min-h-[calc(100vh-4rem)] bg-[#F7F4EB] dark:bg-background flex flex-col items-center justify-center p-6">
         <Loader2 className="w-10 h-10 text-emerald-800 animate-spin mb-4" />
         <p className="text-sm font-semibold text-slate-600">Đang tải thông tin nhóm ghép...</p>
       </div>
@@ -75,16 +77,23 @@ export default function JoinGroupRequestPage() {
 
   if (isError || !groupData) {
     return (
-      <div className="min-h-screen bg-[#F7F4EB] dark:bg-background flex flex-col items-center justify-center p-6">
-        <div className="bg-[#FAF8F5] dark:bg-card border border-stone-200/80 dark:border-border rounded-[2.5rem] p-8 max-w-md w-full text-center shadow-xl">
-          <p className="text-red-500 font-semibold mb-4">Không thể tải thông tin nhóm ghép</p>
-          <button
-            type="button"
-            onClick={() => navigate(PATHS.GROUPS)}
-            className="px-5 py-2 rounded-full bg-[#0D3B2E] text-xs font-semibold text-white hover:bg-emerald-950"
-          >
-            Quay lại danh sách
-          </button>
+      <div className="min-h-[calc(100vh-4rem)] bg-[#F7F4EB] dark:bg-background flex flex-col items-center justify-center p-6 text-center">
+        <div className="max-w-md w-full bg-white dark:bg-card p-8 rounded-3xl border border-red-100 dark:border-border shadow-lg space-y-4">
+          <AlertTriangle className="w-12 h-12 text-rose-500 mx-auto" />
+          <h2 className="text-xl font-extrabold text-[#0B3025] dark:text-foreground">
+            Không thể tải thông tin nhóm
+          </h2>
+          <p className="text-xs text-zinc-500 dark:text-muted-foreground leading-relaxed">
+            Nhóm ghép bạn đang tìm kiếm không tồn tại hoặc đã bị giải tán.
+          </p>
+          <div className="pt-2">
+            <AppButton
+              onClick={() => navigate(PATHS.GROUPS)}
+              className="bg-[#0B3025] hover:bg-[#072019] text-white font-bold px-6 py-2.5 rounded-full text-xs shadow-sm border-none cursor-pointer"
+            >
+              Quay lại danh sách
+            </AppButton>
+          </div>
         </div>
       </div>
     );
@@ -122,7 +131,7 @@ export default function JoinGroupRequestPage() {
 
                 <div className="flex items-center gap-2 text-xs font-medium text-stone-600 dark:text-muted-foreground">
                   <Calendar className="w-4 h-4 text-stone-500" />
-                  <span>Khởi hành: {groupData.targetDate}</span>
+                  <span>Khởi hành: {formatDate(groupData.targetDate)}</span>
                 </div>
 
                 <div className="pt-2 border-t border-stone-300/40 dark:border-border/40 flex items-center justify-between text-xs font-medium text-stone-700 dark:text-stone-300">

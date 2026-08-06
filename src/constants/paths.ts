@@ -61,6 +61,7 @@ export const PATHS = {
   TREKKER_PROFILE: '/trekker/profile',
   TREKKER_PROFILE_EDIT: '/trekker/profile/edit',
   TREKKER_MY_TOURS: '/trekker/my-tours',
+  TREKKER_MY_GROUPS: '/trekker/my-groups',
   TREKKER_VENDOR_APPLICATIONS: '/trekker/vendor-applications',
   TREKKER_BLOG_LIST: '/trekker/blog',
   TREKKER_BLOG_CREATE: '/trekker/blog/create',
@@ -161,6 +162,8 @@ export const getPartnerSessionDetailPath = (sessionId: string) =>
   PATHS.PARTNER_SESSION_DETAIL.replace(':sessionId', sessionId);
 export const getCoordinatorSessionOperationsPath = (sessionId: string) =>
   PATHS.COORDINATOR_SESSION_OPERATIONS.replace(':sessionId', sessionId);
+export const getTrekkerBlogEditPath = (blogId: string) =>
+  PATHS.TREKKER_BLOG_EDIT.replace(':blogId', blogId);
 export const getTrekkerBookingDetailPath = (bookingId: string) =>
   PATHS.TREKKER_BOOKING_DETAIL.replace(':bookingId', bookingId);
 export const getTrekkerBookingPaymentPath = (bookingId: string) =>

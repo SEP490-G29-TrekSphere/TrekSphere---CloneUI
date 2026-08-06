@@ -129,8 +129,15 @@ export const adminAccountService = {
     return mapAccountDetail(response.data);
   },
 
-  /** Khóa/mở khóa tài khoản — `status` là ACTIVE hoặc LOCKED. */
-  async updateStatus(id: string, status: 'ACTIVE' | 'LOCKED'): Promise<void> {
+  /**
+   * Khóa/mở khóa tài khoản.
+   *
+   * Swagger khai báo enum `ACTIVE | LOCKED | DEACTIVATED`, nhưng BE hiện chỉ
+   * implement `ACTIVE` và `DEACTIVATED` — gửi `LOCKED` sẽ bị trả về
+   * `code 9001 — "Chức năng khoá vĩnh viễn chưa được hỗ trợ"`. Vì vậy union ở
+   * đây cố tình hẹp hơn swagger: khóa = DEACTIVATED, mở khóa = ACTIVE.
+   */
+  async updateStatus(id: string, status: 'ACTIVE' | 'DEACTIVATED'): Promise<void> {
     const response = await ApiService<void>(`/users/${id}/status`, 'PUT', undefined, { status });
     if (response.error) {
       throw new Error(response.error);

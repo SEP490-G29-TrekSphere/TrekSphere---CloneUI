@@ -1,6 +1,5 @@
-import { Eye, EyeOff, FileImage, Trash2 } from 'lucide-react';
+import { Eye, EyeOff, FileImage, Search, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
 import {
   MyBlogPagination,
   type TrekkerBlogItem,
@@ -8,7 +7,6 @@ import {
   useTrekkerBlogMutations,
 } from '@/features/trekker-community';
 import { useDebounce } from '@/shared/hooks';
-import type { AdminLayoutContext } from '@/shared/layout/AdminLayout';
 import { AppSpinner, ConfirmActionDialog } from '@/shared/ui';
 import { toast } from '@/store/useToastStore';
 
@@ -22,13 +20,15 @@ type PendingAction = { blog: TrekkerBlogItem; type: 'hide' | 'delete' };
  *
  * Dùng lại data layer của feature trekker-community (cùng endpoint `GET /blogs`,
  * chỉ khác không lọc theo `authorId`) — tránh viết trùng service/hook.
+ *
+ * Ô tìm kiếm nằm ngay trong trang, cùng hàng với bộ lọc trạng thái.
  */
 export default function BlogManagement() {
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
 
-  const { searchValue } = useOutletContext<AdminLayoutContext>();
-  const debouncedSearch = useDebounce(searchValue, 400);
+  const debouncedSearch = useDebounce(search, 400);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: debouncedSearch chỉ dùng để trigger effect
   useEffect(() => {
@@ -82,12 +82,33 @@ export default function BlogManagement() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-extrabold text-[#0B3025] tracking-tight">Quản lý Blog</h1>
-        <p className="text-zinc-500 text-sm font-medium mt-1">
-          Kiểm duyệt bài viết blog trong toàn hệ thống TrekSphere.
-          {total > 0 && ` Tổng cộng ${total} bài viết.`}
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold text-[#0B3025] tracking-tight">Quản lý Blog</h1>
+          <p className="text-zinc-500 text-sm font-medium mt-1">
+            Kiểm duyệt bài viết blog trong toàn hệ thống TrekSphere.
+            {total > 0 && ` Tổng cộng ${total} bài viết.`}
+          </p>
+        </div>
+
+        {/* Ô tìm kiếm nằm trong trang, không đặt ở header */}
+        <div className="relative sm:w-72">
+          <span
+            className="absolute inset-y-0 left-4 flex items-center"
+            style={{ color: '#6F7B75' }}
+          >
+            <Search className="h-4 w-4" />
+          </span>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Tìm kiếm bài viết..."
+            aria-label="Tìm kiếm bài viết"
+            className="h-11 w-full rounded-full pl-11 pr-4 text-sm font-medium outline-none transition-colors"
+            style={{ backgroundColor: '#F0EEE6', color: '#06261D' }}
+          />
+        </div>
       </div>
 
       <div

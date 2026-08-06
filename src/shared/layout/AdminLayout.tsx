@@ -1,6 +1,5 @@
 import {
   AlertTriangle,
-  Bell,
   Building2,
   ClipboardCheck,
   Database,
@@ -8,27 +7,20 @@ import {
   LogOut,
   MessageSquare,
   Newspaper,
-  Search,
   Settings,
   Siren,
   Ticket,
   User,
 } from 'lucide-react';
-import { useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { PATHS } from '@/constants';
 import { useAppStore } from '@/store/useAppStore';
-
-/** Context truyền xuống các trang con qua `<Outlet />` (vd: AccountList dùng để lọc theo từ khóa). */
-export interface AdminLayoutContext {
-  searchValue: string;
-}
 
 const adminNavItems = [
   { name: 'Bảng điều khiển', path: PATHS.ADMIN_DASHBOARD, icon: LayoutGrid, disabled: true },
   { name: 'Tài khoản', path: PATHS.ADMIN_ACCOUNTS, icon: User },
   { name: 'Quản lý Nhà cung cấp', path: PATHS.ADMIN_VENDORS, icon: Building2 },
-  { name: 'Duyệt Tour', path: PATHS.ADMIN_APPLICATIONS, icon: ClipboardCheck },
+  { name: 'Duyệt Vendor', path: PATHS.ADMIN_APPLICATIONS, icon: ClipboardCheck },
   { name: 'Báo cáo Vi phạm', path: PATHS.ADMIN_REPORTS, icon: AlertTriangle },
   { name: 'Khẩn cấp (SOS)', path: PATHS.ADMIN_EMERGENCY, icon: Siren },
   { name: 'Quản lý Blog', path: PATHS.ADMIN_BLOGS, icon: Newspaper },
@@ -43,7 +35,6 @@ export default function AdminLayout() {
   const user = useAppStore((state) => state.user);
   const setUser = useAppStore((state) => state.setUser);
   const navigate = useNavigate();
-  const [searchValue, setSearchValue] = useState('');
   const isChatPage = location.pathname === PATHS.ADMIN_CHAT;
 
   const handleLogout = () => {
@@ -51,28 +42,8 @@ export default function AdminLayout() {
     navigate(PATHS.LOGIN);
   };
 
-  // Get current day name in Vietnamese dynamically from current date
-  const getFormattedDate = () => {
-    const today = new Date();
-    const weekdays = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
-    const weekdayName = weekdays[today.getDay()];
-    const day = today.getDate();
-    const month = today.getMonth() + 1;
-    return `${weekdayName}, ${day} Tháng ${month}`;
-  };
-
   const adminName = user?.name || 'Admin User';
   const adminInitial = adminName.charAt(0).toUpperCase();
-
-  // Một số trang dùng placeholder riêng cho ô search. Các icon bên phải
-  // (chuông / cài đặt / ngày tháng) hiển thị giống nhau ở mọi trang admin.
-  const isAccountPage = location.pathname.startsWith(PATHS.ADMIN_ACCOUNTS);
-  const isBlogPage = location.pathname.startsWith(PATHS.ADMIN_BLOGS);
-  const searchPlaceholder = isAccountPage
-    ? 'Tìm kiếm tài khoản...'
-    : isBlogPage
-      ? 'Tìm kiếm bài viết...'
-      : 'Tìm kiếm hồ sơ...';
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#F4F4F2]">
@@ -166,60 +137,12 @@ export default function AdminLayout() {
         </div>
       </aside>
 
-      {/* Main Content Area */}
+      {/* Main Content Area — không có header, mọi thao tác tìm kiếm/lọc nằm trong từng trang */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Header */}
-        {!isChatPage && (
-          <header className="flex h-16 w-full items-center justify-between border-b border-[#E5E4DE] bg-white px-6 md:px-8 shadow-sm">
-            {/* Search Bar */}
-            <div className="relative w-72 md:w-96">
-              <span className="absolute inset-y-0 left-3 flex items-center text-zinc-400">
-                <Search className="h-4 w-4" />
-              </span>
-              <input
-                type="text"
-                value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
-                placeholder={searchPlaceholder}
-                aria-label={searchPlaceholder}
-                className="w-full pl-10 pr-4 py-2 text-sm rounded-full bg-[#F4F4F2] border-none focus:outline-none focus:ring-1 focus:ring-[#0B3025] text-zinc-800 placeholder-zinc-400 transition-all font-medium"
-              />
-            </div>
-
-            {/* Right side controls */}
-            <div className="flex items-center gap-6">
-              {/* Notifications */}
-              <button
-                type="button"
-                className="relative flex h-9 w-9 items-center justify-center rounded-full text-zinc-600 hover:bg-[#F4F4F2] transition-colors focus:outline-none"
-              >
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white animate-pulse" />
-              </button>
-
-              {/* Settings */}
-              <button
-                type="button"
-                className="flex h-9 w-9 items-center justify-center rounded-full text-zinc-600 hover:bg-[#F4F4F2] transition-colors focus:outline-none"
-              >
-                <Settings className="h-5 w-5" />
-              </button>
-
-              <div className="h-5 w-px bg-zinc-200" />
-
-              {/* Date Display */}
-              <span className="text-sm font-semibold text-zinc-500 hidden sm:inline-block">
-                {getFormattedDate()}
-              </span>
-            </div>
-          </header>
-        )}
-
-        {/* Content Outlet */}
         <main
           className={`flex-1 ${isChatPage ? 'overflow-hidden p-0' : 'overflow-y-auto p-6 md:p-8'}`}
         >
-          <Outlet context={{ searchValue } satisfies AdminLayoutContext} />
+          <Outlet />
         </main>
       </div>
     </div>

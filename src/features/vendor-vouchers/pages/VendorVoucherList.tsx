@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useDebounce } from '@/shared/hooks';
-import { AppBadge, AppEmptyState, AppSpinner } from '@/shared/ui';
+import { AppBadge, AppDatePicker, AppEmptyState, AppSpinner } from '@/shared/ui';
 import { toast } from '@/store/useToastStore';
 import { formatDate, formatPrice } from '@/utils/format';
 import { ConfirmDeleteDialog } from '../components/ConfirmDeleteDialog';
@@ -278,18 +278,24 @@ export default function VendorVoucherList() {
           {/* Valid Until */}
           <div className="relative">
             <span
-              className="absolute inset-y-0 left-4 flex items-center pointer-events-none"
+              className="absolute inset-y-0 left-4 flex items-center pointer-events-none z-10"
               style={{ color: '#6F7B75' }}
             >
               <Calendar className="h-4 w-4" />
             </span>
-            <input
-              type="date"
-              value={validUntil}
-              onChange={(e) => setValidUntil(e.target.value)}
-              aria-label="Hạn dùng trước ngày"
-              className="w-full rounded-full border-none py-2.5 pl-10 pr-4 text-sm font-medium focus:outline-none focus:ring-1"
-              style={{ backgroundColor: '#F0EEE6', color: '#06261D' }}
+            <AppDatePicker
+              selected={validUntil ? new Date(validUntil) : null}
+              onChange={(date: Date | null) => {
+                if (!date) {
+                  setValidUntil('');
+                  return;
+                }
+                const offset = date.getTimezoneOffset();
+                const localDate = new Date(date.getTime() - offset * 60 * 1000);
+                setValidUntil(localDate.toISOString().split('T')[0]);
+              }}
+              placeholderText="Hạn dùng trước ngày"
+              className="w-full rounded-full !border-none !h-auto !bg-[#F0EEE6] py-2.5 pl-10 pr-4 text-sm font-medium focus:outline-none focus:ring-1 cursor-pointer"
             />
           </div>
 

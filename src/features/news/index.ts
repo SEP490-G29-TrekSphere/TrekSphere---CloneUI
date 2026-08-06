@@ -10,7 +10,6 @@ export { BlogFilterBar } from './components/BlogFilterBar';
 export { BlogHeroSection } from './components/BlogHeroSection';
 export { BlogPagination } from './components/BlogPagination';
 export { BlogSidebar } from './components/BlogSidebar';
-export { BLOG_CATEGORIES } from './data/categories';
 export {
   useBlogComments,
   useBlogDetail,

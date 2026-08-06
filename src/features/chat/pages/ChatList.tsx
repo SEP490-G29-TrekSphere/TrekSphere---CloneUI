@@ -42,7 +42,6 @@ import {
   useMessageScroller,
 } from '@/components/ui/message-scroller';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { queryClient } from '@/config/queryClient';
 import { PATHS } from '@/constants';
 import type { Conversation, DetailMessage, MessageResponse } from '@/features/chat/types/types';
@@ -130,7 +129,6 @@ export default function ChatList({ hideSidebar = false }: ChatListProps) {
   const [_localMessages, _setLocalMessages] = useState<Record<string, DetailMessage[]>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [searchQuery, _setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
 
   const { client, isConnected } = useChatWebSocket();
   const { mutate: sendMessage } = useSendMessage();
@@ -305,7 +303,7 @@ export default function ChatList({ hideSidebar = false }: ChatListProps) {
       const matchesSearch =
         c.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         c.lastMessage.toLowerCase().includes(searchQuery.toLowerCase());
-      return activeTab === 'unread' ? matchesSearch && c.unread : matchesSearch;
+      return matchesSearch;
     })
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
@@ -422,24 +420,6 @@ export default function ChatList({ hideSidebar = false }: ChatListProps) {
           >
             <div className="px-6 py-4">
               <h1 className="text-2xl font-bold tracking-tight">Phòng Chat</h1>
-            </div>
-
-            {/* Tab filter */}
-            <div className="px-6 mb-4">
-              <Tabs
-                value={activeTab}
-                onValueChange={(val) => setActiveTab(val as 'all' | 'unread')}
-                className="w-full"
-              >
-                <TabsList className="w-full">
-                  <TabsTrigger value="all" className="flex-1">
-                    Tất cả
-                  </TabsTrigger>
-                  <TabsTrigger value="unread" className="flex-1">
-                    Chưa đọc
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
             </div>
 
             {/* Conversation list */}

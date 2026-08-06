@@ -1,4 +1,4 @@
-import { Download, Filter, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import type { BookingStatus, PaymentStatus, VendorBookingFilter } from '../types';
 
 interface BookingFilterBarProps {
@@ -70,27 +70,6 @@ export function BookingFilterBar({ filter, onFilterChange }: BookingFilterBarPro
           <option value="REFUNDED">Đã hoàn tiền (REFUNDED)</option>
           <option value="PARTIALLY_REFUNDED">Hoàn tiền 1 phần (PARTIALLY_REFUNDED)</option>
         </select>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex items-center gap-3 self-end md:self-auto">
-        <button
-          type="button"
-          className="inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition-colors"
-          style={{ backgroundColor: '#EFECE6', color: '#06261D' }}
-        >
-          <Filter className="h-4 w-4" />
-          Lọc nâng cao
-        </button>
-
-        <button
-          type="button"
-          className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-transform active:scale-95"
-          style={{ backgroundColor: '#06261D' }}
-        >
-          <Download className="h-4 w-4" />
-          Xuất báo cáo
-        </button>
       </div>
     </div>
   );

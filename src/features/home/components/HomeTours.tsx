@@ -11,15 +11,9 @@ export default function HomeTours() {
       <div className="max-w-none w-full mx-auto px-4 sm:px-6">
         <ScrollReveal variant="fade-up">
           <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-4">
-            <div>
-              <span className="section-eyebrow">Được yêu thích nhất</span>
-              <h2 className="text-3xl md:text-5xl font-black text-primary leading-tight">
-                Tour nổi bật
-              </h2>
-              <p className="mt-3 text-base text-muted-foreground max-w-md">
-                Lựa chọn những hành trình được yêu thích nhất từ hàng ngàn trekker.
-              </p>
-            </div>
+            <h2 className="text-3xl md:text-5xl font-black text-primary leading-tight">
+              Tour nổi bật
+            </h2>
             <Link
               to={PATHS.TOURS}
               className="inline-flex items-center gap-1.5 text-sm font-semibold transition-opacity hover:opacity-70 text-primary shrink-0"

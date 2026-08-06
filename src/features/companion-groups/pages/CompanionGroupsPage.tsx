@@ -1,53 +1,90 @@
-import { CheckCircle2, Loader2, LogIn, SearchX } from 'lucide-react';
-import { useState } from 'react';
+import { LayoutGrid, List, RotateCcw, SearchX } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { PATHS } from '@/constants';
+import { TourPagination } from '@/features/tours';
+import { useTours } from '@/features/tours/hooks/useTours';
+import { cn } from '@/lib/utils';
 import { useDebounce } from '@/shared/hooks/useDebounce';
+import { AppButton, AppDatePicker } from '@/shared/ui';
 import { useAppStore } from '@/store/useAppStore';
-import { toast } from '@/store/useToastStore';
 import { CompanionGroupCard, type GroupCardData } from '../components/CompanionGroupCard';
-import { CompanionHeroFilter } from '../components/CompanionHeroFilter';
 import { CreateCompanionGroupModal } from '../components/CreateCompanionGroupModal';
 import { useMatchingGroups } from '../hooks/useMatchingGroups';
+
+const PAGE_SIZE = 9;
+
+const sortOptions = [
+  { value: 'createdAt-desc', label: 'Mới nhất' },
+  { value: 'targetDate-asc', label: 'Ngày đi: Sớm nhất' },
+  { value: 'targetDate-desc', label: 'Ngày đi: Muộn nhất' },
+  { value: 'currentSize-desc', label: 'Nhiều thành viên nhất' },
+];
+
+const statusFilterOptions = [
+  { value: 'ALL', label: 'Tất cả trạng thái' },
+  { value: 'OPEN', label: 'Đang mở' },
+  { value: 'FULL', label: 'Đã đủ' },
+  { value: 'CLOSED', label: 'Đã đóng' },
+];
 
 export default function CompanionGroupsPage() {
   const navigate = useNavigate();
   const user = useAppStore((s) => s.user);
   const isGuest = !user;
+
+  // --- Filter state ---
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, 400);
-
   const [selectedTourId, setSelectedTourId] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [sortKey, setSortKey] = useState('createdAt-desc');
   const [page, setPage] = useState(0);
-  const pageSize = 9;
-
-  const [joinModalGroup, setJoinModalGroup] = useState<GroupCardData | null>(null);
+  const [layout, setLayout] = useState<'list' | 'grid'>('grid');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [message, setMessage] = useState('');
 
-  const handleCreateClick = () => {
-    if (isGuest) {
-      navigate(PATHS.LOGIN);
-      return;
-    }
-    setIsCreateModalOpen(true);
-  };
+  // biome-ignore lint/correctness/useExhaustiveDependencies: setPage is a stable useState setter
+  useEffect(() => {
+    setPage(0);
+  }, [debouncedSearchQuery, selectedTourId, selectedDate, statusFilter, sortKey]);
 
-  // API Integration hook for GET /api/v1/matching-groups
+  const [sortBy, sortDir] = sortKey.split('-') as [string, string];
+
+  // --- Data ---
   const { data, isLoading, isError } = useMatchingGroups({
     keyword: debouncedSearchQuery || undefined,
     tourId: selectedTourId || undefined,
     targetDate: selectedDate || undefined,
     page,
-    size: pageSize,
-    sortBy: 'createdAt',
-    sortDir: 'desc',
+    size: PAGE_SIZE,
+    sortBy,
+    sortDir,
   });
 
-  const matchingGroups = data?.content || [];
-  const totalPages = data?.totalPages || 0;
-  const isLastPage = data?.last ?? true;
+  const matchingGroups = data?.content ?? [];
+  const totalPages = data?.totalPages ?? 0;
+  const totalElements = data?.totalElements ?? 0;
+  const pageNumber = data?.pageNumber ?? 0;
+
+  // Tours for sidebar filter dropdown
+  const { tours: allTours } = useTours({ size: 50 });
+
+  // Client-side status filter (API doesn't support it directly)
+  const filteredGroups = useMemo(() => {
+    if (statusFilter === 'ALL') return matchingGroups;
+    return matchingGroups.filter((g) => g.status === statusFilter);
+  }, [matchingGroups, statusFilter]);
+
+  const handleResetFilters = () => {
+    setSearchQuery('');
+    setSelectedTourId('');
+    setSelectedDate('');
+    setStatusFilter('ALL');
+    setSortKey('createdAt-desc');
+    setPage(0);
+  };
 
   const handleJoinGroup = (group: GroupCardData) => {
     const groupId = 'matchingGroupId' in group ? group.matchingGroupId : group.id;
@@ -59,234 +96,384 @@ export default function CompanionGroupsPage() {
     navigate(`/groups/${groupId}`);
   };
 
-  const submitJoinRequest = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!joinModalGroup) return;
-
-    const groupTitle =
-      'matchingGroupId' in joinModalGroup ? joinModalGroup.groupName : joinModalGroup.title;
-    toast.success(`Đã gửi yêu cầu tham gia nhóm "${groupTitle}"! Leader sẽ duyệt sớm.`);
-    setJoinModalGroup(null);
-    setMessage('');
+  const handlePageChange = (next: number) => {
+    setPage(next);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleResetFilters = () => {
-    setSearchQuery('');
-    setSelectedTourId('');
-    setSelectedDate('');
-    setPage(0);
-  };
+  const currentSortLabel = sortOptions.find((o) => o.value === sortKey)?.label ?? 'Mới nhất';
+  const isStatusFiltered = statusFilter !== 'ALL';
 
   return (
-    <div className="min-h-screen bg-[#faf8f1] dark:bg-background text-foreground pb-20">
-      {/* Hero Section & Search Pill */}
-      <CompanionHeroFilter
-        searchQuery={searchQuery}
-        onSearchChange={(val) => {
-          setSearchQuery(val);
-          setPage(0);
-        }}
-        selectedTourId={selectedTourId}
-        onTourChange={(val) => {
-          setSelectedTourId(val);
-          setPage(0);
-        }}
-        selectedDate={selectedDate}
-        onDateChange={(val) => {
-          setSelectedDate(val);
-          setPage(0);
-        }}
-      />
-
-      {/* Main Content Section */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-        {/* Section Header matching design mockup */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
-          <div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
-              Chuyến đi mới nhất
-            </h2>
-            <p className="text-muted-foreground text-xs sm:text-sm mt-1">
-              Khám phá các nhóm đang tuyển thành viên hoặc tự tạo nhóm của riêng bạn
+    <div className="min-h-screen bg-background pt-16">
+      <div className="relative z-10">
+        {/* Centered container matching ListTours */}
+        <div className="mx-auto max-w-[1400px] w-full px-4 sm:px-6 lg:px-8">
+          {/* ── Page header (search bar area) ── */}
+          <div className="pt-10 pb-8 text-center sm:pt-14">
+            <h1 className="text-3xl sm:text-4xl font-black text-primary tracking-tight">
+              Tìm Bạn Đồng Hành
+            </h1>
+            <p className="mt-3 text-sm text-muted-foreground max-w-xl mx-auto leading-relaxed">
+              Kết nối với những người cùng đam mê để chinh phục những cung đường huyền thoại.
             </p>
+
+            {/* Search bar pill */}
+            <div className="mt-7 mx-auto max-w-2xl bg-white border border-border rounded-full p-2 shadow-md flex items-center gap-2">
+              <div className="flex-1 flex items-center gap-2 px-3">
+                <svg
+                  className="h-4 w-4 text-muted-foreground shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+                  />
+                </svg>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Tìm theo tên nhóm, tour..."
+                  className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3 self-start sm:self-auto">
-            <button
-              type="button"
-              onClick={handleCreateClick}
-              className="flex items-center gap-2 px-4 py-2.5 bg-[#1f3933] hover:bg-[#162c28] text-white text-xs sm:text-sm font-bold rounded-full transition-all shadow-md cursor-pointer"
-            >
-              <span>+ Tạo nhóm ghép mới</span>
-            </button>
+          {/* ── Main 12-column grid (identical to ListTours) ── */}
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+            {/* LEFT: Sidebar filters */}
+            <aside className="lg:col-span-3 flex flex-col gap-6">
+              <div className="rounded-2xl border border-border bg-white p-5 shadow-xs">
+                <h3 className="mb-5 text-lg font-bold text-primary">Bộ lọc</h3>
+
+                {/* Filter: Tour */}
+                <div className="mb-6">
+                  <span className="mb-3 block text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                    Tour
+                  </span>
+                  <select
+                    value={selectedTourId}
+                    onChange={(e) => setSelectedTourId(e.target.value)}
+                    className="w-full rounded-xl border border-border bg-muted/40 px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    <option value="">-- Tất cả các Tour --</option>
+                    {allTours.map((tour) => (
+                      <option key={tour.id} value={tour.id}>
+                        {tour.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <hr className="my-5 border-border" />
+
+                {/* Filter: Ngày khởi hành */}
+                <div className="mb-6">
+                  <span className="mb-3 block text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                    Ngày khởi hành
+                  </span>
+                  <AppDatePicker
+                    selected={selectedDate ? new Date(selectedDate) : null}
+                    onChange={(date: Date | null) => {
+                      if (!date) {
+                        setSelectedDate('');
+                        return;
+                      }
+                      const offset = date.getTimezoneOffset();
+                      const localDate = new Date(date.getTime() - offset * 60 * 1000);
+                      setSelectedDate(localDate.toISOString().split('T')[0]);
+                    }}
+                    className="w-full rounded-xl border border-border bg-muted/40 px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                    placeholderText="Chọn ngày khởi hành"
+                  />
+                </div>
+
+                <hr className="my-5 border-border" />
+
+                {/* Filter: Trạng thái */}
+                <div className="mb-6">
+                  <span className="mb-3 block text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                    Trạng thái
+                  </span>
+                  <div className="flex flex-col gap-2.5">
+                    {statusFilterOptions.map((opt) => {
+                      const isActive = statusFilter === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setStatusFilter(opt.value)}
+                          aria-pressed={isActive}
+                          className="flex items-center gap-3 text-left transition-colors hover:text-primary"
+                        >
+                          <span
+                            className={cn(
+                              'flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-all',
+                              isActive ? 'border-primary bg-primary' : 'border-input bg-transparent'
+                            )}
+                          >
+                            {isActive && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+                          </span>
+                          <span
+                            className={cn(
+                              'text-sm transition-all',
+                              isActive ? 'font-semibold text-primary' : 'text-muted-foreground'
+                            )}
+                          >
+                            {opt.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Reset button */}
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="w-full rounded-xl border border-input py-2 text-center text-xs font-semibold text-primary transition-all hover:bg-muted"
+                >
+                  Làm mới bộ lọc
+                </button>
+              </div>
+            </aside>
+
+            {/* RIGHT: Results */}
+            <main className="lg:col-span-9">
+              {/* Results header row */}
+              <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-primary">Nhóm ghép</h2>
+                  <span className="text-xs text-muted-foreground">
+                    {isStatusFiltered
+                      ? `Hiển thị ${filteredGroups.length}/${matchingGroups.length} nhóm ở trang này`
+                      : `Hiển thị ${totalElements} nhóm`}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  {/* Sort */}
+                  <div className="flex items-center gap-2">
+                    <span className="hidden text-xs text-muted-foreground sm:inline">Sắp xếp:</span>
+                    <Select
+                      value={sortKey}
+                      onValueChange={(val) => {
+                        if (val) setSortKey(val);
+                      }}
+                    >
+                      <SelectTrigger className="h-10 rounded-full bg-white px-4 text-sm font-semibold text-primary hover:border-primary/50">
+                        <span>{currentSortLabel}</span>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sortOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Layout toggle */}
+                  <div className="flex items-center gap-1 rounded-full border border-input bg-white p-1">
+                    <button
+                      type="button"
+                      onClick={() => setLayout('list')}
+                      aria-pressed={layout === 'list'}
+                      className={cn(
+                        'rounded-full p-1.5 transition-colors',
+                        layout === 'list'
+                          ? 'bg-primary text-white font-semibold'
+                          : 'text-muted-foreground hover:bg-muted'
+                      )}
+                      aria-label="Hiển thị danh sách"
+                    >
+                      <List className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLayout('grid')}
+                      aria-pressed={layout === 'grid'}
+                      className={cn(
+                        'rounded-full p-1.5 transition-colors',
+                        layout === 'grid'
+                          ? 'bg-primary text-white font-semibold'
+                          : 'text-muted-foreground hover:bg-muted'
+                      )}
+                      aria-label="Hiển thị lưới"
+                    >
+                      <LayoutGrid className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Content area */}
+              {isLoading ? (
+                <GroupsSkeleton layout={layout} />
+              ) : isError ? (
+                <GroupsError onRetry={handleResetFilters} />
+              ) : filteredGroups.length === 0 ? (
+                <GroupsEmpty
+                  isGuest={isGuest}
+                  onLogin={() => navigate(PATHS.LOGIN)}
+                  onReset={handleResetFilters}
+                />
+              ) : (
+                <div
+                  className={
+                    layout === 'grid'
+                      ? 'grid gap-6 sm:grid-cols-2 lg:grid-cols-3'
+                      : 'flex flex-col gap-5'
+                  }
+                >
+                  {filteredGroups.map((group) => (
+                    <CompanionGroupCard
+                      key={group.matchingGroupId}
+                      group={group}
+                      layout={layout}
+                      onJoinGroup={handleJoinGroup}
+                      onViewDetail={handleViewDetail}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Pagination */}
+              <div className="mt-8">
+                <TourPagination
+                  pageNumber={pageNumber}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
+              </div>
+            </main>
           </div>
         </div>
 
-        {/* Loading State */}
-        {isLoading ? (
-          <div className="py-20 flex flex-col items-center justify-center">
-            <Loader2 className="w-10 h-10 text-primary animate-spin mb-3" />
-            <p className="text-sm font-medium text-muted-foreground">
-              Đang tải danh sách nhóm ghép...
-            </p>
-          </div>
-        ) : isError ? (
-          /* Error State */
-          <div className="py-16 text-center bg-red-50 dark:bg-red-950/20 rounded-3xl border border-red-200 dark:border-red-900/40 max-w-xl mx-auto my-8 p-8">
-            <h3 className="text-lg font-bold text-red-700 dark:text-red-400">
-              Không tìm thấy nhóm phù hợp
-            </h3>
-            <p className="text-xs text-red-600 dark:text-red-300 mt-1">
-              Không có dữ liệu nhóm ghép cho từ khóa hoặc ngày khởi hành đã chọn.
-            </p>
-            <div className="mt-4 flex items-center justify-center">
-              <button
-                type="button"
-                onClick={handleResetFilters}
-                className="px-6 py-2.5 bg-red-600 text-white text-xs font-semibold rounded-full hover:bg-red-700 transition-colors cursor-pointer shadow-sm"
-              >
-                Xóa bộ lọc
-              </button>
-            </div>
-          </div>
-        ) : matchingGroups.length > 0 ? (
-          <>
-            {/* Group Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-              {matchingGroups.map((group) => (
-                <CompanionGroupCard
-                  key={group.matchingGroupId}
-                  group={group}
-                  onJoinGroup={handleJoinGroup}
-                  onViewDetail={handleViewDetail}
-                />
-              ))}
-            </div>
+        <div className="h-16 sm:h-24" />
+      </div>
 
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="mt-12 flex items-center justify-center gap-3">
-                <button
-                  type="button"
-                  disabled={page === 0}
-                  onClick={() => setPage((prev) => Math.max(0, prev - 1))}
-                  className="px-5 py-2.5 bg-white dark:bg-card border border-stone-300 dark:border-stone-700 rounded-full font-semibold text-xs sm:text-sm text-foreground disabled:opacity-40 disabled:cursor-not-allowed hover:bg-stone-100 dark:hover:bg-stone-800 transition-all cursor-pointer shadow-sm"
-                >
-                  Trang trước
-                </button>
-
-                <span className="text-xs sm:text-sm font-medium text-muted-foreground px-2">
-                  Trang <strong className="text-foreground">{page + 1}</strong> / {totalPages}
-                </span>
-
-                <button
-                  type="button"
-                  disabled={isLastPage || page >= totalPages - 1}
-                  onClick={() => setPage((prev) => prev + 1)}
-                  className="px-5 py-2.5 bg-[#1f3933] hover:bg-[#162c28] text-white rounded-full font-semibold text-xs sm:text-sm disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-sm"
-                >
-                  Trang sau
-                </button>
-              </div>
-            )}
-          </>
-        ) : isGuest ? (
-          /* Guest Empty State — mời đăng nhập */
-          <div className="py-16 text-center bg-white/60 dark:bg-card/40 rounded-3xl border border-dashed border-border max-w-xl mx-auto my-8 p-8">
-            <LogIn className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-foreground">Đăng nhập để xem nhóm ghép</h3>
-            <p className="text-muted-foreground text-sm mt-1">
-              Các nhóm ghép công khai sẽ hiển thị sau khi bạn đăng nhập vào tài khoản.
-            </p>
-            <button
-              type="button"
-              onClick={() => navigate(PATHS.LOGIN)}
-              className="mt-4 px-5 py-2 bg-[#1f3933] text-white text-xs font-semibold rounded-full hover:bg-[#162c28] transition-colors cursor-pointer shadow-sm"
-            >
-              Đăng nhập ngay
-            </button>
-          </div>
-        ) : (
-          /* Empty State */
-          <div className="py-16 text-center bg-white/60 dark:bg-card/40 rounded-3xl border border-dashed border-border max-w-xl mx-auto my-8 p-8">
-            <SearchX className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-foreground">Không tìm thấy nhóm phù hợp</h3>
-            <p className="text-muted-foreground text-sm mt-1">
-              Thử thay đổi từ khóa hoặc chọn ngày khác để xem thêm kết quả.
-            </p>
-            <button
-              type="button"
-              onClick={handleResetFilters}
-              className="mt-4 px-5 py-2 bg-primary text-primary-foreground text-xs font-semibold rounded-full hover:opacity-90 transition-opacity cursor-pointer"
-            >
-              Xóa bộ lọc
-            </button>
-          </div>
-        )}
-      </main>
-
-      {/* Join Request Modal */}
-      {joinModalGroup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-card border border-border rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative">
-            <h3 className="text-xl font-bold text-foreground">Xin Tham Gia Nhóm</h3>
-            <p className="text-xs text-muted-foreground mt-1">
-              Chuyến đi:{' '}
-              <span className="font-semibold text-foreground">
-                {'matchingGroupId' in joinModalGroup
-                  ? joinModalGroup.groupName
-                  : joinModalGroup.title}
-              </span>
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Leader:{' '}
-              <span className="font-semibold text-foreground">
-                {'matchingGroupId' in joinModalGroup
-                  ? joinModalGroup.ownerName
-                  : joinModalGroup.leader.name}
-              </span>
-            </p>
-
-            <form onSubmit={submitJoinRequest} className="mt-5 space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-foreground mb-1">
-                  Lời nhắn gửi Trưởng nhóm (Không bắt buộc)
-                </label>
-                <textarea
-                  rows={3}
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Giới thiệu bản thân ngắn gọn, kinh nghiệm trekking hoặc thắc mắc của bạn..."
-                  className="w-full bg-muted/60 border border-border rounded-xl p-3 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setJoinModalGroup(null)}
-                  className="px-4 py-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  className="flex items-center gap-1.5 px-5 py-2 bg-[#1f3933] hover:bg-[#162c28] text-white text-xs font-bold rounded-full transition-all cursor-pointer shadow-md"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  Gửi yêu cầu
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Create Companion Group Modal */}
+      {/* Create modal */}
       <CreateCompanionGroupModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
       />
+    </div>
+  );
+}
+
+// ── Sub-components ──────────────────────────────────────────────────────────
+
+function GroupsSkeleton({ layout }: { layout: 'list' | 'grid' }) {
+  if (layout === 'grid') {
+    return (
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div
+            // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length skeleton
+            key={`group-skeleton-${i}`}
+            className="flex flex-col rounded-2xl bg-white shadow-sm ring-1 ring-border"
+          >
+            <div className="h-12 w-full animate-pulse rounded-t-2xl bg-muted" />
+            <div className="flex flex-col p-4 gap-3">
+              <div className="h-5 w-3/4 animate-pulse rounded bg-muted" />
+              <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
+              <div className="h-3 w-2/3 animate-pulse rounded bg-muted" />
+              <div className="h-8 w-28 animate-pulse rounded-full bg-muted mt-2" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div
+          // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length skeleton
+          key={`group-skeleton-${i}`}
+          className="flex gap-4 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-border"
+        >
+          <div className="flex flex-1 flex-col gap-2 py-1">
+            <div className="h-5 w-2/3 animate-pulse rounded bg-muted" />
+            <div className="h-3 w-1/3 animate-pulse rounded bg-muted" />
+            <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
+            <div className="h-7 w-28 animate-pulse rounded-full bg-muted mt-1" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function GroupsError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-destructive/10">
+        <svg
+          className="h-10 w-10 text-destructive"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={1.5}
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
+          />
+        </svg>
+      </div>
+      <h3 className="mb-2 text-lg font-semibold text-primary">Không thể tải danh sách nhóm</h3>
+      <p className="mb-6 max-w-sm text-sm text-muted-foreground">
+        Đã xảy ra lỗi kết nối. Vui lòng thử lại.
+      </p>
+      <AppButton onClick={onRetry}>
+        <RotateCcw className="mr-2 h-4 w-4" />
+        Thử lại
+      </AppButton>
+    </div>
+  );
+}
+
+function GroupsEmpty({
+  isGuest,
+  onLogin,
+  onReset,
+}: {
+  isGuest: boolean;
+  onLogin: () => void;
+  onReset: () => void;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+        <SearchX className="h-8 w-8" />
+      </div>
+      <h3 className="mb-2 text-lg font-semibold text-primary">
+        {isGuest ? 'Đăng nhập để xem nhóm ghép' : 'Không tìm thấy nhóm phù hợp'}
+      </h3>
+      <p className="mb-6 max-w-sm text-sm text-muted-foreground">
+        {isGuest
+          ? 'Các nhóm ghép sẽ hiển thị sau khi bạn đăng nhập.'
+          : 'Thử thay đổi bộ lọc hoặc từ khoá để xem thêm kết quả.'}
+      </p>
+      {isGuest ? (
+        <AppButton onClick={onLogin}>Đăng nhập ngay</AppButton>
+      ) : (
+        <AppButton onClick={onReset}>Xóa tất cả bộ lọc</AppButton>
+      )}
     </div>
   );
 }

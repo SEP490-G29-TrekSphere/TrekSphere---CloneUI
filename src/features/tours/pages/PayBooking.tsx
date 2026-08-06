@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertCircle, ArrowLeft, FileImage, QrCode, Upload } from 'lucide-react';
+import { AlertCircle, FileImage, QrCode, Upload } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -38,9 +38,9 @@ const paymentSchema = z.object({
     .refine((file) => file !== null, 'Vui lòng chọn file minh chứng thanh toán.')
     .refine((file) => {
       if (!file) return true;
-      const maxSize = 5 * 1024 * 1024;
+      const maxSize = 10 * 1024 * 1024;
       return file.size <= maxSize;
-    }, 'Kích thước file vượt quá giới hạn 5MB. Vui lòng chọn file nhỏ hơn.')
+    }, 'Kích thước file vượt quá giới hạn 10MB. Vui lòng chọn file nhỏ hơn.')
     .refine(async (file) => {
       if (!file) return true;
       return await isValidImageFile(file);
@@ -108,7 +108,7 @@ export default function PayBooking({ backPath }: { backPath?: string }) {
 
         if (remaining <= 0) {
           setIsExpired(true);
-          await tourService.updateBookingStatus(bookingId, 'CANCELLED');
+          await tourService.cancelBooking(bookingId, 'Hết thời gian thanh toán');
         }
       } catch {
         toast.error('Không thể tải thông tin đơn đặt chỗ.');
@@ -124,7 +124,7 @@ export default function PayBooking({ backPath }: { backPath?: string }) {
     if (timeLeft === 0 && !isExpired && booking?.bookingStatus === 'PENDING') {
       setIsExpired(true);
       if (bookingId) {
-        tourService.updateBookingStatus(bookingId, 'CANCELLED');
+        tourService.cancelBooking(bookingId, 'Hết thời gian thanh toán');
       }
       toast.error('Đã hết 15 phút thanh toán! Chỗ của bạn đã được giải phóng.');
     }
@@ -167,7 +167,7 @@ export default function PayBooking({ backPath }: { backPath?: string }) {
 
   if (loading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-[#FAF9F5]">
+      <div className="flex min-h-[calc(100vh-4rem)] w-full items-center justify-center bg-[#FAF9F5]">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#0B3025] border-t-transparent" />
       </div>
     );
@@ -175,190 +175,218 @@ export default function PayBooking({ backPath }: { backPath?: string }) {
 
   if (!booking) {
     return (
-      <div className="mx-auto max-w-md py-20 text-center bg-[#FAF9F5]">
-        <AlertCircle className="mx-auto mb-4 h-12 w-12 text-destructive" />
-        <h2 className="text-xl font-bold">Không tìm thấy thông tin đặt chỗ</h2>
-        <p className="text-muted-foreground mt-2">Vui lòng kiểm tra lại mã đặt chỗ.</p>
-        <AppButton onClick={() => navigate(backPath ?? '/my-tours')} className="mt-4">
-          Quay lại danh sách tour đã đặt
-        </AppButton>
+      <div className="min-h-[calc(100vh-4rem)] w-full flex flex-col items-center justify-center p-6 text-center bg-[#FAF9F5]">
+        <div className="max-w-md w-full bg-white p-8 rounded-3xl border border-red-100 shadow-lg space-y-4">
+          <AlertCircle className="w-12 h-12 text-rose-500 mx-auto" />
+          <h2 className="text-xl font-extrabold text-[#0B3025]">
+            Không tìm thấy thông tin đặt chỗ
+          </h2>
+          <p className="text-xs text-zinc-500 leading-relaxed">
+            Vui lòng kiểm tra lại mã đặt chỗ của bạn.
+          </p>
+          <div className="pt-2">
+            <AppButton
+              onClick={() => navigate(backPath ?? '/my-tours')}
+              className="bg-[#0B3025] hover:bg-[#072019] text-white font-bold px-6 py-2.5 rounded-full text-xs shadow-sm border-none cursor-pointer"
+            >
+              Quay lại danh sách tour đã đặt
+            </AppButton>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (isExpired) {
     return (
-      <div className="mx-auto max-w-md py-20 text-center bg-[#FAF9F5] space-y-4">
-        <AlertCircle className="mx-auto mb-4 h-16 w-16 text-red-500" />
-        <h2 className="text-2xl font-extrabold text-[#0B3025]">Giao dịch đã hết hạn</h2>
-        <p className="text-zinc-500 font-medium text-sm leading-relaxed">
-          Đơn đặt chỗ <strong>{booking.bookingId}</strong> đã tự động hủy do quá thời gian giữ chỗ
-          15 phút. Vui lòng quay lại đặt chỗ mới.
-        </p>
-        <div className="pt-4">
-          <AppButton
-            onClick={() => navigate(`/tours/${booking.tourId}`)}
-            className="bg-[#0B3025] hover:bg-[#072019] text-white font-bold px-6 py-3 rounded-2xl"
-          >
-            Quay lại đặt tour
-          </AppButton>
+      <div className="min-h-[calc(100vh-4rem)] w-full flex flex-col items-center justify-center p-6 text-center bg-[#FAF9F5]">
+        <div className="max-w-md w-full bg-white p-8 rounded-3xl border border-red-100 shadow-lg space-y-4">
+          <AlertCircle className="w-12 h-12 text-rose-500 mx-auto" />
+          <h2 className="text-xl font-extrabold text-[#0B3025]">Giao dịch đã hết hạn</h2>
+          <p className="text-xs text-zinc-500 leading-relaxed">
+            Đơn đặt chỗ <strong>{booking.bookingId}</strong> đã tự động hủy do quá thời gian giữ chỗ
+            15 phút. Vui lòng quay lại đặt chỗ mới.
+          </p>
+          <div className="pt-2">
+            <AppButton
+              onClick={() => navigate(`/tours/${booking.tourId}`)}
+              className="bg-[#0B3025] hover:bg-[#072019] text-white font-bold px-6 py-2.5 rounded-full text-xs shadow-sm border-none cursor-pointer"
+            >
+              Quay lại đặt tour
+            </AppButton>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 md:py-12 bg-[#FAF9F5] min-h-screen">
-      <div className="flex items-center gap-3 mb-6">
-        <button
-          type="button"
-          onClick={() => navigate(backPath ?? `/my-tours/${bookingId}`)}
-          aria-label="Quay lại chi tiết đặt tour"
-          className="p-2 hover:bg-zinc-100 rounded-full transition-colors"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <h1 className="text-2xl font-extrabold text-[#0B3025]">Thanh toán đơn hàng</h1>
-      </div>
-
-      {/* Countdown timer banner (BR-08) */}
-      <div className="p-4 bg-amber-50 text-amber-800 border border-amber-100 rounded-2xl text-xs font-semibold flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          <span>
-            Vui lòng hoàn tất thanh toán chuyển khoản trước khi thời gian giữ chỗ kết thúc:
+    <div className="w-full bg-[#FAF9F5] min-h-screen py-8">
+      <div className="mx-auto max-w-[1400px] w-full px-4 sm:px-6 lg:px-8 space-y-6">
+        {/* Countdown timer banner (BR-08) */}
+        <div className="p-4 bg-amber-50 text-amber-800 border border-amber-100 rounded-2xl text-xs font-semibold flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>
+              Vui lòng hoàn tất thanh toán chuyển khoản trước khi thời gian giữ chỗ kết thúc:
+            </span>
+          </div>
+          <span className="text-sm font-extrabold tracking-wider bg-white px-3 py-1 rounded-xl shadow-sm border border-amber-200">
+            {formatCountdown(timeLeft)}
           </span>
         </div>
-        <span className="text-sm font-extrabold tracking-wider bg-white px-3 py-1 rounded-xl shadow-sm border border-amber-200">
-          {formatCountdown(timeLeft)}
-        </span>
-      </div>
 
-      <div className="grid grid-cols-1 gap-6">
-        {/* Payment Account Details */}
-        <AppCard className="border-[#E5E4DE] rounded-3xl bg-white p-6 shadow-sm">
-          <h3 className="font-extrabold text-base text-zinc-800 tracking-tight pb-4 border-b border-[#F4F4F2] mb-6">
-            Thông tin chuyển khoản ngân hàng
-          </h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-            {/* QR Mockup */}
-            <div className="flex flex-col items-center justify-center p-4 bg-[#FAF9F5] border border-[#E5E4DE] rounded-2xl">
-              <div className="w-48 h-48 bg-white border border-[#E5E4DE] rounded-xl flex flex-col items-center justify-center relative overflow-hidden shadow-sm">
-                <QrCode className="h-32 w-32 text-zinc-800" />
-              </div>
-            </div>
-
-            {/* Bank text details */}
-            <div className="space-y-4">
-              <div className="flex justify-between items-center py-2 border-b border-[#F4F4F2]">
-                <span className="text-zinc-500 text-xs font-semibold">Tên ngân hàng</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-[#F4F4F2]">
-                <span className="text-zinc-500 text-xs font-semibold">Số tài khoản</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-[#F4F4F2]">
-                <span className="text-zinc-500 text-xs font-semibold">Tên chủ tài khoản</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-[#F4F4F2]">
-                <span className="text-zinc-500 text-xs font-semibold">Số tiền cần chuyển</span>
-                <span className="text-red-600 text-sm font-extrabold">
-                  {formatPrice(booking.totalPrice)} VNĐ
-                </span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-[#F4F4F2]">
-                <span className="text-zinc-500 text-xs font-semibold">Nội dung chuyển khoản</span>
-              </div>
-            </div>
-          </div>
-        </AppCard>
-
-        {/* Proof of Payment Upload Component */}
-        <AppCard className="border-[#E5E4DE] rounded-3xl bg-white p-6 shadow-sm">
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <h3 className="font-extrabold text-base text-zinc-800 tracking-tight pb-4 border-b border-[#F4F4F2] mb-4">
-              Tải lên minh chứng thanh toán
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+          {/* Payment Account Details */}
+          <AppCard className="border-[#E5E4DE] rounded-3xl bg-white p-6 shadow-sm">
+            <h3 className="font-extrabold text-base text-zinc-800 tracking-tight pb-4 border-b border-[#F4F4F2] mb-6">
+              Thông tin chuyển khoản ngân hàng
             </h3>
 
-            <div className="space-y-4">
-              <div className="flex flex-col w-full">
-                <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-[#E5E4DE] rounded-2xl cursor-pointer bg-[#FAF9F5] hover:bg-zinc-50 transition-colors">
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <Upload className="w-8 h-8 text-zinc-400 mb-2" />
-                    <p className="mb-2 text-sm text-zinc-500 font-semibold">
-                      <span className="text-[#0B3025]">Nhấp để tải lên</span> hoặc kéo thả file
-                    </p>
-                    <p className="text-xs text-zinc-400 font-semibold">
-                      PNG, JPG hoặc JPEG (Tối đa 5MB)
-                    </p>
-                  </div>
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept="image/png, image/jpeg, image/jpg"
-                    onChange={handleFileChange}
-                  />
-                </label>
-                {errors.paymentProof && (
-                  <p className="text-xs text-destructive font-semibold mt-1">
-                    {errors.paymentProof.message}
-                  </p>
-                )}
-              </div>
-
-              {/* Display selected file details */}
-              {paymentProof && (
-                <div className="flex items-center gap-3 p-3 bg-zinc-50 border border-[#E5E4DE] rounded-xl">
-                  <FileImage className="h-6 w-6 text-zinc-500" />
-                  <div className="flex-1 overflow-hidden">
-                    <p className="text-xs font-bold text-zinc-800 truncate">{paymentProof.name}</p>
-                    <p className="text-[10px] text-zinc-500 font-semibold">
-                      {(paymentProof.size / 1024).toFixed(0)} KB
-                    </p>
-                  </div>
-                  {paymentProofUrl && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+              {/* QR Mockup */}
+              <div className="flex flex-col items-center justify-center p-4 bg-[#FAF9F5] border border-[#E5E4DE] rounded-2xl">
+                <div className="w-48 h-48 bg-white border border-[#E5E4DE] rounded-xl flex flex-col items-center justify-center relative overflow-hidden shadow-sm">
+                  {booking.paymentQrUrl ? (
                     <img
-                      src={paymentProofUrl.startsWith('blob:') ? paymentProofUrl : ''}
-                      alt="Xem trước"
-                      className="w-12 h-12 rounded-lg object-cover border border-[#E5E4DE]"
+                      src={booking.paymentQrUrl}
+                      alt="Mã QR Thanh toán"
+                      className="w-full h-full object-contain p-2"
                     />
+                  ) : (
+                    <QrCode className="h-32 w-32 text-zinc-800" />
                   )}
                 </div>
-              )}
+              </div>
 
-              <div className="flex gap-4 pt-4">
-                <AppButton
-                  type="button"
-                  variant="ghost"
-                  onClick={async () => {
-                    if (!bookingId) return;
-                    setIsMutating(true);
-                    try {
-                      await tourService.updateBookingStatus(bookingId, 'CANCELLED');
-                      toast.success('Hủy giao dịch thành công.');
-                      navigate(getBookingDetailPath(bookingId));
-                    } catch {
-                      toast.error('Đã xảy ra lỗi khi hủy giao dịch.');
-                    } finally {
-                      setIsMutating(false);
-                    }
-                  }}
-                  disabled={isMutating}
-                  className="flex-1 text-zinc-500 font-bold hover:text-zinc-800"
-                >
-                  Hủy giao dịch
-                </AppButton>
-                <AppButton
-                  type="submit"
-                  disabled={isMutating || !paymentProof}
-                  className="flex-1 bg-[#0B3025] hover:bg-[#072019] text-white font-bold py-3.5 rounded-2xl border-none shadow-sm transition-colors"
-                >
-                  {isMutating ? 'Đang gửi...' : 'Gửi bằng chứng thanh toán'}
-                </AppButton>
+              {/* Bank text details */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center py-2 border-b border-[#F4F4F2]">
+                  <span className="text-zinc-500 text-xs font-semibold">Tên ngân hàng</span>
+                  <span className="text-zinc-800 text-xs font-bold">
+                    {booking.vendorBankName || '—'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-[#F4F4F2]">
+                  <span className="text-zinc-500 text-xs font-semibold">Số tài khoản</span>
+                  <span className="text-zinc-800 text-xs font-bold">
+                    {booking.vendorBankAccount || '—'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-[#F4F4F2]">
+                  <span className="text-zinc-500 text-xs font-semibold">Tên chủ tài khoản</span>
+                  <span className="text-zinc-800 text-xs font-bold">
+                    {booking.vendorCompanyName || '—'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-[#F4F4F2]">
+                  <span className="text-zinc-500 text-xs font-semibold">Số tiền cần chuyển</span>
+                  <span className="text-red-600 text-sm font-extrabold">
+                    {formatPrice(booking.totalPrice)} VNĐ
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-[#F4F4F2]">
+                  <span className="text-zinc-500 text-xs font-semibold">Nội dung chuyển khoản</span>
+                  <span className="text-zinc-800 text-xs font-bold select-all">
+                    {booking.bookingCode || '—'}
+                  </span>
+                </div>
               </div>
             </div>
-          </form>
-        </AppCard>
+          </AppCard>
+
+          {/* Proof of Payment Upload Component */}
+          <AppCard className="border-[#E5E4DE] rounded-3xl bg-white p-6 shadow-sm">
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <h3 className="font-extrabold text-base text-zinc-800 tracking-tight pb-4 border-b border-[#F4F4F2] mb-4">
+                Tải lên minh chứng thanh toán
+              </h3>
+
+              <div className="space-y-4">
+                <div className="flex flex-col w-full">
+                  <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-[#E5E4DE] rounded-2xl cursor-pointer bg-[#FAF9F5] hover:bg-zinc-50 transition-colors">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <Upload className="w-8 h-8 text-zinc-400 mb-2" />
+                      <p className="mb-2 text-sm text-zinc-500 font-semibold">
+                        <span className="text-[#0B3025]">Nhấp để tải lên</span> hoặc kéo thả file
+                      </p>
+                      <p className="text-xs text-zinc-400 font-semibold">
+                        PNG, JPG hoặc JPEG (Tối đa 10MB)
+                      </p>
+                    </div>
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/png, image/jpeg, image/jpg"
+                      onChange={handleFileChange}
+                    />
+                  </label>
+                  {errors.paymentProof && (
+                    <p className="text-xs text-destructive font-semibold mt-1">
+                      {errors.paymentProof.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Display selected file details */}
+                {paymentProof && (
+                  <div className="flex items-center gap-3 p-3 bg-zinc-50 border border-[#E5E4DE] rounded-xl">
+                    <FileImage className="h-6 w-6 text-zinc-500" />
+                    <div className="flex-1 overflow-hidden">
+                      <p className="text-xs font-bold text-zinc-800 truncate">
+                        {paymentProof.name}
+                      </p>
+                      <p className="text-[10px] text-zinc-500 font-semibold">
+                        {(paymentProof.size / 1024).toFixed(0)} KB
+                      </p>
+                    </div>
+                    {paymentProofUrl && (
+                      <img
+                        src={paymentProofUrl.startsWith('blob:') ? paymentProofUrl : ''}
+                        alt="Xem trước"
+                        className="w-12 h-12 rounded-lg object-cover border border-[#E5E4DE]"
+                      />
+                    )}
+                  </div>
+                )}
+
+                <div className="flex gap-4 pt-4">
+                  <AppButton
+                    type="button"
+                    variant="ghost"
+                    onClick={async () => {
+                      if (!bookingId) return;
+                      setIsMutating(true);
+                      try {
+                        await tourService.cancelBooking(
+                          bookingId,
+                          'Khách hàng tự hủy giao dịch thanh toán'
+                        );
+                        toast.success('Hủy giao dịch thành công.');
+                        navigate(getBookingDetailPath(bookingId));
+                      } catch {
+                        toast.error('Đã xảy ra lỗi khi hủy giao dịch.');
+                      } finally {
+                        setIsMutating(false);
+                      }
+                    }}
+                    disabled={isMutating}
+                    className="flex-1 text-zinc-500 font-bold hover:text-zinc-800"
+                  >
+                    Hủy giao dịch
+                  </AppButton>
+                  <AppButton
+                    type="submit"
+                    disabled={isMutating || !paymentProof}
+                    className="flex-1 bg-[#0B3025] hover:bg-[#072019] text-white font-bold py-3.5 rounded-2xl border-none shadow-sm transition-colors"
+                  >
+                    {isMutating ? 'Đang gửi...' : 'Gửi bằng chứng thanh toán'}
+                  </AppButton>
+                </div>
+              </div>
+            </form>
+          </AppCard>
+        </div>
       </div>
     </div>
   );

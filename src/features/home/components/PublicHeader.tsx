@@ -1,8 +1,9 @@
-import { Bell, ClipboardList, Compass, FileText, Key, LogOut, User } from 'lucide-react';
+import { Bell, LayoutDashboard, LogOut } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { queryClient } from '@/config/queryClient';
-import { PATHS, ROLES } from '@/constants';
+import { PATHS } from '@/constants';
+import { getRoleDashboardPath } from '@/constants/roles';
 import { authService } from '@/features/auth';
 import { mockNotifications } from '@/features/notifications/data/mockNotifications';
 import { profileKeys } from '@/features/profile/hooks/useProfile';
@@ -13,17 +14,11 @@ import { storage } from '@/utils/storage';
 
 const NAV_ITEMS = [
   { label: 'Trang chủ', path: PATHS.HOME },
-  { label: 'Nhóm', path: PATHS.GROUPS },
-  { label: 'Tin tức', path: PATHS.NEWS },
+  { label: 'Danh sách Tour', path: PATHS.TOURS },
+  { label: 'Ghép nhóm', path: PATHS.GROUPS },
+  { label: 'Bài viết', path: PATHS.NEWS },
 ];
 
-/**
- * PublicHeader — header cho landing page.
- * - Transparent over hero, blurs into glass on scroll.
- * - Chưa login: hiển thị "Sign in / Sign up".
- * - Đã login: hiển thị avatar + dropdown menu (Hồ sơ, Đăng xuất).
- * - Dark mode toggle included.
- */
 export default function PublicHeader() {
   const location = useLocation();
   const user = useAppStore((state) => state.user);
@@ -32,7 +27,6 @@ export default function PublicHeader() {
   const [scrolled, setScrolled] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Glassmorphism on scroll
   useEffect(() => {
     void location.pathname;
     const onScroll = () => setScrolled(window.scrollY > 80);
@@ -64,7 +58,7 @@ export default function PublicHeader() {
 
   const initial = user?.name?.charAt(0).toUpperCase() ?? 'A';
   const unreadCount = mockNotifications.filter((n) => !n.read).length;
-  const isTrekker = user?.roles?.map((r) => r.toLowerCase()).includes(ROLES.TREKKER);
+  const dashboardPath = getRoleDashboardPath(user?.roles);
 
   // On the home page the header starts transparent over the cinematic hero
   const isHome = location.pathname === PATHS.HOME;
@@ -163,48 +157,16 @@ export default function PublicHeader() {
                       <p className="truncate text-xs text-muted-foreground">{user.email}</p>
                     </div>
                     <div className="my-1 h-px bg-border" />
-                    <Link
-                      to={PATHS.PROFILE}
-                      onClick={() => setDropdownOpen(false)}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    >
-                      <User className="h-4 w-4" />
-                      Hồ sơ
-                    </Link>
-                    <Link
-                      to={PATHS.MY_TOURS}
-                      onClick={() => setDropdownOpen(false)}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    >
-                      <Compass className="h-4 w-4" />
-                      Tour của tôi
-                    </Link>
-                    {isTrekker && (
+                    {dashboardPath && (
                       <Link
-                        to={PATHS.MY_VENDOR_APPLICATIONS}
+                        to={dashboardPath}
                         onClick={() => setDropdownOpen(false)}
                         className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                       >
-                        <ClipboardList className="h-4 w-4" />
-                        Lịch sử đăng ký Vendor
+                        <LayoutDashboard className="h-4 w-4" />
+                        Bảng điều khiển
                       </Link>
                     )}
-                    <Link
-                      to={PATHS.BLOG_LIST}
-                      onClick={() => setDropdownOpen(false)}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    >
-                      <FileText className="h-4 w-4" />
-                      Bài viết của tôi
-                    </Link>
-                    <Link
-                      to={PATHS.CHANGE_PASSWORD}
-                      onClick={() => setDropdownOpen(false)}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    >
-                      <Key className="h-4 w-4" />
-                      Đổi mật khẩu
-                    </Link>
                     <div className="my-1 h-px bg-border" />
                     <button
                       type="button"

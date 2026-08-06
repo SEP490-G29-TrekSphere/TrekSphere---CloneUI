@@ -1,6 +1,9 @@
-import { Calendar, Eye, MapPin, Users } from 'lucide-react';
+import { Calendar, Clock, Eye, MapPin, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/useAppStore';
-import type { MatchingGroupItem } from '../services/companionGroupService';
+import { formatDate } from '@/utils/format';
+import type { MatchingGroupItem, MatchingGroupStatus } from '../services/companionGroupService';
 import type { CompanionGroup } from '../types';
 
 export type GroupCardData = CompanionGroup | MatchingGroupItem;
@@ -13,12 +16,57 @@ interface CompanionGroupCardProps {
   group: GroupCardData;
   onJoinGroup?: (group: GroupCardData) => void;
   onViewDetail?: (group: GroupCardData) => void;
+  layout?: 'list' | 'grid';
 }
 
-export function CompanionGroupCard({ group, onJoinGroup, onViewDetail }: CompanionGroupCardProps) {
+function StatusBadge({ status }: { status: MatchingGroupStatus | 'OPEN' }) {
+  const config = {
+    OPEN: { label: 'Đang mở', className: 'bg-emerald-500/90 text-white' },
+    FULL: { label: 'Đã đủ', className: 'bg-amber-500/90 text-white' },
+    CLOSED: { label: 'Đã đóng', className: 'bg-zinc-500/90 text-white' },
+    HIDDEN: { label: 'Ẩn', className: 'bg-zinc-400/90 text-white' },
+  };
+  const { label, className } = config[status] ?? config.OPEN;
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider shadow-sm',
+        className
+      )}
+    >
+      {label}
+    </span>
+  );
+}
+
+function AvatarCircle({ name, avatarUrl }: { name: string; avatarUrl?: string }) {
+  const initials = name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase();
+  return (
+    <div className="h-7 w-7 shrink-0 overflow-hidden rounded-full bg-emerald-200 text-emerald-900 flex items-center justify-center font-bold text-[10px] shadow-inner">
+      {avatarUrl ? (
+        <img src={avatarUrl} alt={name} className="h-full w-full object-cover" />
+      ) : (
+        <span>{initials}</span>
+      )}
+    </div>
+  );
+}
+
+export function CompanionGroupCard({
+  group,
+  onJoinGroup,
+  onViewDetail,
+  layout = 'grid',
+}: CompanionGroupCardProps) {
   const user = useAppStore((state) => state.user);
   const isApiData = isMatchingGroupItem(group);
 
+  const groupId = isApiData ? group.matchingGroupId : group.id;
   const title = isApiData ? group.groupName : group.title;
   const tourName = isApiData ? group.tourName : group.location;
   const currentMembers = isApiData ? group.currentSize : group.currentMembers;
@@ -28,135 +76,165 @@ export function CompanionGroupCard({ group, onJoinGroup, onViewDetail }: Compani
     : group.neededMembers;
   const ownerName = isApiData ? group.ownerName : group.leader.name;
   const ownerAvatarUrl = isApiData ? group.ownerAvatarUrl : group.leader.avatarUrl;
-  const ownerInitials = isApiData
-    ? group.ownerName
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .substring(0, 2)
-        .toUpperCase()
-    : group.leader.initials;
   const departureDate = isApiData ? group.targetDate : group.departureDate;
+  const deadline = isApiData ? group.matchingDeadline : undefined;
   const status = isApiData ? group.status : 'OPEN';
+  const isOwner = user && (isApiData ? group.ownerId === user.id : group.leader.id === user.id);
 
-  const handleCardClick = () => {
-    onViewDetail?.(group);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onViewDetail?.(group);
-    }
-  };
-
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={handleCardClick}
-      onKeyDown={handleKeyDown}
-      className="group relative bg-[#FAF8F5] dark:bg-card border border-stone-200/80 dark:border-border rounded-[2rem] p-3 transition-all duration-300 hover:shadow-xl flex flex-col justify-between cursor-pointer"
-    >
-      <div>
-        {/* Card Body */}
-        <div className="p-4 sm:p-5">
-          {/* Status Badge */}
-          <div className="flex items-center gap-2 mb-3">
-            <span
-              className={`px-3 py-1 rounded-full text-xs font-semibold shadow-sm ${
-                status === 'OPEN'
-                  ? 'bg-emerald-500/90 text-white'
-                  : status === 'FULL'
-                    ? 'bg-amber-500/90 text-white'
-                    : 'bg-stone-500/90 text-white'
-              }`}
-            >
-              {status === 'OPEN' ? 'Đang mở' : status === 'FULL' ? 'Đã đủ' : 'Đã đóng'}
-            </span>
-          </div>
-
-          {/* Title & Favorite Heart */}
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h3 className="font-bold text-lg sm:text-xl text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+  if (layout === 'list') {
+    return (
+      <article
+        className={cn(
+          'group flex flex-col gap-4 rounded-2xl bg-white p-3 shadow-sm ring-1 ring-border transition-all hover:shadow-md sm:flex-row sm:items-stretch sm:gap-5 sm:p-4'
+        )}
+      >
+        {/* Left: status + info */}
+        <div className="flex flex-1 flex-col justify-between gap-3">
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-2">
+              <StatusBadge status={status} />
+            </div>
+            <Link to={`/groups/${groupId}`}>
+              <h3 className="line-clamp-1 text-base font-bold text-primary transition-colors group-hover:text-primary/80 sm:text-lg">
                 {title}
               </h3>
-              {tourName && (
-                <div className="flex items-center gap-1 mt-1 text-xs text-emerald-700 dark:text-emerald-400 font-medium">
-                  <MapPin className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">{tourName}</span>
-                </div>
+            </Link>
+            {tourName && (
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <MapPin className="h-3.5 w-3.5 shrink-0 text-primary/70" />
+                <span className="truncate">{tourName}</span>
+              </div>
+            )}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <Calendar className="h-3.5 w-3.5 text-primary/70" />
+                <span>Khởi hành: {formatDate(departureDate)}</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <Users className="h-3.5 w-3.5 text-primary/70" />
+                <span>
+                  Cần {neededMembers} người ({currentMembers}/{maxMembers})
+                </span>
+              </span>
+              {deadline && (
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3.5 w-3.5 text-primary/70" />
+                  <span>Hạn: {new Date(deadline).toLocaleDateString('vi-VN')}</span>
+                </span>
               )}
             </div>
           </div>
 
-          {/* Meta Info List */}
-          <div className="mt-4 space-y-2 text-xs sm:text-sm text-stone-600 dark:text-muted-foreground">
-            {/* Departure Date */}
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-stone-500 shrink-0" />
-              <span>Khởi hành: {departureDate}</span>
-            </div>
-
-            {/* Recruitment Count */}
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-stone-500 shrink-0" />
-              <span>
-                Cần tìm {neededMembers} người (Đã có {currentMembers}/{maxMembers})
-              </span>
-            </div>
+          <div className="flex items-center gap-2">
+            <AvatarCircle name={ownerName} avatarUrl={ownerAvatarUrl} />
+            <span className="text-xs font-semibold text-foreground truncate">{ownerName}</span>
           </div>
         </div>
-      </div>
 
-      {/* Card Footer: Leader Avatar + Action Buttons */}
-      <div className="p-4 sm:p-5 pt-0 flex items-center justify-between gap-2 border-t border-stone-200/40 dark:border-border/40 mt-2">
-        {/* Leader Info */}
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="w-8 h-8 rounded-full bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-100 flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden shadow-inner">
-            {ownerAvatarUrl ? (
-              <img src={ownerAvatarUrl} alt={ownerName} className="w-full h-full object-cover" />
-            ) : (
-              <span>{ownerInitials}</span>
-            )}
-          </div>
-          <span className="text-xs font-semibold text-foreground truncate">{ownerName}</span>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        {/* Right: action buttons */}
+        <div className="flex shrink-0 flex-row items-center justify-between gap-3 sm:flex-col sm:items-end sm:justify-center sm:py-1">
           <button
             type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onViewDetail?.(group);
-            }}
-            className="flex items-center gap-1 px-3 py-2 bg-stone-200/80 hover:bg-stone-300/80 dark:bg-stone-800 dark:hover:bg-stone-700 text-foreground rounded-full text-xs font-bold transition-all cursor-pointer"
+            onClick={() => onViewDetail?.(group)}
+            className="inline-flex items-center gap-1 rounded-full border border-primary px-3.5 py-1.5 text-xs font-semibold text-primary transition-all hover:bg-primary hover:text-white"
           >
-            <Eye className="w-3.5 h-3.5" />
-            <span>Chi tiết</span>
+            <Eye className="h-3.5 w-3.5" />
+            Chi tiết
           </button>
-
-          {!(user && (isApiData ? group.ownerId === user.id : group.leader.id === user.id)) && (
+          {!isOwner && (
             <button
               type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onJoinGroup?.(group);
-              }}
               disabled={status !== 'OPEN'}
-              className={`px-3.5 py-2 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer ${
+              onClick={() => onJoinGroup?.(group)}
+              className={cn(
+                'rounded-full px-3.5 py-1.5 text-xs font-bold transition-all shadow-sm',
                 status === 'OPEN'
-                  ? 'bg-[#1f3933] hover:bg-[#162c28] text-white hover:scale-105 active:scale-95'
-                  : 'bg-stone-300 text-stone-500 cursor-not-allowed shadow-none'
-              }`}
+                  ? 'bg-primary text-white hover:bg-primary/90'
+                  : 'bg-muted text-muted-foreground cursor-not-allowed'
+              )}
             >
               {status === 'OPEN' ? 'Xin tham gia' : 'Đã đủ'}
             </button>
           )}
         </div>
+      </article>
+    );
+  }
+
+  // Grid layout
+  return (
+    <article className="group flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-border transition-all hover:shadow-md">
+      {/* Card header strip */}
+      <div className="flex items-center justify-between gap-2 bg-muted/40 px-4 pt-4 pb-3">
+        <StatusBadge status={status} />
+        <div className="flex items-center gap-1.5">
+          <AvatarCircle name={ownerName} avatarUrl={ownerAvatarUrl} />
+          <span className="text-xs font-semibold text-foreground truncate max-w-[100px]">
+            {ownerName}
+          </span>
+        </div>
       </div>
-    </div>
+
+      {/* Card body */}
+      <div className="flex flex-1 flex-col gap-3 p-4">
+        <Link to={`/groups/${groupId}`}>
+          <h3 className="line-clamp-2 text-base font-bold text-primary transition-colors group-hover:text-primary/80 min-h-[2.75rem]">
+            {title}
+          </h3>
+        </Link>
+
+        {tourName && (
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <MapPin className="h-3.5 w-3.5 shrink-0 text-primary/70" />
+            <span className="truncate">{tourName}</span>
+          </div>
+        )}
+
+        <div className="flex flex-col gap-1.5 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1.5">
+            <Calendar className="h-3.5 w-3.5 text-primary/70" />
+            Khởi hành: {formatDate(departureDate)}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <Users className="h-3.5 w-3.5 text-primary/70" />
+            Cần {neededMembers} người (Đã có {currentMembers}/{maxMembers})
+          </span>
+          {deadline && (
+            <span className="flex items-center gap-1.5">
+              <Clock className="h-3.5 w-3.5 text-primary/70" />
+              Hạn ghép: {new Date(deadline).toLocaleDateString('vi-VN')}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Card footer */}
+      <div className="flex items-center justify-between gap-2 border-t border-border px-4 py-3">
+        <button
+          type="button"
+          onClick={() => onViewDetail?.(group)}
+          className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-foreground transition-all hover:border-primary hover:text-primary"
+        >
+          <Eye className="h-3.5 w-3.5" />
+          Chi tiết
+        </button>
+
+        {!isOwner && (
+          <button
+            type="button"
+            disabled={status !== 'OPEN'}
+            onClick={() => onJoinGroup?.(group)}
+            className={cn(
+              'rounded-full px-3.5 py-1.5 text-xs font-bold transition-all shadow-sm',
+              status === 'OPEN'
+                ? 'bg-primary text-white hover:bg-primary/90 hover:scale-105 active:scale-95'
+                : 'bg-muted text-muted-foreground cursor-not-allowed'
+            )}
+          >
+            {status === 'OPEN' ? 'Xin tham gia' : 'Đã đủ'}
+          </button>
+        )}
+      </div>
+    </article>
   );
 }

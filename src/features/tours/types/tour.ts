@@ -433,6 +433,10 @@ export interface BookingDetailResponse {
   userEmail: string;
   userFullName: string;
   userPhone: string;
+  vendorBankName?: string;
+  vendorBankAccount?: string;
+  vendorCompanyName?: string;
+  paymentQrUrl?: string;
   participants: BookingParticipantFromApi[];
   reviewed?: boolean;
 }

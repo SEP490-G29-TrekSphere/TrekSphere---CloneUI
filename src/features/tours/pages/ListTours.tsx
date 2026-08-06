@@ -1,14 +1,8 @@
-import { LayoutGrid, List } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
-import {
-  TourCard,
-  TourPagination,
-  TourSearchBar,
-  type TourSearchValues,
-  ToursHero,
-} from '@/features/tours';
+import { TourCard, TourPagination, TourSearchBar, type TourSearchValues } from '@/features/tours';
+import TourFilterPanel from '@/features/tours/components/TourFilterPanel';
+import TourResultsHeader from '@/features/tours/components/TourResultsHeader';
+import { useTourPriceRange } from '@/features/tours/hooks/useTourPriceRange';
 import { useTours } from '@/features/tours/hooks/useTours';
 import type {
   ApiDifficulty,
@@ -17,7 +11,6 @@ import type {
   TourFilter,
   TourListParams,
 } from '@/features/tours/types';
-import { cn } from '@/lib/utils';
 import { useDebounce } from '@/shared/hooks';
 import { AppButton } from '@/shared/ui';
 
@@ -45,37 +38,15 @@ function resolveSort(sortBy: TourFilter['sortBy']): { sortBy: ApiSortField; sort
 
 const PAGE_SIZE = 6;
 
-const difficultyOptions: { value: ApiDifficulty | 'ALL'; label: string }[] = [
-  { value: 'ALL', label: 'Tất cả độ khó' },
-  { value: 'EASY', label: 'Dễ' },
-  { value: 'MODERATE', label: 'Trung bình' },
-  { value: 'HARD', label: 'Khó' },
-  { value: 'EXPERT', label: 'Cực thách thức' },
-];
-
-const sortOptions = [
-  { value: 'newest', label: 'Mới nhất' },
-  { value: 'price-asc', label: 'Giá: Thấp → Cao' },
-  { value: 'price-desc', label: 'Giá: Cao → Thấp' },
-  { value: 'duration-asc', label: 'Thời gian: Ngắn nhất' },
-  { value: 'duration-desc', label: 'Thời gian: Dài nhất' },
-  { value: 'name-asc', label: 'Tên: A → Z' },
-];
-
-function formatShortPrice(val: number): string {
-  if (val <= 0) return '0';
-  if (val >= 1000000) {
-    return `${(val / 1000000).toFixed(val % 1000000 === 0 ? 0 : 1)}M`;
-  }
-  if (val >= 1000) {
-    return `${(val / 1000).toFixed(val % 1000 === 0 ? 0 : 1)}K`;
-  }
-  return String(val);
-}
-
 /**
  * ListTours page. Handles responsive layout modes (list / grid).
- * Layout rearranged: Sidebar filters on the left, Tour content grid on the right.
+ * Layout: left sidebar filters + centered max-width content container.
+ *
+ * Price filtering strategy:
+ *  - Price bounds come from useTourPriceRange (2 x size=1 queries) — stable across page changes.
+ *  - Pagination is always server-side; price filter narrows the *current page* client-side.
+ *  - A page may legitimately render 0 cards while later pages still have matches; the empty
+ *    state and pagination are both rendered so the user can navigate past it.
  */
 export default function ListTours() {
   const [draft, setDraft] = useState<TourSearchValues>({
@@ -89,17 +60,13 @@ export default function ListTours() {
     sortBy: 'newest',
   });
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 0]);
-  const [isPriceFilterActive, setIsPriceFilterActive] = useState(false);
   const [page, setPage] = useState(0);
-  const [layout, setLayout] = useState<'list' | 'grid'>('grid'); // Default to grid layout to match mockup
+  const [layout, setLayout] = useState<'list' | 'grid'>('grid');
 
   const debouncedKeyword = useDebounce(draft.keyword, 400);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: setPage is a stable useState setter — not a dep
   useEffect(() => {
-    setFilters((prev) => {
-      if (prev.keyword === debouncedKeyword) return prev;
-      return { ...prev, keyword: debouncedKeyword };
-    });
     setPage(0);
   }, [debouncedKeyword]);
 
@@ -128,22 +95,13 @@ export default function ListTours() {
 
   const handlePriceRangeChange = (val: [number, number]) => {
     setPriceRange(val);
-    setIsPriceFilterActive(true);
     setPage(0);
   };
 
   const handleResetFilters = () => {
-    setDraft({
-      keyword: '',
-      location: '',
-      departureDate: '',
-      budget: '',
-    });
-    setFilters({
-      sortBy: 'newest',
-    });
-    setPriceRange([minPrice, maxPrice]);
-    setIsPriceFilterActive(false);
+    setDraft({ keyword: '', location: '', departureDate: '', budget: '' });
+    setFilters({ sortBy: 'newest' });
+    setPriceRange([0, 0]); // will be re-synced from useTourPriceRange
     setPage(0);
   };
 
@@ -154,240 +112,93 @@ export default function ListTours() {
     }
   };
 
+  // --- Price range from dedicated hook (stable across page changes) ---
+  const {
+    minPrice,
+    maxPrice,
+    isLoading: isPriceRangeLoading,
+  } = useTourPriceRange({
+    keyword: debouncedKeyword,
+    location: filters.location,
+    difficulty: filters.difficulty,
+  });
+
+  // Sync priceRange to the API-sourced bounds on initial load or when bounds change (if no active filter).
+  // "No active filter" means the range is still at the neutral [0,0] default.
+  useEffect(() => {
+    if (!isPriceRangeLoading && minPrice > 0 && priceRange[0] === 0 && priceRange[1] === 0) {
+      setPriceRange([minPrice, maxPrice]);
+    }
+  }, [minPrice, maxPrice, isPriceRangeLoading, priceRange]);
+
+  // Derived: is the user actively filtering by price?
+  const isPriceFilterActive =
+    (priceRange[0] > 0 || priceRange[1] > 0) &&
+    (priceRange[0] > minPrice || priceRange[1] < maxPrice);
+
+  // --- Server-side paginated query — always uses PAGE_SIZE ---
   const { sortBy, sortDir } = resolveSort(filters.sortBy);
 
   const queryParams = useMemo<TourListParams>(
     () => ({
-      keyword: filters.keyword,
+      keyword: debouncedKeyword,
       location: filters.location,
       difficulty: filters.difficulty,
-      page: isPriceFilterActive ? 0 : page,
-      size: isPriceFilterActive ? 100 : PAGE_SIZE,
+      page,
+      size: PAGE_SIZE,
       sortBy,
       sortDir,
     }),
-    [
-      filters.keyword,
-      filters.location,
-      filters.difficulty,
-      page,
-      sortBy,
-      sortDir,
-      isPriceFilterActive,
-    ]
+    [debouncedKeyword, filters.location, filters.difficulty, page, sortBy, sortDir]
   );
 
-  const { tours, totalPages, pageNumber, isLoading, error, refetch } = useTours(queryParams);
+  const { tours, totalElements, totalPages, pageNumber, isLoading, error, refetch } =
+    useTours(queryParams);
 
-  // Calculate dynamic min/max prices directly from current tours list without extra API queries
-  const { calculatedMinPrice, calculatedMaxPrice } = useMemo(() => {
-    if (!tours.length) return { calculatedMinPrice: 0, calculatedMaxPrice: 0 };
-    let min = Number.POSITIVE_INFINITY;
-    let max = Number.NEGATIVE_INFINITY;
-    for (const t of tours) {
-      if (t.basePrice !== undefined) {
-        if (t.basePrice < min) min = t.basePrice;
-        if (t.basePrice > max) max = t.basePrice;
-      }
-    }
-    return {
-      calculatedMinPrice: min === Number.POSITIVE_INFINITY ? 0 : min,
-      calculatedMaxPrice: max === Number.NEGATIVE_INFINITY ? 0 : max,
-    };
-  }, [tours]);
-
-  const minPrice = calculatedMinPrice;
-  const maxPrice = calculatedMaxPrice;
-  const isPriceRangeLoading = isLoading;
-
-  useEffect(() => {
-    if (isLoading || isPriceFilterActive) return;
-    setPriceRange([calculatedMinPrice, calculatedMaxPrice]);
-  }, [calculatedMinPrice, calculatedMaxPrice, isLoading, isPriceFilterActive]);
-
-  // Client-side price filtering
+  // Client-side price filter narrows the current page only
   const filteredTours = useMemo(() => {
+    if (!isPriceFilterActive || isLoading) return tours;
     return tours.filter((tour) => {
-      if (!isPriceFilterActive || isLoading || (priceRange[0] === 0 && priceRange[1] === 0)) {
-        return true;
-      }
       if (!tour.basePrice) return true;
       return tour.basePrice >= priceRange[0] && tour.basePrice <= priceRange[1];
     });
   }, [tours, priceRange, isLoading, isPriceFilterActive]);
 
-  const activeTotalCount = isLoading ? 0 : filteredTours.length;
-
-  const currentSortLabel =
-    sortOptions.find((option) => option.value === (filters.sortBy || 'newest'))?.label ||
-    'Mới nhất';
-
   return (
     <div className="min-h-screen bg-background pt-16">
-      <ToursHero />
-
       <div className="relative z-10">
-        <div className="mx-auto max-w-none w-full px-4 sm:px-6">
-          <TourSearchBar onSearch={handleSearch} initialValues={draft} />
+        {/* Centered max-width container — aligns search bar and grid */}
+        <div className="mx-auto max-w-[1400px] w-full px-4 sm:px-6 lg:px-8">
+          <TourSearchBar onSearch={handleSearch} initialValues={draft} className="mx-auto" />
 
           {/* Grid Layout below Search: Left Sidebar Filters, Right Content Area */}
           <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-12 sm:mt-14">
-            {/* LEFT COLUMN: Sidebar Filters & Contact Widget */}
+            {/* LEFT COLUMN: Sidebar Filters */}
             <aside className="lg:col-span-3 flex flex-col gap-6">
-              {/* Filter Panel Card */}
-              <div className="rounded-2xl border border-border bg-white p-5 shadow-xs">
-                <h3 className="mb-5 text-lg font-bold text-primary">Bộ lọc</h3>
-
-                {/* Section: Độ khó */}
-                <div className="mb-6">
-                  <span className="mb-3 block text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                    Độ khó
-                  </span>
-                  <div className="flex flex-col gap-2.5">
-                    {difficultyOptions.map((opt) => {
-                      const isActive =
-                        opt.value === 'ALL'
-                          ? filters.difficulty === undefined
-                          : filters.difficulty === opt.value;
-
-                      return (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          onClick={() => handleDifficultySelect(opt.value)}
-                          aria-pressed={isActive}
-                          className="flex items-center gap-3 text-left transition-colors hover:text-primary"
-                        >
-                          <span
-                            className={cn(
-                              'flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-all',
-                              isActive
-                                ? 'border-primary bg-primary text-white'
-                                : 'border-input bg-transparent'
-                            )}
-                          >
-                            {isActive && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
-                          </span>
-                          <span
-                            className={cn(
-                              'text-sm transition-all',
-                              isActive ? 'font-semibold text-primary' : 'text-muted-foreground'
-                            )}
-                          >
-                            {opt.label}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <hr className="my-5 border-border" />
-
-                {/* Section: Khoảng giá */}
-                <div className="mb-6">
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                      Khoảng giá (VND)
-                    </span>
-                    <span className="text-xs font-bold text-primary">
-                      {isPriceRangeLoading
-                        ? 'Đang tải...'
-                        : `${formatShortPrice(priceRange[0])} - ${formatShortPrice(priceRange[1])}`}
-                    </span>
-                  </div>
-                  <div className="px-1 py-4">
-                    <Slider
-                      value={priceRange}
-                      onValueChange={(val) => handlePriceRangeChange(val as [number, number])}
-                      min={minPrice}
-                      max={maxPrice > minPrice ? maxPrice : minPrice + 1}
-                      step={Math.max(1, Math.round((maxPrice - minPrice) / 100) || 1)}
-                      disabled={isPriceRangeLoading || (minPrice === 0 && maxPrice === 0)}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between text-[10px] font-semibold text-muted-foreground">
-                    <span>{formatShortPrice(minPrice)}</span>
-                    <span>{formatShortPrice(maxPrice)}</span>
-                  </div>
-                </div>
-
-                {/* Clear/Reset Button */}
-                <button
-                  type="button"
-                  onClick={handleResetFilters}
-                  className="w-full rounded-xl border border-input py-2 text-center text-xs font-semibold text-primary transition-all hover:bg-muted"
-                >
-                  Làm mới bộ lọc
-                </button>
-              </div>
+              <TourFilterPanel
+                difficulty={filters.difficulty}
+                priceRange={priceRange}
+                minPrice={minPrice}
+                maxPrice={maxPrice}
+                isPriceRangeLoading={isPriceRangeLoading}
+                onDifficultyChange={handleDifficultySelect}
+                onPriceRangeChange={handlePriceRangeChange}
+                onResetFilters={handleResetFilters}
+              />
             </aside>
 
-            {/* RIGHT COLUMN: Results list & Sort options */}
+            {/* RIGHT COLUMN: Results header + cards + pagination */}
             <main className="lg:col-span-9">
-              {/* Header Info Row */}
-              <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
-                <div>
-                  <h2 className="text-2xl font-bold text-primary">Danh sách tour</h2>
-                  <span className="text-xs text-muted-foreground">
-                    Hiển thị {activeTotalCount} hành trình
-                  </span>
-                </div>
-
-                {/* Sorting and Layout Controls */}
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <span className="hidden text-xs text-muted-foreground sm:inline">Sắp xếp:</span>
-                    <Select
-                      value={filters.sortBy || 'newest'}
-                      onValueChange={(val) => handleSortChange(val as TourFilter['sortBy'])}
-                    >
-                      <SelectTrigger className="h-10 rounded-full bg-white px-4 text-sm font-semibold text-primary hover:border-primary/50">
-                        <span>{currentSortLabel}</span>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {sortOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Layout switcher buttons */}
-                  <div className="flex items-center gap-1 rounded-full border border-input bg-white p-1">
-                    <button
-                      type="button"
-                      onClick={() => setLayout('list')}
-                      aria-pressed={layout === 'list'}
-                      className={cn(
-                        'rounded-full p-1.5 transition-colors',
-                        layout === 'list'
-                          ? 'bg-primary text-white font-semibold'
-                          : 'text-muted-foreground hover:bg-muted'
-                      )}
-                      aria-label="Hiển thị danh sách"
-                    >
-                      <List className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setLayout('grid')}
-                      aria-pressed={layout === 'grid'}
-                      className={cn(
-                        'rounded-full p-1.5 transition-colors',
-                        layout === 'grid'
-                          ? 'bg-primary text-white font-semibold'
-                          : 'text-muted-foreground hover:bg-muted'
-                      )}
-                      aria-label="Hiển thị lưới"
-                    >
-                      <LayoutGrid className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <TourResultsHeader
+                totalElements={totalElements}
+                filteredCount={filteredTours.length}
+                pageCount={tours.length}
+                isPriceFilterActive={isPriceFilterActive}
+                sortBy={filters.sortBy}
+                layout={layout}
+                onSortChange={handleSortChange}
+                onLayoutChange={setLayout}
+              />
 
               {/* Main List Rendering */}
               {isLoading ? (
@@ -395,31 +206,11 @@ export default function ListTours() {
               ) : error ? (
                 <FeaturedToursError onRetry={() => refetch()} />
               ) : filteredTours.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="h-8 w-8"
-                      aria-hidden="true"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
-                      />
-                    </svg>
-                  </div>
-                  <h3 className="mb-2 text-lg font-semibold text-primary">Không tìm thấy tour</h3>
-                  <p className="mb-6 max-w-sm text-sm text-muted-foreground">
-                    Không có tour nào phù hợp với bộ lọc hoặc khoảng giá của bạn. Thử thay đổi các
-                    tiêu chí.
-                  </p>
-                  <AppButton onClick={handleResetFilters}>Xóa tất cả bộ lọc</AppButton>
-                </div>
+                <EmptyState
+                  isPriceFilterActive={isPriceFilterActive}
+                  pageNumber={pageNumber + 1}
+                  onReset={handleResetFilters}
+                />
               ) : (
                 <div
                   className={
@@ -434,22 +225,88 @@ export default function ListTours() {
                 </div>
               )}
 
-              {/* Pagination controls */}
-              {!isPriceFilterActive && (
-                <div className="mt-8">
-                  <TourPagination
-                    pageNumber={pageNumber}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
-                  />
-                </div>
-              )}
+              {/* Pagination — always visible so user can navigate past price-empty pages */}
+              <div className="mt-8">
+                <TourPagination
+                  pageNumber={pageNumber}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
+              </div>
             </main>
           </div>
         </div>
 
         <div className="h-16 sm:h-24" />
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Sub-components
+// ---------------------------------------------------------------------------
+
+function EmptyState({
+  isPriceFilterActive,
+  onReset,
+}: {
+  isPriceFilterActive: boolean;
+  pageNumber: number;
+  onReset: () => void;
+}) {
+  if (isPriceFilterActive) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            className="h-8 w-8"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+            />
+          </svg>
+        </div>
+        <h3 className="mb-2 text-lg font-semibold text-primary">
+          Không có tour đáp ứng các tiêu chí lọc
+        </h3>
+        <AppButton onClick={onReset}>Xóa bộ lọc </AppButton>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={1.5}
+          stroke="currentColor"
+          className="h-8 w-8"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+          />
+        </svg>
+      </div>
+      <h3 className="mb-2 text-lg font-semibold text-primary">Không tìm thấy tour</h3>
+      <p className="mb-6 max-w-sm text-sm text-muted-foreground">
+        Không có tour nào phù hợp với bộ lọc của bạn. Thử thay đổi các tiêu chí.
+      </p>
+      <AppButton onClick={onReset}>Xóa tất cả bộ lọc</AppButton>
     </div>
   );
 }

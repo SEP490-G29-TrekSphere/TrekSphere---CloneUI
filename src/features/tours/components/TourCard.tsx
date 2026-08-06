@@ -59,7 +59,7 @@ function formatTourPrice(basePrice: number | undefined, priceStr: string): strin
  * Styled to match the premium TrekSphere visual mockup.
  */
 export default function TourCard({ tour, className = '', layout = 'list' }: TourCardProps) {
-  const [imgSrc, setImgSrc] = useState(tour.image);
+  const [imgSrc, setImgSrc] = useState(tour.image || FALLBACK_IMAGE);
   const formattedPrice = formatTourPrice(tour.basePrice, tour.price);
 
   if (layout === 'grid') {

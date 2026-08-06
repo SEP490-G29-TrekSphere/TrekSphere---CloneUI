@@ -1,18 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  AlertCircle,
-  Calendar,
-  Gift,
-  Info,
-  Plus,
-  ShieldCheck,
-  Trash2,
-  User,
-  Users,
-} from 'lucide-react';
+import { AlertCircle, Calendar, Gift, Plus, Trash2, User, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import * as z from 'zod';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { getBookingPaymentPath } from '@/constants/paths';
@@ -20,16 +10,13 @@ import { useTourDetail } from '@/features/tours/hooks/useTourDetail';
 import { tourService } from '@/features/tours/services/tourService';
 import type { ParticipantGender } from '@/features/tours/types';
 import { useVendorActiveVouchers } from '@/features/vendor-vouchers';
-import { AppButton, AppCard, AppFormInput } from '@/shared/ui';
+import { AppButton, AppCard, AppFormDatePicker, AppFormInput } from '@/shared/ui';
 import { toast } from '@/store/useToastStore';
 
 // Participant schema matching API POST /api/v1/bookings items
 const participantSchema = z.object({
   fullName: z.string().min(1, 'Vui lòng nhập họ tên đầy đủ'),
-  dateOfBirth: z
-    .string()
-    .min(1, 'Vui lòng chọn ngày sinh')
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày sinh không hợp lệ (YYYY-MM-DD)'),
+  dateOfBirth: z.string().min(1, 'Vui lòng chọn ngày sinh'),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER'] as const, {
     message: 'Giới tính không hợp lệ',
   }),
@@ -230,16 +217,22 @@ export default function BookTour() {
   const onFormSubmit = async (data: BookingFormValues) => {
     setIsSubmitting(true);
     try {
-      const formattedParticipants = data.participants.map((p) => ({
-        fullName: p.fullName.trim(),
-        dateOfBirth: p.dateOfBirth,
-        gender: p.gender,
-        idNumber: p.idNumber.trim(),
-        phone: p.phone.trim(),
-        email: p.email?.trim() || undefined,
-        address: p.address?.trim() || undefined,
-        specialRequirements: p.specialRequirements?.trim() || undefined,
-      }));
+      const formattedParticipants = data.participants.map((p) => {
+        let formattedDOB = p.dateOfBirth;
+        if (p.dateOfBirth?.includes('T')) {
+          formattedDOB = p.dateOfBirth.split('T')[0];
+        }
+        return {
+          fullName: p.fullName.trim(),
+          dateOfBirth: formattedDOB,
+          gender: p.gender,
+          idNumber: p.idNumber.trim(),
+          phone: p.phone.trim(),
+          email: p.email?.trim() || undefined,
+          address: p.address?.trim() || undefined,
+          specialRequirements: p.specialRequirements?.trim() || undefined,
+        };
+      });
 
       const bookingResponse = await tourService.createBooking({
         scheduleId: data.scheduleId,
@@ -259,7 +252,7 @@ export default function BookTour() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center">
+      <div className="flex min-h-[calc(100vh-4rem)] w-full items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#0B3025] border-t-transparent" />
       </div>
     );
@@ -267,15 +260,22 @@ export default function BookTour() {
 
   if (error || !tour) {
     return (
-      <div className="mx-auto max-w-md py-20 text-center">
-        <AlertCircle className="mx-auto mb-4 h-12 w-12 text-destructive" />
-        <h2 className="text-xl font-bold">Không tìm thấy thông tin tour</h2>
-        <p className="text-muted-foreground mt-2">
-          {error?.message || 'Có lỗi xảy ra khi tải dữ liệu.'}
-        </p>
-        <Link to="/tours" className="mt-4 inline-block text-primary hover:underline">
-          Quay lại danh sách tour
-        </Link>
+      <div className="min-h-[calc(100vh-4rem)] w-full flex flex-col items-center justify-center p-6 text-center">
+        <div className="max-w-md w-full bg-white p-8 rounded-3xl border border-red-100 shadow-lg space-y-4">
+          <AlertCircle className="w-12 h-12 text-rose-500 mx-auto" />
+          <h2 className="text-xl font-extrabold text-[#0B3025]">Không tìm thấy thông tin tour</h2>
+          <p className="text-xs text-zinc-500 leading-relaxed">
+            {error?.message || 'Có lỗi xảy ra khi tải dữ liệu.'}
+          </p>
+          <div className="pt-2">
+            <AppButton
+              onClick={() => navigate('/tours')}
+              className="bg-[#0B3025] hover:bg-[#072019] text-white font-bold px-6 py-2.5 rounded-full text-xs shadow-sm border-none cursor-pointer"
+            >
+              Quay lại danh sách tour
+            </AppButton>
+          </div>
+        </div>
       </div>
     );
   }
@@ -418,12 +418,12 @@ export default function BookTour() {
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <AppFormInput
+                    <AppFormDatePicker
                       control={control}
                       name={`participants.${index}.dateOfBirth`}
                       label="Ngày sinh *"
-                      type="date"
-                      className="bg-white rounded-xl border-[#E5E4DE]"
+                      placeholderText="Chọn ngày sinh..."
+                      className="bg-white rounded-xl border-[#E5E4DE] w-full"
                     />
                     <div className="space-y-2">
                       <label
@@ -640,16 +640,6 @@ export default function BookTour() {
             >
               {isSubmitting ? 'Đang tạo giao dịch...' : 'Thanh toán ngay'}
             </AppButton>
-
-            <div className="mt-4 flex items-center justify-center gap-1 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
-              <ShieldCheck className="h-4 w-4 text-emerald-600" />
-              <span>Thanh toán an toàn & bảo mật</span>
-            </div>
-            {/* Refund Info Alert */}
-            <div className="mt-4 p-4 bg-emerald-50 text-emerald-800 border border-emerald-100 rounded-2xl text-xs font-semibold flex gap-2">
-              <Info className="h-4 w-4 shrink-0 mt-0.5" />
-              <span>Chính sách hoàn tiền: Hoàn 100% nếu hủy trước khởi hành 7 ngày.</span>
-            </div>
           </AppCard>
         </div>
       </form>

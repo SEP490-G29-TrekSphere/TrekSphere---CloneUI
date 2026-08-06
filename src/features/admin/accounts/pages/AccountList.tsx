@@ -1,7 +1,7 @@
+import { Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useOutletContext } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useDebounce } from '@/shared/hooks';
-import type { AdminLayoutContext } from '@/shared/layout/AdminLayout';
 import { AccountFilterDropdown } from '../components/AccountFilterDropdown';
 import { AccountPagination } from '../components/AccountPagination';
 import { AccountTableRow } from '../components/AccountTableRow';
@@ -18,15 +18,15 @@ const PAGE_SIZE = 10;
  * - Bảng dữ liệu (5 cột) trong khối bo góc 24px.
  * - Pagination footer.
  *
- * Thanh search "Tìm kiếm tài khoản..." nằm ở Header chung của AdminLayout,
- * giá trị được truyền xuống qua Outlet context.
+ * Thanh search "Tìm kiếm tài khoản..." nằm ngay trong trang, cùng hàng với
+ * dropdown lọc theo loại tài khoản.
  */
 export default function AccountList() {
   const [filterRole, setFilterRole] = useState<AccountRole | 'ALL'>('ALL');
+  const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
 
-  const { searchValue } = useOutletContext<AdminLayoutContext>();
-  const debouncedSearch = useDebounce(searchValue, 400);
+  const debouncedSearch = useDebounce(search, 400);
 
   // Reset về trang 1 mỗi khi từ khóa tìm kiếm thay đổi.
   // biome-ignore lint/correctness/useExhaustiveDependencies: debouncedSearch chỉ dùng để trigger effect, không đọc giá trị trong body
@@ -60,13 +60,34 @@ export default function AccountList() {
           </p>
         </div>
 
-        <AccountFilterDropdown
-          value={filterRole}
-          onChange={(value) => {
-            setFilterRole(value);
-            setPage(1);
-          }}
-        />
+        {/* Toolbar: ô tìm kiếm nằm cùng hàng với dropdown lọc loại tài khoản */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative sm:w-72">
+            <span
+              className="absolute inset-y-0 left-4 flex items-center"
+              style={{ color: '#6F7B75' }}
+            >
+              <Search className="h-4 w-4" />
+            </span>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Tìm kiếm tài khoản..."
+              aria-label="Tìm kiếm tài khoản"
+              className="h-11 w-full rounded-full pl-11 pr-4 text-sm font-medium outline-none transition-colors"
+              style={{ backgroundColor: '#F0EEE6', color: '#06261D' }}
+            />
+          </div>
+
+          <AccountFilterDropdown
+            value={filterRole}
+            onChange={(value) => {
+              setFilterRole(value);
+              setPage(1);
+            }}
+          />
+        </div>
       </div>
 
       {/* Data table */}

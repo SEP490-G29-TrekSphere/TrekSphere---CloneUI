@@ -247,6 +247,7 @@ function VendorCard({ tour }: { tour: TourDetailFromApi }) {
   const includes = splitField(tour.includes);
   const navigate = useNavigate();
   const { user } = useAppStore();
+  const [isChatLoading, setIsChatLoading] = useState(false);
 
   const handleChatWithVendor = async () => {
     if (!user) {
@@ -254,6 +255,7 @@ function VendorCard({ tour }: { tour: TourDetailFromApi }) {
       return;
     }
 
+    setIsChatLoading(true);
     try {
       const response = await chatService.createConversation({
         conversationType: 'DIRECT',
@@ -276,6 +278,8 @@ function VendorCard({ tour }: { tour: TourDetailFromApi }) {
       navigate(chatPath, { state: { conversationId: response.conversationId } });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Không thể tạo cuộc trò chuyện');
+    } finally {
+      setIsChatLoading(false);
     }
   };
 
@@ -290,19 +294,19 @@ function VendorCard({ tour }: { tour: TourDetailFromApi }) {
         {tour.vendorLogoUrl ? (
           <img
             src={tour.vendorLogoUrl}
-            alt={tour.vendorName}
+            alt={tour.creatorName}
             className="h-10 w-10 rounded-full object-cover"
           />
         ) : (
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
-            {tour.vendorName.charAt(0)}
+            {tour.creatorName ? tour.creatorName.charAt(0) : 'N'}
           </div>
         )}
         <div>
-          <p className="text-sm font-bold text-foreground">{tour.vendorName}</p>
+          <p className="text-sm font-bold text-foreground">{tour.creatorName || 'Chủ tour'}</p>
           <p className="text-xs text-muted-foreground">
             <MapPin className="mr-0.5 inline h-3 w-3" />
-            Đơn vị lữ hành uy tín
+            Chủ tour / Nhà cung cấp
           </p>
         </div>
       </div>
@@ -341,7 +345,7 @@ function VendorCard({ tour }: { tour: TourDetailFromApi }) {
         className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
       >
         <MessageCircle className="h-4 w-4" />
-        Chat với nhà cung cấp
+        {isChatLoading ? 'Đang kết nối...' : 'Chat với nhà cung cấp'}
       </button>
 
       <p className="text-center text-[11px] text-muted-foreground">Phản hồi trong vòng 30 phút</p>

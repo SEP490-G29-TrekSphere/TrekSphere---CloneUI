@@ -224,4 +224,38 @@ export const companionGroupService = {
 
     return unwrapResponse(response);
   },
+
+  async getMyMatchingGroups(
+    params: {
+      status?: string;
+      keyword?: string;
+      page?: number;
+      size?: number;
+      sortBy?: string;
+      sortDir?: string;
+    } = {}
+  ): Promise<MatchingGroupPaginationResponse> {
+    const queryParams: Record<string, string> = {};
+    if (params.status) queryParams.status = params.status;
+    if (params.keyword !== undefined && params.keyword.trim() !== '') {
+      queryParams.keyword = params.keyword.trim();
+    }
+    if (params.page !== undefined) queryParams.page = String(params.page);
+    if (params.size !== undefined) queryParams.size = String(params.size);
+    if (params.sortBy) queryParams.sortBy = params.sortBy;
+    if (params.sortDir) queryParams.sortDir = params.sortDir;
+
+    const response = await ApiService<MatchingGroupPaginationResponse>(
+      '/matching-groups/owned',
+      'GET',
+      undefined,
+      queryParams
+    );
+
+    if (response.status === 401) {
+      return EMPTY_PAGINATION;
+    }
+
+    return unwrapResponse(response);
+  },
 };

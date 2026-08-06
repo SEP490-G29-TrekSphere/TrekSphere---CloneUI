@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PATHS } from '@/constants';
+import { getTrekkerBlogEditPath, PATHS } from '@/constants';
 import { AppSpinner, ConfirmActionDialog } from '@/shared/ui';
 import { useAppStore } from '@/store/useAppStore';
 import { toast } from '@/store/useToastStore';
@@ -16,7 +16,8 @@ type PendingAction = { blog: TrekkerBlogItem; type: 'hide' | 'delete' };
 
 /**
  * Trang "Blog của tôi" — màn hình quản lý blog của Trekker.
- * Header chung đã có sẵn từ MainLayout.
+ * Render bên trong TrekkerLayout (sidebar portal), nên mọi điều hướng phải
+ * dùng path `/trekker/blog*` để không rơi ra ngoài layout.
  */
 export default function MyBlogList() {
   const navigate = useNavigate();
@@ -46,7 +47,7 @@ export default function MyBlogList() {
   };
 
   const handleEditBlog = (blog: TrekkerBlogItem) => {
-    navigate(`/blog/edit/${blog.blogId}`);
+    navigate(getTrekkerBlogEditPath(blog.blogId));
   };
 
   const handleConfirmAction = () => {
@@ -103,7 +104,7 @@ export default function MyBlogList() {
 
           <button
             type="button"
-            onClick={() => navigate(PATHS.BLOG_CREATE)}
+            onClick={() => navigate(PATHS.TREKKER_BLOG_CREATE)}
             className="inline-flex shrink-0 items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
             style={{ backgroundColor: '#06261D' }}
           >

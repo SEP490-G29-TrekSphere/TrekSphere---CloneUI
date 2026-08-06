@@ -4,6 +4,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { PATHS } from '@/constants';
 import { ScheduleFormDialog } from '@/features/vendor-tours/components/ScheduleFormDialog';
 import { ScheduleTableRow } from '@/features/vendor-tours/components/ScheduleTableRow';
+import {
+  NOT_SCHEDULABLE_REASON,
+  SCHEDULABLE_STATUSES,
+} from '@/features/vendor-tours/components/TourTableRow';
 import { useVendorScheduleMutations } from '@/features/vendor-tours/hooks/useVendorScheduleMutations';
 import { useVendorTourDetail } from '@/features/vendor-tours/hooks/useVendorTourDetail';
 import type { CreateSchedulePayload, UpdateSchedulePayload } from '@/features/vendor-tours/types';
@@ -71,6 +75,10 @@ export default function TourSchedules() {
     );
   }
 
+  // Vào thẳng màn này bằng URL vẫn có thể lọt qua nút lịch (đã disable) ở bảng danh sách tour,
+  // nên phải kiểm tra lại trạng thái ngay tại đây — BE chặn bằng mã lỗi 4206.
+  const canSchedule = SCHEDULABLE_STATUSES.has(tour.status);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -95,7 +103,9 @@ export default function TourSchedules() {
         <button
           type="button"
           onClick={() => setCreateDialogOpen(true)}
-          className="inline-flex items-center rounded-full px-5 py-2.5 text-sm font-semibold text-white"
+          disabled={!canSchedule}
+          title={canSchedule ? undefined : NOT_SCHEDULABLE_REASON}
+          className="inline-flex items-center rounded-full px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
           style={{ backgroundColor: '#06261D' }}
         >
           + Thêm lịch mới

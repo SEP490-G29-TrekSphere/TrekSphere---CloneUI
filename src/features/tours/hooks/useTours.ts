@@ -3,11 +3,11 @@ import { type TourListResponse, tourService } from '@/features/tours/services/to
 import type { ApiDifficulty, Tour, TourApiItem, TourListParams } from '@/features/tours/types';
 
 const DIFFICULTY_MAP: Record<ApiDifficulty, Tour['level']> = {
-  HARD: 'Khó',
-  MODERATE: 'Trung bình',
   EASY: 'Dễ',
-  EXPERT: 'Khó',
-  BEGINNER: 'Khám phá',
+  MODERATE: 'Trung bình',
+  HARD: 'Khó',
+  EXPERT: 'Khám phá', // LevelBadge renders 'Khám phá' as "Cực khó" with rose color
+  BEGINNER: 'Dễ',
 };
 
 function formatPrice(price: number): string {

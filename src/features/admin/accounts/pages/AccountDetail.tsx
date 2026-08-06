@@ -15,8 +15,6 @@ import { ACCOUNT_GENDER_LABELS } from '../types.detail';
  * Chỉ hiển thị các trường thật sự có trong `UserProfileResponse` của BE
  * (`GET /users/{userId}`) — không hiển thị số liệu giả (tour, chi tiêu,
  * đánh giá, vị trí bản đồ) vì BE chưa có API cung cấp các dữ liệu này.
- *
- * Thanh search được đẩy lên Header chung của AdminLayout.
  */
 /** Mảng id tĩnh cho skeleton — tránh dùng index làm key (Biome noArrayIndexKey). */
 const SKELETON_LINES = ['s1', 's2', 's3', 's4', 's5', 's6', 's7'] as const;
@@ -58,8 +56,9 @@ export default function AccountDetail() {
       });
   };
 
-  const isLocked = account?.status === 'LOCKED';
-  const isDeactivated = account?.status === 'DEACTIVATED';
+  // Mọi trạng thái khác ACTIVE đều coi là "đang bị khóa" → nút chuyển sang mở
+  // khóa. BE khóa bằng DEACTIVATED; LOCKED chỉ còn tồn tại ở dữ liệu cũ.
+  const isLocked = Boolean(account) && account?.status !== 'ACTIVE';
 
   return (
     <div className="space-y-6">
@@ -183,15 +182,12 @@ export default function AccountDetail() {
           <div className="space-y-5">
             <div
               className="rounded-3xl p-5"
-              style={{
-                border: isDeactivated ? '1px solid #E6E2D1' : '2px dashed #EF4444',
-                backgroundColor: isDeactivated ? '#FFFFFF' : '#FEF2F2',
-              }}
+              style={{ border: '2px dashed #EF4444', backgroundColor: '#FEF2F2' }}
             >
               <div className="mb-4 flex items-center gap-2">
                 <div
                   className="flex h-8 w-8 items-center justify-center rounded-full"
-                  style={{ backgroundColor: isDeactivated ? '#F0EEE6' : '#FEE2E2' }}
+                  style={{ backgroundColor: '#FEE2E2' }}
                 >
                   <svg
                     width="16"
@@ -202,73 +198,61 @@ export default function AccountDetail() {
                   >
                     <path
                       d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
-                      stroke={isDeactivated ? '#6F7B75' : '#DC2626'}
+                      stroke="#DC2626"
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     />
                   </svg>
                 </div>
-                <span
-                  className="font-bold"
-                  style={{ color: isDeactivated ? '#6F7B75' : '#DC2626' }}
-                >
-                  {isDeactivated ? 'Tài khoản đã vô hiệu hóa' : 'Tác vụ nguy hiểm'}
+                <span className="font-bold" style={{ color: '#DC2626' }}>
+                  Tác vụ nguy hiểm
                 </span>
               </div>
 
-              {isDeactivated ? (
-                <p className="text-sm" style={{ color: '#6F7B75' }}>
-                  Tài khoản này đã bị người dùng tự vô hiệu hóa. Admin không thể khóa hoặc mở khóa
-                  tài khoản ở trạng thái này.
-                </p>
-              ) : (
-                <>
-                  <p className="mb-5 text-sm" style={{ color: '#6F7B75' }}>
-                    Thao tác dưới đây có thể ảnh hưởng nghiêm trọng đến quyền truy cập của người
-                    dùng. Vui lòng cân nhắc kỹ trước khi thực hiện.
-                  </p>
+              <p className="mb-5 text-sm" style={{ color: '#6F7B75' }}>
+                Thao tác dưới đây có thể ảnh hưởng nghiêm trọng đến quyền truy cập của người dùng.
+                Vui lòng cân nhắc kỹ trước khi thực hiện.
+              </p>
 
-                  {/* Lock / Unlock account */}
-                  <button
-                    type="button"
-                    className="flex w-full items-center justify-between rounded-2xl border p-4 transition-colors"
-                    style={{
-                      borderColor: '#EF4444',
-                      backgroundColor: '#FFFFFF',
-                    }}
-                    onClick={handleLockUnlock}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#FEF2F2';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = '#FFFFFF';
-                    }}
-                  >
-                    <div className="text-left">
-                      <div className="text-sm font-semibold" style={{ color: '#DC2626' }}>
-                        {isLocked ? 'MỞ KHÓA TÀI KHOẢN' : 'KHÓA TÀI KHOẢN'}
-                      </div>
-                      <div className="mt-0.5 text-xs" style={{ color: '#6F7B75' }}>
-                        {isLocked
-                          ? 'Cho phép người dùng đăng nhập trở lại'
-                          : 'Tạm thời vô hiệu hóa quyền truy cập'}
-                      </div>
-                    </div>
-                    {isLocked ? (
-                      <Unlock className="h-5 w-5 shrink-0" style={{ color: '#DC2626' }} />
-                    ) : (
-                      <Lock className="h-5 w-5 shrink-0" style={{ color: '#DC2626' }} />
-                    )}
-                  </button>
+              {/* Lock / Unlock account */}
+              <button
+                type="button"
+                className="flex w-full items-center justify-between rounded-2xl border p-4 transition-colors"
+                style={{
+                  borderColor: '#EF4444',
+                  backgroundColor: '#FFFFFF',
+                }}
+                onClick={handleLockUnlock}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#FEF2F2';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#FFFFFF';
+                }}
+              >
+                <div className="text-left">
+                  <div className="text-sm font-semibold" style={{ color: '#DC2626' }}>
+                    {isLocked ? 'MỞ KHÓA TÀI KHOẢN' : 'KHÓA TÀI KHOẢN'}
+                  </div>
+                  <div className="mt-0.5 text-xs" style={{ color: '#6F7B75' }}>
+                    {isLocked
+                      ? 'Cho phép người dùng đăng nhập trở lại'
+                      : 'Tạm thời vô hiệu hóa quyền truy cập'}
+                  </div>
+                </div>
+                {isLocked ? (
+                  <Unlock className="h-5 w-5 shrink-0" style={{ color: '#DC2626' }} />
+                ) : (
+                  <Lock className="h-5 w-5 shrink-0" style={{ color: '#DC2626' }} />
+                )}
+              </button>
 
-                  {/* Warning note */}
-                  <p className="mt-4 text-xs italic" style={{ color: '#9CA3AF' }}>
-                    Lưu ý: Mọi thao tác trong vùng này sẽ được lưu vào Nhật ký Hệ thống (System
-                    Audit Log).
-                  </p>
-                </>
-              )}
+              {/* Warning note */}
+              <p className="mt-4 text-xs italic" style={{ color: '#9CA3AF' }}>
+                Lưu ý: Mọi thao tác trong vùng này sẽ được lưu vào Nhật ký Hệ thống (System Audit
+                Log).
+              </p>
             </div>
           </div>
         </div>

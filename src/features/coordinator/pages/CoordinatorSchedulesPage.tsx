@@ -15,6 +15,8 @@ import {
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCoordinatorSessionOperationsPath } from '@/constants';
+import { parseIsoDate, toIsoDate } from '@/lib';
+import { AppDatePicker } from '@/shared/ui';
 import { useCoordinatorSchedules } from '../hooks/useCoordinatorSchedules';
 import type { CoordinatorScheduleStatus } from '../types';
 
@@ -176,14 +178,17 @@ export default function CoordinatorSchedulesPage() {
               <label className="mb-1 block text-xs font-bold" style={{ color: '#06261D' }}>
                 Khởi hành từ ngày
               </label>
-              <input
-                type="date"
-                value={departureDateFrom}
-                onChange={(e) => {
-                  setDepartureDateFrom(e.target.value);
+              <AppDatePicker
+                selected={parseIsoDate(departureDateFrom)}
+                onChange={(date: Date | null) => {
+                  setDepartureDateFrom(toIsoDate(date));
                   setPage(0);
                 }}
-                className="w-full rounded-xl border px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                isClearable
+                ariaLabel="Khởi hành từ ngày"
+                placeholderText="Từ ngày..."
+                maxDate={parseIsoDate(departureDateTo) ?? undefined}
+                className="w-full cursor-pointer rounded-xl border px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-600"
                 style={{ borderColor: '#E0DCD1', backgroundColor: '#FAF8F1' }}
               />
             </div>
@@ -193,14 +198,17 @@ export default function CoordinatorSchedulesPage() {
               <label className="mb-1 block text-xs font-bold" style={{ color: '#06261D' }}>
                 Đến ngày
               </label>
-              <input
-                type="date"
-                value={departureDateTo}
-                onChange={(e) => {
-                  setDepartureDateTo(e.target.value);
+              <AppDatePicker
+                selected={parseIsoDate(departureDateTo)}
+                onChange={(date: Date | null) => {
+                  setDepartureDateTo(toIsoDate(date));
                   setPage(0);
                 }}
-                className="w-full rounded-xl border px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                isClearable
+                ariaLabel="Đến ngày"
+                placeholderText="Đến ngày..."
+                minDate={parseIsoDate(departureDateFrom) ?? undefined}
+                className="w-full cursor-pointer rounded-xl border px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-600"
                 style={{ borderColor: '#E0DCD1', backgroundColor: '#FAF8F1' }}
               />
             </div>

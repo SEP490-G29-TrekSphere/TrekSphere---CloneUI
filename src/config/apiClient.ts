@@ -347,7 +347,7 @@ const handleError = (error: unknown): ApiResponse<never> => {
         }
       | undefined;
     const fieldErrors = responseData?.errors
-      ?.map((e) => (e.field ? `${e.field}: ${e.message}` : e.message))
+      ?.map((e) => e.message)
       .filter(Boolean)
       .join('; ');
     const message = fieldErrors || responseData?.message || responseData?.error || error.message;

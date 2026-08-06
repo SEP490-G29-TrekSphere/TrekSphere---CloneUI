@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,6 +11,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { parseIsoDate, toIsoDate } from '@/lib';
+import { AppDatePicker } from '@/shared/ui';
 import type { ApiScheduleStatus, CreateSchedulePayload, UpdateSchedulePayload } from '../types';
 
 const STATUS_OPTIONS: Array<{ value: ApiScheduleStatus; label: string }> = [
@@ -19,6 +21,11 @@ const STATUS_OPTIONS: Array<{ value: ApiScheduleStatus; label: string }> = [
   { value: 'CANCELLED', label: 'Đã hủy' },
   { value: 'COMPLETED', label: 'Đã hoàn thành' },
 ];
+
+/** Hôm nay dạng `yyyy-MM-dd` — cùng định dạng với giá trị lưu trong form nên so sánh chuỗi là đủ. */
+function todayIso(): string {
+  return toIsoDate(new Date());
+}
 
 const scheduleFormSchema = z
   .object({
@@ -93,6 +100,8 @@ export function ScheduleFormDialog({
 
   const {
     register,
+    control,
+    watch,
     handleSubmit,
     reset,
     setError,
@@ -102,6 +111,9 @@ export function ScheduleFormDialog({
     defaultValues: { ...EMPTY_DEFAULTS, ...defaultValues },
   });
 
+  // Ngày kết thúc không được chọn trước ngày khởi hành (cùng ràng buộc với `.refine` của zod).
+  const departureDate = watch('departureDate');
+
   // Đổ lại giá trị mỗi lần dialog mở, tránh giữ dữ liệu của lịch/lần mở trước (cho lịch khác).
   // biome-ignore lint/correctness/useExhaustiveDependencies: chỉ cần trigger reset khi mở dialog
   useEffect(() => {
@@ -109,6 +121,13 @@ export function ScheduleFormDialog({
   }, [open]);
 
   const submit = handleSubmit((values) => {
+    // Chỉ chặn ngày quá khứ khi TẠO lịch mới — lịch cũ (đã khởi hành) vẫn phải sửa được
+    // các thông tin khác như giá/số chỗ/trạng thái, không thể bắt dời ngày lên tương lai.
+    if (!isEdit && values.departureDate < todayIso()) {
+      setError('departureDate', { message: 'Ngày khởi hành không được ở trong quá khứ' });
+      return;
+    }
+
     if (isEdit && values.availableSlots < bookedSlots) {
       setError('availableSlots', {
         message: `Không thể đặt thấp hơn số chỗ đã đặt (${bookedSlots}).`,
@@ -175,12 +194,22 @@ export function ScheduleFormDialog({
               >
                 Ngày khởi hành <span className="text-red-500">*</span>
               </label>
-              <input
-                id="departureDate"
-                type="date"
-                {...register('departureDate')}
-                className="w-full rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-1"
-                style={{ backgroundColor: '#F8F6EF', color: '#06261D' }}
+              <Controller
+                name="departureDate"
+                control={control}
+                render={({ field }) => (
+                  <AppDatePicker
+                    id="departureDate"
+                    selected={parseIsoDate(field.value)}
+                    onChange={(date: Date | null) => field.onChange(toIsoDate(date))}
+                    onBlur={field.onBlur}
+                    // Lịch cũ (đã khởi hành) vẫn phải sửa được thông tin khác nên không chặn quá khứ khi edit.
+                    minDate={isEdit ? undefined : new Date()}
+                    className="w-full cursor-pointer rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-1"
+                    style={{ backgroundColor: '#F8F6EF', color: '#06261D' }}
+                    placeholderText="Chọn ngày khởi hành"
+                  />
+                )}
               />
               {errors.departureDate && (
                 <p className="mt-1 text-xs text-red-500">{errors.departureDate.message}</p>
@@ -194,12 +223,21 @@ export function ScheduleFormDialog({
               >
                 Ngày kết thúc <span className="text-red-500">*</span>
               </label>
-              <input
-                id="returnDate"
-                type="date"
-                {...register('returnDate')}
-                className="w-full rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-1"
-                style={{ backgroundColor: '#F8F6EF', color: '#06261D' }}
+              <Controller
+                name="returnDate"
+                control={control}
+                render={({ field }) => (
+                  <AppDatePicker
+                    id="returnDate"
+                    selected={parseIsoDate(field.value)}
+                    onChange={(date: Date | null) => field.onChange(toIsoDate(date))}
+                    onBlur={field.onBlur}
+                    minDate={parseIsoDate(departureDate) ?? undefined}
+                    className="w-full cursor-pointer rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-1"
+                    style={{ backgroundColor: '#F8F6EF', color: '#06261D' }}
+                    placeholderText="Chọn ngày kết thúc"
+                  />
+                )}
               />
               {errors.returnDate && (
                 <p className="mt-1 text-xs text-red-500">{errors.returnDate.message}</p>
