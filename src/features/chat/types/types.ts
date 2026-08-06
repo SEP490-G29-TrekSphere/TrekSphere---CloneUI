@@ -10,6 +10,7 @@ export interface Conversation {
   lastMessage: string;
   lastMessageTime: string;
   unread: boolean;
+  unreadCount?: number;
   tag?: Tag;
   tourName?: string;
   timestamp: string;
