@@ -10,6 +10,7 @@ export interface Conversation {
   lastMessage: string;
   lastMessageTime: string;
   unread: boolean;
+  unreadCount?: number;
   tag?: Tag;
   tourName?: string;
   timestamp: string;
@@ -38,6 +39,7 @@ export interface ConversationResponse {
   lastMessageAt: string;
   lastMessageContent: string;
   unreadCount: number;
+  isNew?: boolean;
 }
 
 export interface PaginationResponse<T> {

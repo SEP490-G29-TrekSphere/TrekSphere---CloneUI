@@ -322,6 +322,7 @@ export interface TourDetailFromApi {
   createdAt: string;
   updatedAt: string | null;
   vendorId: string;
+  vendorManagerId: string;
   vendorName: string;
   vendorLogoUrl: string | null;
   vendorContactEmail: string | null;
