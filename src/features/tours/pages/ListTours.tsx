@@ -249,7 +249,6 @@ export default function ListTours() {
 
 function EmptyState({
   isPriceFilterActive,
-  pageNumber,
   onReset,
 }: {
   isPriceFilterActive: boolean;
@@ -277,12 +276,8 @@ function EmptyState({
           </svg>
         </div>
         <h3 className="mb-2 text-lg font-semibold text-primary">
-          Không có tour trong khoảng giá này
+          Không có tour đáp ứng các tiêu chí lọc
         </h3>
-        <p className="mb-6 max-w-sm text-sm text-muted-foreground">
-          Trang {pageNumber} không có tour nào khớp khoảng giá đã chọn. Thử chuyển trang hoặc nới
-          rộng khoảng giá.
-        </p>
         <AppButton onClick={onReset}>Xóa bộ lọc </AppButton>
       </div>
     );

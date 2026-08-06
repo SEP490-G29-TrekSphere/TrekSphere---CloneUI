@@ -33,6 +33,9 @@ const MyBlogList = lazy(() => import('@/features/trekker-community/pages/MyBlogL
 const CreateBlogPost = lazy(() => import('@/features/trekker-community/pages/CreateBlogPost'));
 const ChatList = lazy(() => import('@/features/chat/pages/ChatList'));
 const CompanionGroups = lazy(() => import('@/features/companion-groups/pages/CompanionGroupsPage'));
+const MyCompanionGroupsPage = lazy(
+  () => import('@/features/companion-groups/pages/MyCompanionGroupsPage')
+);
 const CreateCompanionGroup = lazy(
   () => import('@/features/companion-groups/pages/CreateCompanionGroupPage')
 );
@@ -170,6 +173,7 @@ export default function AppRoutes() {
             element={<EditProfile returnPath={PATHS.TREKKER_PROFILE} />}
           />
           <Route path={PATHS.TREKKER_MY_TOURS} element={<MyBookings useTrekkerPaths />} />
+          <Route path={PATHS.TREKKER_MY_GROUPS} element={<MyCompanionGroupsPage />} />
           <Route path={PATHS.TREKKER_VENDOR_APPLICATIONS} element={<MyApplications />} />
           <Route path={PATHS.TREKKER_BLOG_LIST} element={<MyBlogList />} />
           <Route path={PATHS.TREKKER_BLOG_CREATE} element={<CreateBlogPost />} />

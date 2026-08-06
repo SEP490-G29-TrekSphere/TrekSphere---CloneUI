@@ -1,4 +1,13 @@
-import { ClipboardList, Compass, FileText, Key, LogOut, MessageSquare, User } from 'lucide-react';
+import {
+  ClipboardList,
+  Compass,
+  FileText,
+  Key,
+  LogOut,
+  MessageSquare,
+  User,
+  Users,
+} from 'lucide-react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { PATHS } from '@/constants';
 import { useLogout } from '@/features/auth/hooks/useLogout';
@@ -7,6 +16,7 @@ import { useAppStore } from '@/store/useAppStore';
 const navItems = [
   { name: 'Hồ sơ', path: PATHS.TREKKER_PROFILE, icon: User, disabled: false },
   { name: 'Tour của tôi', path: PATHS.TREKKER_MY_TOURS, icon: Compass, disabled: false },
+  { name: 'Nhóm của tôi', path: PATHS.TREKKER_MY_GROUPS, icon: Users, disabled: false },
   {
     name: 'Lịch sử đăng ký Vendor',
     path: PATHS.TREKKER_VENDOR_APPLICATIONS,

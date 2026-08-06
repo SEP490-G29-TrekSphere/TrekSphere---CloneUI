@@ -701,17 +701,6 @@ export default function BookingDetail({
               lastSentAt={sosSentAt}
             />
           )}
-
-          {/* Additional info badge */}
-          <div className="p-5 bg-white border border-[#E5E4DE] rounded-3xl text-zinc-500 font-semibold text-xs space-y-2">
-            <div className="flex items-center gap-2 text-zinc-800 font-bold">
-              <ShieldCheck className="h-4 w-4 text-[#0B3025]" />
-              <span>Bảo đảm từ TrekSphere</span>
-            </div>
-            <p className="text-[11px] text-zinc-500 leading-relaxed">
-              Mọi thông tin về chuyến đi và vé sẽ được gửi trực tiếp tới email đăng ký của bạn.
-            </p>
-          </div>
         </div>
       </div>
 
@@ -824,7 +813,7 @@ export default function BookingDetail({
                     thả file
                   </p>
                   <p className="text-[11px] text-zinc-400 font-semibold">
-                    PNG, JPG hoặc JPEG (Tối đa 5MB)
+                    PNG, JPG hoặc JPEG (Tối đa 10MB)
                   </p>
                 </div>
                 <input

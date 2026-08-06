@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { AppInput } from '@/shared/ui';
+import { AppDatePicker } from '@/shared/ui';
 import type { ApiScheduleStatus, CreateSchedulePayload, UpdateSchedulePayload } from '../types';
 
 const STATUS_OPTIONS: Array<{ value: ApiScheduleStatus; label: string }> = [
@@ -71,6 +71,12 @@ export interface ScheduleFormDialogProps {
   onSubmit: (payload: CreateSchedulePayload | UpdateSchedulePayload) => void;
 }
 
+const parseLocalDate = (dateStr: string) => {
+  if (!dateStr) return null;
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
 /**
  * Dialog dùng chung cho Tạo lịch khởi hành (`POST .../schedules`) và Sửa lịch
  * (`PUT .../schedules/{scheduleId}`) — chỉ mode 'edit' mới hiện ô Trạng thái,
@@ -95,6 +101,7 @@ export function ScheduleFormDialog({
   const {
     register,
     handleSubmit,
+    control,
     reset,
     setError,
     formState: { errors },
@@ -176,12 +183,29 @@ export function ScheduleFormDialog({
               >
                 Ngày khởi hành <span className="text-red-500">*</span>
               </label>
-              <AppInput
-                id="departureDate"
-                type="date"
-                {...register('departureDate')}
-                className="w-full rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-1"
-                style={{ backgroundColor: '#F8F6EF', color: '#06261D' }}
+              <Controller
+                name="departureDate"
+                control={control}
+                render={({ field }) => (
+                  <AppDatePicker
+                    id="departureDate"
+                    selected={field.value ? parseLocalDate(field.value) : null}
+                    onChange={(date: Date | null) => {
+                      if (!date) {
+                        field.onChange('');
+                        return;
+                      }
+                      const year = date.getFullYear();
+                      const month = String(date.getMonth() + 1).padStart(2, '0');
+                      const day = String(date.getDate()).padStart(2, '0');
+                      field.onChange(`${year}-${month}-${day}`);
+                    }}
+                    className="w-full rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-1 cursor-pointer"
+                    style={{ backgroundColor: '#F8F6EF', color: '#06261D' }}
+                    placeholderText="Chọn ngày khởi hành"
+                    dateFormat="dd/MM/yyyy"
+                  />
+                )}
               />
               {errors.departureDate && (
                 <p className="mt-1 text-xs text-red-500">{errors.departureDate.message}</p>
@@ -195,12 +219,29 @@ export function ScheduleFormDialog({
               >
                 Ngày kết thúc <span className="text-red-500">*</span>
               </label>
-              <AppInput
-                id="returnDate"
-                type="date"
-                {...register('returnDate')}
-                className="w-full rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-1"
-                style={{ backgroundColor: '#F8F6EF', color: '#06261D' }}
+              <Controller
+                name="returnDate"
+                control={control}
+                render={({ field }) => (
+                  <AppDatePicker
+                    id="returnDate"
+                    selected={field.value ? parseLocalDate(field.value) : null}
+                    onChange={(date: Date | null) => {
+                      if (!date) {
+                        field.onChange('');
+                        return;
+                      }
+                      const year = date.getFullYear();
+                      const month = String(date.getMonth() + 1).padStart(2, '0');
+                      const day = String(date.getDate()).padStart(2, '0');
+                      field.onChange(`${year}-${month}-${day}`);
+                    }}
+                    className="w-full rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-1 cursor-pointer"
+                    style={{ backgroundColor: '#F8F6EF', color: '#06261D' }}
+                    placeholderText="Chọn ngày kết thúc"
+                    dateFormat="dd/MM/yyyy"
+                  />
+                )}
               />
               {errors.returnDate && (
                 <p className="mt-1 text-xs text-red-500">{errors.returnDate.message}</p>

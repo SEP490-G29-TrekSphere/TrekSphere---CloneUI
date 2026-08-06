@@ -86,14 +86,6 @@ export default function CompanionGroupsPage() {
     setPage(0);
   };
 
-  const handleCreateClick = () => {
-    if (isGuest) {
-      navigate(PATHS.LOGIN);
-      return;
-    }
-    setIsCreateModalOpen(true);
-  };
-
   const handleJoinGroup = (group: GroupCardData) => {
     const groupId = 'matchingGroupId' in group ? group.matchingGroupId : group.id;
     navigate(`/groups/${groupId}/join`);
@@ -151,13 +143,6 @@ export default function CompanionGroupsPage() {
                   className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
                 />
               </div>
-              <button
-                type="button"
-                onClick={handleCreateClick}
-                className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-bold text-white transition-all hover:bg-primary/90 shrink-0"
-              >
-                + Tạo nhóm
-              </button>
             </div>
           </div>
 

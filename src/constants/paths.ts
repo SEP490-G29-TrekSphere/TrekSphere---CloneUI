@@ -61,6 +61,7 @@ export const PATHS = {
   TREKKER_PROFILE: '/trekker/profile',
   TREKKER_PROFILE_EDIT: '/trekker/profile/edit',
   TREKKER_MY_TOURS: '/trekker/my-tours',
+  TREKKER_MY_GROUPS: '/trekker/my-groups',
   TREKKER_VENDOR_APPLICATIONS: '/trekker/vendor-applications',
   TREKKER_BLOG_LIST: '/trekker/blog',
   TREKKER_BLOG_CREATE: '/trekker/blog/create',

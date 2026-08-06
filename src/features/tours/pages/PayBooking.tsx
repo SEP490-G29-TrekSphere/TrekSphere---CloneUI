@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertCircle, ArrowLeft, FileImage, QrCode, Upload } from 'lucide-react';
+import { AlertCircle, FileImage, QrCode, Upload } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -38,9 +38,9 @@ const paymentSchema = z.object({
     .refine((file) => file !== null, 'Vui lòng chọn file minh chứng thanh toán.')
     .refine((file) => {
       if (!file) return true;
-      const maxSize = 5 * 1024 * 1024;
+      const maxSize = 10 * 1024 * 1024;
       return file.size <= maxSize;
-    }, 'Kích thước file vượt quá giới hạn 5MB. Vui lòng chọn file nhỏ hơn.')
+    }, 'Kích thước file vượt quá giới hạn 10MB. Vui lòng chọn file nhỏ hơn.')
     .refine(async (file) => {
       if (!file) return true;
       return await isValidImageFile(file);
@@ -208,19 +208,7 @@ export default function PayBooking({ backPath }: { backPath?: string }) {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 md:py-12 bg-[#FAF9F5] min-h-screen">
-      <div className="flex items-center gap-3 mb-6">
-        <button
-          type="button"
-          onClick={() => navigate(backPath ?? `/my-tours/${bookingId}`)}
-          aria-label="Quay lại chi tiết đặt tour"
-          className="p-2 hover:bg-zinc-100 rounded-full transition-colors"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <h1 className="text-2xl font-extrabold text-[#0B3025]">Thanh toán đơn hàng</h1>
-      </div>
-
+    <div className="w-full px-4 md:px-8 py-6 md:py-8 bg-[#FAF9F5]">
       {/* Countdown timer banner (BR-08) */}
       <div className="p-4 bg-amber-50 text-amber-800 border border-amber-100 rounded-2xl text-xs font-semibold flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
@@ -234,7 +222,7 @@ export default function PayBooking({ backPath }: { backPath?: string }) {
         </span>
       </div>
 
-      <div className="grid grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
         {/* Payment Account Details */}
         <AppCard className="border-[#E5E4DE] rounded-3xl bg-white p-6 shadow-sm">
           <h3 className="font-extrabold text-base text-zinc-800 tracking-tight pb-4 border-b border-[#F4F4F2] mb-6">
@@ -245,7 +233,15 @@ export default function PayBooking({ backPath }: { backPath?: string }) {
             {/* QR Mockup */}
             <div className="flex flex-col items-center justify-center p-4 bg-[#FAF9F5] border border-[#E5E4DE] rounded-2xl">
               <div className="w-48 h-48 bg-white border border-[#E5E4DE] rounded-xl flex flex-col items-center justify-center relative overflow-hidden shadow-sm">
-                <QrCode className="h-32 w-32 text-zinc-800" />
+                {booking.paymentQrUrl ? (
+                  <img
+                    src={booking.paymentQrUrl}
+                    alt="Mã QR Thanh toán"
+                    className="w-full h-full object-contain p-2"
+                  />
+                ) : (
+                  <QrCode className="h-32 w-32 text-zinc-800" />
+                )}
               </div>
             </div>
 
@@ -253,12 +249,21 @@ export default function PayBooking({ backPath }: { backPath?: string }) {
             <div className="space-y-4">
               <div className="flex justify-between items-center py-2 border-b border-[#F4F4F2]">
                 <span className="text-zinc-500 text-xs font-semibold">Tên ngân hàng</span>
+                <span className="text-zinc-800 text-xs font-bold">
+                  {booking.vendorBankName || '—'}
+                </span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-[#F4F4F2]">
                 <span className="text-zinc-500 text-xs font-semibold">Số tài khoản</span>
+                <span className="text-zinc-800 text-xs font-bold">
+                  {booking.vendorBankAccount || '—'}
+                </span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-[#F4F4F2]">
                 <span className="text-zinc-500 text-xs font-semibold">Tên chủ tài khoản</span>
+                <span className="text-zinc-800 text-xs font-bold">
+                  {booking.vendorCompanyName || '—'}
+                </span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-[#F4F4F2]">
                 <span className="text-zinc-500 text-xs font-semibold">Số tiền cần chuyển</span>
@@ -268,6 +273,9 @@ export default function PayBooking({ backPath }: { backPath?: string }) {
               </div>
               <div className="flex justify-between items-center py-2 border-b border-[#F4F4F2]">
                 <span className="text-zinc-500 text-xs font-semibold">Nội dung chuyển khoản</span>
+                <span className="text-zinc-800 text-xs font-bold select-all">
+                  {booking.bookingCode || '—'}
+                </span>
               </div>
             </div>
           </div>
@@ -289,7 +297,7 @@ export default function PayBooking({ backPath }: { backPath?: string }) {
                       <span className="text-[#0B3025]">Nhấp để tải lên</span> hoặc kéo thả file
                     </p>
                     <p className="text-xs text-zinc-400 font-semibold">
-                      PNG, JPG hoặc JPEG (Tối đa 5MB)
+                      PNG, JPG hoặc JPEG (Tối đa 10MB)
                     </p>
                   </div>
                   <input
@@ -334,7 +342,10 @@ export default function PayBooking({ backPath }: { backPath?: string }) {
                     if (!bookingId) return;
                     setIsMutating(true);
                     try {
-                      await tourService.updateBookingStatus(bookingId, 'CANCELLED');
+                      await tourService.cancelBooking(
+                        bookingId,
+                        'Khách hàng tự hủy giao dịch thanh toán'
+                      );
                       toast.success('Hủy giao dịch thành công.');
                       navigate(getBookingDetailPath(bookingId));
                     } catch {
