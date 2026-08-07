@@ -41,6 +41,7 @@ export {
   AppCardTitle,
 } from './data-display/AppCard';
 export { AppEmptyState, type AppEmptyStateProps } from './data-display/AppEmptyState';
+export { AppIdDisplay, type AppIdDisplayProps } from './data-display/AppIdDisplay';
 export {
   AppTable,
   AppTableBody,
