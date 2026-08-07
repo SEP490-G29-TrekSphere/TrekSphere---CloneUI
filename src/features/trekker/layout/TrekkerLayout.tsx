@@ -6,6 +6,7 @@ import {
   LogOut,
   MessageSquare,
   User,
+  UserPlus,
   Users,
 } from 'lucide-react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
@@ -17,7 +18,13 @@ import { useAppStore } from '@/store/useAppStore';
 const navItems = [
   { name: 'Hồ sơ', path: PATHS.TREKKER_PROFILE, icon: User, disabled: false },
   { name: 'Tour của tôi', path: PATHS.TREKKER_MY_TOURS, icon: Compass, disabled: false },
-  { name: 'Nhóm của tôi', path: PATHS.TREKKER_MY_GROUPS, icon: Users, disabled: false },
+  { name: 'Quản lý nhóm của tôi', path: PATHS.TREKKER_MY_GROUPS, icon: Users, disabled: false },
+  {
+    name: 'Yêu cầu gia nhập nhóm',
+    path: PATHS.TREKKER_MY_JOIN_REQUESTS,
+    icon: UserPlus,
+    disabled: false,
+  },
   {
     name: 'Lịch sử đăng ký Vendor',
     path: PATHS.TREKKER_VENDOR_APPLICATIONS,

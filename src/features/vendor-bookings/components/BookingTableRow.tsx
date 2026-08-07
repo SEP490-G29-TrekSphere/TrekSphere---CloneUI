@@ -46,13 +46,13 @@ export function BookingTableRow({
     text: '#374151',
   };
 
-  // Format date: e.g. "24 Oct, 2026"
+  // Format date: e.g. "24/10/2026"
   const formatDate = (dateStr: string) => {
     try {
       const date = new Date(dateStr);
-      return new Intl.DateTimeFormat('en-GB', {
+      return new Intl.DateTimeFormat('vi-VN', {
         day: '2-digit',
-        month: 'short',
+        month: '2-digit',
         year: 'numeric',
       }).format(date);
     } catch {

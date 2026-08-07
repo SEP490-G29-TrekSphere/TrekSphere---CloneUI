@@ -554,39 +554,6 @@ export default function BookingDetail({
             )}
           </AppCard>
 
-          {/* Proof of Payment Image (if available) */}
-          {booking.proofImageUrl && (
-            <AppCard className="border-[#E5E4DE] rounded-3xl bg-white p-6 shadow-sm space-y-4">
-              <div className="flex items-center justify-between border-b border-[#F4F4F2] pb-3">
-                <div className="flex items-center gap-2">
-                  <FileImage className="h-4 w-4 text-[#0B3025]" />
-                  <h3 className="font-extrabold text-zinc-800 text-base">Minh chứng thanh toán</h3>
-                </div>
-                {booking.bookingStatus === 'PENDING' && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setProofFile(null);
-                      setProofPreviewUrl(booking.proofImageUrl || '');
-                      setProofError('');
-                      setIsProofModalOpen(true);
-                    }}
-                    className="text-xs font-bold text-[#0B3025] hover:underline cursor-pointer"
-                  >
-                    Cập nhật lại
-                  </button>
-                )}
-              </div>
-              <div className="overflow-hidden rounded-2xl border border-[#E5E4DE] max-w-sm">
-                <img
-                  src={booking.proofImageUrl}
-                  alt="Minh chứng thanh toán"
-                  className="w-full max-h-72 object-contain bg-zinc-50"
-                />
-              </div>
-            </AppCard>
-          )}
-
           {/* Cancellation Details (if cancelled) */}
           {(booking.bookingStatus === 'CANCELLED' || booking.cancellationReason) && (
             <AppCard className="border-red-200 rounded-3xl bg-red-50/50 p-6 shadow-sm space-y-3">
@@ -710,6 +677,39 @@ export default function BookingDetail({
               )}
             </div>
           </AppCard>
+
+          {/* Proof of Payment Image (if available) */}
+          {booking.proofImageUrl && (
+            <AppCard className="border-[#E5E4DE] rounded-3xl bg-white p-6 shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-[#F4F4F2] pb-3">
+                <div className="flex items-center gap-2">
+                  <FileImage className="h-4 w-4 text-[#0B3025]" />
+                  <h3 className="font-extrabold text-zinc-800 text-base">Minh chứng thanh toán</h3>
+                </div>
+                {booking.bookingStatus === 'PENDING' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProofFile(null);
+                      setProofPreviewUrl(booking.proofImageUrl || '');
+                      setProofError('');
+                      setIsProofModalOpen(true);
+                    }}
+                    className="text-xs font-bold text-[#0B3025] hover:underline cursor-pointer"
+                  >
+                    Cập nhật lại
+                  </button>
+                )}
+              </div>
+              <div className="overflow-hidden rounded-2xl border border-[#E5E4DE]">
+                <img
+                  src={booking.proofImageUrl}
+                  alt="Minh chứng thanh toán"
+                  className="w-full object-contain bg-zinc-50"
+                />
+              </div>
+            </AppCard>
+          )}
 
           {booking.bookingStatus === 'CONFIRMED' && booking.tourSessionId && (
             <BookingSosPanel

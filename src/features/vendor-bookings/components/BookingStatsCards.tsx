@@ -8,7 +8,7 @@ interface BookingStatsCardsProps {
 export function BookingStatsCards({ stats }: BookingStatsCardsProps) {
   const cards = [
     {
-      title: 'TOTAL BOOKINGS',
+      title: 'TỔNG ĐƠN ĐẶT',
       value: stats?.totalBookings ?? 0,
       icon: Ticket,
       bgColor: '#F4F8F5',
@@ -16,7 +16,7 @@ export function BookingStatsCards({ stats }: BookingStatsCardsProps) {
       iconColor: '#06261D',
     },
     {
-      title: 'PENDING PAYMENTS',
+      title: 'CHỜ THANH TOÁN',
       value: stats?.pendingPayments ?? 0,
       icon: CreditCard,
       bgColor: '#FFF5F5',
@@ -24,7 +24,7 @@ export function BookingStatsCards({ stats }: BookingStatsCardsProps) {
       iconColor: '#DC2626',
     },
     {
-      title: 'CONFIRMED TREKS',
+      title: 'ĐÃ XÁC NHẬN',
       value: stats?.confirmedTreks ?? 0,
       icon: CheckCircle2,
       bgColor: '#F0FDF4',
@@ -32,7 +32,7 @@ export function BookingStatsCards({ stats }: BookingStatsCardsProps) {
       iconColor: '#16A34A',
     },
     {
-      title: 'REFUNDED',
+      title: 'ĐÃ HOÀN TIỀN',
       value: stats?.refunded ?? 0,
       icon: ArrowLeftRight,
       bgColor: '#F5F5F5',

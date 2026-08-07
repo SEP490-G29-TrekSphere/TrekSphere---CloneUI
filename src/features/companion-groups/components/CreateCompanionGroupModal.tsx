@@ -1,14 +1,15 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Calendar,
+  CheckCircle2,
   Clock,
-  FileText,
+  Info,
   Loader2,
   MapPin,
-  Send,
-  ShieldCheck,
+  Sparkles,
   Tag,
   Users,
+  X,
 } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
@@ -111,289 +112,278 @@ export function CreateCompanionGroupModal({ isOpen, onClose }: CreateCompanionGr
   };
 
   const isPending = createMutation.isPending;
+  const description = form.watch('description') || '';
+  const maxDescriptionLength = 500;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto">
-      <div className="bg-[#FAF8F5] dark:bg-card border border-stone-200 dark:border-border rounded-[2.5rem] p-6 sm:p-10 max-w-5xl w-full shadow-2xl relative my-8">
-        {/* Main Grid: Left Banner + Right Form */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-          {/* Left Column (Banner & Tips) */}
-          <div className="lg:col-span-5 flex flex-col justify-between gap-6">
-            {/* Green Scenic Banner */}
-            <div className="relative rounded-[2rem] overflow-hidden min-h-[320px] lg:min-h-[420px] flex flex-col justify-end p-6 sm:p-8 text-white bg-[#0d2a22] shadow-lg">
-              <div className="relative z-10 space-y-3">
-                <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight">
-                  Kết nối đam mê,
-                  <br />
-                  Chia sẻ hành trình.
-                </h3>
-                <p className="text-xs sm:text-sm text-stone-200 font-medium leading-relaxed">
-                  Tạo nhóm để tìm kiếm những người bạn đồng hành chung chí hướng cho chuyến đi sắp
-                  tới của bạn.
-                </p>
-              </div>
-            </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+      {/* Modal Container */}
+      <div className="relative w-full max-w-3xl bg-white dark:bg-card rounded-3xl shadow-2xl max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-300">
+        {/* Close Button */}
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={isPending}
+          className="absolute top-6 right-6 z-10 p-2 rounded-full bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          aria-label="Đóng"
+        >
+          <X className="w-5 h-5" />
+        </button>
 
-            {/* Note box */}
-            <div className="bg-[#F5F2EA] dark:bg-muted/40 border border-stone-200/70 dark:border-border/60 rounded-[1.5rem] p-5 space-y-3">
-              <span className="text-[11px] font-bold tracking-wider text-stone-500 dark:text-muted-foreground uppercase block">
-                Lưu ý cho bạn
-              </span>
-              <div className="flex items-start gap-3">
-                <ShieldCheck className="w-4 h-4 text-emerald-800 dark:text-emerald-400 shrink-0 mt-0.5" />
-                <p className="text-xs text-stone-700 dark:text-stone-300 font-medium leading-relaxed">
-                  Mô tả chi tiết giúp bạn nhanh chóng tìm được người phù hợp nhất.
-                </p>
+        {/* Scrollable Content */}
+        <div className="overflow-y-auto max-h-[90vh] hide-scrollbar">
+          {/* Header Section */}
+          <div className="relative px-8 pt-10 pb-8 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border-b border-emerald-100 dark:border-emerald-900/30">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg">
+                <Sparkles className="w-7 h-7 text-white" />
               </div>
-              <div className="flex items-start gap-3">
-                <Users className="w-4 h-4 text-emerald-800 dark:text-emerald-400 shrink-0 mt-0.5" />
-                <p className="text-xs text-stone-700 dark:text-stone-300 font-medium leading-relaxed">
-                  Số lượng người nên cân đối với độ khó của tour trekking.
-                </p>
-              </div>
-              <div className="flex items-start gap-3">
-                <Clock className="w-4 h-4 text-emerald-800 dark:text-emerald-400 shrink-0 mt-0.5" />
-                <p className="text-xs text-stone-700 dark:text-stone-300 font-medium leading-relaxed">
-                  Hạn chót đăng ký nên đặt trước ngày khởi hành để có thời gian chuẩn bị.
+              <div className="flex-1 min-w-0">
+                <h2 className="text-3xl font-black text-foreground tracking-tight mb-2">
+                  Tạo Nhóm Đồng Hành
+                </h2>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Kết nối với những người bạn đồng hành có cùng đam mê khám phá
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Right Column (Form) */}
-          <div className="lg:col-span-7 flex flex-col justify-between">
-            <div>
-              {/* Form Title & Subtitle */}
-              <div className="mb-6">
-                <h2 className="text-2xl sm:text-3xl font-black text-stone-900 dark:text-foreground tracking-tight">
-                  Tạo Nhóm Đồng Hành
-                </h2>
-                <p className="text-xs sm:text-sm text-stone-500 dark:text-muted-foreground mt-1">
-                  Điền thông tin bên dưới để bắt đầu tìm kiếm đồng đội.
-                </p>
+          {/* Form Section */}
+          <form onSubmit={form.handleSubmit(onSubmit)} className="px-8 py-8 space-y-6">
+            {/* Tour Selection */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <MapPin className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                Chọn tour <span className="text-red-500">*</span>
+              </label>
+              <div className="relative group">
+                <select
+                  {...form.register('tourId')}
+                  disabled={toursLoading || isPending}
+                  className="w-full h-12 px-4 pr-10 bg-muted/50 hover:bg-muted/80 border-2 border-transparent focus:border-emerald-500 dark:focus:border-emerald-400 rounded-xl text-sm font-medium text-foreground transition-all duration-200 appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <option value="" disabled>
+                    {toursLoading ? 'Đang tải...' : 'Chọn điểm đến của bạn'}
+                  </option>
+                  {tours.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground group-hover:text-foreground transition-colors">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
               </div>
-
-              {/* Form Inputs */}
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                {/* Field 1: Tour Select */}
-                <div>
-                  <label className="block text-[11px] font-bold tracking-wider text-stone-500 dark:text-muted-foreground uppercase mb-2">
-                    CHỌN TOUR MUỐN ĐI <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none">
-                      <MapPin className="w-5 h-5" />
-                    </div>
-                    <select
-                      {...form.register('tourId')}
-                      disabled={toursLoading}
-                      className="w-full bg-[#F3F0E6] dark:bg-muted/60 border-none rounded-2xl py-3.5 pl-12 pr-10 text-sm font-medium text-stone-800 dark:text-foreground appearance-none focus:outline-none focus:ring-2 focus:ring-[#1f3933] cursor-pointer disabled:opacity-60"
-                    >
-                      <option value="" disabled>
-                        {toursLoading ? 'Đang tải danh sách tour...' : 'Tìm điểm đến của bạn...'}
-                      </option>
-                      {tours.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.name}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-stone-400">
-                      ▼
-                    </div>
-                  </div>
-                  {form.formState.errors.tourId && (
-                    <p className="text-xs text-red-500 mt-1 pl-2">
-                      {form.formState.errors.tourId.message}
-                    </p>
-                  )}
-                </div>
-
-                {/* Field 2: Group Name */}
-                <div>
-                  <label className="block text-[11px] font-bold tracking-wider text-stone-500 dark:text-muted-foreground uppercase mb-2">
-                    TÊN NHÓM <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none">
-                      <Tag className="w-5 h-5" />
-                    </div>
-                    <input
-                      type="text"
-                      {...form.register('groupName')}
-                      placeholder="Ví dụ: Nhóm Fansipan tháng 8 🏔️"
-                      className="w-full bg-[#F3F0E6] dark:bg-muted/60 border-none rounded-2xl py-3.5 pl-12 pr-4 text-sm font-medium text-stone-800 dark:text-foreground placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#1f3933]"
-                    />
-                  </div>
-                  {form.formState.errors.groupName && (
-                    <p className="text-xs text-red-500 mt-1 pl-2">
-                      {form.formState.errors.groupName.message}
-                    </p>
-                  )}
-                </div>
-
-                {/* Grid row: Date & Deadline & Members */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {/* Field 3: Target Date */}
-                  <div>
-                    <label className="block text-[11px] font-bold tracking-wider text-stone-500 dark:text-muted-foreground uppercase mb-2">
-                      NGÀY KHỞI HÀNH <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none z-10">
-                        <Calendar className="w-5 h-5" />
-                      </div>
-                      <Controller
-                        name="targetDate"
-                        control={form.control}
-                        render={({ field }) => (
-                          <AppDatePicker
-                            selected={field.value ? new Date(field.value) : null}
-                            onChange={(date: Date | null) => {
-                              if (!date) {
-                                field.onChange('');
-                                return;
-                              }
-                              const offset = date.getTimezoneOffset();
-                              const localDate = new Date(date.getTime() - offset * 60 * 1000);
-                              field.onChange(localDate.toISOString().split('T')[0]);
-                            }}
-                            className="w-full bg-[#F3F0E6] dark:bg-muted/60 border-none rounded-2xl py-3.5 pl-12 pr-4 text-sm font-medium text-stone-800 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-[#1f3933] !h-12 cursor-pointer"
-                            placeholderText="Chọn ngày khởi hành"
-                          />
-                        )}
-                      />
-                    </div>
-                    {form.formState.errors.targetDate && (
-                      <p className="text-xs text-red-500 mt-1 pl-2">
-                        {form.formState.errors.targetDate.message}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Field 4: Matching Deadline */}
-                  <div>
-                    <label className="block text-[11px] font-bold tracking-wider text-stone-500 dark:text-muted-foreground uppercase mb-2">
-                      HẠN ĐĂNG KÝ <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none z-10">
-                        <Clock className="w-5 h-5" />
-                      </div>
-                      <Controller
-                        name="matchingDeadline"
-                        control={form.control}
-                        render={({ field }) => (
-                          <AppDatePicker
-                            selected={field.value ? new Date(field.value) : null}
-                            onChange={(date: Date | null) => {
-                              if (!date) {
-                                field.onChange('');
-                                return;
-                              }
-                              const offset = date.getTimezoneOffset();
-                              const localDate = new Date(date.getTime() - offset * 60 * 1000);
-                              field.onChange(localDate.toISOString().slice(0, 16));
-                            }}
-                            showTimeSelect
-                            timeFormat="HH:mm"
-                            timeIntervals={15}
-                            timeCaption="Thời gian"
-                            className="w-full bg-[#F3F0E6] dark:bg-muted/60 border-none rounded-2xl py-3.5 pl-12 pr-4 text-sm font-medium text-stone-800 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-[#1f3933] !h-12 cursor-pointer"
-                            placeholderText="Chọn hạn đăng ký"
-                          />
-                        )}
-                      />
-                    </div>
-                    {form.formState.errors.matchingDeadline && (
-                      <p className="text-xs text-red-500 mt-1 pl-2">
-                        {form.formState.errors.matchingDeadline.message}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Field 5: Max Size */}
-                  <div>
-                    <label className="block text-[11px] font-bold tracking-wider text-stone-500 dark:text-muted-foreground uppercase mb-2">
-                      SỐ NGƯỜI TỐI ĐA <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none">
-                        <Users className="w-5 h-5" />
-                      </div>
-                      <input
-                        type="number"
-                        min={2}
-                        max={100}
-                        {...form.register('maxSize')}
-                        placeholder="Ví dụ: 8"
-                        className="w-full bg-[#F3F0E6] dark:bg-muted/60 border-none rounded-2xl py-3.5 pl-12 pr-4 text-sm font-medium text-stone-800 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-[#1f3933]"
-                      />
-                    </div>
-                    {form.formState.errors.maxSize && (
-                      <p className="text-xs text-red-500 mt-1 pl-2">
-                        {form.formState.errors.maxSize.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Field 6: Description */}
-                <div>
-                  <label className="block text-[11px] font-bold tracking-wider text-stone-500 dark:text-muted-foreground uppercase mb-2">
-                    MÔ TẢ LỜI MỜI
-                  </label>
-                  <div className="relative">
-                    <div className="absolute left-4 top-4 text-stone-500 pointer-events-none">
-                      <FileText className="w-5 h-5" />
-                    </div>
-                    <textarea
-                      rows={4}
-                      {...form.register('description')}
-                      placeholder="Chia sẻ thêm về bản thân, yêu cầu về thể lực hoặc kinh nghiệm của thành viên bạn muốn tìm..."
-                      className="w-full bg-[#F3F0E6] dark:bg-muted/60 border-none rounded-2xl p-4 pl-12 text-sm font-medium text-stone-800 dark:text-foreground placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#1f3933] resize-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Submit Button */}
-                <div className="pt-2">
-                  <button
-                    type="submit"
-                    disabled={isPending}
-                    className="w-full py-4 bg-[#0a231c] hover:bg-[#071914] text-white rounded-full font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    {isPending ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Đang tạo nhóm...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4" />
-                        <span>Đăng bài</span>
-                      </>
-                    )}
-                  </button>
-                  <p className="text-center text-[11px] text-stone-500 dark:text-muted-foreground mt-3">
-                    Nhóm sẽ được hiển thị công khai ngay sau khi tạo.
-                  </p>
-                </div>
-              </form>
+              {form.formState.errors.tourId && (
+                <p className="flex items-center gap-1.5 text-xs text-red-500 animate-in slide-in-from-top-1 duration-200">
+                  <Info className="w-3.5 h-3.5" />
+                  {form.formState.errors.tourId.message}
+                </p>
+              )}
             </div>
 
-            {/* Modal Close Button */}
-            <div className="mt-4 text-right">
+            {/* Group Name */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Tag className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                Tên nhóm <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                {...form.register('groupName')}
+                disabled={isPending}
+                placeholder="Ví dụ: Nhóm Fansipan tháng 8"
+                className="w-full h-12 px-4 bg-muted/50 hover:bg-muted/80 border-2 border-transparent focus:border-emerald-500 dark:focus:border-emerald-400 rounded-xl text-sm font-medium text-foreground placeholder:text-muted-foreground transition-all duration-200 disabled:opacity-50"
+              />
+              {form.formState.errors.groupName && (
+                <p className="flex items-center gap-1.5 text-xs text-red-500 animate-in slide-in-from-top-1 duration-200">
+                  <Info className="w-3.5 h-3.5" />
+                  {form.formState.errors.groupName.message}
+                </p>
+              )}
+            </div>
+
+            {/* Date & Time Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Departure Date */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  Ngày khởi hành <span className="text-red-500">*</span>
+                </label>
+                <Controller
+                  name="targetDate"
+                  control={form.control}
+                  render={({ field }) => (
+                    <AppDatePicker
+                      selected={field.value ? new Date(field.value) : null}
+                      onChange={(date: Date | null) => {
+                        if (!date) {
+                          field.onChange('');
+                          return;
+                        }
+                        const offset = date.getTimezoneOffset();
+                        const localDate = new Date(date.getTime() - offset * 60 * 1000);
+                        field.onChange(localDate.toISOString().split('T')[0]);
+                      }}
+                      disabled={isPending}
+                      className="w-full h-12 px-4 bg-muted/50 hover:bg-muted/80 border-2 border-transparent focus:border-emerald-500 dark:focus:border-emerald-400 rounded-xl text-sm font-medium text-foreground transition-all duration-200 cursor-pointer"
+                      placeholderText="Chọn ngày"
+                    />
+                  )}
+                />
+                {form.formState.errors.targetDate && (
+                  <p className="flex items-center gap-1.5 text-xs text-red-500 animate-in slide-in-from-top-1 duration-200">
+                    <Info className="w-3.5 h-3.5" />
+                    {form.formState.errors.targetDate.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Deadline */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Clock className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  Hạn đăng ký <span className="text-red-500">*</span>
+                </label>
+                <Controller
+                  name="matchingDeadline"
+                  control={form.control}
+                  render={({ field }) => (
+                    <AppDatePicker
+                      selected={field.value ? new Date(field.value) : null}
+                      onChange={(date: Date | null) => {
+                        if (!date) {
+                          field.onChange('');
+                          return;
+                        }
+                        const offset = date.getTimezoneOffset();
+                        const localDate = new Date(date.getTime() - offset * 60 * 1000);
+                        field.onChange(localDate.toISOString().slice(0, 16));
+                      }}
+                      showTimeSelect
+                      timeFormat="HH:mm"
+                      timeIntervals={15}
+                      timeCaption="Giờ"
+                      disabled={isPending}
+                      className="w-full h-12 px-4 bg-muted/50 hover:bg-muted/80 border-2 border-transparent focus:border-emerald-500 dark:focus:border-emerald-400 rounded-xl text-sm font-medium text-foreground transition-all duration-200 cursor-pointer"
+                      placeholderText="Chọn hạn"
+                    />
+                  )}
+                />
+                {form.formState.errors.matchingDeadline && (
+                  <p className="flex items-center gap-1.5 text-xs text-red-500 animate-in slide-in-from-top-1 duration-200">
+                    <Info className="w-3.5 h-3.5" />
+                    {form.formState.errors.matchingDeadline.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Max Members */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Users className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  Số người tối đa <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min={2}
+                  max={100}
+                  {...form.register('maxSize')}
+                  disabled={isPending}
+                  placeholder="4"
+                  className="w-full h-12 px-4 bg-muted/50 hover:bg-muted/80 border-2 border-transparent focus:border-emerald-500 dark:focus:border-emerald-400 rounded-xl text-sm font-medium text-foreground placeholder:text-muted-foreground transition-all duration-200 disabled:opacity-50"
+                />
+                {form.formState.errors.maxSize && (
+                  <p className="flex items-center gap-1.5 text-xs text-red-500 animate-in slide-in-from-top-1 duration-200">
+                    <Info className="w-3.5 h-3.5" />
+                    {form.formState.errors.maxSize.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <svg
+                  className="w-4 h-4 text-emerald-600 dark:text-emerald-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h7"
+                  />
+                </svg>
+                Mô tả nhóm
+                <span className="text-xs font-normal text-muted-foreground">(Không bắt buộc)</span>
+              </label>
+              <div className="relative">
+                <textarea
+                  rows={4}
+                  {...form.register('description')}
+                  disabled={isPending}
+                  maxLength={maxDescriptionLength}
+                  placeholder="Chia sẻ về bản thân, yêu cầu thể lực, kinh nghiệm mong muốn của thành viên..."
+                  className="w-full px-4 py-3 bg-muted/50 hover:bg-muted/80 border-2 border-transparent focus:border-emerald-500 dark:focus:border-emerald-400 rounded-xl text-sm font-medium text-foreground placeholder:text-muted-foreground transition-all duration-200 resize-none disabled:opacity-50"
+                />
+                <div className="absolute bottom-3 right-3 text-xs text-muted-foreground">
+                  {description.length}/{maxDescriptionLength}
+                </div>
+              </div>
+            </div>
+
+            {/* Info Box */}
+            <div className="flex items-start gap-3 p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/30 rounded-xl">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 text-sm text-muted-foreground leading-relaxed">
+                Nhóm của bạn sẽ được hiển thị công khai ngay sau khi tạo. Các thành viên khác có thể
+                gửi yêu cầu tham gia và bạn sẽ quyết định chấp nhận hay từ chối.
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={isPending}
-                className="text-xs text-stone-500 hover:text-stone-800 dark:text-muted-foreground dark:hover:text-foreground font-semibold underline cursor-pointer disabled:opacity-50"
+                className="flex-1 sm:flex-none px-6 py-3 border-2 border-border hover:border-muted-foreground rounded-xl font-semibold text-sm text-muted-foreground hover:text-foreground transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Hủy bỏ / Đóng lại
+                Hủy bỏ
+              </button>
+              <button
+                type="submit"
+                disabled={isPending}
+                className="flex-1 px-8 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl font-bold text-sm shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Đang tạo...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    <span>Tạo nhóm ngay</span>
+                  </>
+                )}
               </button>
             </div>
-          </div>
+          </form>
         </div>
       </div>
     </div>

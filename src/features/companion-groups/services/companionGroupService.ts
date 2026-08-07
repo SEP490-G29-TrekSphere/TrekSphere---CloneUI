@@ -44,6 +44,35 @@ export interface GetJoinRequestsParams {
   size?: number;
 }
 
+export interface MyMatchingJoinRequestItem {
+  matchingMemberId: string;
+  matchingGroupId: string;
+  groupName: string;
+  groupStatus: MatchingGroupStatus;
+  tourId: string;
+  tourName: string;
+  ownerId: string;
+  ownerName: string;
+  ownerAvatarUrl?: string;
+  currentSize: number;
+  maxSize: number;
+  targetDate: string; // 'yyyy-MM-dd'
+  matchingDeadline: string; // ISO string
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'LEFT';
+  createdAt: string; // ISO string
+  updatedAt: string; // ISO string
+  canCancel: boolean;
+}
+
+export interface MyMatchingJoinRequestPaginationResponse {
+  content: MyMatchingJoinRequestItem[];
+  pageNumber: number;
+  pageSize: number;
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
+}
+
 export interface MatchingMemberPaginationResponse {
   content: MatchingMemberItem[];
   pageNumber: number;
@@ -178,27 +207,45 @@ export const companionGroupService = {
     return unwrapResponse(response);
   },
 
-  async leaveMatchingGroup(matchingGroupId: string): Promise<MatchingMemberItem> {
+  async getMyMemberStatus(matchingGroupId: string): Promise<MatchingMemberItem> {
     const response = await ApiService<MatchingMemberItem>(
-      `/matching-groups/${matchingGroupId}/leave`,
-      'POST'
+      `/matching-groups/${matchingGroupId}/members/me`,
+      'GET'
     );
 
     return unwrapResponse(response);
   },
 
-  async approveMember(memberId: string): Promise<MatchingMemberItem> {
+  async leaveMatchingGroup(matchingGroupId: string): Promise<MatchingMemberItem> {
     const response = await ApiService<MatchingMemberItem>(
-      `/matching-groups/members/${memberId}/approve`,
+      `/matching-groups/${matchingGroupId}/members/me`,
+      'DELETE'
+    );
+
+    return unwrapResponse(response);
+  },
+
+  async cancelJoinRequest(matchingGroupId: string): Promise<MatchingMemberItem> {
+    const response = await ApiService<MatchingMemberItem>(
+      `/matching-groups/${matchingGroupId}/join-request`,
+      'DELETE'
+    );
+
+    return unwrapResponse(response);
+  },
+
+  async approveMember(groupId: string, memberId: string): Promise<MatchingMemberItem> {
+    const response = await ApiService<MatchingMemberItem>(
+      `/matching-groups/${groupId}/join-requests/${memberId}/approve`,
       'PUT'
     );
 
     return unwrapResponse(response);
   },
 
-  async rejectMember(memberId: string): Promise<MatchingMemberItem> {
+  async rejectMember(groupId: string, memberId: string): Promise<MatchingMemberItem> {
     const response = await ApiService<MatchingMemberItem>(
-      `/matching-groups/members/${memberId}/reject`,
+      `/matching-groups/${groupId}/join-requests/${memberId}/reject`,
       'PUT'
     );
 
@@ -255,6 +302,24 @@ export const companionGroupService = {
     if (response.status === 401) {
       return EMPTY_PAGINATION;
     }
+
+    return unwrapResponse(response);
+  },
+
+  async getMyJoinRequests(
+    params: { status?: string; page?: number; size?: number } = {}
+  ): Promise<MyMatchingJoinRequestPaginationResponse> {
+    const queryParams: Record<string, string> = {};
+    if (params.status) queryParams.status = params.status;
+    if (params.page !== undefined) queryParams.page = String(params.page);
+    if (params.size !== undefined) queryParams.size = String(params.size);
+
+    const response = await ApiService<MyMatchingJoinRequestPaginationResponse>(
+      '/matching-groups/join-requests/me',
+      'GET',
+      undefined,
+      queryParams
+    );
 
     return unwrapResponse(response);
   },
