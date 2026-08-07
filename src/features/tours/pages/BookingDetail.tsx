@@ -736,7 +736,7 @@ export default function BookingDetail({
 
       {/* Cancel Booking Confirmation Dialog */}
       <Dialog open={isCancelModalOpen} onOpenChange={setIsCancelModalOpen}>
-        <DialogContent className="max-w-md bg-white rounded-3xl p-6 border border-[#E5E4DE]">
+        <DialogContent className="sm:max-w-md bg-white rounded-3xl p-6 border border-[#E5E4DE]">
           <DialogHeader className="space-y-2">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600 border border-red-100 mb-1">
               <XCircle className="h-6 w-6" />
@@ -807,7 +807,7 @@ export default function BookingDetail({
 
       {/* Update Payment Proof Dialog */}
       <Dialog open={isProofModalOpen} onOpenChange={setIsProofModalOpen}>
-        <DialogContent className="max-w-md bg-white rounded-3xl p-6 border border-[#E5E4DE]">
+        <DialogContent className="sm:max-w-md bg-white rounded-3xl p-6 border border-[#E5E4DE]">
           <DialogHeader className="space-y-2">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-100 mb-1">
               <FileImage className="h-6 w-6" />
@@ -889,7 +889,7 @@ export default function BookingDetail({
 
       {/* Review Writing Dialog */}
       <Dialog open={isReviewModalOpen} onOpenChange={setIsReviewModalOpen}>
-        <DialogContent className="max-w-md bg-white rounded-3xl p-6 border border-[#E5E4DE]">
+        <DialogContent className="sm:max-w-md bg-white rounded-3xl p-6 border border-[#E5E4DE]">
           <DialogHeader className="space-y-2">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-500 border border-amber-100 mb-1">
               <Star className="h-6 w-6 fill-current" />

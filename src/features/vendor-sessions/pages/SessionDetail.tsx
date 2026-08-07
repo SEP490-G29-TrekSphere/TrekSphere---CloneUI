@@ -42,7 +42,11 @@ export default function SessionDetail() {
   const { data: session, isLoading, isError, error } = useVendorSessionAllocations(sessionId);
   const mutations = useVendorSessionMutations(sessionId ?? '');
 
-  const { data: coordinatorCandidates = [] } = useCoordinatorCandidates();
+  const {
+    data: coordinatorCandidates = [],
+    isLoading: isLoadingCoordinatorCandidates,
+    error: coordinatorCandidatesError,
+  } = useCoordinatorCandidates();
   const { data: porterCandidates = [] } = usePorterCandidates();
   const { data: equipmentCandidates = [] } = useEquipmentCandidates();
 
@@ -173,7 +177,10 @@ export default function SessionDetail() {
             Quay lại danh sách phiên
           </button>
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-3xl font-extrabold tracking-tight" style={{ color: '#06261D' }}>
+            <h1
+              className="text-2xl sm:text-3xl font-extrabold tracking-tight"
+              style={{ color: '#06261D' }}
+            >
               {session.tourName}
             </h1>
             <SessionStatusBadge status={session.status} />
@@ -222,6 +229,8 @@ export default function SessionDetail() {
         onOpenChange={setAssignCoordinatorOpen}
         candidates={coordinatorCandidates}
         assignedUserIds={assignedCoordinatorUserIds}
+        isLoadingCandidates={isLoadingCoordinatorCandidates}
+        candidatesError={coordinatorCandidatesError}
         isPending={mutations.assignCoordinator.isPending}
         onSubmit={(payload) =>
           mutations.assignCoordinator.mutate(payload, {

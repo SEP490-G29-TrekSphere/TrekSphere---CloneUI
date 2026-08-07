@@ -41,7 +41,7 @@ export function VendorStatusDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-[420px]">
+      <DialogContent className="sm:max-w-[420px]">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">Đổi trạng thái Vendor</DialogTitle>
           <DialogDescription>

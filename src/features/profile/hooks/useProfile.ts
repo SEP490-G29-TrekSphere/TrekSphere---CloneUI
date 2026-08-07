@@ -54,14 +54,8 @@ export function normalizeProfile(raw: Record<string, unknown>): UserProfile {
     avatar: (raw.avatarUrl as string | null | undefined) ?? undefined,
     gender,
     dateOfBirth: (raw.dateOfBirth as string | null | undefined) ?? undefined,
-    username:
-      (raw.username as string | undefined) ?? `@${fullName.toLowerCase().replace(/\s+/g, '_')}`,
     roles,
     role: roles[0] ?? '',
-    joinedAt:
-      (raw.joinedAt as string | undefined) ??
-      (raw.createdAt as string | undefined) ??
-      (raw.updatedAt as string | undefined),
   };
 }
 

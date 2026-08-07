@@ -5,10 +5,12 @@ import AdminTopbar from '../../components/AdminTopbar';
  * Tạm thời hiển thị placeholder để layout chạy đúng khi user navigate tới.
  */
 export default function AdminDashboard() {
+  // Không tự đặt `h-screen`/padding riêng: `<main>` của AdminLayout đã lo scroll
+  // và padding responsive — lồng thêm sẽ tạo scroll đôi và thừa lề trên mobile.
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex flex-col gap-6">
       <AdminTopbar />
-      <div className="flex-1 overflow-y-auto px-8 py-6">
+      <div>
         <h2 className="text-2xl font-bold" style={{ color: '#06261D' }}>
           Dashboard
         </h2>

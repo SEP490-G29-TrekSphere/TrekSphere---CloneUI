@@ -14,22 +14,14 @@ interface ProfileSidebarProps {
   onAvatarChange?: (file: File) => void;
 }
 
-const DEFAULT_AVATAR =
-  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=240&h=240&fit=crop&crop=face';
-
-const formatJoinedMonth = (iso?: string): string => {
-  if (!iso) return 'Tháng 09/2025';
-  try {
-    const d = new Date(iso);
-    return `Tháng ${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-  } catch {
-    return 'Tháng 09/2025';
-  }
-};
-
 /**
- * Cột trái của màn hình Profile — hiển thị avatar, tên, stats, nút hành động.
+ * Cột trái của màn hình Profile — hiển thị avatar, tên, email, nút hành động.
  * Dùng chung cho cả màn View và Edit để đảm bảo nhất quán layout 30%-70%.
+ *
+ * Chỉ render dữ liệu `GET /users/me` thật sự trả về (`UserProfileResponse`:
+ * fullName, email, phone, dateOfBirth, gender, avatarUrl, roles). BE không có
+ * username, ngày tham gia hay số liệu tour/bài viết/người theo dõi — trước đây
+ * các mục đó hiển thị bằng số liệu bịa, nay đã bỏ hẳn thay vì hiện sai.
  */
 export default function ProfileSidebar({
   profile,
@@ -52,10 +44,8 @@ export default function ProfileSidebar({
     e.target.value = '';
   };
 
-  const avatarSrc = profile.avatar || DEFAULT_AVATAR;
-  const stats = profile.stats ?? { toursCount: 5, postsCount: 12, followersCount: 1200 };
-  const joinedText = formatJoinedMonth(profile.joinedAt);
-  const username = profile.username || `@${profile.name.toLowerCase().replace(/\s+/g, '_')}`;
+  const avatarSrc = profile.avatar;
+  const initial = profile.name.trim().charAt(0).toUpperCase() || '?';
 
   return (
     <aside className="flex w-full flex-col items-center rounded-3xl bg-card p-6 shadow-sm lg:sticky lg:top-6">
@@ -65,12 +55,20 @@ export default function ProfileSidebar({
           className="group relative h-[120px] w-[120px] overflow-hidden rounded-full ring-4 ring-muted"
           style={{ backgroundColor: 'var(--color-muted)' }}
         >
-          <img
-            src={avatarSrc}
-            alt={profile.name}
-            className="h-full w-full object-cover"
-            loading="lazy"
-          />
+          {avatarSrc ? (
+            <img
+              src={avatarSrc}
+              alt={profile.name}
+              className="h-full w-full object-cover"
+              loading="lazy"
+            />
+          ) : (
+            // Chưa có ảnh đại diện → hiện chữ cái đầu của tên, không dùng ảnh
+            // stock của người lạ làm mặc định.
+            <span className="flex h-full w-full items-center justify-center bg-primary text-4xl font-bold text-primary-foreground">
+              {initial}
+            </span>
+          )}
 
           {mode === 'edit' && (
             <button
@@ -96,38 +94,17 @@ export default function ProfileSidebar({
         )}
       </div>
 
-      {/* Name + username + joined date */}
+      {/* Name + email */}
       <div className="mt-6 text-center">
-        <h2 className="text-xl font-bold text-primary">{profile.name}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{username}</p>
-        <p className="text-sm text-muted-foreground">Tham gia từ: {joinedText}</p>
+        <h2 className="text-xl font-bold text-primary">{profile.name || '—'}</h2>
+        {profile.email && <p className="mt-1 text-sm text-muted-foreground">{profile.email}</p>}
       </div>
 
       {/* Divider */}
       <div className="my-6 h-px w-full bg-border" />
 
-      {/* Stats */}
-      <div className="grid w-full grid-cols-3 gap-2 text-center">
-        <div>
-          <p className="text-base font-bold text-primary">{stats.toursCount}</p>
-          <p className="text-xs text-muted-foreground">Tour đã đi</p>
-        </div>
-        <div className="border-x border-border">
-          <p className="text-base font-bold text-primary">{stats.postsCount}</p>
-          <p className="text-xs text-muted-foreground">Bài viết</p>
-        </div>
-        <div>
-          <p className="text-base font-bold text-primary">
-            {stats.followersCount >= 1000
-              ? `${(stats.followersCount / 1000).toFixed(1)}K`
-              : stats.followersCount}
-          </p>
-          <p className="text-xs text-muted-foreground">Người theo dõi</p>
-        </div>
-      </div>
-
       {/* Action button */}
-      <div className="mt-6 w-full">
+      <div className="w-full">
         {mode === 'view' ? (
           <Link
             to={editPath ?? PATHS.EDIT_PROFILE}

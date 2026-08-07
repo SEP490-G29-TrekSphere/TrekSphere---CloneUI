@@ -76,7 +76,7 @@ export default function StaffList() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-extrabold text-[#06261D] tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#06261D] tracking-tight">
             Danh sách Nhân viên
           </h2>
           <p className="text-sm font-medium mt-1" style={{ color: '#6F7B75' }}>

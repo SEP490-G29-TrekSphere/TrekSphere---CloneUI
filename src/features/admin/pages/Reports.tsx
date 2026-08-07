@@ -87,7 +87,7 @@ export default function Reports() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-extrabold tracking-tight text-[#0B3025]">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0B3025]">
               Danh sách Báo cáo Vi phạm
             </h1>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
@@ -152,7 +152,9 @@ export default function Reports() {
             <span className="text-xs font-bold tracking-wider uppercase text-emerald-300/80">
               TỔNG SỐ BÁO CÁO HÔM NAY
             </span>
-            <div className="text-5xl font-black tracking-tight mt-2 text-white">128</div>
+            <div className="text-4xl sm:text-5xl font-black tracking-tight mt-2 text-white">
+              128
+            </div>
           </div>
           <div className="text-xs font-medium text-emerald-200/90 mt-4 flex items-center gap-1">
             <span className="font-bold text-emerald-400">+12%</span> so với hôm qua
@@ -160,12 +162,14 @@ export default function Reports() {
         </div>
 
         {/* Pending Card */}
-        <div className="bg-[#FAF9F5] border border-[#E5E4DE] rounded-2xl p-6 shadow-sm flex items-center justify-between">
+        <div className="bg-[#FAF9F5] border border-[#E5E4DE] rounded-2xl p-6 shadow-sm flex flex-wrap items-center justify-between gap-4">
           <div>
             <span className="text-xs font-bold tracking-wider uppercase text-zinc-500">
               ĐANG CHỜ XỬ LÝ
             </span>
-            <div className="text-4xl font-extrabold text-zinc-900 mt-2">{pendingCount}</div>
+            <div className="text-3xl font-extrabold sm:text-4xl text-zinc-900 mt-2">
+              {pendingCount}
+            </div>
           </div>
           <div className="flex size-12 items-center justify-center rounded-full bg-red-100 text-red-600">
             <AlertCircle className="size-6 stroke-[2.5]" />
@@ -173,12 +177,12 @@ export default function Reports() {
         </div>
 
         {/* Performance Efficiency Card */}
-        <div className="bg-[#FAF9F5] border border-[#E5E4DE] rounded-2xl p-6 shadow-sm flex items-center justify-between">
+        <div className="bg-[#FAF9F5] border border-[#E5E4DE] rounded-2xl p-6 shadow-sm flex flex-wrap items-center justify-between gap-4">
           <div>
             <span className="text-xs font-bold tracking-wider uppercase text-zinc-500">
               HIỆU SUẤT XỬ LÝ
             </span>
-            <div className="text-4xl font-extrabold text-zinc-900 mt-2">94%</div>
+            <div className="text-3xl font-extrabold sm:text-4xl text-zinc-900 mt-2">94%</div>
           </div>
           <div className="flex size-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
             <Zap className="size-6 stroke-[2.5]" />
@@ -333,7 +337,7 @@ export default function Reports() {
         </div>
 
         {/* Table Footer Pagination */}
-        <div className="p-4 border-t border-[#E5E4DE] flex items-center justify-between text-xs text-zinc-500 font-medium bg-[#FAF9F5]">
+        <div className="p-4 border-t border-[#E5E4DE] flex flex-col gap-2 text-xs text-zinc-500 font-medium bg-[#FAF9F5] sm:flex-row sm:items-center sm:justify-between">
           <span>
             Hiển thị 1 - {filteredReports.length} trên tổng số {filteredReports.length} báo cáo
           </span>
@@ -395,7 +399,7 @@ export default function Reports() {
         </div>
 
         {/* Nhật ký hoạt động gần đây */}
-        <div className="bg-[#FAF9F5] border border-[#E5E4DE] rounded-2xl p-6 shadow-sm flex items-center justify-between">
+        <div className="bg-[#FAF9F5] border border-[#E5E4DE] rounded-2xl p-6 shadow-sm flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-3">
             <h3 className="font-bold text-xs tracking-wider uppercase text-zinc-800">
               Nhật ký hoạt động gần đây

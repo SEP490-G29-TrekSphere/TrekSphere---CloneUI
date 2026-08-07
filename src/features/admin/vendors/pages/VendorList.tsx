@@ -66,7 +66,10 @@ export default function VendorList() {
     <div className="space-y-6">
       {/* Page header */}
       <div>
-        <h1 className="text-3xl font-extrabold tracking-tight" style={{ color: '#06261D' }}>
+        <h1
+          className="text-2xl sm:text-3xl font-extrabold tracking-tight"
+          style={{ color: '#06261D' }}
+        >
           Quản lý Nhà cung cấp
         </h1>
         <p className="text-sm font-medium mt-1" style={{ color: '#6F7B75' }}>

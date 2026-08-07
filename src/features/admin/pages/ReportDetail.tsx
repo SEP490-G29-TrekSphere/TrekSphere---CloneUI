@@ -92,7 +92,7 @@ export default function ReportDetail() {
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-12 animate-fade-in">
       {/* Breadcrumb & Navigation */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-xs font-semibold text-zinc-500">
           <Link to={PATHS.ADMIN_REPORTS} className="hover:text-zinc-900 transition-colors">
             Báo cáo
@@ -113,7 +113,7 @@ export default function ReportDetail() {
       {/* Top Title Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-[#0B3025]">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0B3025]">
             Xử lý Báo cáo #{reportData.code}
           </h1>
         </div>

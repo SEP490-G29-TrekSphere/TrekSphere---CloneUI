@@ -69,7 +69,7 @@ export default function AccountDetail() {
 
       {/* Page header */}
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-3xl font-extrabold text-[#0B3025] tracking-tight">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0B3025] tracking-tight">
           Chi tiết tài khoản
         </h1>
         {account && (

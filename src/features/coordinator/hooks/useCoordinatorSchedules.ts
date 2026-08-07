@@ -4,6 +4,8 @@ import type { CoordinatorScheduleFilter } from '../types';
 
 export const coordinatorKeys = {
   all: ['coordinator'] as const,
+  /** Prefix của mọi query lịch dẫn đoàn — invalidate key này là refresh mọi bộ lọc. */
+  schedulesRoot: ['coordinator', 'schedules'] as const,
   schedules: (filter: CoordinatorScheduleFilter) => ['coordinator', 'schedules', filter] as const,
 };
 

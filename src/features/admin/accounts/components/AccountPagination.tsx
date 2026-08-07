@@ -32,7 +32,7 @@ export function AccountPagination({
   const pageNumbers = getPageNumbers(currentPage, totalPages);
 
   return (
-    <div className="flex items-center justify-between px-6 py-5">
+    <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5">
       <p className="text-sm" style={{ color: '#6F7B75' }}>
         Hiển thị{' '}
         <span className="font-semibold" style={{ color: '#06261D' }}>
@@ -49,7 +49,7 @@ export function AccountPagination({
         tài khoản
       </p>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
         <button
           type="button"
           aria-label="Trang trước"

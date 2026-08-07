@@ -122,7 +122,7 @@ export default function Applications() {
       {/* Top Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-[#0B3025] tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0B3025] tracking-tight">
             Hồ sơ Đăng ký Đối tác
           </h1>
           <p className="text-zinc-500 text-sm font-medium mt-1">
@@ -379,7 +379,9 @@ export default function Applications() {
         <div className="bg-[#0B3025] shadow-md text-white rounded-2xl p-6 flex flex-col justify-between h-44">
           <span className="text-zinc-300 text-xs font-bold tracking-wide">Tổng số đơn đăng ký</span>
           <div className="my-2">
-            <h2 className="text-5xl font-extrabold tracking-tight">{statsData?.all ?? 0}</h2>
+            <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight">
+              {statsData?.all ?? 0}
+            </h2>
           </div>
           <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-bold">
             <span>Đã cập nhật hệ thống</span>
@@ -390,7 +392,7 @@ export default function Applications() {
         <AppCard className="bg-white border border-[#E5E4DE] shadow-sm rounded-2xl p-6 flex flex-col justify-between h-44">
           <span className="text-zinc-400 text-xs font-bold tracking-wide">Đơn chờ xét duyệt</span>
           <div className="my-2">
-            <h2 className="text-5xl font-extrabold text-[#D97706] tracking-tight">
+            <h2 className="text-4xl sm:text-5xl font-extrabold text-[#D97706] tracking-tight">
               {statsData?.pending ?? 0}
             </h2>
           </div>
@@ -408,7 +410,7 @@ export default function Applications() {
         <AppCard className="bg-[#FAF9F5] border border-[#E5E4DE] shadow-sm rounded-2xl p-6 flex flex-col justify-between h-44">
           <span className="text-zinc-400 text-xs font-bold tracking-wide">Đơn đã duyệt</span>
           <div className="my-2">
-            <h2 className="text-5xl font-extrabold text-[#059669] tracking-tight">
+            <h2 className="text-4xl sm:text-5xl font-extrabold text-[#059669] tracking-tight">
               {statsData?.approved ?? 0}
             </h2>
           </div>

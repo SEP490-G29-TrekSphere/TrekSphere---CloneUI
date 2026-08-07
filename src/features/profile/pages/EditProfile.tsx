@@ -153,11 +153,8 @@ export default function EditProfile({ returnPath }: { returnPath?: string }) {
     email: profile?.email ?? '',
     phone: profile?.phone,
     avatar: avatarPreview || profile?.avatar,
-    username: profile?.username,
     gender: profile?.gender,
     dateOfBirth: profile?.dateOfBirth,
-    stats: profile?.stats,
-    joinedAt: profile?.joinedAt,
     roles: profile?.roles ?? [],
     role: profile?.role ?? '',
   };

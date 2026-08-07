@@ -118,7 +118,7 @@ export function CreateApplicationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[550px] w-full max-h-[90vh] overflow-y-auto bg-white rounded-2xl p-6 border-[#E5E4DE] shadow-lg">
+      <DialogContent className="sm:max-w-[550px] w-full max-h-[90vh] overflow-y-auto bg-white rounded-2xl p-6 border-[#E5E4DE] shadow-lg">
         <DialogHeader className="space-y-1">
           <DialogTitle className="text-xl font-bold text-primary">
             {isEditMode ? 'Cập nhật đơn đăng ký Vendor' : 'Đăng ký làm Vendor (Bản nháp)'}

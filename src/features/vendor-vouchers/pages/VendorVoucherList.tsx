@@ -14,6 +14,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { parseIsoDate, toIsoDate } from '@/lib';
 import { useDebounce } from '@/shared/hooks';
 import { AppBadge, AppDatePicker, AppEmptyState, AppSpinner } from '@/shared/ui';
 import { toast } from '@/store/useToastStore';
@@ -189,7 +190,10 @@ export default function VendorVoucherList() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-extrabold tracking-tight" style={{ color: '#06261D' }}>
+          <h2
+            className="text-2xl sm:text-3xl font-extrabold tracking-tight"
+            style={{ color: '#06261D' }}
+          >
             Quản lý Voucher
           </h2>
           <p className="text-sm font-medium mt-1" style={{ color: '#6F7B75' }}>
@@ -278,24 +282,19 @@ export default function VendorVoucherList() {
           {/* Valid Until */}
           <div className="relative">
             <span
-              className="absolute inset-y-0 left-4 flex items-center pointer-events-none z-10"
+              className="absolute inset-y-0 left-4 flex items-center pointer-events-none"
               style={{ color: '#6F7B75' }}
             >
               <Calendar className="h-4 w-4" />
             </span>
             <AppDatePicker
-              selected={validUntil ? new Date(validUntil) : null}
-              onChange={(date: Date | null) => {
-                if (!date) {
-                  setValidUntil('');
-                  return;
-                }
-                const offset = date.getTimezoneOffset();
-                const localDate = new Date(date.getTime() - offset * 60 * 1000);
-                setValidUntil(localDate.toISOString().split('T')[0]);
-              }}
-              placeholderText="Hạn dùng trước ngày"
-              className="w-full rounded-full !border-none !h-auto !bg-[#F0EEE6] py-2.5 pl-10 pr-4 text-sm font-medium focus:outline-none focus:ring-1 cursor-pointer"
+              selected={parseIsoDate(validUntil)}
+              onChange={(date: Date | null) => setValidUntil(toIsoDate(date))}
+              isClearable
+              ariaLabel="Hạn dùng trước ngày"
+              placeholderText="Hạn dùng trước ngày..."
+              className="w-full cursor-pointer rounded-full border-none py-2.5 pl-10 pr-4 text-sm font-medium focus:outline-none focus:ring-1"
+              style={{ backgroundColor: '#F0EEE6', color: '#06261D' }}
             />
           </div>
 
@@ -348,7 +347,7 @@ export default function VendorVoucherList() {
         style={{ border: '1px solid #E6E2D1' }}
       >
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px]">
+          <table className="w-full">
             <thead style={{ backgroundColor: '#F0EEE6' }}>
               <tr>
                 <th
@@ -543,7 +542,7 @@ export default function VendorVoucherList() {
         {/* Pagination Footer */}
         {!isLoading && !isError && vouchers.length > 0 && (
           <div
-            className="flex items-center justify-between px-6 py-5 border-t"
+            className="flex flex-col gap-3 px-4 py-4 border-t sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5"
             style={{ borderColor: '#E6E2D1' }}
           >
             <p className="text-sm" style={{ color: '#6F7B75' }}>

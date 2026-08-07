@@ -84,7 +84,9 @@ export default function BlogManagement() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-[#0B3025] tracking-tight">Quản lý Blog</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0B3025] tracking-tight">
+            Quản lý Blog
+          </h1>
           <p className="text-zinc-500 text-sm font-medium mt-1">
             Kiểm duyệt bài viết blog trong toàn hệ thống TrekSphere.
             {total > 0 && ` Tổng cộng ${total} bài viết.`}
@@ -116,7 +118,7 @@ export default function BlogManagement() {
         style={{ border: '1px solid #E6E2D1' }}
       >
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px]">
+          <table className="w-full">
             <thead style={{ backgroundColor: '#F0EEE6' }}>
               <tr>
                 <Th align="left">Hình ảnh & Tiêu đề</Th>

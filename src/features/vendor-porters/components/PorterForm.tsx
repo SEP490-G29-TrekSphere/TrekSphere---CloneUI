@@ -125,7 +125,10 @@ export function PorterForm({
           </Link>{' '}
           &gt; {isEdit ? 'Sửa hồ sơ' : 'Tạo hồ sơ mới'}
         </p>
-        <h2 className="mt-2 text-3xl font-extrabold tracking-tight" style={{ color: '#06261D' }}>
+        <h2
+          className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight"
+          style={{ color: '#06261D' }}
+        >
           {isEdit ? 'Sửa hồ sơ Porter' : 'Tạo hồ sơ Porter mới'}
         </h2>
         <p className="mt-1 text-sm font-medium" style={{ color: '#6F7B75' }}>

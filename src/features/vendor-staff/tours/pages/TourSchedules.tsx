@@ -92,7 +92,10 @@ export default function TourSchedules() {
             <ArrowLeft className="h-4 w-4" />
             Quay lại danh sách tour
           </button>
-          <h2 className="text-3xl font-extrabold tracking-tight" style={{ color: '#06261D' }}>
+          <h2
+            className="text-2xl sm:text-3xl font-extrabold tracking-tight"
+            style={{ color: '#06261D' }}
+          >
             Lịch khởi hành — {tour.tourName}
           </h2>
           <p className="text-sm font-medium mt-1" style={{ color: '#6F7B75' }}>

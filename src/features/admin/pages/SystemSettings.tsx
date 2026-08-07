@@ -89,7 +89,7 @@ export default function SystemSettings() {
       {/* Page Header */}
       <div className="flex flex-col gap-1.5 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-[#0B3025] leading-none mb-2">
+          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0B3025] leading-none mb-2">
             Cấu hình Hệ thống
           </h2>
           <p className="text-zinc-500 font-medium text-sm">
@@ -248,7 +248,7 @@ export default function SystemSettings() {
           {/* Toggles list */}
           <div className="space-y-4">
             {/* Email Notifications Toggle */}
-            <div className="flex items-center justify-between p-4 bg-[#FAF9F5] rounded-2xl border border-[#E5E4DE]">
+            <div className="flex flex-col gap-3 p-4 bg-[#FAF9F5] rounded-2xl border border-[#E5E4DE] sm:flex-row sm:items-center sm:justify-between">
               <div className="flex gap-4 items-center">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white border border-[#E5E4DE] text-zinc-500">
                   <Mail className="h-5 w-5" />
@@ -284,7 +284,7 @@ export default function SystemSettings() {
             </div>
 
             {/* Push Notifications Toggle */}
-            <div className="flex items-center justify-between p-4 bg-[#FAF9F5] rounded-2xl border border-[#E5E4DE]">
+            <div className="flex flex-col gap-3 p-4 bg-[#FAF9F5] rounded-2xl border border-[#E5E4DE] sm:flex-row sm:items-center sm:justify-between">
               <div className="flex gap-4 items-center">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white border border-[#E5E4DE] text-zinc-500">
                   <Smartphone className="h-5 w-5" />
@@ -324,7 +324,7 @@ export default function SystemSettings() {
         {/* Data Backup and Security Info Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Backup Info */}
-          <div className="flex items-center justify-between p-6 bg-[#FAF9F5] rounded-3xl border border-[#E5E4DE]">
+          <div className="flex flex-col gap-4 p-6 bg-[#FAF9F5] rounded-3xl border border-[#E5E4DE] sm:flex-row sm:items-center sm:justify-between">
             <div>
               <span className="text-[9px] font-extrabold text-zinc-400 tracking-wider block mb-1 uppercase">
                 LƯU TRỮ DỮ LIỆU
@@ -352,7 +352,7 @@ export default function SystemSettings() {
           </div>
 
           {/* 2FA Info */}
-          <div className="flex items-center justify-between p-6 bg-[#FAF9F5] rounded-3xl border border-[#E5E4DE]">
+          <div className="flex flex-col gap-4 p-6 bg-[#FAF9F5] rounded-3xl border border-[#E5E4DE] sm:flex-row sm:items-center sm:justify-between">
             <div>
               <span className="text-[9px] font-extrabold text-zinc-400 tracking-wider block mb-1 uppercase">
                 BẢO MẬT HỆ THỐNG

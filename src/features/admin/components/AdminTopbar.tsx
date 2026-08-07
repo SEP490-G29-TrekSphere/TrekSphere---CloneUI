@@ -82,11 +82,11 @@ export default function AdminTopbar({
 
   return (
     <header
-      className="sticky top-0 z-30 flex h-20 w-full items-center justify-between border-b px-8"
+      className="sticky top-0 z-30 flex w-full flex-wrap items-center justify-between gap-3 border-b px-4 py-3 sm:h-20 sm:flex-nowrap sm:gap-4 sm:px-8 sm:py-0"
       style={{ backgroundColor: '#FFFFFF', borderColor: '#E6E2D1' }}
     >
       {/* Search bar */}
-      <div className="flex max-w-md flex-1 items-center">
+      <div className="flex w-full min-w-0 flex-1 items-center sm:max-w-md">
         <div className="relative w-full">
           <Search
             className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2"
@@ -108,7 +108,7 @@ export default function AdminTopbar({
       </div>
 
       {/* Right side icons */}
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
         {/* Notification */}
         <button
           type="button"
@@ -136,7 +136,7 @@ export default function AdminTopbar({
         </button>
 
         {/* Language selector */}
-        <div className="relative" ref={languageRef}>
+        <div className="relative hidden sm:block" ref={languageRef}>
           <button
             type="button"
             onClick={() => setLanguageOpen((prev) => !prev)}
