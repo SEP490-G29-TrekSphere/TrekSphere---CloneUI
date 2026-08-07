@@ -3,14 +3,14 @@ import { AppIdDisplay } from '@/shared/ui';
 
 export interface ReportTargetInfoProps {
   reason: string;
-  reporterAvatar?: string;
+  reporterAvatar?: string | null;
   reporterFullName: string;
   reporterEmail: string;
   createdAt: string;
   targetType: string;
   targetId: string;
-  targetTitle: string;
-  targetContent: string;
+  targetTitle: string | null;
+  targetContent: string | null;
 }
 
 export function ReportTargetInfo({
