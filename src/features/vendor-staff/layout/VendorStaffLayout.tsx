@@ -67,17 +67,7 @@ export default function VendorStaffLayout() {
           {navItems.map((item) => {
             const Icon = item.icon;
             if (item.disabled) {
-              return (
-                <span
-                  key={item.name}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold opacity-40 cursor-not-allowed select-none"
-                  style={{ color: '#6F7B75' }}
-                  title={`${item.name} (chưa thực hiện)`}
-                >
-                  <Icon className="h-5 w-5" />
-                  {item.name}
-                </span>
-              );
+              return null;
             }
 
             const isActive = location.pathname.startsWith(item.path);
