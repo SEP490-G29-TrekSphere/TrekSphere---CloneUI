@@ -1,3 +1,5 @@
+import type { CancellationPolicy } from '@/features/vendor-cancellation-policies/types';
+
 export type TourLevel = 'Dễ' | 'Trung bình' | 'Khó' | 'Khám phá';
 
 export interface Tour {
@@ -332,6 +334,12 @@ export interface TourDetailFromApi {
   creatorEmail: string;
   images: TourDetailImageApi[];
   schedules: TourDetailScheduleApi[];
+  /**
+   * Điều khoản hủy tour & hoàn tiền của vendor sở hữu tour. BE nhúng sẵn vào
+   * `GET /tours/{id}` nên trekker đọc được mà không cần gọi endpoint vendor.
+   * Optional vì vendor có thể chưa cấu hình chính sách nào.
+   */
+  cancellationPolicies?: CancellationPolicy[];
   averageRating: number | null;
   totalReviews: number;
 }

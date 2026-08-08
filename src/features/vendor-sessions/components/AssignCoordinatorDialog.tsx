@@ -16,7 +16,7 @@ export interface AssignCoordinatorDialogProps {
   candidates: CoordinatorCandidate[];
   /** userId của các coordinator đã gán — loại khỏi danh sách chọn để tránh gán trùng. */
   assignedUserIds: string[];
-  /** Đang tải danh sách ứng viên từ `GET /vendor-staff/me`. */
+  /** Đang tải danh sách ứng viên từ `GET /vendor-staff/coordinators`. */
   isLoadingCandidates?: boolean;
   /** Lỗi khi tải danh sách ứng viên (vd 403 nếu role không được gọi endpoint). */
   candidatesError?: unknown;
@@ -26,8 +26,7 @@ export interface AssignCoordinatorDialogProps {
 
 /**
  * Dialog "Chỉ định thêm" Coordinator — gọi `POST /vendor/sessions/{id}/coordinators`.
- * Ứng viên lấy từ Staff Directory (xem `useCoordinatorCandidates`), không phải entity
- * riêng ở BE.
+ * Ứng viên lấy từ `GET /vendor-staff/coordinators` (xem `useCoordinatorCandidates`).
  *
  * Phân biệt rõ 3 trạng thái "không có gì để chọn" — trước đây gộp làm một nên
  * khi API lỗi vẫn báo "tất cả đã được phân công", che mất nguyên nhân thật.

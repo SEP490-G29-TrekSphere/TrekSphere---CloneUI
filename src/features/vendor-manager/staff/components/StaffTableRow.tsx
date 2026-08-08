@@ -1,4 +1,9 @@
-import type { VendorStaffMember } from '../types';
+import {
+  VENDOR_STAFF_ROLE_LABELS,
+  VENDOR_STAFF_ROLES,
+  type VendorStaffMember,
+  type VendorStaffRole,
+} from '../types';
 import { StaffStatusBadge } from './StaffStatusBadge';
 
 interface StaffTableRowProps {
@@ -7,13 +12,23 @@ interface StaffTableRowProps {
   onLockClick: (staff: VendorStaffMember) => void;
   /** Bấm "Mở khóa" gọi thẳng, không cần xác nhận (giống hành vi unlock bên Admin). */
   onUnlock: (staff: VendorStaffMember) => void;
+  /** Đổi vai trò nghiệp vụ — gọi `PATCH /vendor-staff/{id}/role` ở component cha. */
+  onRoleChange: (staff: VendorStaffMember, role: VendorStaffRole) => void;
+  /** Đang chờ API đổi vai trò của riêng hàng này. */
+  isRoleUpdating?: boolean;
 }
 
 const FALLBACK_AVATAR =
   'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&h=120&fit=crop&crop=face';
 
 /** 1 hàng trong bảng nhân viên — không có nút Sửa (BE chưa có API cập nhật thông tin). */
-export function StaffTableRow({ staff, onLockClick, onUnlock }: StaffTableRowProps) {
+export function StaffTableRow({
+  staff,
+  onLockClick,
+  onUnlock,
+  onRoleChange,
+  isRoleUpdating = false,
+}: StaffTableRowProps) {
   const avatarSrc = staff.avatarUrl ?? FALLBACK_AVATAR;
   const initial = staff.fullName.charAt(0).toUpperCase();
 
@@ -58,6 +73,23 @@ export function StaffTableRow({ staff, onLockClick, onUnlock }: StaffTableRowPro
 
       <td className="px-6 py-4" style={{ verticalAlign: 'middle' }}>
         <StaffStatusBadge isActive={staff.isActive} />
+      </td>
+
+      <td className="px-6 py-4" style={{ verticalAlign: 'middle' }}>
+        <select
+          aria-label={`Vai trò của ${staff.fullName}`}
+          value={staff.role}
+          disabled={isRoleUpdating}
+          onChange={(e) => onRoleChange(staff, e.target.value as VendorStaffRole)}
+          className="w-full max-w-[180px] rounded-full px-4 py-2 text-sm font-semibold transition-colors focus:outline-none focus:ring-1 disabled:opacity-60"
+          style={{ backgroundColor: '#F0EEE6', color: '#06261D', border: '1px solid #E0DCD1' }}
+        >
+          {VENDOR_STAFF_ROLES.map((value) => (
+            <option key={value} value={value}>
+              {VENDOR_STAFF_ROLE_LABELS[value]}
+            </option>
+          ))}
+        </select>
       </td>
 
       <td className="px-6 py-4 text-right" style={{ verticalAlign: 'middle' }}>

@@ -1,5 +1,6 @@
 import { getPrimaryRole, PATHS, ROLES } from '@/constants';
 import { useVendorBookingStats } from '@/features/vendor-bookings/hooks/useVendorBookingStats';
+import { VendorCancellationPolicyCard } from '@/features/vendor-cancellation-policies';
 import { useVendorTourStats } from '@/features/vendor-tours/hooks/useVendorTourStats';
 import { useAppStore } from '@/store/useAppStore';
 import { VendorAccountStatusCard } from '../components/VendorAccountStatusCard';
@@ -63,6 +64,9 @@ export default function VendorProfileOverview() {
         <VendorContactCard profile={profile} />
         <VendorBankingCard profile={profile} />
       </div>
+
+      {/* Chính sách hủy tour — full width vì có danh sách điều khoản + thao tác CRUD */}
+      <VendorCancellationPolicyCard canManage={isManager} />
     </div>
   );
 }

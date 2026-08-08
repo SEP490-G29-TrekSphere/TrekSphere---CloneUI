@@ -2,7 +2,10 @@ import { type ApiResponse, ApiService } from '@/config/apiClient';
 import type {
   AttendanceType,
   CheckpointLogResult,
+  SessionCheckpointStatus,
+  SessionSosStatus,
   SosAlertResult,
+  SosStatus,
   TourSessionStatus,
 } from '../types';
 
@@ -34,6 +37,36 @@ interface SessionEquipmentCheckResultDto {
   isChecked: boolean;
 }
 
+/** `SessionCheckpointStatusResponse` — BE đặt tiền tố `checkpoint` cho toạ độ/độ cao. */
+interface SessionCheckpointStatusDto {
+  sessionCheckpointLogId?: string;
+  checkpointId: string;
+  checkpointName: string;
+  checkpointDescription?: string;
+  checkpointOrder: number;
+  checkpointLatitude?: number;
+  checkpointLongitude?: number;
+  checkpointAltitude?: number;
+  status: SessionCheckpointStatus['status'];
+}
+
+interface SessionSosStatusDto {
+  tourSessionId: string;
+  hasSosAlert: boolean;
+  hasActiveSosAlert: boolean;
+  resolved: boolean;
+  status?: SosStatus;
+  sosAlert?: {
+    sosAlertId: string;
+    senderName?: string;
+    senderRole?: string;
+    message?: string;
+    status: SosStatus;
+    createdAt: string;
+    resolvedByName?: string;
+  };
+}
+
 export const trackingService = {
   /** `POST /tracking/sessions/{sessionId}/start` */
   async startSession(
@@ -59,6 +92,52 @@ export const trackingService = {
       payload
     );
     return unwrapResponse(response);
+  },
+
+  /**
+   * `GET /tracking/sessions/{sessionId}/checkpoint-logs` — toàn bộ trạm dừng kèm
+   * trạng thái check-in thật, đã sắp theo thứ tự hành trình (vẫn sort lại ở FE
+   * cho chắc). Trước khi phiên tour bắt đầu, BE chưa khởi tạo nhật ký nên có thể
+   * trả về mảng rỗng — caller tự fallback sang lộ trình tour công khai.
+   */
+  async getCheckpointLogs(sessionId: string): Promise<SessionCheckpointStatus[]> {
+    const response = await ApiService<SessionCheckpointStatusDto[]>(
+      `/tracking/sessions/${sessionId}/checkpoint-logs`,
+      'GET'
+    );
+    const data = unwrapResponse(response) ?? [];
+
+    return [...data]
+      .sort((a, b) => a.checkpointOrder - b.checkpointOrder)
+      .map((dto) => ({
+        sessionCheckpointLogId: dto.sessionCheckpointLogId,
+        checkpointId: dto.checkpointId,
+        checkpointName: dto.checkpointName,
+        description: dto.checkpointDescription,
+        checkpointOrder: dto.checkpointOrder,
+        latitude: dto.checkpointLatitude,
+        longitude: dto.checkpointLongitude,
+        altitude: dto.checkpointAltitude,
+        status: dto.status,
+      }));
+  },
+
+  /** `GET /tracking/sessions/{sessionId}/sos/status` — SOS của phiên đã được xử lý hay chưa. */
+  async getSosStatus(sessionId: string): Promise<SessionSosStatus> {
+    const response = await ApiService<SessionSosStatusDto>(
+      `/tracking/sessions/${sessionId}/sos/status`,
+      'GET'
+    );
+    const dto = unwrapResponse(response);
+
+    return {
+      tourSessionId: dto.tourSessionId,
+      hasSosAlert: dto.hasSosAlert,
+      hasActiveSosAlert: dto.hasActiveSosAlert,
+      resolved: dto.resolved,
+      status: dto.status,
+      sosAlert: dto.sosAlert,
+    };
   },
 
   /** `POST /tracking/sessions/{sessionId}/checkpoint-logs` — BE tự so khớp GPS với trạm kế tiếp. */

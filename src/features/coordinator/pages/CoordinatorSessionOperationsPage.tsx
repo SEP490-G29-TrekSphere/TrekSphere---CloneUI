@@ -1,5 +1,5 @@
 import { ArrowLeft, XCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { PATHS } from '@/constants';
 import { ConfirmActionDialog } from '@/shared/ui';
@@ -10,9 +10,15 @@ import { EmergencySosPanel } from '../components/EmergencySosPanel';
 import { GearChecklistPanel } from '../components/GearChecklistPanel';
 import { OperationsHeaderBar } from '../components/OperationsHeaderBar';
 import { TrekkersPanel } from '../components/TrekkersPanel';
-import { useSessionDetail, useTourCheckpoints } from '../hooks/useSessionOperations';
+import {
+  useSessionCheckpointLogs,
+  useSessionDetail,
+  useSessionSosStatus,
+  useTourCheckpoints,
+} from '../hooks/useSessionOperations';
 import { useSessionOperationsMutations } from '../hooks/useSessionOperationsMutations';
 import { useSessionTrekkers } from '../hooks/useSessionTrekkers';
+import type { SessionCheckpointStatus } from '../types';
 
 function errorMessage(err: unknown, fallback: string): string {
   return err instanceof Error ? err.message : fallback;
@@ -32,19 +38,31 @@ export default function CoordinatorSessionOperationsPage() {
     error: sessionError,
     refetch: refetchSession,
   } = useSessionDetail(sessionId);
-  const { data: checkpoints = [], isLoading: isCheckpointsLoading } = useTourCheckpoints(
+  const { data: checkpointLogs = [], isLoading: isCheckpointLogsLoading } =
+    useSessionCheckpointLogs(sessionId);
+  const { data: tourCheckpoints = [], isLoading: isTourCheckpointsLoading } = useTourCheckpoints(
     session?.tourId
   );
+  const { data: sosStatus, isLoading: isSosStatusLoading } = useSessionSosStatus(sessionId);
   const { data: trekkers = [], isLoading: isTrekkersLoading } = useSessionTrekkers(sessionId);
   const mutations = useSessionOperationsMutations(sessionId ?? '');
 
-  const [reachedOrder, setReachedOrder] = useState(0);
   const [equipmentChecked, setEquipmentChecked] = useState<Record<string, boolean>>({});
-  const [sosSentAt, setSosSentAt] = useState<string | undefined>(undefined);
   const [pendingEquipmentId, setPendingEquipmentId] = useState<string | undefined>(undefined);
   const [pendingGpsAction, setPendingGpsAction] = useState<PendingGpsAction | null>(null);
-  const [sosAlertId, setSosAlertId] = useState<string | undefined>(undefined);
-  const [isSosResolved, setIsSosResolved] = useState(false);
+
+  /**
+   * Nguồn hiển thị lộ trình: ưu tiên nhật ký checkpoint của phiên (có trạng thái
+   * check-in thật). Phiên chưa bắt đầu thì BE chưa khởi tạo nhật ký → rơi về lộ
+   * trình tour công khai, mọi trạm coi như PENDING để Coordinator vẫn xem trước
+   * được hành trình.
+   */
+  const checkpoints = useMemo<SessionCheckpointStatus[]>(() => {
+    if (checkpointLogs.length > 0) return checkpointLogs;
+    return tourCheckpoints.map((cp) => ({ ...cp, status: 'PENDING' as const }));
+  }, [checkpointLogs, tourCheckpoints]);
+
+  const isCheckpointsLoading = isCheckpointLogsLoading || isTourCheckpointsLoading;
 
   const handleBack = () => navigate(PATHS.COORDINATOR_SCHEDULES);
 
@@ -57,20 +75,14 @@ export default function CoordinatorSessionOperationsPage() {
 
   const handleEnd = () => {
     mutations.endSession.mutate(undefined, {
-      onSuccess: () => {
-        setReachedOrder(checkpoints.length);
-        toast.success('Đã kết thúc phiên tour.');
-      },
+      onSuccess: () => toast.success('Đã kết thúc phiên tour.'),
       onError: (err) => toast.error(errorMessage(err, 'Không thể kết thúc phiên tour.')),
     });
   };
 
   const handleCheckin = (note?: string) => {
     mutations.checkinCheckpoint.mutate(note, {
-      onSuccess: (result) => {
-        setReachedOrder((prev) => Math.max(prev, result.checkpointOrder));
-        toast.success(`Đã check-in: ${result.checkpointName}`);
-      },
+      onSuccess: (result) => toast.success(`Đã check-in: ${result.checkpointName}`),
       onError: (err) => toast.error(errorMessage(err, 'Check-in trạm dừng thất bại.')),
       onSettled: () => setPendingGpsAction(null),
     });
@@ -95,23 +107,15 @@ export default function CoordinatorSessionOperationsPage() {
 
   const handleSendSos = (message?: string) => {
     mutations.sendSos.mutate(message, {
-      onSuccess: (result) => {
-        setSosSentAt(result.createdAt);
-        setSosAlertId(result.sosAlertId);
-        toast.success('Đã gửi tín hiệu SOS tới đội cứu hộ.');
-      },
+      onSuccess: () => toast.success('Đã gửi tín hiệu SOS tới đội cứu hộ.'),
       onError: (err) => toast.error(errorMessage(err, 'Không thể gửi tín hiệu SOS.')),
       onSettled: () => setPendingGpsAction(null),
     });
   };
 
-  const handleResolveSos = () => {
-    if (!sosAlertId) return;
+  const handleResolveSos = (sosAlertId: string) => {
     mutations.resolveSos.mutate(sosAlertId, {
-      onSuccess: () => {
-        setIsSosResolved(true);
-        toast.success('Đã xác nhận cứu hộ hoàn tất.');
-      },
+      onSuccess: () => toast.success('Đã xác nhận cứu hộ hoàn tất.'),
       onError: (err) => toast.error(errorMessage(err, 'Không thể cập nhật trạng thái cứu hộ.')),
     });
   };
@@ -181,8 +185,7 @@ export default function CoordinatorSessionOperationsPage() {
     );
   }
 
-  const lastReachedCheckpoint =
-    reachedOrder > 0 ? checkpoints.find((cp) => cp.checkpointOrder === reachedOrder) : undefined;
+  const lastReachedCheckpoint = [...checkpoints].reverse().find((cp) => cp.status === 'REACHED');
   const finalCheckpoint = checkpoints[checkpoints.length - 1];
 
   return (
@@ -210,7 +213,6 @@ export default function CoordinatorSessionOperationsPage() {
         <div className="lg:col-span-2">
           <CheckpointTimeline
             checkpoints={checkpoints}
-            reachedOrder={reachedOrder}
             canCheckin={session.status === 'IN_PROGRESS'}
             isCheckingIn={mutations.checkinCheckpoint.isPending}
             onCheckin={(note) => setPendingGpsAction({ type: 'checkin', note })}
@@ -220,11 +222,10 @@ export default function CoordinatorSessionOperationsPage() {
 
         <div className="space-y-6">
           <EmergencySosPanel
+            status={sosStatus}
+            isLoadingStatus={isSosStatusLoading}
             onSendSos={(message) => setPendingGpsAction({ type: 'sos', message })}
             isSending={mutations.sendSos.isPending}
-            lastSentAt={sosSentAt}
-            sosAlertId={sosAlertId}
-            isResolved={isSosResolved}
             onResolve={handleResolveSos}
             isResolving={mutations.resolveSos.isPending}
           />

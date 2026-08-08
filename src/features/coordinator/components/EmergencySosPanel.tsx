@@ -1,30 +1,46 @@
 import { Loader2, ShieldCheck, Siren } from 'lucide-react';
 import { useState } from 'react';
+import type { SessionSosStatus } from '../types';
 
 interface EmergencySosPanelProps {
+  /** Trạng thái SOS của phiên — `GET /tracking/sessions/{id}/sos/status`. */
+  status?: SessionSosStatus;
+  isLoadingStatus?: boolean;
   onSendSos: (message?: string) => void;
   isSending: boolean;
-  lastSentAt?: string;
-  /** ID của SOS vừa gửi — có giá trị nghĩa là đã gửi xong, hiện nút "Hoàn thành cứu hộ" thay vì form gửi. */
-  sosAlertId?: string;
-  isResolved: boolean;
-  onResolve: () => void;
+  onResolve: (sosAlertId: string) => void;
   isResolving: boolean;
 }
 
+function formatTime(value?: string): string {
+  if (!value) return '';
+  return ` lúc ${new Date(value).toLocaleTimeString('vi-VN')}`;
+}
+
+/**
+ * Panel SOS của Coordinator. Trạng thái lấy từ BE thay vì state cục bộ, nên
+ * Coordinator thấy được cả tín hiệu do người khác (Trekker) gửi, và biết đội cứu
+ * hộ đã đóng ca chưa dù có reload trang hay đổi thiết bị.
+ */
 export function EmergencySosPanel({
+  status,
+  isLoadingStatus = false,
   onSendSos,
   isSending,
-  lastSentAt,
-  sosAlertId,
-  isResolved,
   onResolve,
   isResolving,
 }: EmergencySosPanelProps) {
   const [message, setMessage] = useState('');
 
+  const alert = status?.sosAlert;
+  const hasActiveAlert = Boolean(status?.hasActiveSosAlert);
+  // Đã xử lý xong tín hiệu gần nhất và hiện không còn tín hiệu nào chờ.
+  const isResolvedOnly =
+    Boolean(status?.hasSosAlert) && !hasActiveAlert && Boolean(status?.resolved);
+
   const handleSend = () => {
     onSendSos(message.trim() || undefined);
+    setMessage('');
   };
 
   return (
@@ -40,25 +56,29 @@ export function EmergencySosPanel({
         Khẩn cấp (SOS)
       </h2>
 
-      {isResolved ? (
+      {isLoadingStatus ? (
         <p
-          className="mt-3 flex items-center justify-center gap-1.5 text-sm font-bold"
-          style={{ color: '#166534' }}
+          className="mt-3 flex items-center justify-center gap-1.5 text-xs font-medium"
+          style={{ color: '#8A4747' }}
         >
-          <ShieldCheck className="h-4 w-4" />
-          Đã xác nhận cứu hộ hoàn tất.
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Đang kiểm tra trạng thái cứu hộ...
         </p>
-      ) : sosAlertId ? (
+      ) : hasActiveAlert ? (
         <>
           <p className="mt-1 text-xs font-medium" style={{ color: '#8A4747' }}>
-            Đã gửi tín hiệu SOS
-            {lastSentAt ? ` lúc ${new Date(lastSentAt).toLocaleTimeString('vi-VN')}` : ''}. Đội cứu
-            hộ đã nhận được toạ độ GPS của bạn.
+            Đã gửi tín hiệu SOS{formatTime(alert?.createdAt)}. Đội cứu hộ đã nhận được toạ độ GPS,
+            tình huống đang chờ xử lý.
           </p>
+          {alert?.message && (
+            <p className="mt-1 text-xs font-semibold italic" style={{ color: '#8A4747' }}>
+              “{alert.message}”
+            </p>
+          )}
           <button
             type="button"
-            onClick={onResolve}
-            disabled={isResolving}
+            onClick={() => alert && onResolve(alert.sosAlertId)}
+            disabled={isResolving || !alert}
             className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold text-white transition-all disabled:opacity-60"
             style={{ backgroundColor: '#06261D' }}
           >
@@ -68,7 +88,27 @@ export function EmergencySosPanel({
         </>
       ) : (
         <>
-          <p className="mt-1 text-xs font-medium" style={{ color: '#8A4747' }}>
+          {isResolvedOnly && (
+            <div
+              className="mt-3 rounded-2xl px-3 py-2 text-left"
+              style={{ backgroundColor: '#E7F5EC', border: '1px solid #B7E0C5' }}
+            >
+              <p
+                className="flex items-center gap-1.5 text-xs font-bold"
+                style={{ color: '#166534' }}
+              >
+                <ShieldCheck className="h-4 w-4 shrink-0" />
+                Tín hiệu SOS gần nhất đã được xử lý
+              </p>
+              <p className="mt-0.5 text-xs font-medium" style={{ color: '#3F6B4E' }}>
+                {alert?.resolvedByName
+                  ? `Xác nhận bởi ${alert.resolvedByName}.`
+                  : 'Đội cứu hộ đã xác nhận hoàn tất.'}
+              </p>
+            </div>
+          )}
+
+          <p className="mt-3 text-xs font-medium" style={{ color: '#8A4747' }}>
             Gửi tín hiệu cấp cứu và tọa độ GPS ngay lập tức cho đội cứu hộ.
           </p>
 

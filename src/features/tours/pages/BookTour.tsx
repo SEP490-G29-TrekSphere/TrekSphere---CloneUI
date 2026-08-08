@@ -6,6 +6,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import * as z from 'zod';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { getBookingPaymentPath } from '@/constants/paths';
+import { CancellationPolicyNotice } from '@/features/tours/components/CancellationPolicyNotice';
 import { useTourDetail } from '@/features/tours/hooks/useTourDetail';
 import { tourService } from '@/features/tours/services/tourService';
 import type { ParticipantGender } from '@/features/tours/types';
@@ -486,9 +487,13 @@ export default function BookTour() {
           </AppCard>
         </div>
 
-        {/* Right side: Summary */}
-        <div className="space-y-6">
-          <AppCard className="border-[#E5E4DE] rounded-3xl bg-white p-6 shadow-sm sticky top-24">
+        {/* Right side: Summary + điều khoản hoàn tiền.
+            `sticky` đặt ở wrapper (không phải riêng thẻ Tóm tắt) để 2 card dính
+            và cuộn cùng nhau — nếu chỉ thẻ Tóm tắt sticky, nó sẽ đè lên card
+            chính sách nằm dưới khi người dùng cuộn trang. Cao quá viewport thì
+            cuộn nội bộ; popover voucher render qua Portal nên không bị cắt. */}
+        <div className="space-y-6 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
+          <AppCard className="border-[#E5E4DE] rounded-3xl bg-white p-6 shadow-sm">
             <h3 className="font-extrabold text-base text-zinc-800 tracking-tight pb-4 border-b border-[#F4F4F2] mb-4">
               Tóm tắt đơn hàng
             </h3>
@@ -641,6 +646,9 @@ export default function BookTour() {
               {isSubmitting ? 'Đang tạo giao dịch...' : 'Thanh toán ngay'}
             </AppButton>
           </AppCard>
+
+          {/* Điều khoản hoàn tiền của vendor — cho khách nắm rõ trước khi thanh toán */}
+          <CancellationPolicyNotice policies={tour.cancellationPolicies} />
         </div>
       </form>
     </div>

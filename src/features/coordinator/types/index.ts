@@ -90,19 +90,66 @@ export interface ParticipantAttendanceItem {
   isPresent: boolean;
 }
 
-/** Trạng thái check-in cục bộ của 1 trạm dừng trong phiên xem hiện tại (không persist qua BE). */
-export type CheckpointProgressStatus = 'PENDING' | 'REACHED';
+export type CheckpointProgressStatus = 'PENDING' | 'REACHED' | 'SKIPPED';
+
+/**
+ * 1 trạm dừng kèm trạng thái check-in thật của phiên tour —
+ * `GET /tracking/sessions/{sessionId}/checkpoint-logs`. Đây là nguồn dữ liệu
+ * chính của Lộ trình Check-in: trạng thái do BE lưu, không còn suy đoán từ state
+ * cục bộ của trình duyệt nên refresh trang vẫn giữ đúng tiến độ.
+ */
+export interface SessionCheckpointStatus {
+  /** Chỉ có khi BE đã khởi tạo nhật ký (sau khi phiên tour bắt đầu). */
+  sessionCheckpointLogId?: string;
+  checkpointId: string;
+  checkpointName: string;
+  description?: string;
+  checkpointOrder: number;
+  latitude?: number;
+  longitude?: number;
+  altitude?: number;
+  status: CheckpointProgressStatus;
+}
 
 export interface CheckpointLogResult {
   checkpointId: string;
   checkpointName: string;
   checkpointOrder: number;
-  status: 'PENDING' | 'REACHED' | 'SKIPPED';
+  status: CheckpointProgressStatus;
   reachedAt?: string;
 }
 
+export type SosStatus = 'PENDING' | 'RESOLVED';
+
 export interface SosAlertResult {
   sosAlertId: string;
-  status: 'PENDING' | 'RESOLVED';
+  status: SosStatus;
   createdAt: string;
+}
+
+/** Chi tiết tín hiệu SOS gắn với phiên tour — subset của `SosAlertResponse` mà màn Vận hành cần. */
+export interface SessionSosAlert {
+  sosAlertId: string;
+  senderName?: string;
+  senderRole?: string;
+  message?: string;
+  status: SosStatus;
+  createdAt: string;
+  resolvedByName?: string;
+}
+
+/**
+ * Trạng thái SOS của phiên tour — `GET /tracking/sessions/{sessionId}/sos/status`.
+ * Cho Coordinator biết tín hiệu mình gửi đã được đội cứu hộ xử lý hay chưa.
+ */
+export interface SessionSosStatus {
+  tourSessionId: string;
+  /** Phiên tour từng có tín hiệu SOS nào chưa. */
+  hasSosAlert: boolean;
+  /** Còn tín hiệu đang chờ xử lý (PENDING). */
+  hasActiveSosAlert: boolean;
+  /** Tín hiệu gần nhất đã được giải quyết. */
+  resolved: boolean;
+  status?: SosStatus;
+  sosAlert?: SessionSosAlert;
 }

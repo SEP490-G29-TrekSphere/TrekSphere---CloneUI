@@ -1,10 +1,13 @@
-import { Check, Loader2, MapPinPlus, Target } from 'lucide-react';
+import { Check, Loader2, MapPinPlus, SkipForward, Target } from 'lucide-react';
 import { useState } from 'react';
-import type { TourCheckpoint } from '../types';
+import type { SessionCheckpointStatus } from '../types';
 
 interface CheckpointTimelineProps {
-  checkpoints: TourCheckpoint[];
-  reachedOrder: number;
+  /**
+   * Trạm dừng kèm trạng thái check-in — lấy từ
+   * `GET /tracking/sessions/{id}/checkpoint-logs`, đã sắp theo thứ tự hành trình.
+   */
+  checkpoints: SessionCheckpointStatus[];
   canCheckin: boolean;
   isCheckingIn: boolean;
   onCheckin: (note?: string) => void;
@@ -13,13 +16,17 @@ interface CheckpointTimelineProps {
 
 export function CheckpointTimeline({
   checkpoints,
-  reachedOrder,
   canCheckin,
   isCheckingIn,
   onCheckin,
   isLoading,
 }: CheckpointTimelineProps) {
   const [note, setNote] = useState('');
+
+  // Trạm kế tiếp cần check-in = trạm PENDING đầu tiên theo thứ tự. Suy ra từ
+  // trạng thái BE trả về nên reload trang vẫn hiện đúng trạm đang chờ.
+  const currentCheckpointId = checkpoints.find((cp) => cp.status === 'PENDING')?.checkpointId;
+  const reachedCount = checkpoints.filter((cp) => cp.status === 'REACHED').length;
 
   const handleCheckin = () => {
     onCheckin(note.trim() || undefined);
@@ -37,7 +44,7 @@ export function CheckpointTimeline({
           style={{ color: '#6F7B75' }}
         >
           <MapPinPlus className="h-4 w-4" />
-          {checkpoints.length} trạm dừng
+          {reachedCount}/{checkpoints.length} trạm dừng
         </span>
       </div>
 
@@ -52,8 +59,9 @@ export function CheckpointTimeline({
       ) : (
         <ul className="space-y-3">
           {checkpoints.map((cp) => {
-            const isReached = cp.checkpointOrder <= reachedOrder;
-            const isCurrent = cp.checkpointOrder === reachedOrder + 1;
+            const isReached = cp.status === 'REACHED';
+            const isSkipped = cp.status === 'SKIPPED';
+            const isCurrent = cp.checkpointId === currentCheckpointId;
 
             return (
               <li
@@ -79,6 +87,8 @@ export function CheckpointTimeline({
                   >
                     {isReached ? (
                       <Check className="h-3.5 w-3.5" style={{ color: '#FFFFFF' }} />
+                    ) : isSkipped ? (
+                      <SkipForward className="h-3.5 w-3.5" style={{ color: '#6F7B75' }} />
                     ) : isCurrent ? (
                       <Target className="h-3.5 w-3.5" style={{ color: '#06261D' }} />
                     ) : null}
@@ -92,12 +102,12 @@ export function CheckpointTimeline({
                       >
                         Trạm {cp.checkpointOrder}: {cp.checkpointName}
                       </span>
-                      {isReached && (
+                      {(isReached || isSkipped) && (
                         <span
                           className="text-xs font-semibold shrink-0"
                           style={{ color: '#6F7B75' }}
                         >
-                          Hoàn tất
+                          {isReached ? 'Hoàn tất' : 'Đã bỏ qua'}
                         </span>
                       )}
                     </div>

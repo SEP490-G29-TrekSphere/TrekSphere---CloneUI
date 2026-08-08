@@ -3,10 +3,10 @@
  * Types cho khu vực "Trek Sessions" (Vendor Logistics — Module 5C) — dùng chung
  * Vendor Manager và Vendor Staff. Mirror schema BE tag "Vendor Logistics".
  *
- * Lưu ý: BE không có API liệt kê riêng "coordinator" — Coordinator thực chất là
- * nhân viên (vendor-staff) đang active, chọn qua Staff Directory. `coordinatorId`
- * gửi lên khi gán được suy luận là user id của nhân viên (không phải vendorStaffId),
- * dựa trên cách các API khác (SOS, tracking) định danh Hướng dẫn viên bằng user id.
+ * Lưu ý: danh sách ứng viên Coordinator lấy từ `GET /vendor-staff/coordinators`
+ * (BE lọc sẵn role + trạng thái active). `coordinatorId` gửi lên khi gán là user
+ * id của nhân viên (không phải vendorStaffId), theo cách các API khác (SOS,
+ * tracking) định danh Hướng dẫn viên.
  */
 
 export type SessionStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';

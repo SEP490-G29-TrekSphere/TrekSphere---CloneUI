@@ -9,14 +9,17 @@ import { StaffTableRow } from '../components/StaffTableRow';
 import { useVendorStaffList } from '../hooks/useVendorStaffList';
 import { useVendorStaffLockedCount } from '../hooks/useVendorStaffLockedCount';
 import { useVendorStaffMutations } from '../hooks/useVendorStaffMutations';
-import type { VendorStaffMember } from '../types';
+import { VENDOR_STAFF_ROLE_LABELS, type VendorStaffMember, type VendorStaffRole } from '../types';
 
 const PAGE_SIZE = 10;
+const TABLE_COLUMNS = ['Họ và tên', 'Email', 'Trạng thái', 'Vai trò', 'Thao tác'];
 
 export default function StaffList() {
   const [page, setPage] = useState(1);
   const [isAddOpen, setAddOpen] = useState(false);
   const [lockTarget, setLockTarget] = useState<VendorStaffMember | null>(null);
+  /** Hàng đang chờ API đổi vai trò — chỉ disable select của chính hàng đó, không phải cả bảng. */
+  const [roleUpdatingId, setRoleUpdatingId] = useState<string | null>(null);
 
   const [searchValue, setSearchValue] = useState('');
   const debouncedSearch = useDebounce(searchValue, 400);
@@ -30,13 +33,17 @@ export default function StaffList() {
 
   const { data, isLoading, isError, error } = useVendorStaffList(filter, page, PAGE_SIZE);
   const { data: lockedCount } = useVendorStaffLockedCount();
-  const { addStaff, setStatus } = useVendorStaffMutations();
+  const { addStaff, setStatus, setRole } = useVendorStaffMutations();
 
   const staff = data?.staff ?? [];
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-  const handleAddSubmit = (payload: { email: string; fullName?: string }) => {
+  const handleAddSubmit = (payload: {
+    email: string;
+    fullName?: string;
+    role?: VendorStaffRole;
+  }) => {
     addStaff.mutate(payload, {
       onSuccess: () => {
         setAddOpen(false);
@@ -54,6 +61,21 @@ export default function StaffList() {
       {
         onSuccess: () => toast.success('Đã mở khóa nhân viên.'),
         onError: (err) => toast.error(err instanceof Error ? err.message : 'Không thể mở khóa.'),
+      }
+    );
+  };
+
+  const handleRoleChange = (member: VendorStaffMember, role: VendorStaffRole) => {
+    if (role === member.role) return;
+    setRoleUpdatingId(member.id);
+    setRole.mutate(
+      { staffId: member.id, role },
+      {
+        onSuccess: () =>
+          toast.success(`Đã cập nhật vai trò thành ${VENDOR_STAFF_ROLE_LABELS[role]}.`),
+        onError: (err) =>
+          toast.error(err instanceof Error ? err.message : 'Không thể cập nhật vai trò.'),
+        onSettled: () => setRoleUpdatingId(null),
       }
     );
   };
@@ -139,13 +161,13 @@ export default function StaffList() {
         style={{ border: '1px solid #E6E2D1' }}
       >
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px]">
+          <table className="w-full min-w-[880px]">
             <thead style={{ backgroundColor: '#F0EEE6' }}>
               <tr>
-                {['Họ và tên', 'Email', 'Trạng thái', 'Thao tác'].map((col, i) => (
+                {TABLE_COLUMNS.map((col, i) => (
                   <th
                     key={col}
-                    className={`px-6 py-4 text-xs font-bold uppercase tracking-wider ${i === 3 ? 'text-right' : 'text-left'}`}
+                    className={`px-6 py-4 text-xs font-bold uppercase tracking-wider ${i === TABLE_COLUMNS.length - 1 ? 'text-right' : 'text-left'}`}
                     style={{ color: '#06261D' }}
                   >
                     {col}
@@ -157,7 +179,7 @@ export default function StaffList() {
               {isLoading ? (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={TABLE_COLUMNS.length}
                     className="px-6 py-16 text-center text-sm"
                     style={{ color: '#6F7B75' }}
                   >
@@ -167,7 +189,7 @@ export default function StaffList() {
               ) : isError ? (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={TABLE_COLUMNS.length}
                     className="px-6 py-16 text-center text-sm"
                     style={{ color: '#DC2626' }}
                   >
@@ -178,7 +200,7 @@ export default function StaffList() {
               ) : staff.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={TABLE_COLUMNS.length}
                     className="px-6 py-16 text-center text-sm"
                     style={{ color: '#6F7B75' }}
                   >
@@ -192,6 +214,8 @@ export default function StaffList() {
                     staff={member}
                     onLockClick={setLockTarget}
                     onUnlock={handleUnlock}
+                    onRoleChange={handleRoleChange}
+                    isRoleUpdating={roleUpdatingId === member.id}
                   />
                 ))
               )}
