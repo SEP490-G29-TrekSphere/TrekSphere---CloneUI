@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { queryClient } from '@/config/queryClient';
 import { PATHS } from '@/constants';
 import { authService } from '@/features/auth';
+import { clearSessionTokens, resetSessionExpiryFlag } from '@/lib/session';
 import { useAppStore } from '@/store/useAppStore';
 import { toast } from '@/store/useToastStore';
-import { storage } from '@/utils/storage';
 
 interface UseLogoutOptions {
   /**
@@ -62,8 +62,10 @@ export function useLogout(options: UseLogoutOptions = {}): UseLogoutReturn {
     }
 
     // Dọn local state dù BE có fail.
-    storage.remove('accessToken');
-    storage.remove('refreshToken');
+    clearSessionTokens();
+    // Mở lại "cửa" toast/điều hướng cho phiên sau — cờ idempotent trong
+    // `clearExpiredSession` chỉ tự mở khi có phiên mới.
+    resetSessionExpiryFlag();
     setUser(null);
     queryClient.clear();
     toast.success('Đã đăng xuất.');

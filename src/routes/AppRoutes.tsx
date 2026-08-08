@@ -10,6 +10,7 @@ import {
 import { AccountDetail, AccountList, AdminDashboard, BlogManagement } from '@/features/admin';
 import ProtectedRoute from '@/routes/ProtectedRoute';
 import RequireRole from '@/routes/RequireRole';
+import SessionExpiryWatcher from '@/routes/SessionExpiryWatcher';
 import MainLayout from '@/shared/layout/MainLayout';
 import PublicLayout from '@/shared/layout/PublicLayout';
 import { ScrollManager } from '@/shared/ui/ScrollManager';
@@ -125,6 +126,9 @@ export default function AppRoutes() {
   return (
     <Suspense fallback={<PageLoader />}>
       <ScrollManager />
+      {/* Phiên hết hạn ở bất kỳ portal nào (trekker/admin/vendor/coordinator)
+          đều điều hướng về /login qua watcher này. */}
+      <SessionExpiryWatcher />
       <Routes>
         {/* Standalone routes — không qua layout chung (auth flow, notifications) */}
         <Route path={PATHS.LOGIN} element={<Login />} />

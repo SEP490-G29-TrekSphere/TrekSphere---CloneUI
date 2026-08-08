@@ -1,16 +1,12 @@
 import { Bell, LayoutDashboard, LogOut, Menu, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { queryClient } from '@/config/queryClient';
+import { Link, NavLink } from 'react-router-dom';
 import { PATHS } from '@/constants';
 import { getRoleDashboardPath } from '@/constants/roles';
-import { authService } from '@/features/auth';
+import { useLogout } from '@/features/auth/hooks/useLogout';
 import { mockNotifications } from '@/features/notifications/data/mockNotifications';
-import { profileKeys } from '@/features/profile/hooks/useProfile';
 import { AppLogo } from '@/shared/ui';
 import { useAppStore } from '@/store/useAppStore';
-import { toast } from '@/store/useToastStore';
-import { storage } from '@/utils/storage';
 
 const NAV_ITEMS = [
   { label: 'Trang chủ', path: PATHS.HOME },
@@ -58,8 +54,10 @@ function NavItems({ variant, onItemClick }: NavItemsProps) {
 
 export default function Header() {
   const user = useAppStore((state) => state.user);
-  const setUser = useAppStore((state) => state.setUser);
-  const navigate = useNavigate();
+  // Dùng chung `useLogout` thay vì tự dọn state: hook này xoá token, reset cờ
+  // hết hạn phiên và clear TOÀN BỘ cache React Query (bản cũ chỉ xoá cache
+  // `profile`, nên đăng nhập tài khoản khác trong 5 phút vẫn thấy dữ liệu cũ).
+  const { logout } = useLogout({ redirectTo: PATHS.HOME });
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -75,13 +73,8 @@ export default function Header() {
   }, []);
 
   const handleLogout = async () => {
-    await authService.logout();
-    storage.remove('accessToken');
-    storage.remove('refreshToken');
-    setUser(null);
-    queryClient.removeQueries({ queryKey: profileKeys.all });
-    toast.success('Đã đăng xuất.');
-    navigate(PATHS.HOME);
+    setDropdownOpen(false);
+    await logout();
   };
 
   const avatarUrl = user?.avatarUrl;

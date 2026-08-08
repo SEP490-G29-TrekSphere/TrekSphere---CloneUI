@@ -2,9 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PATHS } from '@/constants';
 import { authService, toAppStoreUser } from '@/features/auth';
+import { setSessionTokens } from '@/lib/session';
 import { AppButton, AppSpinner } from '@/shared/ui';
 import { useAppStore } from '@/store/useAppStore';
-import { storage } from '@/utils/storage';
 import AuthLayout from '../components/AuthLayout';
 
 const VERIFY_IMAGE = 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&q=80';
@@ -79,10 +79,7 @@ export default function VerifyEmail() {
 
         // Lưu token + set user vào store nếu BE có trả về (backward-compat).
         if (accessToken) {
-          storage.set('accessToken', accessToken);
-        }
-        if (refreshToken) {
-          storage.set('refreshToken', refreshToken);
+          setSessionTokens(accessToken, refreshToken);
         }
 
         if (verifiedUser) {

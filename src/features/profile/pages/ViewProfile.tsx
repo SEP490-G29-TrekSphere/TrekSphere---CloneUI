@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { PATHS } from '@/constants';
+import { hasValidAccessToken } from '@/lib/session';
 import { AppButton, AppSpinner } from '@/shared/ui';
-import { storage } from '@/utils/storage';
 import ProfileSidebar from '../components/ProfileSidebar';
 import { useProfile } from '../hooks/useProfile';
 import { GENDER_LABELS } from '../types';
@@ -61,7 +61,9 @@ export default function ViewProfile({ editPath }: { editPath?: string }) {
             >
               Thử lại
             </AppButton>
-            {!storage.get<string>('accessToken') && (
+            {/* Token hết hạn cũng phải hiện nút này — bản cũ chỉ kiểm tra token
+                có tồn tại nên phiên hết hạn chỉ thấy "Thử lại" (luôn 401). */}
+            {!hasValidAccessToken() && (
               <AppButton type="button" onClick={() => (window.location.href = PATHS.LOGIN)}>
                 Đăng nhập lại
               </AppButton>
