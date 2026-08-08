@@ -28,7 +28,7 @@ export function CheckpointTimeline({
 
   return (
     <div className="rounded-3xl p-6" style={{ backgroundColor: '#EFECE6' }}>
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-lg font-bold" style={{ color: '#06261D' }}>
           Lộ trình Check-in
         </h2>

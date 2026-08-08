@@ -100,7 +100,7 @@ export function EditVoucherDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold" style={{ color: '#06261D' }}>
             Sửa thông tin Voucher

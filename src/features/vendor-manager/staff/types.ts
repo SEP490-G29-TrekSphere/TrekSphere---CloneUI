@@ -13,6 +13,13 @@ export interface VendorStaffMember {
   fullName: string;
   email: string;
   avatarUrl?: string;
+  /**
+   * Roles của user, uppercase như BE trả (`VENDOR_STAFF`, `COORDINATOR`,
+   * `TREKKER`...). Dùng để lọc ứng viên theo vai trò (vd chỉ lấy `COORDINATOR`
+   * cho dialog phân công dẫn đoàn) — `GET /vendor-staff/me` không có query
+   * param lọc theo role nên phải lọc phía FE.
+   */
+  roles: string[];
   isActive: boolean;
   deactivatedAt?: string;
 }

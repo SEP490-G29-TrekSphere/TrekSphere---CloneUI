@@ -115,7 +115,10 @@ export default function BookingList() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-extrabold tracking-tight" style={{ color: '#06261D' }}>
+          <h2
+            className="text-2xl sm:text-3xl font-extrabold tracking-tight"
+            style={{ color: '#06261D' }}
+          >
             Quản Lý Đặt Tour - TrekOps
           </h2>
           <p className="text-sm font-medium mt-1" style={{ color: '#6F7B75' }}>

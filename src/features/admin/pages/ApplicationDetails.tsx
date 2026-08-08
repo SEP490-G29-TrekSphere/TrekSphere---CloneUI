@@ -370,7 +370,7 @@ export default function ApplicationDetails() {
         <div className="space-y-6">
           {/* Business License Document Card */}
           <AppCard className="border-[#E5E4DE] shadow-sm rounded-3xl bg-white p-6 flex flex-col">
-            <div className="flex items-center justify-between border-b border-[#F4F4F2] pb-4 mb-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#F4F4F2] pb-4 mb-4">
               <div className="flex items-center gap-2">
                 <span className="text-[#0B3025] font-bold text-lg">📄</span>
                 <h3 className="font-extrabold text-base text-zinc-800 tracking-tight">
@@ -445,7 +445,7 @@ export default function ApplicationDetails() {
       )}
 
       <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
-        <DialogContent className="max-w-[420px]">
+        <DialogContent className="sm:max-w-[420px]">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">Từ chối đơn đăng ký</DialogTitle>
             <DialogDescription>

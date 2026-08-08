@@ -48,10 +48,10 @@ export function OperationsHeaderBar({
           {STATUS_LABEL[session.status]}
         </span>
         <h1
-          className="mt-2 text-3xl font-extrabold tracking-tight flex items-center gap-2"
+          className="mt-2 flex items-center gap-2 text-2xl font-extrabold tracking-tight break-words sm:text-3xl"
           style={{ color: '#06261D' }}
         >
-          <Compass className="h-7 w-7" />
+          <Compass className="h-6 w-6 shrink-0 sm:h-7 sm:w-7" />
           {session.tourName}
         </h1>
         <p className="mt-1 text-sm font-medium" style={{ color: '#6F7B75' }}>
@@ -61,7 +61,7 @@ export function OperationsHeaderBar({
         </p>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
           onClick={onStart}

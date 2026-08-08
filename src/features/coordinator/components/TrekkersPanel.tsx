@@ -34,7 +34,7 @@ export function TrekkersPanel({ trekkers, isLoading, isSubmitting, onSubmit }: T
 
   return (
     <div className="rounded-3xl p-5" style={{ backgroundColor: '#EFECE6' }}>
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 text-sm font-bold" style={{ color: '#06261D' }}>
           <Users className="h-4 w-4" />
           Trekkers ({trekkers.length})

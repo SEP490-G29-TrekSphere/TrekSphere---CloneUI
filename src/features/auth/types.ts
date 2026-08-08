@@ -73,7 +73,10 @@ export interface RegisterResponseData {
 
 /**
  * Detailed user profile (used for the View/Edit profile screens).
- * Preserves the existing structure to avoid breaking other features.
+ *
+ * Chỉ gồm các field `GET /users/me` (`UserProfileResponse`) thật sự trả về.
+ * KHÔNG thêm username / ngày tham gia / stats (tour đã đi, bài viết, người theo
+ * dõi) — BE không có, trước đây FE tự bịa số liệu và hiển thị lên UI.
  */
 export interface UserProfile {
   id: string;
@@ -81,21 +84,12 @@ export interface UserProfile {
   name: string;
   phone?: string;
   avatar?: string;
-  username?: string;
   gender?: 'male' | 'female' | 'other';
   dateOfBirth?: string;
-  /** Thời gian tạo tài khoản (API trả về `createdAt`). */
-  joinedAt?: string;
   /** Vai trò người dùng (API trả về `roles` là array). */
   roles: string[];
   /** Vai trò chính (lấy từ roles[0]). Dùng cho các check hiển thị. */
   role: string;
-  /** Stats cho sidebar profile (FE tự tính hoặc mock). */
-  stats?: {
-    toursCount: number;
-    postsCount: number;
-    followersCount: number;
-  };
 }
 
 /**

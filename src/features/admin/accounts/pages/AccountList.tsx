@@ -52,7 +52,7 @@ export default function AccountList() {
       {/* Page header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-[#0B3025] tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0B3025] tracking-tight">
             Quản lý tài khoản
           </h1>
           <p className="text-zinc-500 text-sm font-medium mt-1">

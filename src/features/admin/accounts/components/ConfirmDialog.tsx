@@ -68,7 +68,7 @@ export function ConfirmDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[420px]">
+      <DialogContent className="sm:max-w-[420px]">
         <DialogHeader className="items-center text-center">
           {/* Icon */}
           <div

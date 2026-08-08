@@ -62,6 +62,7 @@ function mapVendorStaff(dto: VendorStaffResponseDto): VendorStaffMember {
     fullName: dto.user.fullName,
     email: dto.user.email,
     avatarUrl: dto.user.avatarUrl ?? undefined,
+    roles: dto.user.roles ?? [],
     isActive: dto.isActive,
     deactivatedAt: dto.deactivatedAt ?? undefined,
   };

@@ -27,7 +27,7 @@ export function UnhideTourConfirmDialog({
 }: UnhideTourConfirmDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[420px]">
+      <DialogContent className="sm:max-w-[420px]">
         <DialogHeader className="items-center text-center">
           <div
             className="mb-2 flex h-14 w-14 items-center justify-center rounded-full"

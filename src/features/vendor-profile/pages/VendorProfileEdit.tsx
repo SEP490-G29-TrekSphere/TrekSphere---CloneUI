@@ -88,7 +88,10 @@ export default function VendorProfileEdit() {
   return (
     <div className="mx-auto flex max-w-[900px] flex-col gap-6">
       <div>
-        <h2 className="text-3xl font-extrabold tracking-tight" style={{ color: '#06261D' }}>
+        <h2
+          className="text-2xl sm:text-3xl font-extrabold tracking-tight"
+          style={{ color: '#06261D' }}
+        >
           Chi tiết hồ sơ
         </h2>
         <p className="mt-1 text-sm font-medium" style={{ color: '#6F7B75' }}>

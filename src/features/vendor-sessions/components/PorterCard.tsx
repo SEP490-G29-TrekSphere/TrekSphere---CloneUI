@@ -11,7 +11,7 @@ interface PorterCardProps {
 export function PorterCard({ porters, onAddClick, onRemoveClick }: PorterCardProps) {
   return (
     <div className="rounded-[28px] p-6" style={{ backgroundColor: '#F0EEE6' }}>
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Footprints className="h-5 w-5" style={{ color: '#06261D' }} />
           <h3 className="text-lg font-bold" style={{ color: '#06261D' }}>

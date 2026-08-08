@@ -28,7 +28,7 @@ export function ConfirmDeleteDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[400px]">
+      <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-red-600">Xác nhận xóa Voucher</DialogTitle>
           <DialogDescription className="mt-2 text-sm text-slate-500">

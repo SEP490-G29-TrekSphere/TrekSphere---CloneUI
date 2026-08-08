@@ -52,7 +52,7 @@ export function AddStaffDialog({
         onOpenChange(next);
       }}
     >
-      <DialogContent className="max-w-[420px]">
+      <DialogContent className="sm:max-w-[420px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Thêm nhân viên</DialogTitle>
           <DialogDescription>

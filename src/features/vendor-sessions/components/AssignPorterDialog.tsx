@@ -52,7 +52,7 @@ export function AssignPorterDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[420px]">
+      <DialogContent className="sm:max-w-[420px]">
         <DialogHeader>
           <DialogTitle>Thêm Porter</DialogTitle>
           <DialogDescription>

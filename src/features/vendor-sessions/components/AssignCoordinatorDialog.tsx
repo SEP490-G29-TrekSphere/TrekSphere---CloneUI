@@ -16,6 +16,10 @@ export interface AssignCoordinatorDialogProps {
   candidates: CoordinatorCandidate[];
   /** userId của các coordinator đã gán — loại khỏi danh sách chọn để tránh gán trùng. */
   assignedUserIds: string[];
+  /** Đang tải danh sách ứng viên từ `GET /vendor-staff/me`. */
+  isLoadingCandidates?: boolean;
+  /** Lỗi khi tải danh sách ứng viên (vd 403 nếu role không được gọi endpoint). */
+  candidatesError?: unknown;
   isPending?: boolean;
   onSubmit: (payload: AssignCoordinatorPayload) => void;
 }
@@ -24,12 +28,17 @@ export interface AssignCoordinatorDialogProps {
  * Dialog "Chỉ định thêm" Coordinator — gọi `POST /vendor/sessions/{id}/coordinators`.
  * Ứng viên lấy từ Staff Directory (xem `useCoordinatorCandidates`), không phải entity
  * riêng ở BE.
+ *
+ * Phân biệt rõ 3 trạng thái "không có gì để chọn" — trước đây gộp làm một nên
+ * khi API lỗi vẫn báo "tất cả đã được phân công", che mất nguyên nhân thật.
  */
 export function AssignCoordinatorDialog({
   open,
   onOpenChange,
   candidates,
   assignedUserIds,
+  isLoadingCandidates = false,
+  candidatesError,
   isPending = false,
   onSubmit,
 }: AssignCoordinatorDialogProps) {
@@ -55,7 +64,7 @@ export function AssignCoordinatorDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[420px]">
+      <DialogContent className="sm:max-w-[420px]">
         <DialogHeader>
           <DialogTitle>Chỉ định điều phối viên</DialogTitle>
           <DialogDescription>
@@ -63,9 +72,22 @@ export function AssignCoordinatorDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {available.length === 0 ? (
+        {isLoadingCandidates ? (
           <p className="text-sm" style={{ color: '#6F7B75' }}>
-            Tất cả nhân viên đang hoạt động đều đã được phân công cho phiên này.
+            Đang tải danh sách điều phối viên...
+          </p>
+        ) : candidatesError ? (
+          <p className="text-sm" style={{ color: '#DC2626' }}>
+            Không tải được danh sách điều phối viên:{' '}
+            {candidatesError instanceof Error ? candidatesError.message : 'Lỗi không xác định'}
+          </p>
+        ) : candidates.length === 0 ? (
+          <p className="text-sm" style={{ color: '#6F7B75' }}>
+            Công ty chưa có nhân viên nào giữ vai trò Điều phối viên (COORDINATOR) đang hoạt động.
+          </p>
+        ) : available.length === 0 ? (
+          <p className="text-sm" style={{ color: '#6F7B75' }}>
+            Tất cả điều phối viên đều đã được phân công cho phiên này.
           </p>
         ) : (
           <div className="flex flex-col gap-4">

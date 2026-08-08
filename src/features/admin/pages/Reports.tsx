@@ -37,7 +37,7 @@ export default function Reports() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-extrabold tracking-tight text-[#0B3025]">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0B3025]">
               Danh sách Báo cáo Vi phạm
             </h1>
           </div>
