@@ -1,76 +1,59 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from '@/store/useToastStore';
 import { ReportDecisionPanel } from '../components/reports/ReportDecisionPanel';
 
 import { ReportDetailHeader } from '../components/reports/ReportDetailHeader';
 import { ReportTargetInfo } from '../components/reports/ReportTargetInfo';
-import {
-  adminReportService,
-  type ReportAction,
-  type ReportResponse,
-} from '../services/adminReportService';
+import { useAdminReportDetail, useResolveAdminReport } from '../hooks/useAdminReports';
+import type { ReportAction } from '../services/adminReportService';
 
 export default function ReportDetail() {
   const { id } = useParams<{ id: string }>();
 
-  const [reportData, setReportData] = useState<ReportResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const { data: reportData, isLoading, isError } = useAdminReportDetail(id);
+  const resolveMutation = useResolveAdminReport();
 
   const [selectedDecision, setSelectedDecision] = useState<ReportAction | null>(null);
   const [note, setNote] = useState('');
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditingDecision, setIsEditingDecision] = useState(false);
 
-  useEffect(() => {
-    if (id) {
-      setIsLoading(true);
-      adminReportService
-        .getReportDetail(id)
-        .then((res) => {
-          setReportData(res);
-          setIsSubmitted(res.status === 'RESOLVED' || res.status === 'DISMISSED');
-        })
+  const isSubmitted = reportData
+    ? (reportData.status === 'RESOLVED' || reportData.status === 'DISMISSED') && !isEditingDecision
+    : false;
+
+  const handleSubmitDecision = () => {
+    if (!selectedDecision || !id) return;
+    resolveMutation.mutate(
+      { id, data: { action: selectedDecision, resolutionNotes: note } },
+      {
+        onSuccess: () => {
+          setIsEditingDecision(false);
+          toast.success('Xử lý báo cáo thành công!');
+        },
         // biome-ignore lint/suspicious/noExplicitAny: API error
-        .catch((error: any) => {
+        onError: (error: any) => {
           console.error(error);
           toast.error(
-            error.message || error.response?.data?.message || 'Không thể tải chi tiết báo cáo'
+            error.message || error.response?.data?.message || 'Có lỗi xảy ra khi xử lý báo cáo'
           );
-        })
-        .finally(() => setIsLoading(false));
-    }
-  }, [id]);
-
-  const handleSubmitDecision = async () => {
-    if (!selectedDecision || !id) return;
-    setIsSubmitting(true);
-    try {
-      await adminReportService.resolveReport(id, {
-        action: selectedDecision,
-        resolutionNotes: note,
-      });
-
-      setIsSubmitted(true);
-      setReportData((prev) =>
-        prev ? { ...prev, status: selectedDecision === 'DISMISS' ? 'DISMISSED' : 'RESOLVED' } : null
-      );
-      toast.success('Xử lý báo cáo thành công!');
-      // biome-ignore lint/suspicious/noExplicitAny: API error
-    } catch (error: any) {
-      console.error(error);
-      toast.error(
-        error.message || error.response?.data?.message || 'Có lỗi xảy ra khi xử lý báo cáo'
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
+        },
+      }
+    );
   };
 
   if (isLoading || !reportData) {
     return (
       <div className="flex justify-center items-center h-full min-h-[400px]">
         <div className="animate-spin rounded-full size-8 border-b-2 border-emerald-600"></div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex justify-center items-center h-full min-h-[400px] text-red-500 font-medium">
+        Không thể tải chi tiết báo cáo. Vui lòng thử lại sau.
       </div>
     );
   }
@@ -102,11 +85,11 @@ export default function ReportDetail() {
             isSubmitted={isSubmitted}
             selectedDecision={selectedDecision}
             note={note}
-            isSubmitting={isSubmitting}
+            isSubmitting={resolveMutation.isPending}
             onDecisionChange={setSelectedDecision}
             onNoteChange={setNote}
             onSubmit={handleSubmitDecision}
-            onEditDecision={() => setIsSubmitted(false)}
+            onEditDecision={() => setIsEditingDecision(true)}
           />
         </div>
       </div>

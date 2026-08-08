@@ -3,6 +3,7 @@ import type React from 'react';
 import { Link } from 'react-router-dom';
 import { PATHS } from '@/constants';
 import type { ReportResponse, ReportTargetType } from '../../services/adminReportService';
+import { ReportFilterTabs } from './ReportFilterTabs';
 
 export interface ReportTableProps {
   reports: ReportResponse[];
@@ -10,6 +11,9 @@ export interface ReportTableProps {
   page: number;
   totalPages: number;
   setPage: React.Dispatch<React.SetStateAction<number>>;
+  activeTab: 'all' | 'pending' | 'resolved' | 'dismissed';
+  setActiveTab: (tab: 'all' | 'pending' | 'resolved' | 'dismissed') => void;
+  isFetching?: boolean;
 }
 
 export function ReportTable({
@@ -18,6 +22,9 @@ export function ReportTable({
   page,
   totalPages,
   setPage,
+  activeTab,
+  setActiveTab,
+  isFetching = false,
 }: ReportTableProps) {
   const getItemIcon = (type: ReportTargetType) => {
     switch (type) {
@@ -58,11 +65,20 @@ export function ReportTable({
           </span>
         </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto"></div>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <ReportFilterTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+        </div>
       </div>
 
       {/* Table Content */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto relative min-h-[200px]">
+        {/* Loading Overlay */}
+        {isFetching && (
+          <div className="absolute inset-0 z-10 bg-white/60 backdrop-blur-[1px] flex items-center justify-center">
+            <div className="w-8 h-8 border-4 border-[#0B3025] border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        )}
+
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="border-b border-[#E5E4DE] text-zinc-400 font-bold uppercase tracking-wider text-[11px] bg-[#FAF9F5]">

@@ -1,50 +1,35 @@
 import { ShieldAlert } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { toast } from '@/store/useToastStore';
-import { ReportFilterTabs } from '../components/reports/ReportFilterTabs';
-import { ReportStatCards } from '../components/reports/ReportStatCards';
+import { useState } from 'react';
 import { ReportTable } from '../components/reports/ReportTable';
-import {
-  adminReportService,
-  type ReportResponse,
-  type ReportStatus,
-} from '../services/adminReportService';
+import { useAdminReports } from '../hooks/useAdminReports';
+import type { ReportStatus } from '../services/adminReportService';
 
 export default function Reports() {
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'resolved' | 'dismissed'>('all');
-  const [reports, setReports] = useState<ReportResponse[]>([]);
-  const [totalElements, setTotalElements] = useState(0);
   const [page, setPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const fetchReports = async () => {
-    try {
-      const statusFilter: ReportStatus | undefined =
-        activeTab === 'pending'
-          ? 'PENDING'
-          : activeTab === 'resolved'
-            ? 'RESOLVED'
-            : activeTab === 'dismissed'
-              ? 'DISMISSED'
-              : undefined;
-      const res = await adminReportService.getReports({
-        status: statusFilter,
-        page: page,
-        size: 10,
-      });
-      setReports(res.content);
-      setTotalElements(res.totalElements);
-      setTotalPages(res.totalPages);
-      // biome-ignore lint/suspicious/noExplicitAny: API error
-    } catch (error: any) {
-      console.error('Lỗi khi lấy danh sách báo cáo:', error);
-      toast.error(error.response?.data?.message || 'Không thể tải danh sách báo cáo');
-    }
-  };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional
-  useEffect(() => {
-    fetchReports();
-  }, [activeTab, page]);
+  const statusFilter: ReportStatus | undefined =
+    activeTab === 'pending'
+      ? 'PENDING'
+      : activeTab === 'resolved'
+        ? 'RESOLVED'
+        : activeTab === 'dismissed'
+          ? 'DISMISSED'
+          : undefined;
+
+  const { data, isLoading, isError, error, isFetching } = useAdminReports({
+    status: statusFilter,
+    page: page,
+    size: 10,
+  });
+
+  const reports = data?.content || [];
+  const totalElements = data?.totalElements || 0;
+  const totalPages = data?.totalPages || 1;
+
+  if (isError) {
+    console.error('Lỗi khi lấy danh sách báo cáo:', error);
+  }
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-10 px-4 sm:px-6 lg:px-8">
@@ -63,20 +48,29 @@ export default function Reports() {
         </div>
 
         {/* Filter Tabs (All / Pending / Resolved) */}
-        <ReportFilterTabs activeTab={activeTab} setActiveTab={setActiveTab} />
       </div>
 
-      {/* Overview Stat Cards */}
-      <ReportStatCards totalElements={totalElements} />
-
       {/* Main Table Container */}
-      <ReportTable
-        reports={reports}
-        totalElements={totalElements}
-        page={page}
-        totalPages={totalPages}
-        setPage={setPage}
-      />
+      {isLoading ? (
+        <div className="py-20 flex justify-center items-center">
+          <div className="w-8 h-8 border-4 border-[#0B3025] border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      ) : isError ? (
+        <div className="py-20 text-center text-red-500 font-medium">
+          Không thể tải danh sách báo cáo. Vui lòng thử lại sau.
+        </div>
+      ) : (
+        <ReportTable
+          reports={reports}
+          totalElements={totalElements}
+          page={page}
+          totalPages={totalPages}
+          setPage={setPage}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          isFetching={isFetching}
+        />
+      )}
 
       {/* Bottom Information Grid */}
       <div className="w-full">
