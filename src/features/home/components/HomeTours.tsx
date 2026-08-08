@@ -1,10 +1,15 @@
 import { Link } from 'react-router-dom';
 import { PATHS } from '@/constants';
 import { useFeaturedTours } from '@/features/tours/hooks/useFeaturedTours';
+import { useMediaQuery } from '@/shared/hooks';
 import { ScrollReveal, Slider } from '@/shared/ui';
 
 export default function HomeTours() {
   const { tours, isLoading } = useFeaturedTours();
+  const isMobile = useMediaQuery('(max-width: 767px)');
+  const isTablet = useMediaQuery('(min-width: 768px) and (max-width: 1023px)');
+
+  const slidesPerView = isMobile ? 1 : isTablet ? 2 : 3;
 
   return (
     <section className="py-24 bg-muted/40">
@@ -49,7 +54,7 @@ export default function HomeTours() {
         ) : (
           <ScrollReveal variant="fade-up" scrollOptions={{ delay: 100 }}>
             <div className="mt-10">
-              <Slider slidesPerView={3} autoplayInterval={3500}>
+              <Slider slidesPerView={slidesPerView} autoplayInterval={3500}>
                 {tours.map((tour) => (
                   <article key={tour.id} className="tour-card">
                     <div className="tour-image-wrapper">

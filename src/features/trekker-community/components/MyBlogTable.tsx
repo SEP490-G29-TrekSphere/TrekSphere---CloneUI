@@ -22,44 +22,48 @@ export function MyBlogTable({ blogs, onEdit, onDelete, onHide }: MyBlogTableProp
         overflow: 'hidden',
       }}
     >
-      {/* Table Header */}
-      <table className="w-full">
-        <thead>
-          <tr style={{ backgroundColor: '#F0EEE6' }}>
-            <HeaderCell style={{ padding: '14px 20px', textAlign: 'left' }}>
-              HÌNH ẢNH & TIÊU ĐỀ
-            </HeaderCell>
-            <HeaderCell>TRẠNG THÁI</HeaderCell>
-            <HeaderCell>NGÀY TẠO</HeaderCell>
-            <HeaderCell>LƯỢT XEM</HeaderCell>
-            <HeaderCell style={{ textAlign: 'center' }}>THAO TÁC</HeaderCell>
-          </tr>
-        </thead>
-        <tbody>
-          {blogs.length === 0 ? (
-            <tr>
-              <td colSpan={5} className="py-16 text-center" style={{ color: '#6F7B75' }}>
-                <div className="flex flex-col items-center gap-3">
-                  <FileImage className="h-10 w-10 opacity-30" style={{ color: '#6F7B75' }} />
-                  <p className="font-medium">Chưa có bài viết nào</p>
-                  <p className="text-sm">Bắt đầu chia sẻ hành trình của bạn ngay hôm nay!</p>
-                </div>
-              </td>
+      {/* Bọc riêng lớp cuộn ngang — `overflow: hidden` ở ngoài chỉ để bo góc,
+          nếu để bảng trực tiếp trong đó thì trên mobile các cột bị cắt mất. */}
+      <div className="overflow-x-auto">
+        {/* Table Header */}
+        <table className="w-full min-w-[720px]">
+          <thead>
+            <tr style={{ backgroundColor: '#F0EEE6' }}>
+              <HeaderCell style={{ padding: '14px 20px', textAlign: 'left' }}>
+                HÌNH ẢNH & TIÊU ĐỀ
+              </HeaderCell>
+              <HeaderCell>TRẠNG THÁI</HeaderCell>
+              <HeaderCell>NGÀY TẠO</HeaderCell>
+              <HeaderCell>LƯỢT XEM</HeaderCell>
+              <HeaderCell style={{ textAlign: 'center' }}>THAO TÁC</HeaderCell>
             </tr>
-          ) : (
-            blogs.map((blog, index) => (
-              <TableRow
-                key={blog.blogId}
-                blog={blog}
-                index={index}
-                onEdit={onEdit}
-                onDelete={onDelete}
-                onHide={onHide}
-              />
-            ))
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {blogs.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="py-16 text-center" style={{ color: '#6F7B75' }}>
+                  <div className="flex flex-col items-center gap-3">
+                    <FileImage className="h-10 w-10 opacity-30" style={{ color: '#6F7B75' }} />
+                    <p className="font-medium">Chưa có bài viết nào</p>
+                    <p className="text-sm">Bắt đầu chia sẻ hành trình của bạn ngay hôm nay!</p>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              blogs.map((blog, index) => (
+                <TableRow
+                  key={blog.blogId}
+                  blog={blog}
+                  index={index}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  onHide={onHide}
+                />
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

@@ -1,6 +1,12 @@
 import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes, useParams } from 'react-router-dom';
-import { getTrekkerBlogEditPath, getTrekkerBookingPaymentPath, PATHS, ROLES } from '@/constants';
+import {
+  getTrekkerBlogEditPath,
+  getTrekkerBookingPaymentPath,
+  getTrekkerGroupDetailPath,
+  PATHS,
+  ROLES,
+} from '@/constants';
 import { AccountDetail, AccountList, AdminDashboard, BlogManagement } from '@/features/admin';
 import ProtectedRoute from '@/routes/ProtectedRoute';
 import RequireRole from '@/routes/RequireRole';
@@ -44,6 +50,9 @@ const CompanionGroupDetail = lazy(
 );
 const JoinGroupRequestPage = lazy(
   () => import('@/features/companion-groups/pages/JoinGroupRequestPage')
+);
+const MyJoinRequestsPage = lazy(
+  () => import('@/features/companion-groups/pages/MyJoinRequestsPage')
 );
 const AdminLayout = lazy(() => import('@/shared/layout/AdminLayout'));
 const TrekkerLayout = lazy(() => import('@/features/trekker/layout/TrekkerLayout'));
@@ -192,6 +201,31 @@ export default function AppRoutes() {
           />
           <Route path={PATHS.TREKKER_MY_TOURS} element={<MyBookings useTrekkerPaths />} />
           <Route path={PATHS.TREKKER_MY_GROUPS} element={<MyCompanionGroupsPage />} />
+          {/* Chi tiết nhóm ghép mở từ portal Trekker — giữ nguyên sidebar thay vì
+              nhảy sang `/groups/:groupId` (PublicLayout) làm mất điều hướng. */}
+          <Route
+            path={PATHS.TREKKER_GROUP_DETAIL}
+            element={
+              <CompanionGroupDetail
+                embedded
+                backPath={PATHS.TREKKER_MY_GROUPS}
+                chatPath={PATHS.TREKKER_CHAT}
+              />
+            }
+          />
+          {/* Gửi yêu cầu tham gia mở từ portal Trekker — giữ sidebar thay vì
+              nhảy sang `/groups/:groupId/join` (PublicLayout). */}
+          <Route
+            path={PATHS.TREKKER_GROUPS_JOIN}
+            element={
+              <JoinGroupRequestPage
+                embedded
+                backPath={PATHS.TREKKER_MY_GROUPS}
+                getDetailPath={getTrekkerGroupDetailPath}
+              />
+            }
+          />
+          <Route path={PATHS.TREKKER_MY_JOIN_REQUESTS} element={<MyJoinRequestsPage />} />
           <Route path={PATHS.TREKKER_VENDOR_APPLICATIONS} element={<MyApplications />} />
           <Route path={PATHS.TREKKER_BLOG_LIST} element={<MyBlogList />} />
           <Route path={PATHS.TREKKER_BLOG_CREATE} element={<CreateBlogPost />} />

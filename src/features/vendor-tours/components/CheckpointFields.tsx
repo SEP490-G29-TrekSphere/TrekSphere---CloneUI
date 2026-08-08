@@ -192,7 +192,7 @@ function CheckpointRow({ checkpoint, onChange, onRemove }: CheckpointRowProps) {
           className="w-full resize-none rounded-xl border-none bg-white px-4 py-2.5 text-sm focus:outline-none"
           style={{ color: '#06261D' }}
         />
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           <input
             type="number"
             inputMode="decimal"

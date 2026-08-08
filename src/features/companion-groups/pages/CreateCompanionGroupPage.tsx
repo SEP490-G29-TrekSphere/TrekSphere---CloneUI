@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Calendar, MapPin, Send, ShieldCheck, Users } from 'lucide-react';
+import { Calendar, MapPin, Send, Users } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
@@ -73,25 +73,6 @@ export default function CreateCompanionGroupPage() {
                 <p className="text-xs sm:text-sm text-stone-200 font-medium leading-relaxed">
                   Tạo nhóm để tìm kiếm những người bạn đồng hành chung chí hướng cho chuyến đi sắp
                   tới của bạn.
-                </p>
-              </div>
-            </div>
-
-            {/* Note box matching mockup bottom-left */}
-            <div className="bg-[#F5F2EA] dark:bg-muted/40 border border-stone-200/70 dark:border-border/60 rounded-[1.5rem] p-5 space-y-3">
-              <span className="text-[11px] font-bold tracking-wider text-stone-500 dark:text-muted-foreground uppercase block">
-                LƯU Ý CHO BẠN
-              </span>
-              <div className="flex items-start gap-3">
-                <ShieldCheck className="w-4 h-4 text-emerald-800 dark:text-emerald-400 shrink-0 mt-0.5" />
-                <p className="text-xs text-stone-700 dark:text-stone-300 font-medium leading-relaxed">
-                  Mô tả chi tiết giúp bạn nhanh chóng tìm được người phù hợp nhất.
-                </p>
-              </div>
-              <div className="flex items-start gap-3">
-                <Users className="w-4 h-4 text-emerald-800 dark:text-emerald-400 shrink-0 mt-0.5" />
-                <p className="text-xs text-stone-700 dark:text-stone-300 font-medium leading-relaxed">
-                  Số lượng người nên cân đối với độ khó của tour trekking.
                 </p>
               </div>
             </div>

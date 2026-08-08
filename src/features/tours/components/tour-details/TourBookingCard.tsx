@@ -136,7 +136,7 @@ export function TourBookingCard({ tour, className }: TourBookingCardProps) {
           <label className="mb-2 block text-sm font-medium text-foreground">
             Chọn ngày khởi hành
           </label>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {availableDates.slice(0, 6).map((date) => {
               const isSelected = state.selectedDate?.toDateString() === date.toDateString();
               return (

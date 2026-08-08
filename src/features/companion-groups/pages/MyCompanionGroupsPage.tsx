@@ -2,7 +2,7 @@ import { LayoutGrid, List, RotateCcw, Users } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
-import { PATHS } from '@/constants';
+import { getTrekkerGroupDetailPath, getTrekkerGroupJoinPath, PATHS } from '@/constants';
 import { TourPagination } from '@/features/tours';
 import { useTours } from '@/features/tours/hooks/useTours';
 import { cn } from '@/lib/utils';
@@ -150,12 +150,12 @@ export default function MyCompanionGroupsPage() {
 
   const handleJoinGroup = (group: GroupCardData) => {
     const groupId = 'matchingGroupId' in group ? group.matchingGroupId : group.id;
-    navigate(`/groups/${groupId}/join`);
+    navigate(getTrekkerGroupJoinPath(groupId));
   };
 
   const handleViewDetail = (group: GroupCardData) => {
     const groupId = 'matchingGroupId' in group ? group.matchingGroupId : group.id;
-    navigate(`/groups/${groupId}`);
+    navigate(getTrekkerGroupDetailPath(groupId));
   };
 
   const handlePageChange = (next: number) => {
@@ -422,6 +422,7 @@ export default function MyCompanionGroupsPage() {
                   layout={layout}
                   onJoinGroup={handleJoinGroup}
                   onViewDetail={handleViewDetail}
+                  getDetailPath={getTrekkerGroupDetailPath}
                 />
               ))}
             </div>

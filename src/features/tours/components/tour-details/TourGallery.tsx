@@ -84,7 +84,7 @@ export function TourGallery({ images, className }: TourGalleryProps) {
       </button>
 
       {/* Thumbnail grid */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {images.slice(1, 5).map((image, index) => (
           <button
             key={image.id}

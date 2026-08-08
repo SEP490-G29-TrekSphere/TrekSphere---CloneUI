@@ -115,7 +115,7 @@ export default function StaffList() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="rounded-[20px] bg-white p-6" style={{ border: '1px solid #E6E2D1' }}>
           <p className="text-xs font-bold uppercase" style={{ color: '#6F7B75' }}>
             Tổng nhân viên
@@ -139,7 +139,7 @@ export default function StaffList() {
         style={{ border: '1px solid #E6E2D1' }}
       >
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[720px]">
             <thead style={{ backgroundColor: '#F0EEE6' }}>
               <tr>
                 {['Họ và tên', 'Email', 'Trạng thái', 'Thao tác'].map((col, i) => (

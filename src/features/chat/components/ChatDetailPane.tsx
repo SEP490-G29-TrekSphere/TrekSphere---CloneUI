@@ -113,7 +113,6 @@ export function ChatDetailPane({
   const currentConvIdRef = useRef<string | undefined>(undefined);
 
   // Clear draft on conversation change
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Clear draft on conversation change
   useEffect(() => {
     reset({ message: '' });
     if (selectedConversation?.id !== currentConvIdRef.current) {

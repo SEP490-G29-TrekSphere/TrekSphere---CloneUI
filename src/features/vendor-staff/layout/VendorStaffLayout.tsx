@@ -14,6 +14,7 @@ import {
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { PATHS } from '@/constants';
 import { useLogout } from '@/features/auth/hooks/useLogout';
+import PortalShell from '@/shared/layout/PortalShell';
 import { useAppStore } from '@/store/useAppStore';
 
 /**
@@ -43,68 +44,67 @@ export default function VendorStaffLayout() {
   const isChatPage = location.pathname === PATHS.PARTNER_CHAT;
 
   return (
-    <div className="flex h-screen w-full overflow-hidden" style={{ backgroundColor: '#FAF8F1' }}>
-      <aside
-        className="hidden md:flex w-72 flex-col justify-between"
-        style={{ backgroundColor: '#EFECE6', borderRight: '1px solid #E0DCD1' }}
-      >
-        <div className="flex flex-col py-6">
-          <div className="px-6 mb-8">
-            <Link to={PATHS.HOME} className="hover:opacity-85 transition-opacity block">
-              <h1
-                className="text-3xl font-extrabold tracking-tight leading-none mb-1"
-                style={{ color: '#06261D' }}
-              >
-                TrekPartner
-              </h1>
-              <span className="text-xs font-medium tracking-wide" style={{ color: '#6F7B75' }}>
-                Quản lý tour của bạn
-              </span>
-            </Link>
-          </div>
-
-          <nav className="px-4 space-y-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              if (item.disabled) {
-                return (
-                  <span
-                    key={item.name}
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold opacity-40 cursor-not-allowed select-none"
-                    style={{ color: '#6F7B75' }}
-                    title={`${item.name} (chưa thực hiện)`}
-                  >
-                    <Icon className="h-5 w-5" />
-                    {item.name}
-                  </span>
-                );
-              }
-
-              const isActive = location.pathname.startsWith(item.path);
+    <PortalShell
+      rootStyle={{ backgroundColor: '#FAF8F1' }}
+      sidebarStyle={{ backgroundColor: '#EFECE6', borderRight: '1px solid #E0DCD1' }}
+      mobileTitle="TrekPartner"
+      fullBleed={isChatPage}
+      brand={
+        <Link to={PATHS.HOME} className="hover:opacity-85 transition-opacity block">
+          <h1
+            className="text-3xl font-extrabold tracking-tight leading-none mb-1"
+            style={{ color: '#06261D' }}
+          >
+            TrekPartner
+          </h1>
+          <span className="text-xs font-medium tracking-wide" style={{ color: '#6F7B75' }}>
+            Quản lý tour của bạn
+          </span>
+        </Link>
+      }
+      nav={
+        <nav className="px-4 space-y-1">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            if (item.disabled) {
               return (
-                <Link
+                <span
                   key={item.name}
-                  to={item.path}
-                  className="flex items-center gap-3 px-4 py-3 rounded-full text-sm font-semibold transition-all"
-                  style={
-                    isActive
-                      ? { backgroundColor: 'rgba(162, 235, 210, 0.35)', color: '#06261D' }
-                      : { color: '#6F7B75' }
-                  }
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold opacity-40 cursor-not-allowed select-none"
+                  style={{ color: '#6F7B75' }}
+                  title={`${item.name} (chưa thực hiện)`}
                 >
                   <Icon className="h-5 w-5" />
                   {item.name}
-                </Link>
+                </span>
               );
-            })}
-          </nav>
-        </div>
+            }
 
+            const isActive = location.pathname.startsWith(item.path);
+            return (
+              <Link
+                key={item.name}
+                to={item.path}
+                className="flex items-center gap-3 px-4 py-3 rounded-full text-sm font-semibold transition-all"
+                style={
+                  isActive
+                    ? { backgroundColor: 'rgba(162, 235, 210, 0.35)', color: '#06261D' }
+                    : { color: '#6F7B75' }
+                }
+              >
+                <Icon className="h-5 w-5" />
+                {item.name}
+              </Link>
+            );
+          })}
+        </nav>
+      }
+      userCard={
         <div className="p-4" style={{ borderTop: '1px solid #E0DCD1' }}>
           <div className="flex items-center justify-between p-2 rounded-xl">
             <div className="flex items-center gap-3">
               <div
-                className="flex h-11 w-11 items-center justify-center rounded-full text-base font-bold shadow-sm"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-base font-bold shadow-sm"
                 style={{ backgroundColor: '#06261D', color: '#FFFFFF' }}
               >
                 {user?.avatarUrl ? (
@@ -117,8 +117,11 @@ export default function VendorStaffLayout() {
                   <span>{staffInitial}</span>
                 )}
               </div>
-              <div className="flex flex-col">
-                <span className="text-sm font-bold leading-tight" style={{ color: '#06261D' }}>
+              <div className="flex min-w-0 flex-col">
+                <span
+                  className="truncate text-sm font-bold leading-tight"
+                  style={{ color: '#06261D' }}
+                >
                   {staffName}
                 </span>
                 <span className="text-[11px] font-medium" style={{ color: '#6F7B75' }}>
@@ -136,17 +139,9 @@ export default function VendorStaffLayout() {
             </button>
           </div>
         </div>
-      </aside>
-
-      {/* Không có header riêng — mỗi trang tự dựng tiêu đề/thanh công cụ của
-          mình, giống VendorManagerLayout và CoordinatorLayout. */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <main
-          className={`flex-1 ${isChatPage ? 'overflow-hidden p-0' : 'overflow-y-auto p-6 md:p-8'}`}
-        >
-          <Outlet />
-        </main>
-      </div>
-    </div>
+      }
+    >
+      <Outlet />
+    </PortalShell>
   );
 }

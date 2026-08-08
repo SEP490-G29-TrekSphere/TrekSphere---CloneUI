@@ -140,17 +140,17 @@ export default function BookingList() {
         style={{ border: '1px solid #E6E2D1' }}
       >
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[760px]">
             <thead style={{ backgroundColor: '#FAF8F1' }}>
               <tr>
                 {[
-                  'BOOKING ID',
-                  'CUSTOMER NAME',
-                  'TOUR NAME',
-                  'DATE',
-                  'TOTAL AMOUNT',
-                  'STATUS',
-                  'ACTIONS',
+                  'MÃ ĐƠN',
+                  'KHÁCH HÀNG',
+                  'TÊN TOUR',
+                  'NGÀY KHỞI HÀNH',
+                  'TỔNG TIỀN',
+                  'TRẠNG THÁI',
+                  'THAO TÁC',
                 ].map((header) => (
                   <th
                     key={header}
@@ -189,7 +189,7 @@ export default function BookingList() {
                   <td colSpan={7} className="px-6 py-16 text-center text-sm text-gray-500">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <p className="text-base font-semibold" style={{ color: '#06261D' }}>
-                        No bookings found
+                        Không tìm thấy đơn đặt tour
                       </p>
                       <p className="text-xs text-gray-400">
                         Không có đơn đặt tour nào phù hợp với bộ lọc hiện tại.
@@ -225,7 +225,7 @@ export default function BookingList() {
                 {Math.min((page - 1) * PAGE_SIZE + 1, totalElements)} -{' '}
                 {Math.min(page * PAGE_SIZE, totalElements)}
               </span>{' '}
-              của <span className="font-bold text-gray-800">{totalElements}</span> bookings
+              trong <span className="font-bold text-gray-800">{totalElements}</span> đơn
             </p>
 
             <div className="flex items-center gap-2">

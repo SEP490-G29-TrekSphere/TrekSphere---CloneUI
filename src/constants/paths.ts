@@ -62,6 +62,9 @@ export const PATHS = {
   TREKKER_PROFILE_EDIT: '/trekker/profile/edit',
   TREKKER_MY_TOURS: '/trekker/my-tours',
   TREKKER_MY_GROUPS: '/trekker/my-groups',
+  TREKKER_GROUP_DETAIL: '/trekker/my-groups/:groupId',
+  TREKKER_GROUPS_JOIN: '/trekker/my-groups/:groupId/join',
+  TREKKER_MY_JOIN_REQUESTS: '/trekker/my-join-requests',
   TREKKER_VENDOR_APPLICATIONS: '/trekker/vendor-applications',
   TREKKER_BLOG_LIST: '/trekker/blog',
   TREKKER_BLOG_CREATE: '/trekker/blog/create',
@@ -168,3 +171,7 @@ export const getTrekkerBookingDetailPath = (bookingId: string) =>
   PATHS.TREKKER_BOOKING_DETAIL.replace(':bookingId', bookingId);
 export const getTrekkerBookingPaymentPath = (bookingId: string) =>
   PATHS.TREKKER_BOOKING_PAYMENT.replace(':bookingId', bookingId);
+export const getTrekkerGroupDetailPath = (groupId: string) =>
+  PATHS.TREKKER_GROUP_DETAIL.replace(':groupId', groupId);
+export const getTrekkerGroupJoinPath = (groupId: string) =>
+  PATHS.TREKKER_GROUPS_JOIN.replace(':groupId', groupId);

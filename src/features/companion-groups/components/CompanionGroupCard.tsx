@@ -17,6 +17,8 @@ interface CompanionGroupCardProps {
   onJoinGroup?: (group: GroupCardData) => void;
   onViewDetail?: (group: GroupCardData) => void;
   layout?: 'list' | 'grid';
+  /** Func tạo link chi tiết nhóm — dùng khi cần trỏ sang portal khác (vd trekker). */
+  getDetailPath?: (groupId: string) => string;
 }
 
 function StatusBadge({ status }: { status: MatchingGroupStatus | 'OPEN' }) {
@@ -62,11 +64,13 @@ export function CompanionGroupCard({
   onJoinGroup,
   onViewDetail,
   layout = 'grid',
+  getDetailPath,
 }: CompanionGroupCardProps) {
   const user = useAppStore((state) => state.user);
   const isApiData = isMatchingGroupItem(group);
 
   const groupId = isApiData ? group.matchingGroupId : group.id;
+  const detailPath = getDetailPath?.(groupId) ?? `/groups/${groupId}`;
   const title = isApiData ? group.groupName : group.title;
   const tourName = isApiData ? group.tourName : group.location;
   const currentMembers = isApiData ? group.currentSize : group.currentMembers;
@@ -94,7 +98,7 @@ export function CompanionGroupCard({
             <div className="flex items-center gap-2">
               <StatusBadge status={status} />
             </div>
-            <Link to={`/groups/${groupId}`}>
+            <Link to={detailPath}>
               <h3 className="line-clamp-1 text-base font-bold text-primary transition-colors group-hover:text-primary/80 sm:text-lg">
                 {title}
               </h3>
@@ -177,7 +181,7 @@ export function CompanionGroupCard({
 
       {/* Card body */}
       <div className="flex flex-1 flex-col gap-3 p-4">
-        <Link to={`/groups/${groupId}`}>
+        <Link to={detailPath}>
           <h3 className="line-clamp-2 text-base font-bold text-primary transition-colors group-hover:text-primary/80 min-h-[2.75rem]">
             {title}
           </h3>

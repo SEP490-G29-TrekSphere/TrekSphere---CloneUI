@@ -18,9 +18,27 @@ const joinRequestSchema = z.object({
 
 type JoinRequestFormValues = z.infer<typeof joinRequestSchema>;
 
-export default function JoinGroupRequestPage() {
+interface JoinGroupRequestPageProps {
+  /**
+   * Trang được render bên trong một portal đã có sidebar + padding riêng
+   * (vd TrekkerLayout). Khi bật, bỏ wrapper `min-h-screen` và padding bù
+   * header nổi của PublicLayout để không sinh khoảng trắng thừa.
+   */
+  embedded?: boolean;
+  /** Nơi quay về khi không tải được nhóm. */
+  backPath?: string;
+  /** Func tạo link chi tiết nhóm — dùng khi cần trỏ sang portal khác (vd trekker). */
+  getDetailPath?: (groupId: string) => string;
+}
+
+export default function JoinGroupRequestPage({
+  embedded = false,
+  backPath = PATHS.GROUPS,
+  getDetailPath = (id: string) => `/groups/${id}`,
+}: JoinGroupRequestPageProps = {}) {
   const navigate = useNavigate();
   const { groupId } = useParams<{ groupId: string }>();
+  const detailPath = groupId ? getDetailPath(groupId) : backPath;
 
   const { data: groupData, isLoading, isError } = useMatchingGroupDetail(groupId);
   const joinMutation = useJoinMatchingGroup();
@@ -35,16 +53,16 @@ export default function JoinGroupRequestPage() {
 
   // Redirect if current user is the owner of the group
   useEffect(() => {
-    if (user && groupData && groupData.ownerId === user.id) {
-      navigate(`/groups/${groupId}`, { replace: true });
+    if (user && groupData && String(groupData.ownerId) === String(user.id)) {
+      navigate(detailPath, { replace: true });
     }
-  }, [user, groupData, groupId, navigate]);
+  }, [user, groupData, detailPath, navigate]);
 
-  if (user && groupData && groupData.ownerId === user.id) {
+  if (user && groupData && String(groupData.ownerId) === String(user.id)) {
     return null;
   }
 
-  const existingMember = groupData?.members?.find((m) => m.userId === user?.id);
+  const existingMember = groupData?.members?.find((m) => String(m.userId) === String(user?.id));
 
   const onSubmit = () => {
     if (!groupId) return;
@@ -54,7 +72,7 @@ export default function JoinGroupRequestPage() {
         toast.success(
           'Đã gửi yêu cầu tham gia thành công! Trưởng nhóm sẽ xét duyệt yêu cầu của bạn.'
         );
-        navigate(`/groups/${groupId}`);
+        navigate(detailPath);
       },
       onError: (err) => {
         toast.error(err instanceof Error ? err.message : 'Có lỗi xảy ra khi gửi yêu cầu tham gia.');
@@ -66,9 +84,22 @@ export default function JoinGroupRequestPage() {
     navigate(-1);
   };
 
+  // PublicLayout có header nổi nên cần pt-20; trong portal thì <main> đã có padding.
+  const shellClassName = embedded
+    ? 'flex items-center justify-center py-8'
+    : 'min-h-screen bg-[#F7F4EB] dark:bg-background pt-20 pb-16 px-4 sm:px-6 lg:px-8 flex items-center justify-center';
+
+  const loadingClassName = embedded
+    ? 'flex flex-col items-center justify-center p-6'
+    : 'min-h-[calc(100vh-4rem)] bg-[#F7F4EB] dark:bg-background flex flex-col items-center justify-center p-6';
+
+  const errorClassName = embedded
+    ? 'flex flex-col items-center justify-center p-6 text-center'
+    : 'min-h-[calc(100vh-4rem)] bg-[#F7F4EB] dark:bg-background flex flex-col items-center justify-center p-6 text-center';
+
   if (isLoading) {
     return (
-      <div className="min-h-[calc(100vh-4rem)] bg-[#F7F4EB] dark:bg-background flex flex-col items-center justify-center p-6">
+      <div className={loadingClassName}>
         <Loader2 className="w-10 h-10 text-emerald-800 animate-spin mb-4" />
         <p className="text-sm font-semibold text-slate-600">Đang tải thông tin nhóm ghép...</p>
       </div>
@@ -77,7 +108,7 @@ export default function JoinGroupRequestPage() {
 
   if (isError || !groupData) {
     return (
-      <div className="min-h-[calc(100vh-4rem)] bg-[#F7F4EB] dark:bg-background flex flex-col items-center justify-center p-6 text-center">
+      <div className={errorClassName}>
         <div className="max-w-md w-full bg-white dark:bg-card p-8 rounded-3xl border border-red-100 dark:border-border shadow-lg space-y-4">
           <AlertTriangle className="w-12 h-12 text-rose-500 mx-auto" />
           <h2 className="text-xl font-extrabold text-[#0B3025] dark:text-foreground">
@@ -88,7 +119,7 @@ export default function JoinGroupRequestPage() {
           </p>
           <div className="pt-2">
             <AppButton
-              onClick={() => navigate(PATHS.GROUPS)}
+              onClick={() => navigate(backPath)}
               className="bg-[#0B3025] hover:bg-[#072019] text-white font-bold px-6 py-2.5 rounded-full text-xs shadow-sm border-none cursor-pointer"
             >
               Quay lại danh sách
@@ -106,7 +137,7 @@ export default function JoinGroupRequestPage() {
   const currentSize = acceptedMembers.length;
 
   return (
-    <div className="min-h-screen bg-[#F7F4EB] dark:bg-background pt-20 pb-16 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+    <div className={shellClassName}>
       {/* Container Khung Trắng Viền Bo Tròn (Giống hình thiết kế) */}
       <div className="bg-[#FAF8F5] dark:bg-card border border-stone-200/80 dark:border-border rounded-[2.5rem] p-6 sm:p-10 max-w-5xl w-full shadow-xl">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -237,7 +268,7 @@ export default function JoinGroupRequestPage() {
                   </p>
                   <button
                     type="button"
-                    onClick={() => navigate(`/groups/${groupId}`)}
+                    onClick={() => navigate(detailPath)}
                     className="px-6 py-2.5 rounded-full bg-[#0D3B2E] text-xs font-bold text-white hover:bg-emerald-950 transition-colors cursor-pointer"
                   >
                     Xem chi tiết nhóm
