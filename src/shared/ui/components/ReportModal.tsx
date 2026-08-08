@@ -1,6 +1,7 @@
 import { Flag } from 'lucide-react';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useCreateReport } from '@/features/reports';
 import { toast } from '@/store/useToastStore';
 
 export interface ReportModalProps {
@@ -33,7 +34,8 @@ export function ReportModal({
 }: ReportModalProps) {
   const [selectedType, setSelectedType] = useState<ViolationType | null>(null);
   const [details, setDetails] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { mutate: createReport, isPending: isSubmitting } = useCreateReport();
 
   const formattedTargetCode = targetId.startsWith('#')
     ? targetId
@@ -46,16 +48,25 @@ export function ReportModal({
       return;
     }
 
-    setIsSubmitting(true);
+    const selectedOption = violationOptions.find((opt) => opt.id === selectedType);
+    const reasonText = details.trim()
+      ? `${selectedOption?.label}: ${details.trim()}`
+      : selectedOption?.label || '';
 
-    // Mock API simulation
-    setTimeout(() => {
-      setIsSubmitting(false);
-      toast.success('Gửi báo cáo thành công. Cảm ơn đóng góp của bạn!');
-      setSelectedType(null);
-      setDetails('');
-      onClose();
-    }, 600);
+    createReport(
+      {
+        targetType,
+        targetId,
+        reason: reasonText,
+      },
+      {
+        onSuccess: () => {
+          setSelectedType(null);
+          setDetails('');
+          onClose();
+        },
+      }
+    );
   };
 
   return (
