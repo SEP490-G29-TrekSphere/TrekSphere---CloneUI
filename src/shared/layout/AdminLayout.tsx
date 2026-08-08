@@ -65,16 +65,7 @@ export default function AdminLayout() {
           {adminNavItems.map((item) => {
             const Icon = item.icon;
             if (item.disabled) {
-              return (
-                <span
-                  key={item.name}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold opacity-40 cursor-not-allowed text-zinc-400 select-none"
-                  title={`${item.name} (chưa thực hiện)`}
-                >
-                  <Icon className="h-5 w-5" />
-                  {item.name}
-                </span>
-              );
+              return null;
             }
 
             const isActive =
