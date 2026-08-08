@@ -66,7 +66,10 @@ export default function BlogDetails() {
 
   return (
     <div className="min-h-screen bg-background">
-      <BlogDetailsHero post={post!} onReport={() => setIsReportModalOpen(true)} />
+      <BlogDetailsHero
+        post={post!}
+        onReport={isLoggedIn ? () => setIsReportModalOpen(true) : undefined}
+      />
 
       <main className="mx-auto max-w-none w-full px-4 py-10 sm:px-6 md:py-12">
         {/* Breadcrumb */}

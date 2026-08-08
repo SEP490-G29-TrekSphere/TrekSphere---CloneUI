@@ -297,15 +297,17 @@ function CommentNode({
                 </button>
               </>
             )}
-            <button
-              type="button"
-              onClick={() => onReport(comment)}
-              className="flex items-center gap-1 text-xs text-zinc-400 hover:text-red-600 transition-colors"
-              title="Báo cáo bình luận"
-            >
-              <Flag className="size-3.5" />
-              <span>Báo cáo</span>
-            </button>
+            {isLoggedIn && !isOwner && (
+              <button
+                type="button"
+                onClick={() => onReport(comment)}
+                className="flex items-center gap-1 text-xs text-zinc-400 hover:text-red-600 transition-colors"
+                title="Báo cáo bình luận"
+              >
+                <Flag className="size-3.5" />
+                <span>Báo cáo</span>
+              </button>
+            )}
           </div>
         </div>
 
