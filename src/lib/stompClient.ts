@@ -1,6 +1,6 @@
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { getAccessToken } from '@/lib/session';
+import { storage } from '@/utils/storage';
 
 export const getWebSocketUrl = (): string => {
   const isDev = import.meta.env.DEV;
@@ -18,10 +18,7 @@ export const getWebSocketUrl = (): string => {
 };
 
 export const createStompClient = (): Client => {
-  // Đọc qua `@/lib/session` để dùng chung 1 nguồn token với apiClient —
-  // `connectHeaders` chỉ được đọc 1 lần lúc tạo client, nên caller phải bảo đảm
-  // token còn hạn trước khi gọi (xem `ChatWebSocketProvider`).
-  const token = getAccessToken();
+  const token = storage.get<string>('accessToken');
   const wsUrl = getWebSocketUrl();
 
   const client = new Client({

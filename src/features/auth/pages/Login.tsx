@@ -7,7 +7,6 @@ import { queryClient } from '@/config/queryClient';
 import { PATHS } from '@/constants';
 import { extractRoles, getPostLoginRoute } from '@/constants/roles';
 import { authService, toAppStoreUser } from '@/features/auth';
-import { setSessionTokens } from '@/lib/session';
 import { useAuthCheck } from '@/shared/hooks/useAuthCheck';
 import {
   AppButton,
@@ -110,7 +109,8 @@ export default function Login() {
           (responseData.refresh_token as string | undefined) ??
           '';
 
-        setSessionTokens(accessToken, refreshToken);
+        storage.set('accessToken', accessToken);
+        storage.set('refreshToken', refreshToken);
 
         const userData = (responseData.user ?? responseData) as Record<string, unknown>;
         const normalizedRoles = extractRoles(userData);
@@ -203,9 +203,8 @@ export default function Login() {
           'length:',
           refreshToken.length
         );
-        // `setSessionTokens` cũng reset cờ "đang hết hạn" — nếu không, phiên
-        // trước đã hết hạn thì lần hết hạn kế tiếp sẽ không toast/điều hướng nữa.
-        setSessionTokens(accessToken, refreshToken);
+        storage.set('accessToken', accessToken);
+        storage.set('refreshToken', refreshToken);
         console.log('[Login] token saved. Verify:', storage.get('accessToken') ? 'OK' : 'MISSING');
 
         // Lấy thông tin user từ login response.

@@ -1,5 +1,9 @@
-import { ApiService, ApiUpload } from '@/config/apiClient';
+import type { AxiosResponse } from 'axios';
+import axios from 'axios';
+import type { ApiResponse } from '@/config/apiClient';
+import apiClient, { handleResponse } from '@/config/apiClient';
 import type { UserProfile } from '@/features/auth';
+import { storage } from '@/utils/storage';
 
 /**
  * Service gọi API liên quan tới profile.
@@ -18,13 +22,8 @@ export const profileService = {
    * - avatar: File (binary) - optional, chỉ gửi khi user đổi ảnh
    *
    * KHÔNG set Content-Type header thủ công - axios sẽ tự set multipart boundary.
-   *
-   * Đi qua `ApiUpload` (apiClient) để hưởng đủ interceptor: gắn Bearer token,
-   * auto-refresh khi 401, dọn phiên khi refresh token hết hạn. Bản cũ gọi
-   * `axios.put` trần với URL hard-code `/api/v1/users/me` nên vừa 404 trên
-   * production (không có Vite proxy), vừa không bao giờ được refresh token.
    */
-  updateProfile: (data: FormData) => ApiUpload<UserProfile>('/users/me', data, 'PUT'),
+  updateProfile: (data: FormData) => updateProfileMultipart<UserProfile>(data),
   /**
    * Upload 1 file (ảnh) lên BE → trả về URL string.
    * Endpoint: POST /files/upload?folder=<folder>
@@ -62,3 +61,75 @@ export const profileService = {
     );
   },
 };
+
+/**
+ * Wrapper để dùng chung ApiService cho GET/POST/DELETE (body JSON).
+ */
+function ApiService<T>(
+  path: string,
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
+  data?: unknown
+): Promise<ApiResponse<T>> {
+  return apiClient
+    .request({ url: path, method, data })
+    .then((res: AxiosResponse) => handleResponse<T>(res))
+    .catch((err: unknown) => {
+      if (axios.isAxiosError(err)) {
+        const responseData = err.response?.data as { message?: string; error?: string } | undefined;
+        return {
+          error: responseData?.message || responseData?.error || err.message,
+          message: responseData?.message || responseData?.error || err.message,
+          status: err.response?.status || 500,
+        };
+      }
+      return { error: 'An unknown error occurred', message: 'An unknown error occurred' };
+    });
+}
+
+/**
+ * Hỗ trợ upload file (multipart/form-data) — gửi FormData trực tiếp qua axios.
+ * KHÔNG set thủ công Content-Type vì axios sẽ tự thêm boundary.
+ */
+function ApiUpload<T>(path: string, formData: FormData): Promise<ApiResponse<T>> {
+  return apiClient
+    .request({ url: path, method: 'POST', data: formData })
+    .then((res: AxiosResponse) => handleResponse<T>(res))
+    .catch((err: unknown) => {
+      if (axios.isAxiosError(err)) {
+        const responseData = err.response?.data as { message?: string; error?: string } | undefined;
+        return {
+          error: responseData?.message || responseData?.error || err.message,
+          message: responseData?.message || responseData?.error || err.message,
+          status: err.response?.status || 500,
+        };
+      }
+      return { error: 'An unknown error occurred', message: 'An unknown error occurred' };
+    });
+}
+
+/**
+ * Cập nhật profile bằng PUT với body là FormData (multipart/form-data).
+ * Dùng trực tiếp axios thay vì ApiService vì body là FormData chứ không phải JSON.
+ */
+async function updateProfileMultipart<T>(formData: FormData): Promise<ApiResponse<T>> {
+  try {
+    const token = storage.get<string>('accessToken');
+    const response = await axios.put<T>(`/api/v1/users/me`, formData, {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : undefined,
+      },
+      withCredentials: true,
+    });
+    return handleResponse<T>(response as Parameters<typeof handleResponse<T>>[0]);
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      const responseData = err.response?.data as { message?: string; error?: string } | undefined;
+      return {
+        error: responseData?.message || responseData?.error || err.message,
+        message: responseData?.message || responseData?.error || err.message,
+        status: err.response?.status || 500,
+      };
+    }
+    return { error: 'An unknown error occurred', message: 'An unknown error occurred' };
+  }
+}

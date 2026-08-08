@@ -4,14 +4,10 @@ import axios, {
   type AxiosProgressEvent,
   type AxiosResponse,
 } from 'axios';
-import {
-  clearExpiredSession,
-  getAccessToken,
-  getRefreshToken,
-  setSessionTokens,
-} from '@/lib/session';
 import { useAppStore } from '@/store/useAppStore';
-import { isJwtExpired } from '@/utils/jwt';
+import { toast } from '@/store/useToastStore';
+import { storage } from '@/utils/storage';
+import { queryClient } from './queryClient';
 
 /**
  * baseURL cho môi trường dev vs prod.
@@ -87,77 +83,70 @@ type RetryableRequest = AxiosError['config'] & {
 // Biến shared state cho refresh flow — đảm bảo nhiều request 401 đồng thời
 // chỉ trigger 1 lần refresh, các request còn lại sẽ đợi token mới rồi retry.
 let isRefreshing = false;
+let refreshSubscribers: Array<(token: string) => void> = [];
 
-/**
- * Subscriber phải có CẢ nhánh thất bại. Trước đây chỉ có callback success nên
- * khi refresh fail, `onRefreshFailed` chỉ xoá mảng subscriber — các promise
- * đang `await` của những request 401 đến sau treo mãi mãi (spinner không bao
- * giờ tắt, `finally` của caller không chạy).
- */
-interface RefreshSubscriber {
-  onSuccess: (token: string) => void;
-  onFailure: () => void;
-}
-
-let refreshSubscribers: RefreshSubscriber[] = [];
-
-const subscribeTokenRefresh = (subscriber: RefreshSubscriber): void => {
-  refreshSubscribers.push(subscriber);
+const subscribeTokenRefresh = (cb: (token: string) => void): void => {
+  refreshSubscribers.push(cb);
 };
 
-// Lấy list ra trước rồi mới gọi callback — callback có thể retry request và
-// đăng ký subscriber mới, không được để nó chen vào mảng đang duyệt.
 const onTokenRefreshed = (token: string): void => {
-  const subscribers = refreshSubscribers;
+  for (const cb of refreshSubscribers) cb(token);
   refreshSubscribers = [];
-  for (const subscriber of subscribers) subscriber.onSuccess(token);
 };
 
 const onRefreshFailed = (): void => {
-  const subscribers = refreshSubscribers;
   refreshSubscribers = [];
-  for (const subscriber of subscribers) subscriber.onFailure();
 };
 
 /**
- * Kết quả refresh — phân biệt rõ 3 trạng thái vì cách xử lý khác nhau hoàn toàn:
- *   - `success`      : có token mới, retry request.
- *   - `unauthorized` : BE nói refresh token không còn hợp lệ (401/403) → logout.
- *   - `error`        : network down / 5xx / timeout → CHỈ reject request đang
- *                      chờ, KHÔNG xoá session. Wifi rớt 1 nhịp không phải là
- *                      lý do để đá user ra khỏi hệ thống.
+ * Dọn sạch session khi token hết hạn hẳn (không refresh được nữa) — không chỉ
+ * xóa token trong storage mà còn phải reset `useAppStore.user` (vì
+ * `useAuthCheck` coi `isAuthenticated = Boolean(user) || hasToken`, còn user
+ * là còn coi như đã login) và clear cache React Query (nếu không, các trang
+ * đang mount vẫn hiển thị dữ liệu cũ từ cache dù đã "mất" đăng nhập).
+ *
+ * Guard theo `accessToken` còn tồn tại không — tránh nhiều request 401 cùng
+ * lúc (cùng 1 đợt hết hạn) gọi clear/toast lặp lại nhiều lần.
  */
-type RefreshOutcome =
-  | { status: 'success'; token: string }
-  | { status: 'unauthorized' }
-  | { status: 'error'; error: unknown };
+const clearExpiredSession = (): void => {
+  if (!storage.get<string>('accessToken')) return;
+  storage.remove('accessToken');
+  storage.remove('refreshToken');
+  useAppStore.getState().setUser(null);
+  queryClient.clear();
+  toast.warning('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.');
+};
+
+function buildAbsoluteBaseURL(): string {
+  if (isDev) {
+    return baseURL;
+  }
+  return baseURL;
+}
 
 /**
- * Gọi /auth/refresh-token để lấy access_token mới.
+ * Gọi /auth/refresh để lấy access_token mới.
+ * Trả về access_token mới, hoặc null nếu thất bại.
  *
  * Lưu ý: Vì không biết chính xác BE expect body shape nào, thử lần lượt các
  * shape phổ biến. Vì `apiClient` đã có `withCredentials: true` nên cookie
  * (nếu BE set) sẽ tự gửi kèm — không cần truyền thêm gì.
  */
-async function performRefresh(): Promise<RefreshOutcome> {
-  const refreshToken = getRefreshToken();
+async function performRefresh(): Promise<string | null> {
+  const refreshToken = storage.get<string>('refreshToken');
   if (!refreshToken) {
     console.warn(
       '[apiClient] performRefresh: no refreshToken in storage — trying cookie-based refresh'
     );
   }
 
-  // Gọi bằng `axios` trần thay vì `apiClient`: request này KHÔNG được đi qua
-  // interceptor 401, nếu không refresh fail sẽ tự trigger refresh → vòng lặp.
-  const refreshURL = `${baseURL}/auth/refresh-token`;
+  const absoluteURL = `${buildAbsoluteBaseURL()}/auth/refresh-token`;
   const bodyCandidates: Array<Record<string, unknown> | null> = [
     refreshToken ? { refreshToken } : null,
     refreshToken ? { refresh_token: refreshToken } : null,
     refreshToken ? { token: refreshToken } : null,
     null,
   ];
-
-  let lastError: unknown = null;
 
   for (const _body of bodyCandidates) {
     try {
@@ -174,7 +163,7 @@ async function performRefresh(): Promise<RefreshOutcome> {
           refresh_token?: string;
           refreshToken?: string;
         };
-      }>(refreshURL, _body ?? {}, { timeout: TIME_OUT, withCredentials });
+      }>(absoluteURL, _body ?? {}, { timeout: TIME_OUT, withCredentials });
 
       const root = response.data as Record<string, unknown>;
       const inner = (root.data as Record<string, unknown> | undefined) ?? {};
@@ -198,74 +187,23 @@ async function performRefresh(): Promise<RefreshOutcome> {
         continue;
       }
 
-      setSessionTokens(newAccess, newRefresh || refreshToken);
-      return { status: 'success', token: newAccess };
+      storage.set('accessToken', newAccess);
+      if (newRefresh) storage.set('refreshToken', newRefresh);
+      return newAccess;
     } catch (err) {
-      const status = axios.isAxiosError(err) ? err.response?.status : undefined;
-
-      // 401/403 → BE nói rõ refresh token không dùng được nữa (sai/hết hạn/bị
-      // thu hồi). KHÔNG thử shape khác, và đây là trường hợp DUY NHẤT được
-      // phép logout user.
-      if (status === 401 || status === 403) {
-        console.error(`[apiClient] refresh token rejected by BE (${status})`);
-        return { status: 'unauthorized' };
+      // Nếu lỗi 401 → refresh token sai/hết hạn → KHÔNG thử shape khác nữa
+      // (vì BE đã từ chối), trả về null để caller clear storage.
+      if (axios.isAxiosError(err) && err.response?.status === 401) {
+        console.error('[apiClient] refresh token returned 401 — refresh token invalid/expired');
+        return null;
       }
-
-      // Lỗi khác (network, timeout, 4xx do sai shape, 5xx) → thử shape tiếp theo
-      lastError = err;
+      // Lỗi khác (network, 5xx) → thử shape tiếp theo
       console.warn('[apiClient] refresh attempt failed:', err);
     }
   }
 
-  // Hết shape mà vẫn không có access token mới: có thể do BE lỗi hoặc shape
-  // request/response đổi. Không kết luận được là refresh token hết hạn → giữ
-  // session, chỉ báo lỗi cho request đang chờ.
   console.error('[apiClient] refresh token: all body shapes failed');
-  return {
-    status: 'error',
-    error: lastError ?? new Error('[apiClient] refresh returned no access token'),
-  };
-}
-
-/**
- * Đảm bảo trong storage có access token còn hạn — dùng cho lúc app vừa khởi
- * động (F5 / mở lại tab) khi access token đã hết hạn nhưng refresh token vẫn
- * còn: refresh im lặng 1 lần thay vì đá user về `/login`.
- *
- * Trả `true` nếu sau khi chạy đã có token hợp lệ. Dùng chung state
- * `isRefreshing`/`refreshSubscribers` với response interceptor nên nhiều nơi
- * gọi cùng lúc vẫn chỉ có 1 request refresh thật sự.
- */
-export async function ensureFreshSession(): Promise<boolean> {
-  const accessToken = getAccessToken();
-  if (accessToken && !isJwtExpired(accessToken)) return true;
-  if (!getRefreshToken()) return false;
-
-  if (isRefreshing) {
-    return new Promise<boolean>((resolve) => {
-      subscribeTokenRefresh({
-        onSuccess: () => resolve(true),
-        onFailure: () => resolve(false),
-      });
-    });
-  }
-
-  isRefreshing = true;
-  let outcome: RefreshOutcome;
-  try {
-    outcome = await performRefresh();
-  } finally {
-    isRefreshing = false;
-  }
-
-  if (outcome.status === 'success') {
-    onTokenRefreshed(outcome.token);
-    return true;
-  }
-
-  onRefreshFailed();
-  if (outcome.status === 'unauthorized') clearExpiredSession('refresh-failed');
-  return false;
+  return null;
 }
 
 // Request interceptor for token
@@ -275,7 +213,7 @@ apiClient.interceptors.request.use(
     // Bỏ qua nếu request được đánh dấu skipAuth (vd: login, register, verify)
     if (retryable.__skipAuth) return config;
 
-    const token = getAccessToken();
+    const token = storage.get<string>('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -306,29 +244,19 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // `performRefresh` gọi bằng `axios.post` trần (không qua `apiClient`) nên
-    // 401 của chính /auth/refresh-token không chạy vào interceptor này. Giữ
-    // check như một chốt chặn phòng khi sau này ai đó đổi sang dùng apiClient —
-    // nếu không, refresh fail sẽ tự gọi refresh lại thành vòng lặp.
+    // Endpoint /auth/refresh-token tự nó cũng có thể 401 khi refresh token hết hạn —
+    // trong trường hợp đó axios.post trong `performRefresh` đã xử lý rồi, không
+    // cần chạy vào flow này. Cờ __skipRefresh được set cho request /auth/refresh-token
+    // qua `performRefresh` rồi, nên logic ở đây an toàn.
     if (originalConfig.url?.includes('/auth/refresh-token')) {
       return Promise.reject(error);
     }
 
-    // Guest (chưa từng đăng nhập) cũng có thể ăn 401 khi vào endpoint yêu cầu
-    // auth. Trường hợp đó không có "phiên" nào để hết hạn — chỉ reject, không
-    // toast, không điều hướng về /login.
-    const hasSession = Boolean(
-      getAccessToken() || getRefreshToken() || useAppStore.getState().user
-    );
-    if (!hasSession) {
-      console.warn('[apiClient] 401 for request without session:', originalConfig?.url);
-      return Promise.reject(error);
-    }
-
     // Có refresh token trong storage không?
-    if (!getRefreshToken()) {
+    const hasRefreshToken = Boolean(storage.get<string>('refreshToken'));
+    if (!hasRefreshToken) {
       console.warn('[apiClient] 401 received, no refresh token available:', originalConfig?.url);
-      clearExpiredSession('refresh-token-missing');
+      clearExpiredSession();
       return Promise.reject(error);
     }
 
@@ -336,45 +264,29 @@ apiClient.interceptors.response.use(
 
     if (!isRefreshing) {
       isRefreshing = true;
-      let outcome: RefreshOutcome;
-      try {
-        outcome = await performRefresh();
-      } finally {
-        // Phải nằm trong `finally`: nếu `performRefresh` throw (bug ngoài dự
-        // kiến), cờ này kẹt ở `true` vĩnh viễn và MỌI request 401 sau đó sẽ
-        // rơi vào nhánh "đợi token mới" — không ai gọi refresh nữa nên tất cả
-        // treo mãi.
-        isRefreshing = false;
+      const newToken = await performRefresh();
+      isRefreshing = false;
+
+      if (!newToken) {
+        // Refresh thất bại → xóa token + user + cache, để user phải login lại
+        clearExpiredSession();
+        onRefreshFailed();
+        return Promise.reject(error);
       }
 
-      if (outcome.status === 'success') {
-        onTokenRefreshed(outcome.token);
-        // Retry request hiện tại với token mới
-        originalConfig.headers = originalConfig.headers ?? new axios.AxiosHeaders();
-        originalConfig.headers.Authorization = `Bearer ${outcome.token}`;
-        return apiClient.request(originalConfig);
-      }
-
-      // Chỉ dọn session khi BE khẳng định refresh token không còn hợp lệ.
-      // Lỗi network/5xx (`status === 'error'`) → giữ nguyên session để user
-      // thử lại được, không bắt đăng nhập lại vì mạng lỗi.
-      if (outcome.status === 'unauthorized') {
-        clearExpiredSession('refresh-failed');
-      }
-      onRefreshFailed();
-      return Promise.reject(error);
+      onTokenRefreshed(newToken);
+      // Retry request hiện tại với token mới
+      originalConfig.headers = originalConfig.headers ?? new axios.AxiosHeaders();
+      originalConfig.headers.Authorization = `Bearer ${newToken}`;
+      return apiClient.request(originalConfig);
     }
 
-    // Đang refresh rồi → đợi token mới rồi retry. Nếu refresh fail thì reject
-    // bằng chính lỗi 401 của request này (trước đây promise bị bỏ treo).
+    // Đang refresh rồi → đợi token mới rồi retry
     return new Promise<AxiosResponse>((resolve, reject) => {
-      subscribeTokenRefresh({
-        onSuccess: (token) => {
-          originalConfig.headers = originalConfig.headers ?? new axios.AxiosHeaders();
-          originalConfig.headers.Authorization = `Bearer ${token}`;
-          apiClient.request(originalConfig).then(resolve).catch(reject);
-        },
-        onFailure: () => reject(error),
+      subscribeTokenRefresh((token) => {
+        originalConfig.headers = originalConfig.headers ?? new axios.AxiosHeaders();
+        originalConfig.headers.Authorization = `Bearer ${token}`;
+        apiClient.request(originalConfig).then(resolve).catch(reject);
       });
     });
   }
