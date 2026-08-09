@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { tourService } from '@/features/tours/services/tourService';
 import type { BookingDetailResponse } from '@/features/tours/types';
 import type { VendorBookingItem } from '../types';
+import { getBookingCustomerName } from '../utils/bookingCustomer';
 
 interface ConfirmPaymentModalProps {
   booking: VendorBookingItem | null;
@@ -98,9 +99,7 @@ export function ConfirmPaymentModal({
           <div className="flex items-center justify-between text-sm">
             <span className="font-medium text-gray-500">Khách hàng</span>
             <span className="font-bold text-[#06261D]">
-              {currentBooking.customerName ||
-                (currentBooking as any).userFullName ||
-                'Khách đặt tour'}
+              {getBookingCustomerName(currentBooking, 'Khách đặt tour')}
             </span>
           </div>
           <div className="flex items-center justify-between text-sm">

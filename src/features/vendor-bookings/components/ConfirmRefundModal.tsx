@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { tourService } from '@/features/tours/services/tourService';
 import type { BookingDetailResponse } from '@/features/tours/types';
 import type { VendorBookingItem } from '../types';
+import { getBookingCustomerName } from '../utils/bookingCustomer';
 
 interface ConfirmRefundModalProps {
   booking: VendorBookingItem | null;
@@ -49,8 +50,7 @@ export function ConfirmRefundModal({
 
   const currentBooking = fullBooking || booking;
   const bookingCode = currentBooking.bookingCode || currentBooking.bookingId.substring(0, 8);
-  const customerName =
-    currentBooking.customerName || (currentBooking as any).userFullName || 'khách hàng';
+  const customerName = getBookingCustomerName(currentBooking);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
