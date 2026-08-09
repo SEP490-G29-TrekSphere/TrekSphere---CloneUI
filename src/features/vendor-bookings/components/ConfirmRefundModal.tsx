@@ -1,4 +1,7 @@
 import { Info, Loader2, RotateCcw, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { tourService } from '@/features/tours/services/tourService';
+import type { BookingDetailResponse } from '@/features/tours/types';
 import type { VendorBookingItem } from '../types';
 
 interface ConfirmRefundModalProps {
@@ -16,14 +19,38 @@ export function ConfirmRefundModal({
   onClose,
   onConfirm,
 }: ConfirmRefundModalProps) {
+  const [fullBooking, setFullBooking] = useState<BookingDetailResponse | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && booking?.bookingId) {
+      setLoadingDetail(true);
+      tourService
+        .getBookingDetail(booking.bookingId)
+        .then((data) => {
+          setFullBooking(data);
+        })
+        .catch((err) => {
+          console.error('Lỗi tải chi tiết đơn đặt:', err);
+        })
+        .finally(() => {
+          setLoadingDetail(false);
+        });
+    } else {
+      setFullBooking(null);
+    }
+  }, [isOpen, booking?.bookingId]);
+
   if (!isOpen || !booking) return null;
 
   const handleConfirm = () => {
     onConfirm(booking.bookingId);
   };
 
-  const bookingCode = booking.bookingCode || booking.bookingId.substring(0, 8);
-  const customerName = booking.customerName || 'khách hàng';
+  const currentBooking = fullBooking || booking;
+  const bookingCode = currentBooking.bookingCode || currentBooking.bookingId.substring(0, 8);
+  const customerName =
+    currentBooking.customerName || (currentBooking as any).userFullName || 'khách hàng';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -82,7 +109,7 @@ export function ConfirmRefundModal({
             </span>
             <div className="flex flex-col items-end gap-1">
               <span className="text-lg font-extrabold text-[#06261D]">
-                {booking.totalPrice.toLocaleString('vi-VN')} VND
+                {currentBooking.totalPrice.toLocaleString('vi-VN')} VND
               </span>
               <span className="inline-flex items-center rounded-md bg-[#52D89C]/30 px-2 py-0.5 text-[10px] font-bold text-[#06261D] tracking-wide uppercase">
                 100% THANH TOÁN
@@ -90,6 +117,34 @@ export function ConfirmRefundModal({
             </div>
           </div>
         </div>
+
+        {/* Proof of Payment Image Section */}
+        {loadingDetail ? (
+          <div className="mb-5 rounded-2xl bg-white border border-gray-200 p-6 flex flex-col justify-center items-center gap-2 text-xs text-gray-400">
+            <Loader2 className="h-5 w-5 animate-spin text-[#06261D]" />
+            <span>Đang tải hình ảnh minh chứng...</span>
+          </div>
+        ) : currentBooking.proofImageUrl ? (
+          <div className="mb-5 rounded-2xl border border-gray-200 bg-white p-3">
+            <span className="block text-[11px] font-bold text-gray-400 mb-2 uppercase tracking-wide">
+              Hình ảnh minh chứng thanh toán
+            </span>
+            <div className="overflow-hidden rounded-xl border border-gray-100 max-h-56 bg-zinc-50 flex justify-center">
+              <img
+                src={currentBooking.proofImageUrl}
+                alt="Minh chứng thanh toán từ khách hàng"
+                className="max-h-52 object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="mb-5 rounded-2xl bg-amber-50 border border-amber-100 p-4 text-xs text-amber-800 text-center">
+            Khách hàng chưa tải lên hình ảnh minh chứng.
+          </div>
+        )}
 
         {/* Notice Callout Box */}
         <div className="mb-8 flex items-start gap-3 rounded-2xl bg-[#E4EBE6] p-4 text-xs text-[#06261D]">

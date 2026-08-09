@@ -61,6 +61,14 @@ export default function BookingDetail({
   const [cancellationReason, setCancellationReason] = useState('');
   const [cancelling, setCancelling] = useState(false);
   const [reasonError, setReasonError] = useState('');
+  const [refundBankName, setRefundBankName] = useState('');
+  const [refundAccountNumber, setRefundAccountNumber] = useState('');
+  const [refundAccountHolder, setRefundAccountHolder] = useState('');
+  const [refundErrors, setRefundErrors] = useState<{
+    bankName?: string;
+    accountNumber?: string;
+    accountHolder?: string;
+  }>({});
 
   const [isProofModalOpen, setIsProofModalOpen] = useState(false);
   const [proofFile, setProofFile] = useState<File | null>(null);
@@ -86,6 +94,15 @@ export default function BookingDetail({
     booking?.bookingStatus === 'PENDING' &&
     booking?.paymentStatus === 'PENDING' &&
     Boolean(booking?.proofImageUrl);
+
+  /**
+   * Tiền đã (hoặc có thể đã) rời khỏi tài khoản trekker → khi hủy sẽ phát sinh
+   * hoàn tiền, nên cần thu tài khoản nhận tiền. Đơn chưa chuyển khoản thì không
+   * hỏi để tránh làm nặng form.
+   */
+  const showRefundFields = booking?.paymentStatus === 'PAID' || Boolean(booking?.proofImageUrl);
+  /** Đã xác nhận thanh toán thì chắc chắn có hoàn tiền → bắt buộc nhập. */
+  const isRefundInfoRequired = booking?.paymentStatus === 'PAID';
 
   const timeLeft = useBookingCountdown(
     booking?.createdAt,
@@ -179,18 +196,55 @@ export default function BookingDetail({
   const handleConfirmCancel = async () => {
     if (!booking) return;
     const trimmedReason = cancellationReason.trim();
+    const bankName = refundBankName.trim();
+    const accountNumber = refundAccountNumber.trim();
+    const accountHolder = refundAccountHolder.trim();
+
     if (!trimmedReason) {
       setReasonError('Vui lòng nhập lý do hủy đặt tour.');
       return;
     }
-
     setReasonError('');
+
+    // Thông tin hoàn tiền chỉ hữu ích khi đủ cả 3 field → nếu đã nhập 1 field
+    // (hoặc đơn bắt buộc hoàn tiền) thì validate cả nhóm.
+    const nextRefundErrors: typeof refundErrors = {};
+    if (showRefundFields) {
+      const hasAnyRefundInput = Boolean(bankName || accountNumber || accountHolder);
+      if (isRefundInfoRequired || hasAnyRefundInput) {
+        if (!bankName) nextRefundErrors.bankName = 'Vui lòng nhập tên ngân hàng.';
+        if (!accountNumber) {
+          nextRefundErrors.accountNumber = 'Vui lòng nhập số tài khoản.';
+        } else if (!/^\d{6,20}$/.test(accountNumber.replace(/[\s-]/g, ''))) {
+          nextRefundErrors.accountNumber = 'Số tài khoản chỉ gồm 6-20 chữ số.';
+        }
+        if (!accountHolder) nextRefundErrors.accountHolder = 'Vui lòng nhập tên chủ tài khoản.';
+      }
+    }
+
+    setRefundErrors(nextRefundErrors);
+    if (Object.keys(nextRefundErrors).length > 0) return;
+
     setCancelling(true);
     try {
-      const updatedBooking = await tourService.cancelBooking(booking.bookingId, trimmedReason);
+      const updatedBooking = await tourService.cancelBooking(
+        booking.bookingId,
+        trimmedReason,
+        showRefundFields
+          ? {
+              refundBankName: bankName,
+              refundAccountNumber: accountNumber.replace(/[\s-]/g, ''),
+              refundAccountHolder: accountHolder,
+            }
+          : undefined
+      );
       setBooking(updatedBooking);
       setIsCancelModalOpen(false);
       setCancellationReason('');
+      setRefundBankName('');
+      setRefundAccountNumber('');
+      setRefundAccountHolder('');
+      setRefundErrors({});
       toast.success('Hủy đặt tour thành công');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Không thể hủy đặt tour. Vui lòng thử lại.');
@@ -583,6 +637,55 @@ export default function BookingDetail({
                   </span>
                 </p>
               )}
+
+              {/* Refund bank details if available */}
+              {(booking.refundBankName ||
+                booking.refundAccountNumber ||
+                booking.refundAccountHolder) && (
+                <div className="mt-3 pt-3 border-t border-red-200/60 text-xs text-zinc-600 space-y-1.5">
+                  <p className="font-extrabold text-red-900">Thông tin tài khoản nhận tiền hoàn:</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-white/60 p-3 rounded-2xl border border-red-100">
+                    {booking.refundBankName && (
+                      <div>
+                        <span className="text-zinc-400 font-bold block mb-0.5">Ngân hàng</span>
+                        <span className="text-zinc-800 font-extrabold">
+                          {booking.refundBankName}
+                        </span>
+                      </div>
+                    )}
+                    {booking.refundAccountNumber && (
+                      <div>
+                        <span className="text-zinc-400 font-bold block mb-0.5">Số tài khoản</span>
+                        <span className="text-zinc-800 font-extrabold">
+                          {booking.refundAccountNumber}
+                        </span>
+                      </div>
+                    )}
+                    {booking.refundAccountHolder && (
+                      <div>
+                        <span className="text-zinc-400 font-bold block mb-0.5">Chủ tài khoản</span>
+                        <span className="text-zinc-800 font-extrabold">
+                          {booking.refundAccountHolder}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Refund proof image if available */}
+              {booking.refundProofImageUrl && (
+                <div className="mt-3 pt-3 border-t border-red-200/60 text-xs space-y-1.5">
+                  <p className="font-extrabold text-zinc-600">Minh chứng hoàn tiền:</p>
+                  <div className="overflow-hidden rounded-2xl border border-red-100 max-w-md bg-white p-2">
+                    <img
+                      src={booking.refundProofImageUrl}
+                      alt="Minh chứng hoàn tiền"
+                      className="w-full object-contain max-h-60 rounded-xl"
+                    />
+                  </div>
+                </div>
+              )}
             </AppCard>
           )}
         </div>
@@ -666,6 +769,7 @@ export default function BookingDetail({
                 <AppButton
                   onClick={() => {
                     setReasonError('');
+                    setRefundErrors({});
                     setIsCancelModalOpen(true);
                   }}
                   variant="destructive"
@@ -736,7 +840,7 @@ export default function BookingDetail({
 
       {/* Cancel Booking Confirmation Dialog */}
       <Dialog open={isCancelModalOpen} onOpenChange={setIsCancelModalOpen}>
-        <DialogContent className="sm:max-w-md bg-white rounded-3xl p-6 border border-[#E5E4DE]">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto bg-white rounded-3xl p-6 border border-[#E5E4DE]">
           <DialogHeader className="space-y-2">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600 border border-red-100 mb-1">
               <XCircle className="h-6 w-6" />
@@ -759,6 +863,7 @@ export default function BookingDetail({
               <textarea
                 id="cancel-reason-input"
                 rows={3}
+                disabled={cancelling}
                 value={cancellationReason}
                 onChange={(e) => {
                   setCancellationReason(e.target.value);
@@ -775,6 +880,117 @@ export default function BookingDetail({
                 <p className="text-[11px] text-red-500 font-bold mt-1">{reasonError}</p>
               )}
             </div>
+
+            {showRefundFields && (
+              <div className="space-y-3 border-t border-[#F4F4F2] pt-4">
+                <div>
+                  <h4 className="font-extrabold text-zinc-800 text-sm">
+                    Thông tin nhận hoàn tiền{' '}
+                    {isRefundInfoRequired && <span className="text-red-500">*</span>}
+                  </h4>
+                  <p className="text-[11px] text-zinc-500 font-medium mt-1 leading-relaxed">
+                    {isRefundInfoRequired
+                      ? 'Vui lòng nhập đúng tài khoản của bạn để nhận tiền hoàn từ nhà cung cấp tour.'
+                      : 'Nếu đơn của bạn phát sinh hoàn tiền, hãy cung cấp tài khoản nhận tiền.'}
+                  </p>
+                </div>
+
+                <div>
+                  <label htmlFor="refund-bank-name" className="block text-zinc-700 font-bold mb-2">
+                    Ngân hàng {isRefundInfoRequired && <span className="text-red-500">*</span>}
+                  </label>
+                  <input
+                    id="refund-bank-name"
+                    type="text"
+                    disabled={cancelling}
+                    value={refundBankName}
+                    onChange={(e) => {
+                      setRefundBankName(e.target.value);
+                      if (e.target.value.trim()) {
+                        setRefundErrors((prev) => ({ ...prev, bankName: undefined }));
+                      }
+                    }}
+                    placeholder="Ví dụ: Vietcombank"
+                    className={`w-full p-3 rounded-2xl border bg-zinc-50/50 text-xs font-semibold text-zinc-800 focus:outline-none focus:bg-white transition-colors ${
+                      refundErrors.bankName
+                        ? 'border-red-500 focus:border-red-600'
+                        : 'border-[#E5E4DE] focus:border-[#0B3025]'
+                    }`}
+                  />
+                  {refundErrors.bankName && (
+                    <p className="text-[11px] text-red-500 font-bold mt-1">
+                      {refundErrors.bankName}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="refund-account-number"
+                    className="block text-zinc-700 font-bold mb-2"
+                  >
+                    Số tài khoản {isRefundInfoRequired && <span className="text-red-500">*</span>}
+                  </label>
+                  <input
+                    id="refund-account-number"
+                    type="text"
+                    inputMode="numeric"
+                    disabled={cancelling}
+                    value={refundAccountNumber}
+                    onChange={(e) => {
+                      setRefundAccountNumber(e.target.value);
+                      if (e.target.value.trim()) {
+                        setRefundErrors((prev) => ({ ...prev, accountNumber: undefined }));
+                      }
+                    }}
+                    placeholder="Ví dụ: 1234567890"
+                    className={`w-full p-3 rounded-2xl border bg-zinc-50/50 text-xs font-semibold text-zinc-800 focus:outline-none focus:bg-white transition-colors ${
+                      refundErrors.accountNumber
+                        ? 'border-red-500 focus:border-red-600'
+                        : 'border-[#E5E4DE] focus:border-[#0B3025]'
+                    }`}
+                  />
+                  {refundErrors.accountNumber && (
+                    <p className="text-[11px] text-red-500 font-bold mt-1">
+                      {refundErrors.accountNumber}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="refund-account-holder"
+                    className="block text-zinc-700 font-bold mb-2"
+                  >
+                    Tên chủ tài khoản{' '}
+                    {isRefundInfoRequired && <span className="text-red-500">*</span>}
+                  </label>
+                  <input
+                    id="refund-account-holder"
+                    type="text"
+                    disabled={cancelling}
+                    value={refundAccountHolder}
+                    onChange={(e) => {
+                      setRefundAccountHolder(e.target.value.toUpperCase());
+                      if (e.target.value.trim()) {
+                        setRefundErrors((prev) => ({ ...prev, accountHolder: undefined }));
+                      }
+                    }}
+                    placeholder="Ví dụ: NGUYEN VAN A"
+                    className={`w-full p-3 rounded-2xl border bg-zinc-50/50 text-xs font-semibold text-zinc-800 uppercase focus:outline-none focus:bg-white transition-colors ${
+                      refundErrors.accountHolder
+                        ? 'border-red-500 focus:border-red-600'
+                        : 'border-[#E5E4DE] focus:border-[#0B3025]'
+                    }`}
+                  />
+                  {refundErrors.accountHolder && (
+                    <p className="text-[11px] text-red-500 font-bold mt-1">
+                      {refundErrors.accountHolder}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-4">

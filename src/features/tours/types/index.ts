@@ -4,6 +4,7 @@ export type {
   ApiSortDir,
   ApiSortField,
   ApiStatus,
+  BookingCancelRequest,
   BookingDetailResponse,
   BookingFormState,
   BookingHistoryApiResponse,

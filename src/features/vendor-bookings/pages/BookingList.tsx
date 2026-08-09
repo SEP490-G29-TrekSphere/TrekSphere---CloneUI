@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight, ShieldAlert } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useDebounce } from '@/shared/hooks';
+import { BookingDetailModal } from '../components/BookingDetailModal';
 import { BookingFilterBar } from '../components/BookingFilterBar';
 import { BookingStatsCards } from '../components/BookingStatsCards';
 import { BookingTableRow } from '../components/BookingTableRow';
@@ -34,6 +35,7 @@ export default function BookingList() {
     useState<VendorBookingItem | null>(null);
   const [selectedBookingForReject, setSelectedBookingForReject] =
     useState<VendorBookingItem | null>(null);
+  const [selectedBookingIdForDetail, setSelectedBookingIdForDetail] = useState<string | null>(null);
 
   const confirmBookingMutation = useConfirmBooking();
   const confirmPaymentMutation = useConfirmPayment();
@@ -99,9 +101,21 @@ export default function BookingList() {
     });
   };
 
-  const handleRejectSubmit = (bookingId: string, cancellationReason: string) => {
+  const handleRejectSubmit = (
+    bookingId: string,
+    cancellationReason: string,
+    refundBankName?: string,
+    refundAccountNumber?: string,
+    refundAccountHolder?: string
+  ) => {
     rejectBookingMutation.mutate(
-      { bookingId, cancellationReason },
+      {
+        bookingId,
+        cancellationReason,
+        refundBankName,
+        refundAccountNumber,
+        refundAccountHolder,
+      },
       {
         onSuccess: () => {
           setSelectedBookingForReject(null);
@@ -209,6 +223,7 @@ export default function BookingList() {
                     onConfirmPayment={(b) => setSelectedBookingForConfirmPayment(b)}
                     onConfirmRefund={(b) => setSelectedBookingForConfirmRefund(b)}
                     onReject={(b) => setSelectedBookingForReject(b)}
+                    onViewDetail={(id) => setSelectedBookingIdForDetail(id)}
                   />
                 ))
               )}
@@ -306,6 +321,13 @@ export default function BookingList() {
         isPending={rejectBookingMutation.isPending}
         onClose={() => setSelectedBookingForReject(null)}
         onConfirm={handleRejectSubmit}
+      />
+
+      {/* Booking Detail Modal */}
+      <BookingDetailModal
+        bookingId={selectedBookingIdForDetail}
+        isOpen={!!selectedBookingIdForDetail}
+        onClose={() => setSelectedBookingIdForDetail(null)}
       />
     </div>
   );

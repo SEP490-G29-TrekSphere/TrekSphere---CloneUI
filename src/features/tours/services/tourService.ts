@@ -1,5 +1,6 @@
 import { type ApiResponse, ApiService, ApiUpload } from '@/config/apiClient';
 import type {
+  BookingCancelRequest,
   BookingDetailResponse,
   BookingHistoryApiResponse,
   BookingHistoryParams,
@@ -131,14 +132,34 @@ export const tourService = {
     return unwrapResponse(response);
   },
 
+  /**
+   * `POST /bookings/{id}/cancel` — trekker tự hủy đơn.
+   *
+   * `refundInfo` là thông tin tài khoản nhận hoàn tiền; chỉ gửi kèm khi đơn đã
+   * (hoặc có thể đã) thanh toán. Các field rỗng được loại bỏ khỏi body để BE
+   * không lưu chuỗi trắng.
+   */
   async cancelBooking(
     bookingId: string,
-    cancellationReason: string
+    cancellationReason: string,
+    refundInfo?: Omit<BookingCancelRequest, 'cancellationReason'>
   ): Promise<BookingDetailResponse> {
+    const payload: BookingCancelRequest = { cancellationReason };
+
+    if (refundInfo?.refundBankName?.trim()) {
+      payload.refundBankName = refundInfo.refundBankName.trim();
+    }
+    if (refundInfo?.refundAccountNumber?.trim()) {
+      payload.refundAccountNumber = refundInfo.refundAccountNumber.trim();
+    }
+    if (refundInfo?.refundAccountHolder?.trim()) {
+      payload.refundAccountHolder = refundInfo.refundAccountHolder.trim();
+    }
+
     const response = await ApiService<BookingDetailResponse>(
       `/bookings/${bookingId}/cancel`,
       'POST',
-      { cancellationReason }
+      payload
     );
     return unwrapResponse(response);
   },

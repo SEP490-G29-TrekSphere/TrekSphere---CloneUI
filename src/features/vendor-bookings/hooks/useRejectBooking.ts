@@ -9,10 +9,23 @@ export function useRejectBooking() {
     mutationFn: ({
       bookingId,
       cancellationReason,
+      refundBankName,
+      refundAccountNumber,
+      refundAccountHolder,
     }: {
       bookingId: string;
       cancellationReason: string;
-    }) => vendorBookingService.rejectBooking(bookingId, cancellationReason),
+      refundBankName?: string;
+      refundAccountNumber?: string;
+      refundAccountHolder?: string;
+    }) =>
+      vendorBookingService.rejectBooking(
+        bookingId,
+        cancellationReason,
+        refundBankName,
+        refundAccountNumber,
+        refundAccountHolder
+      ),
     onSuccess: () => {
       toast.success('Từ chối đơn đặt tour thành công!');
       queryClient.invalidateQueries({ queryKey: ['vendor-bookings'] });

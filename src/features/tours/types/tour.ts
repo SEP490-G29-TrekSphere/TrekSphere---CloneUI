@@ -445,12 +445,22 @@ export interface BookingDetailResponse {
   vendorBankAccount?: string;
   vendorCompanyName?: string;
   paymentQrUrl?: string;
+  refundBankName?: string;
+  refundAccountNumber?: string;
+  refundAccountHolder?: string;
+  refundProofImageUrl?: string;
   participants: BookingParticipantFromApi[];
   reviewed?: boolean;
 }
 
 export interface BookingCancelRequest {
   cancellationReason: string;
+  /** Tên ngân hàng nhận hoàn tiền — ví dụ: "Vietcombank". */
+  refundBankName?: string;
+  /** Số tài khoản nhận hoàn tiền. */
+  refundAccountNumber?: string;
+  /** Tên chủ tài khoản nhận hoàn tiền — ví dụ: "NGUYEN VAN A". */
+  refundAccountHolder?: string;
 }
 
 export interface PaymentProofRequest {

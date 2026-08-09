@@ -9,6 +9,7 @@ interface BookingTableRowProps {
   onConfirmPayment?: (booking: VendorBookingItem) => void;
   onConfirmRefund?: (booking: VendorBookingItem) => void;
   onReject?: (booking: VendorBookingItem) => void;
+  onViewDetail?: (bookingId: string) => void;
 }
 
 const bookingStatusConfig: Record<BookingStatus, { label: string; bg: string; text: string }> = {
@@ -31,6 +32,7 @@ export function BookingTableRow({
   onConfirmPayment,
   onConfirmRefund,
   onReject,
+  onViewDetail,
 }: BookingTableRowProps) {
   const [popoverOpen, setPopoverOpen] = useState(false);
 
@@ -85,8 +87,15 @@ export function BookingTableRow({
       style={{ borderColor: '#F0EEE6' }}
     >
       {/* Booking ID */}
-      <td className="px-6 py-4 text-sm font-bold" style={{ color: '#06261D' }}>
-        {booking.bookingCode || booking.bookingId.substring(0, 8)}
+      <td className="px-6 py-4 text-sm">
+        <button
+          type="button"
+          onClick={() => onViewDetail?.(booking.bookingId)}
+          className="font-bold hover:underline transition-all text-left cursor-pointer focus:outline-hidden"
+          style={{ color: '#06261D' }}
+        >
+          {booking.bookingCode || booking.bookingId.substring(0, 8)}
+        </button>
       </td>
 
       {/* Customer Name */}

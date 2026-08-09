@@ -180,12 +180,20 @@ export const vendorBookingService = {
    */
   async rejectBooking(
     bookingId: string,
-    cancellationReason: string
+    cancellationReason: string,
+    refundBankName?: string,
+    refundAccountNumber?: string,
+    refundAccountHolder?: string
   ): Promise<BookingDetailResponse> {
     const response = await ApiService<BookingDetailResponse>(
       `/vendor/bookings/${bookingId}/reject`,
       'PUT',
-      { cancellationReason }
+      {
+        cancellationReason,
+        refundBankName,
+        refundAccountNumber,
+        refundAccountHolder,
+      }
     );
     return unwrapResponse(response);
   },

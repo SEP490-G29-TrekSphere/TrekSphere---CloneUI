@@ -1,4 +1,7 @@
 import { Info, Loader2, Wallet, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { tourService } from '@/features/tours/services/tourService';
+import type { BookingDetailResponse } from '@/features/tours/types';
 import type { VendorBookingItem } from '../types';
 
 interface ConfirmPaymentModalProps {
@@ -16,13 +19,36 @@ export function ConfirmPaymentModal({
   onClose,
   onConfirm,
 }: ConfirmPaymentModalProps) {
+  const [fullBooking, setFullBooking] = useState<BookingDetailResponse | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && booking?.bookingId) {
+      setLoadingDetail(true);
+      tourService
+        .getBookingDetail(booking.bookingId)
+        .then((data) => {
+          setFullBooking(data);
+        })
+        .catch((err) => {
+          console.error('Lỗi tải chi tiết thanh toán:', err);
+        })
+        .finally(() => {
+          setLoadingDetail(false);
+        });
+    } else {
+      setFullBooking(null);
+    }
+  }, [isOpen, booking?.bookingId]);
+
   if (!isOpen || !booking) return null;
 
   const handleConfirm = () => {
     onConfirm(booking.bookingId);
   };
 
-  const bookingCode = booking.bookingCode || booking.bookingId.substring(0, 8);
+  const currentBooking = fullBooking || booking;
+  const bookingCode = currentBooking.bookingCode || currentBooking.bookingId.substring(0, 8);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -72,26 +98,33 @@ export function ConfirmPaymentModal({
           <div className="flex items-center justify-between text-sm">
             <span className="font-medium text-gray-500">Khách hàng</span>
             <span className="font-bold text-[#06261D]">
-              {booking.customerName || 'Khách đặt tour'}
+              {currentBooking.customerName ||
+                (currentBooking as any).userFullName ||
+                'Khách đặt tour'}
             </span>
           </div>
           <div className="flex items-center justify-between text-sm">
             <span className="font-medium text-gray-500">Tổng số tiền</span>
             <span className="text-lg font-extrabold text-[#06261D]">
-              {booking.totalPrice.toLocaleString('vi-VN')} VND
+              {currentBooking.totalPrice.toLocaleString('vi-VN')} VND
             </span>
           </div>
         </div>
 
         {/* Proof of Payment Image Section */}
-        {booking.proofImageUrl ? (
+        {loadingDetail ? (
+          <div className="mb-5 rounded-2xl bg-white border border-gray-200 p-6 flex flex-col justify-center items-center gap-2 text-xs text-gray-400">
+            <Loader2 className="h-5 w-5 animate-spin text-[#06261D]" />
+            <span>Đang tải hình ảnh minh chứng...</span>
+          </div>
+        ) : currentBooking.proofImageUrl ? (
           <div className="mb-5 rounded-2xl border border-gray-200 bg-white p-3">
             <span className="block text-[11px] font-bold text-gray-400 mb-2 uppercase tracking-wide">
               Hình ảnh minh chứng thanh toán
             </span>
             <div className="overflow-hidden rounded-xl border border-gray-100 max-h-56 bg-zinc-50 flex justify-center">
               <img
-                src={booking.proofImageUrl}
+                src={currentBooking.proofImageUrl}
                 alt="Minh chứng thanh toán từ khách hàng"
                 className="max-h-52 object-contain"
                 onError={(e) => {
