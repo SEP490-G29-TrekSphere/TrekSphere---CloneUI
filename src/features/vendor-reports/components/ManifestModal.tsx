@@ -1,8 +1,7 @@
-import { CalendarClock, Download, ShieldAlert, Users, X } from 'lucide-react';
+import { CalendarClock, ShieldAlert, Users, X } from 'lucide-react';
 import { stableKey } from '@/lib/utils';
 import { useScheduleManifest } from '../hooks/useVendorReports';
 import type { ManifestPaymentStatus } from '../types';
-import { exportManifestCsv } from '../utils/exportManifestCsv';
 
 interface ManifestModalProps {
   scheduleId: string | null;
@@ -91,6 +90,8 @@ export function ManifestModal({ scheduleId, onClose }: ManifestModalProps) {
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
+            {/* Nút xuất CSV đang tắt. Bật lại thì nhớ thêm lại 2 import đã gỡ:
+                `Download` từ lucide-react và `exportManifestCsv` từ '../utils/exportManifestCsv'. */}
             {/* <button
               type="button"
               onClick={() => manifest && exportManifestCsv(manifest)}
