@@ -1,6 +1,16 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertCircle, Calendar, Gift, Plus, Trash2, User, Users } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import {
+  AlertCircle,
+  Calendar,
+  ChevronDown,
+  Gift,
+  MapPin,
+  Plus,
+  ShieldCheck,
+  Trash2,
+  Users,
+} from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import * as z from 'zod';
@@ -13,8 +23,12 @@ import type { ParticipantGender } from '@/features/tours/types';
 import { useVendorActiveVouchers } from '@/features/vendor-vouchers';
 import { AppButton, AppCard, AppFormDatePicker, AppFormInput } from '@/shared/ui';
 import { toast } from '@/store/useToastStore';
+import { formatPrice } from '@/utils/format';
 
-// Participant schema matching API POST /api/v1/bookings items
+// ---------------------------------------------------------------------------
+// Schemas
+// ---------------------------------------------------------------------------
+
 const participantSchema = z.object({
   fullName: z.string().min(1, 'Vui lòng nhập họ tên đầy đủ'),
   dateOfBirth: z.string().min(1, 'Vui lòng chọn ngày sinh'),
@@ -36,7 +50,6 @@ const participantSchema = z.object({
   specialRequirements: z.string().optional(),
 });
 
-// Booking form schema
 const bookingFormSchema = z.object({
   scheduleId: z.string().min(1, 'Vui lòng chọn ngày khởi hành'),
   paymentMethod: z.enum(['card', 'bank', 'wallet']),
@@ -47,28 +60,51 @@ const bookingFormSchema = z.object({
 
 type BookingFormValues = z.infer<typeof bookingFormSchema>;
 
+// ---------------------------------------------------------------------------
+// Helper — collapsed participant header summary
+// ---------------------------------------------------------------------------
+
+function ParticipantSummary({
+  name,
+  phone,
+  index,
+}: {
+  name: string;
+  phone: string;
+  index: number;
+}) {
+  if (!name && !phone) return null;
+  return (
+    <p className="mt-1 text-xs text-muted-foreground truncate">
+      {name || `Người tham gia ${index + 1}`}
+      {phone ? ` · ${phone}` : ''}
+    </p>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main Component
+// ---------------------------------------------------------------------------
+
 export default function BookTour() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+
   const urlScheduleId = searchParams.get('scheduleId') || '';
   const preSelectedParticipantsStr = searchParams.get('participants');
   const parsedPart = preSelectedParticipantsStr ? parseInt(preSelectedParticipantsStr, 10) : 1;
   const preSelectedParticipantsCount = Number.isNaN(parsedPart) || parsedPart < 1 ? 1 : parsedPart;
 
   const { data: tour, isLoading, error } = useTourDetail(id);
-
-  // Fetch active vouchers for this vendor (page = 0, size = 50)
   const { data: activeVouchersData } = useVendorActiveVouchers(tour?.vendorId || '', {
     page: 0,
     size: 50,
   });
-
   const activeVouchers = activeVouchersData?.content || [];
 
+  // State
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Voucher state
   const [voucherCode, setVoucherCode] = useState('');
   const [appliedVoucher, setAppliedVoucher] = useState<{
     code: string;
@@ -76,7 +112,12 @@ export default function BookTour() {
   } | null>(null);
   const [voucherError, setVoucherError] = useState<string | null>(null);
   const [isValidatingVoucher, setIsValidatingVoucher] = useState(false);
+  const [expandedParticipants, setExpandedParticipants] = useState<Set<number>>(() => new Set([0]));
 
+  // Refs for auto-scroll to newly added participant
+  const participantRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+
+  // Form
   const createDefaultParticipant = () => ({
     fullName: '',
     dateOfBirth: '',
@@ -113,17 +154,16 @@ export default function BookTour() {
   const participantsList = watch('participants');
   const participantsCount = participantsList?.length || 0;
 
-  // Find selected schedule details
   const selectedSchedule = tour?.schedules.find((s) => s.scheduleId === selectedScheduleId);
 
-  // 1. Sync URL scheduleId parameter -> Form state when user edits URL manually
+  // --- Effects ---
+
   useEffect(() => {
     if (urlScheduleId && urlScheduleId !== selectedScheduleId) {
       setValue('scheduleId', urlScheduleId, { shouldValidate: true });
     }
   }, [urlScheduleId, setValue, selectedScheduleId]);
 
-  // 2. Validate selected schedule & auto-correct if scheduleId is invalid/empty or doesn't belong to tour
   useEffect(() => {
     if (tour && tour.schedules.length > 0) {
       const openSchedulesList = tour.schedules.filter(
@@ -146,20 +186,6 @@ export default function BookTour() {
     }
   }, [tour, selectedScheduleId, setValue, setSearchParams]);
 
-  // 3. Helper to change schedule and update URL searchParams simultaneously
-  const handleScheduleSelect = (scheduleId: string) => {
-    setValue('scheduleId', scheduleId, { shouldValidate: true });
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev);
-        next.set('scheduleId', scheduleId);
-        return next;
-      },
-      { replace: true }
-    );
-  };
-
-  // Clamp participants count to selected schedule remaining capacity (BR-08)
   useEffect(() => {
     if (selectedSchedule) {
       const remainingCapacity = Math.max(
@@ -174,18 +200,70 @@ export default function BookTour() {
     }
   }, [selectedSchedule, fields.length, remove]);
 
-  // Get base price
+  // --- Derived values ---
+
   const basePrice = selectedSchedule?.price ?? tour?.basePrice ?? 0;
   const subtotal = basePrice * participantsCount;
   const discount = appliedVoucher ? appliedVoucher.discountAmount : 0;
   const total = Math.max(0, subtotal - discount);
 
-  // Format currency
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN').format(price);
+  const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80';
+  const remainingSlots = selectedSchedule
+    ? Math.max(0, selectedSchedule.availableSlots - selectedSchedule.bookedSlots)
+    : 10;
+  const openSchedules = tour
+    ? tour.schedules.filter((s) => s.status === 'OPEN' && s.availableSlots - s.bookedSlots > 0)
+    : [];
+
+  // --- Handlers ---
+
+  const handleScheduleSelect = (scheduleId: string) => {
+    setValue('scheduleId', scheduleId, { shouldValidate: true });
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('scheduleId', scheduleId);
+        return next;
+      },
+      { replace: true }
+    );
   };
 
-  // Handle voucher application
+  const toggleParticipant = (index: number) => {
+    setExpandedParticipants((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
+
+  const addParticipant = () => {
+    append(createDefaultParticipant());
+    const newIndex = fields.length;
+    setExpandedParticipants((prev) => new Set(prev).add(newIndex));
+    // Auto-scroll to new participant after render
+    setTimeout(() => {
+      const el = participantRefs.current.get(newIndex);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  };
+
+  const removeParticipant = (index: number) => {
+    remove(index);
+    setExpandedParticipants((prev) => {
+      const next = new Set<number>();
+      for (const i of prev) {
+        if (i < index) next.add(i);
+        else if (i > index) next.add(i - 1);
+      }
+      return next;
+    });
+  };
+
   const handleApplyVoucher = async (codeOverride?: string) => {
     const code = codeOverride || voucherCode;
     if (!code.trim()) return;
@@ -195,7 +273,7 @@ export default function BookTour() {
       const response = await tourService.validateVoucher(code, subtotal, tour?.vendorId);
       if (response.isValid) {
         setAppliedVoucher({
-          code: code,
+          code,
           discountAmount: response.discountAmount,
         });
         toast.success('Áp dụng mã giảm giá thành công!');
@@ -214,7 +292,6 @@ export default function BookTour() {
     }
   };
 
-  // Submit form with participants array & voucherCode to POST /api/v1/bookings
   const onFormSubmit = async (data: BookingFormValues) => {
     setIsSubmitting(true);
     try {
@@ -243,122 +320,198 @@ export default function BookTour() {
 
       toast.success('Đặt tour thành công! Đang chuyển đến trang thanh toán.');
       navigate(getBookingPaymentPath(bookingResponse.bookingId));
-    } catch (error) {
-      const errMsg = error instanceof Error ? error.message : 'Đã xảy ra lỗi khi tạo đặt chỗ.';
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : 'Đã xảy ra lỗi khi tạo đặt chỗ.';
       toast.error(errMsg);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // --- Loading state ---
+
   if (isLoading) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] w-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#0B3025] border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
 
+  // --- Error state ---
+
   if (error || !tour) {
     return (
       <div className="min-h-[calc(100vh-4rem)] w-full flex flex-col items-center justify-center p-6 text-center">
-        <div className="max-w-md w-full bg-white p-8 rounded-3xl border border-red-100 shadow-lg space-y-4">
-          <AlertCircle className="w-12 h-12 text-rose-500 mx-auto" />
-          <h2 className="text-xl font-extrabold text-[#0B3025]">Không tìm thấy thông tin tour</h2>
-          <p className="text-xs text-zinc-500 leading-relaxed">
+        <div className="max-w-md w-full bg-card p-8 rounded-3xl border border-border shadow-lg space-y-4">
+          <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
+          <h2 className="text-xl font-extrabold text-foreground">Không tìm thấy thông tin tour</h2>
+          <p className="text-xs text-muted-foreground leading-relaxed">
             {error?.message || 'Có lỗi xảy ra khi tải dữ liệu.'}
           </p>
           <div className="pt-2">
-            <AppButton
-              onClick={() => navigate('/tours')}
-              className="bg-[#0B3025] hover:bg-[#072019] text-white font-bold px-6 py-2.5 rounded-full text-xs shadow-sm border-none cursor-pointer"
-            >
-              Quay lại danh sách tour
-            </AppButton>
+            <AppButton onClick={() => navigate('/tours')}>Quay lại danh sách tour</AppButton>
           </div>
         </div>
       </div>
     );
   }
 
-  const openSchedules = tour.schedules.filter(
-    (s) => s.status === 'OPEN' && s.availableSlots - s.bookedSlots > 0
-  );
-  const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80';
-  const remainingSlots = selectedSchedule
-    ? Math.max(0, selectedSchedule.availableSlots - selectedSchedule.bookedSlots)
-    : 10;
+  // ========================================================================
+  // RENDER
+  // ========================================================================
 
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-      <div className="mb-8">
-        <h1 className="text-3xl font-extrabold text-[#0B3025]">Đặt tour mới</h1>
-        <p className="text-zinc-500 mt-2 font-medium text-sm">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 md:py-12 pb-28 lg:pb-12">
+      {/* ── Progress Steps ── */}
+      <nav aria-label="Tiến trình đặt tour" className="mb-10">
+        <ol className="flex items-center justify-center gap-0">
+          {[
+            { label: 'Chọn lịch', done: !!selectedScheduleId },
+            { label: 'Thông tin', done: fields.length > 0 },
+            { label: 'Thanh toán', done: false },
+          ].map((step, i, arr) => (
+            <li key={step.label} className="flex items-center">
+              <span className="flex items-center gap-2">
+                <span
+                  className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-colors ${
+                    step.done
+                      ? 'bg-primary text-primary-foreground'
+                      : i === arr.findIndex((s) => !s.done)
+                        ? 'bg-primary/15 text-primary ring-2 ring-primary'
+                        : 'bg-muted text-muted-foreground'
+                  }`}
+                >
+                  {i + 1}
+                </span>
+                <span
+                  className={`text-sm font-semibold hidden sm:inline ${
+                    step.done || i === arr.findIndex((s) => !s.done)
+                      ? 'text-foreground'
+                      : 'text-muted-foreground'
+                  }`}
+                >
+                  {step.label}
+                </span>
+              </span>
+              {i < arr.length - 1 && (
+                <div
+                  className={`mx-3 h-px w-8 sm:w-14 ${step.done ? 'bg-primary' : 'bg-border'}`}
+                />
+              )}
+            </li>
+          ))}
+        </ol>
+      </nav>
+
+      {/* ── Page Header ── */}
+      <header className="mb-8">
+        <h1 className="text-3xl font-extrabold text-foreground tracking-tight">Đặt tour mới</h1>
+        <p className="text-muted-foreground mt-2 font-medium text-sm">
           Vui lòng điền đầy đủ thông tin danh sách thành viên tham gia tour.
         </p>
-      </div>
+      </header>
 
       <form
         onSubmit={handleSubmit(onFormSubmit)}
-        className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px]"
+        className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_400px]"
       >
-        {/* Left side: Input Details */}
+        {/* ================================================================
+            LEFT COLUMN — Input Details
+        ================================================================ */}
         <div className="space-y-6">
-          {/* Schedule selection */}
-          <AppCard className="border-[#E5E4DE] rounded-3xl bg-white p-6 shadow-sm">
-            <div className="flex items-center gap-3 border-b border-[#F4F4F2] pb-4 mb-4">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E8F1EE] text-[#0B3025]">
-                <Calendar className="h-4 w-4" />
+          {/* ── Schedule Selection ── */}
+          <AppCard className="p-6">
+            <div className="flex items-center gap-3 border-b border-border pb-4 mb-5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <Calendar className="h-[18px] w-[18px]" />
               </div>
-              <h3 className="font-extrabold text-zinc-800 text-base">Chọn ngày khởi hành</h3>
+              <div>
+                <h3 className="font-extrabold text-foreground text-base">Chọn ngày khởi hành</h3>
+                <p className="text-xs text-muted-foreground font-medium mt-0.5">
+                  {openSchedules.length} lịch khả dụng
+                </p>
+              </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {openSchedules.map((s) => {
-                  const remaining = Math.max(0, s.availableSlots - s.bookedSlots);
-                  const isSelected = selectedScheduleId === s.scheduleId;
-                  return (
-                    <button
-                      key={s.scheduleId}
-                      type="button"
-                      onClick={() => handleScheduleSelect(s.scheduleId)}
-                      className={`flex flex-col text-left p-4 rounded-2xl border transition-all ${
-                        isSelected
-                          ? 'border-[#0B3025] bg-[#E8F1EE]/30 ring-2 ring-[#0B3025]'
-                          : 'border-[#E5E4DE] bg-[#FAF9F5] hover:border-zinc-400'
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {openSchedules.map((s) => {
+                const remaining = Math.max(0, s.availableSlots - s.bookedSlots);
+                const isSelected = selectedScheduleId === s.scheduleId;
+                const isLow = remaining <= 3 && remaining > 0;
+
+                return (
+                  <button
+                    key={s.scheduleId}
+                    type="button"
+                    onClick={() => handleScheduleSelect(s.scheduleId)}
+                    className={`relative flex flex-col text-left p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+                      isSelected
+                        ? 'border-primary bg-primary/5 shadow-sm'
+                        : 'border-border bg-card hover:border-primary/40 hover:shadow-sm'
+                    }`}
+                  >
+                    {/* Selected indicator */}
+                    {isSelected && (
+                      <span className="absolute top-3 right-3 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                        <svg
+                          viewBox="0 0 12 12"
+                          fill="none"
+                          className="h-3 w-3 text-primary-foreground"
+                        >
+                          <path
+                            d="M2 6l3 3 5-5"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </span>
+                    )}
+
+                    <span className="font-bold text-sm text-foreground">
+                      {new Date(s.departureDate).toLocaleDateString('vi-VN', {
+                        weekday: 'short',
+                        day: 'numeric',
+                        month: '2-digit',
+                        year: 'numeric',
+                      })}
+                    </span>
+                    <span
+                      className={`text-[11px] mt-1 font-semibold ${
+                        isLow ? 'text-destructive' : 'text-muted-foreground'
                       }`}
                     >
-                      <span className="font-bold text-sm text-[#0B3025]">
-                        {new Date(s.departureDate).toLocaleDateString('vi-VN')}
-                      </span>
-                      <span className="text-[11px] text-zinc-500 mt-1 font-semibold">
-                        Còn {remaining} chỗ
-                      </span>
-                      <span className="text-sm font-extrabold mt-2 text-zinc-800">
-                        {formatPrice(s.price)}đ
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-              {errors.scheduleId && (
-                <p className="text-xs text-destructive">{errors.scheduleId.message}</p>
-              )}
+                      Còn {remaining} chỗ
+                    </span>
+                    <span className="text-base font-extrabold mt-2 text-foreground">
+                      {formatPrice(s.price)}đ
+                    </span>
+                  </button>
+                );
+              })}
             </div>
+
+            {errors.scheduleId && (
+              <p className="text-xs text-destructive mt-3">{errors.scheduleId.message}</p>
+            )}
           </AppCard>
 
-          {/* Participant list */}
-          <AppCard className="border-[#E5E4DE] rounded-3xl bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-between border-b border-[#F4F4F2] pb-4 mb-4">
+          {/* ── Participant List ── */}
+          <AppCard className="p-6">
+            <div className="flex items-center justify-between border-b border-border pb-4 mb-5">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E8F1EE] text-[#0B3025]">
-                  <Users className="h-4 w-4" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Users className="h-[18px] w-[18px]" />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-zinc-800 text-base">
-                    Danh sách người tham gia ({fields.length})
+                  <h3 className="font-extrabold text-foreground text-base">
+                    Danh sách người tham gia
                   </h3>
+                  <p className="text-xs text-muted-foreground font-medium mt-0.5">
+                    {fields.length} người · Tối đa {remainingSlots} người
+                  </p>
                 </div>
               </div>
               <AppButton
@@ -366,8 +519,8 @@ export default function BookTour() {
                 variant="outline"
                 size="sm"
                 disabled={fields.length >= remainingSlots}
-                onClick={() => append(createDefaultParticipant())}
-                className="rounded-xl flex items-center gap-1.5 text-xs font-bold border-[#E5E4DE] text-[#0B3025] hover:bg-[#E8F1EE]/40"
+                onClick={addParticipant}
+                className="gap-1.5"
               >
                 <Plus className="h-4 w-4" /> Thêm người
               </AppButton>
@@ -379,127 +532,180 @@ export default function BookTour() {
               </p>
             )}
 
-            <div className="space-y-6">
-              {fields.map((field, index) => (
-                <div
-                  key={field.id}
-                  className="p-5 bg-[#FAF9F5] border border-[#E5E4DE] rounded-2xl space-y-4 relative"
-                >
-                  <div className="flex items-center justify-between border-b border-[#E5E4DE] pb-3">
-                    <span className="font-extrabold text-sm text-[#0B3025] flex items-center gap-2">
-                      <User className="h-4 w-4" /> Người tham gia {index + 1}
-                    </span>
-                    {fields.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => remove(index)}
-                        className="text-zinc-400 hover:text-destructive p-1 rounded-lg transition-colors"
-                        title="Xóa người tham gia"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+            <div className="space-y-3">
+              {fields.map((field, index) => {
+                const isExpanded = expandedParticipants.has(index);
+                const pv = participantsList?.[index];
+
+                return (
+                  <div
+                    key={field.id}
+                    ref={(el) => {
+                      if (el) participantRefs.current.set(index, el);
+                    }}
+                    className={`border rounded-2xl overflow-hidden transition-all ${
+                      isExpanded
+                        ? 'border-primary/30 bg-card shadow-sm'
+                        : 'border-border bg-muted/30 hover:border-border'
+                    }`}
+                  >
+                    {/* Collapsed header — always visible */}
+                    <button
+                      type="button"
+                      onClick={() => toggleParticipant(index)}
+                      className="w-full flex items-center justify-between px-4 py-3.5 text-left cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <span
+                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                            pv?.fullName
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted text-muted-foreground'
+                          }`}
+                        >
+                          {index + 1}
+                        </span>
+                        <div className="min-w-0">
+                          <span className="font-bold text-sm text-foreground block">
+                            {pv?.fullName || `Người tham gia ${index + 1}`}
+                          </span>
+                          {!isExpanded && (
+                            <ParticipantSummary
+                              name={pv?.fullName || ''}
+                              phone={pv?.phone || ''}
+                              index={index}
+                            />
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0 ml-2">
+                        {fields.length > 1 && (
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeParticipant(index);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.stopPropagation();
+                                removeParticipant(index);
+                              }
+                            }}
+                            className="text-muted-foreground hover:text-destructive p-1 rounded-lg transition-colors cursor-pointer"
+                            title="Xóa người tham gia"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </span>
+                        )}
+                        <ChevronDown
+                          className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
+                            isExpanded ? 'rotate-180' : ''
+                          }`}
+                        />
+                      </div>
+                    </button>
+
+                    {/* Expanded form */}
+                    {isExpanded && (
+                      <div className="px-4 pb-5 pt-1 space-y-4 border-t border-border">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3">
+                          <AppFormInput
+                            control={control}
+                            name={`participants.${index}.fullName`}
+                            label="Họ và tên *"
+                            placeholder="Nguyễn Văn A"
+                          />
+                          <AppFormInput
+                            control={control}
+                            name={`participants.${index}.phone`}
+                            label="Số điện thoại *"
+                            placeholder="0987654321"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <AppFormDatePicker
+                            control={control}
+                            name={`participants.${index}.dateOfBirth`}
+                            label="Ngày sinh *"
+                            placeholderText="Chọn ngày sinh..."
+                            className="w-full"
+                          />
+                          <div className="space-y-2">
+                            <label
+                              htmlFor={`participants.${index}.gender`}
+                              className="text-sm font-medium text-foreground block"
+                            >
+                              Giới tính *
+                            </label>
+                            <select
+                              id={`participants.${index}.gender`}
+                              {...register(`participants.${index}.gender`)}
+                              className="w-full h-10 px-3 bg-card border border-input rounded-md text-foreground text-sm font-medium focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer"
+                            >
+                              <option value="MALE">Nam</option>
+                              <option value="FEMALE">Nữ</option>
+                              <option value="OTHER">Khác</option>
+                            </select>
+                            {errors.participants?.[index]?.gender && (
+                              <p className="text-xs text-destructive">
+                                {errors.participants[index]?.gender?.message}
+                              </p>
+                            )}
+                          </div>
+                          <AppFormInput
+                            control={control}
+                            name={`participants.${index}.idNumber`}
+                            label="Số CCCD / Hộ chiếu *"
+                            placeholder="001202001234"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <AppFormInput
+                            control={control}
+                            name={`participants.${index}.email`}
+                            label="Email"
+                            placeholder="nguyenvana@gmail.com"
+                          />
+                          <AppFormInput
+                            control={control}
+                            name={`participants.${index}.address`}
+                            label="Địa chỉ"
+                            placeholder="Cầu Giấy, Hà Nội"
+                          />
+                        </div>
+
+                        <AppFormInput
+                          control={control}
+                          name={`participants.${index}.specialRequirements`}
+                          label="Yêu cầu đặc biệt"
+                          placeholder="Không ăn được thịt bò, dị ứng thực phẩm..."
+                        />
+                      </div>
                     )}
                   </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <AppFormInput
-                      control={control}
-                      name={`participants.${index}.fullName`}
-                      label="Họ và tên *"
-                      placeholder="Nguyễn Văn A"
-                      className="bg-white rounded-xl border-[#E5E4DE]"
-                    />
-                    <AppFormInput
-                      control={control}
-                      name={`participants.${index}.phone`}
-                      label="Số điện thoại *"
-                      placeholder="0987654321"
-                      className="bg-white rounded-xl border-[#E5E4DE]"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <AppFormDatePicker
-                      control={control}
-                      name={`participants.${index}.dateOfBirth`}
-                      label="Ngày sinh *"
-                      placeholderText="Chọn ngày sinh..."
-                      className="bg-white rounded-xl border-[#E5E4DE] w-full"
-                    />
-                    <div className="space-y-2">
-                      <label
-                        htmlFor={`participants.${index}.gender`}
-                        className="text-zinc-700 font-bold text-xs block"
-                      >
-                        Giới tính *
-                      </label>
-                      <select
-                        id={`participants.${index}.gender`}
-                        {...register(`participants.${index}.gender`)}
-                        className="w-full h-10 px-3 bg-white border border-[#E5E4DE] rounded-xl text-zinc-800 font-medium text-sm focus:outline-none focus:ring-1 focus:ring-[#0B3025]"
-                      >
-                        <option value="MALE">Nam (MALE)</option>
-                        <option value="FEMALE">Nữ (FEMALE)</option>
-                        <option value="OTHER">Khác (OTHER)</option>
-                      </select>
-                      {errors.participants?.[index]?.gender && (
-                        <p className="text-xs text-destructive">
-                          {errors.participants[index]?.gender?.message}
-                        </p>
-                      )}
-                    </div>
-                    <AppFormInput
-                      control={control}
-                      name={`participants.${index}.idNumber`}
-                      label="Số CCCD / Hộ chiếu *"
-                      placeholder="001202001234"
-                      className="bg-white rounded-xl border-[#E5E4DE]"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <AppFormInput
-                      control={control}
-                      name={`participants.${index}.email`}
-                      label="Email (Không bắt buộc)"
-                      placeholder="nguyenvana@gmail.com"
-                      className="bg-white rounded-xl border-[#E5E4DE]"
-                    />
-                    <AppFormInput
-                      control={control}
-                      name={`participants.${index}.address`}
-                      label="Địa chỉ (Không bắt buộc)"
-                      placeholder="Cầu Giấy, Hà Nội"
-                      className="bg-white rounded-xl border-[#E5E4DE]"
-                    />
-                  </div>
-
-                  <AppFormInput
-                    control={control}
-                    name={`participants.${index}.specialRequirements`}
-                    label="Yêu cầu đặc biệt (Không bắt buộc)"
-                    placeholder="Không ăn được thịt bò, dị ứng thực phẩm..."
-                    className="bg-white rounded-xl border-[#E5E4DE]"
-                  />
-                </div>
-              ))}
+                );
+              })}
             </div>
           </AppCard>
         </div>
 
-        {/* Right side: Summary + điều khoản hoàn tiền.
-            `sticky` đặt ở wrapper (không phải riêng thẻ Tóm tắt) để 2 card dính
-            và cuộn cùng nhau — nếu chỉ thẻ Tóm tắt sticky, nó sẽ đè lên card
-            chính sách nằm dưới khi người dùng cuộn trang. Cao quá viewport thì
-            cuộn nội bộ; popover voucher render qua Portal nên không bị cắt. */}
-        <div className="space-y-6 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
-          <AppCard className="border-[#E5E4DE] rounded-3xl bg-white p-6 shadow-sm">
-            <h3 className="font-extrabold text-base text-zinc-800 tracking-tight pb-4 border-b border-[#F4F4F2] mb-4">
+        {/* ================================================================
+            RIGHT COLUMN — Order Summary + Policies
+        ================================================================ */}
+        <div className="space-y-6 lg:sticky lg:top-24 lg:self-start">
+          {/* ── Order Summary Card ── */}
+          <AppCard className="p-6">
+            <h3 className="font-extrabold text-foreground text-base tracking-tight pb-4 border-b border-border mb-4">
               Tóm tắt đơn hàng
             </h3>
 
             {/* Mini Tour Card */}
-            <div className="flex gap-3 mb-4">
+            <div className="flex gap-3 mb-5">
               <img
                 src={
                   tour.coverImageUrl ||
@@ -511,14 +717,14 @@ export default function BookTour() {
                     e.currentTarget.src = FALLBACK_IMAGE;
                   }
                 }}
-                className="w-16 h-16 rounded-xl object-cover"
+                className="w-16 h-16 rounded-xl object-cover ring-1 ring-border"
               />
-              <div>
-                <h4 className="font-extrabold text-sm text-zinc-800 leading-snug">
+              <div className="min-w-0">
+                <h4 className="font-extrabold text-sm text-foreground leading-snug line-clamp-2">
                   {tour.tourName}
                 </h4>
-                <div className="flex items-center gap-1.5 text-zinc-400 mt-1 text-xs font-semibold">
-                  <Calendar className="w-3.5 h-3.5" />
+                <div className="flex items-center gap-1.5 text-muted-foreground mt-1.5 text-xs font-semibold">
+                  <Calendar className="w-3.5 h-3.5 shrink-0" />
                   <span>
                     {selectedSchedule
                       ? new Date(selectedSchedule.departureDate).toLocaleDateString('vi-VN', {
@@ -529,128 +735,244 @@ export default function BookTour() {
                       : 'Chưa chọn ngày'}
                   </span>
                 </div>
+                {selectedSchedule && (
+                  <div className="flex items-center gap-1.5 text-muted-foreground mt-1 text-xs font-semibold">
+                    <MapPin className="w-3.5 h-3.5 shrink-0" />
+                    <span>{tour.location}</span>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Voucher input */}
-            <div className="mb-6 pt-4 border-t border-[#F4F4F2]">
+            {/* ── Voucher ── */}
+            <div className="mb-5 pt-4 border-t border-border">
               <label
                 htmlFor="voucherCodeInput"
-                className="text-zinc-600 font-bold text-xs mb-2 block"
+                className="text-foreground font-bold text-xs mb-2 flex items-center gap-1.5"
               >
-                Mã ưu đãi (Voucher)
+                <Gift className="w-3.5 h-3.5 text-primary" />
+                Mã ưu đãi
               </label>
-              <div className="flex gap-2">
+              <div className="flex gap-2 mt-2">
                 <input
                   id="voucherCodeInput"
                   type="text"
-                  className="bg-[#FAF9F5] border border-[#E5E4DE] rounded-2xl px-4 py-2.5 outline-none w-full text-zinc-800 font-bold text-sm placeholder-zinc-300 focus:ring-1 focus:ring-[#0B3025]"
+                  className="bg-muted/50 border border-border rounded-xl px-4 py-2.5 outline-none w-full text-foreground font-bold text-sm placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:ring-offset-1"
                   placeholder="Nhập mã..."
                   value={voucherCode}
                   onChange={(e) => setVoucherCode(e.target.value)}
                 />
-                <button
+                <AppButton
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   disabled={isValidatingVoucher}
                   onClick={() => handleApplyVoucher()}
-                  className="bg-[#E8F1EE] hover:bg-[#d8e7e2] text-[#0B3025] font-bold px-4 py-2.5 rounded-2xl text-xs transition-colors shrink-0"
+                  className="shrink-0"
                 >
                   {isValidatingVoucher ? '...' : 'Áp dụng'}
-                </button>
+                </AppButton>
               </div>
 
-              {/* Danh sách voucher có sẵn */}
+              {/* Applied voucher badge */}
+              {appliedVoucher && (
+                <div className="flex items-center gap-2 mt-2 px-3 py-2 rounded-xl bg-primary/5 border border-primary/20">
+                  <span className="text-xs font-bold text-primary">✓ {appliedVoucher.code}</span>
+                  <span className="text-xs text-destructive font-bold ml-auto">
+                    -{formatPrice(appliedVoucher.discountAmount)}đ
+                  </span>
+                </div>
+              )}
+
+              {voucherError && (
+                <p className="text-xs text-destructive mt-2 font-medium">{voucherError}</p>
+              )}
+
+              {/* ── Ưu đãi dành cho bạn — ticket-style coupons ── */}
               {activeVouchers.length > 0 && (
-                <div className="mt-2">
+                <div className="mt-3">
                   <Popover>
-                    <PopoverTrigger className="text-xs font-bold text-[#0B3025] hover:underline flex items-center gap-1.5 cursor-pointer">
-                      <Gift className="h-3.5 w-3.5" />
-                      Xem các mã giảm giá có sẵn ({activeVouchers.length})
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80 bg-white border border-[#E5E4DE] rounded-2xl shadow-xl p-4 space-y-3 z-50">
-                      <h4 className="font-extrabold text-sm text-[#0B3025] border-b pb-2">
+                    <PopoverTrigger className="w-full flex items-center justify-between text-xs font-bold text-primary hover:bg-primary/5 rounded-xl px-3 py-2.5 cursor-pointer transition-colors border border-dashed border-primary/25 group">
+                      <span className="flex items-center gap-1.5">
+                        <Gift className="h-3.5 w-3.5" />
                         Ưu đãi dành cho bạn
-                      </h4>
-                      <div className="max-h-60 overflow-y-auto space-y-2.5 pr-1">
-                        {activeVouchers.map((voucher) => (
-                          <button
-                            type="button"
-                            key={voucher.voucherId}
-                            onClick={() => {
-                              setVoucherCode(voucher.code);
-                              handleApplyVoucher(voucher.code);
-                            }}
-                            className="w-full group flex flex-col p-3 rounded-xl border border-[#E5E4DE] hover:border-[#0B3025] hover:bg-slate-50 transition-all cursor-pointer text-left focus:outline-none focus:ring-1 focus:ring-[#0B3025]"
-                          >
-                            <div className="flex justify-between items-center w-full mb-1">
-                              <span className="font-mono font-extrabold text-xs bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-md border border-emerald-100 group-hover:bg-[#0B3025] group-hover:text-white transition-all">
-                                {voucher.code}
-                              </span>
-                              <span className="text-xs font-bold text-[#0B3025]">
-                                {voucher.discountType === 'PERCENTAGE'
-                                  ? `Giảm ${voucher.discountValue}%`
-                                  : `Giảm ${formatPrice(voucher.discountValue)}đ`}
-                              </span>
-                            </div>
-                            <p className="text-[11px] font-semibold text-zinc-500">
-                              Đơn tối thiểu: {formatPrice(voucher.minOrderValue)}đ
-                            </p>
-                            <p className="text-[10px] text-zinc-400 mt-1">
-                              HSD: {new Date(voucher.validUntil).toLocaleDateString('vi-VN')}
-                            </p>
-                          </button>
-                        ))}
+                      </span>
+                      <span className="bg-primary/10 text-primary text-[11px] font-extrabold px-2 py-0.5 rounded-full group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+                        {activeVouchers.length}
+                      </span>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      side="top"
+                      align="end"
+                      sideOffset={8}
+                      className="w-[340px] bg-card border border-border rounded-2xl shadow-xl p-0 overflow-hidden z-50"
+                    >
+                      {/* Header */}
+                      <div className="px-4 pt-4 pb-3 border-b border-border">
+                        <h4 className="font-extrabold text-sm text-foreground flex items-center gap-2">
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/10">
+                            <Gift className="h-3.5 w-3.5 text-primary" />
+                          </span>
+                          Ưu đãi dành cho bạn
+                        </h4>
+                        <p className="text-[11px] text-muted-foreground font-semibold mt-1">
+                          Chọn mã để áp dụng ngay
+                        </p>
+                      </div>
+
+                      {/* Voucher list */}
+                      <div className="max-h-56 overflow-y-auto p-3 space-y-2">
+                        {activeVouchers.map((voucher) => {
+                          const isApplied = appliedVoucher?.code === voucher.code;
+                          return (
+                            <button
+                              type="button"
+                              key={voucher.voucherId}
+                              onClick={() => {
+                                setVoucherCode(voucher.code);
+                                handleApplyVoucher(voucher.code);
+                              }}
+                              disabled={isApplied}
+                              className={`w-full group relative flex overflow-hidden rounded-xl border transition-all cursor-pointer text-left focus:outline-none focus:ring-2 focus:ring-ring ${
+                                isApplied
+                                  ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                                  : 'border-border hover:border-primary/40 hover:shadow-md'
+                              }`}
+                            >
+                              {/* Left stub — discount value */}
+                              <div className="flex flex-col items-center justify-center w-20 shrink-0 bg-primary/10 px-2 py-3 relative">
+                                <span className="font-extrabold text-base text-primary leading-none">
+                                  {voucher.discountType === 'PERCENTAGE'
+                                    ? `${voucher.discountValue}%`
+                                    : formatPrice(voucher.discountValue)}
+                                </span>
+                                <span className="text-[9px] font-bold text-primary/70 mt-1 uppercase tracking-wider">
+                                  {voucher.discountType === 'PERCENTAGE' ? 'Phần trăm' : 'Giảm'}
+                                </span>
+                                {/* Notch circles */}
+                                <span className="absolute -top-1.5 right-0 w-3 h-3 rounded-full bg-card" />
+                                <span className="absolute -bottom-1.5 right-0 w-3 h-3 rounded-full bg-card" />
+                              </div>
+
+                              {/* Dashed separator */}
+                              <div className="w-px border-r border-dashed border-border/60 self-stretch my-2" />
+
+                              {/* Right content */}
+                              <div className="flex-1 px-3 py-2.5 flex flex-col justify-between min-w-0">
+                                <div>
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="font-mono font-extrabold text-xs text-foreground bg-muted/80 px-2 py-0.5 rounded-md truncate">
+                                      {voucher.code}
+                                    </span>
+                                    {isApplied && (
+                                      <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
+                                        Đã chọn
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-[11px] font-semibold text-muted-foreground">
+                                    Đơn tối thiểu: {formatPrice(voucher.minOrderValue)}đ
+                                  </p>
+                                </div>
+                                <div className="flex items-center justify-between mt-1.5">
+                                  <p className="text-[10px] text-muted-foreground/70">
+                                    HSD: {new Date(voucher.validUntil).toLocaleDateString('vi-VN')}
+                                  </p>
+                                  {!isApplied && (
+                                    <span className="text-[10px] font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                                      Nhấn để chọn →
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
                       </div>
                     </PopoverContent>
                   </Popover>
                 </div>
               )}
-
-              {voucherError && (
-                <p className="text-xs text-red-500 mt-2 font-medium">{voucherError}</p>
-              )}
-              {appliedVoucher && (
-                <p className="text-xs text-emerald-600 mt-2 font-bold">
-                  Đã áp dụng mã: {appliedVoucher.code} (-
-                  {formatPrice(appliedVoucher.discountAmount)}đ)
-                </p>
-              )}
             </div>
 
-            {/* Cost display */}
-            <div className="space-y-3 pt-4 border-t border-[#F4F4F2] mb-6">
-              <div className="flex justify-between items-center text-zinc-500 font-semibold text-sm">
+            {/* ── Cost Breakdown ── */}
+            <div className="space-y-3 pt-4 border-t border-border mb-5">
+              <div className="flex justify-between items-center text-muted-foreground font-semibold text-sm">
                 <span>Số lượng người tham gia</span>
-                <span>{participantsCount} người</span>
+                <span className="text-foreground">{participantsCount} người</span>
               </div>
-              <div className="flex justify-between items-center text-zinc-500 font-semibold text-sm">
+              <div className="flex justify-between items-center text-muted-foreground font-semibold text-sm">
+                <span>Đơn giá</span>
+                <span className="text-foreground">{formatPrice(basePrice)}đ</span>
+              </div>
+              <div className="flex justify-between items-center text-muted-foreground font-semibold text-sm">
                 <span>Tạm tính</span>
-                <span>{formatPrice(subtotal)}đ</span>
+                <span className="text-foreground">{formatPrice(subtotal)}đ</span>
               </div>
-              <div className="flex justify-between items-center text-zinc-500 font-semibold text-sm">
-                <span>Giảm giá</span>
-                <span className="text-red-500">-{formatPrice(discount)}đ</span>
-              </div>
-              <div className="flex justify-between items-center text-zinc-800 font-extrabold text-base pt-2 border-t border-dashed border-[#E5E4DE]">
+              {discount > 0 && (
+                <div className="flex justify-between items-center text-muted-foreground font-semibold text-sm">
+                  <span>Giảm giá</span>
+                  <span className="text-destructive">-{formatPrice(discount)}đ</span>
+                </div>
+              )}
+              <div className="flex justify-between items-center text-foreground font-extrabold text-base pt-3 border-t-2 border-dashed border-border">
                 <span>Tổng cộng</span>
-                <span className="text-lg text-[#0B3025]">{formatPrice(total)}đ</span>
+                <span className="text-lg text-primary">{formatPrice(total)}đ</span>
               </div>
             </div>
 
-            {/* Pay button */}
+            {/* ── CTA Button ── */}
             <AppButton
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-[#0B3025] hover:bg-[#072019] text-white font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-sm transition-colors border-none"
+              className="w-full py-3.5 text-sm font-bold gap-2"
             >
-              {isSubmitting ? 'Đang tạo giao dịch...' : 'Thanh toán ngay'}
+              {isSubmitting ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+                  Đang tạo giao dịch...
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="h-4 w-4" />
+                  Thanh toán ngay
+                </>
+              )}
             </AppButton>
+
+            <p className="text-center text-[11px] text-muted-foreground mt-3 font-medium">
+              Thanh toán an toàn &middot; Xác nhận qua email
+            </p>
           </AppCard>
 
-          {/* Điều khoản hoàn tiền của vendor — cho khách nắm rõ trước khi thanh toán */}
+          {/* ── Cancellation Policy ── */}
           <CancellationPolicyNotice policies={tour.cancellationPolicies} />
         </div>
       </form>
+
+      {/* ── Mobile Sticky CTA ──
+          Nằm ngoài <form> nên phải dùng type="button" + handleSubmit thủ công;
+          để type="submit" ở đây sẽ không kích hoạt submit của form. */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border px-4 py-3 lg:hidden">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-[11px] text-muted-foreground font-semibold">Tổng cộng</p>
+            <p className="text-lg font-extrabold text-primary">{formatPrice(total)}đ</p>
+          </div>
+          <AppButton
+            type="button"
+            disabled={isSubmitting}
+            onClick={handleSubmit(onFormSubmit)}
+            className="shrink-0 px-6 font-bold gap-2"
+          >
+            {isSubmitting ? (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+            ) : (
+              'Thanh toán'
+            )}
+          </AppButton>
+        </div>
+      </div>
     </div>
   );
 }
