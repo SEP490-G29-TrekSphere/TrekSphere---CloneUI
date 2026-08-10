@@ -5,7 +5,9 @@ export const queryClient = new QueryClient({
     queries: {
       refetchOnWindowFocus: false,
       retry: 1,
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      // staleTime mặc định = 0: data luôn stale sau fetch,
+      // invalidateQueries sẽ trigger refetch ngay lập tức.
+      // Hooks cần cache lâu (tours, news, profile...) đặt staleTime riêng.
     },
   },
 });

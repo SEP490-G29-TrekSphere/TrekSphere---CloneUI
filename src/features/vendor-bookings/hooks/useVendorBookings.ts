@@ -7,6 +7,5 @@ export function useVendorBookings(filter: VendorBookingFilter, page = 1, size = 
     queryKey: ['vendor-bookings', filter, page, size],
     queryFn: () => vendorBookingService.listBookings(filter, page, size),
     placeholderData: keepPreviousData,
-    staleTime: 30000,
   });
 }

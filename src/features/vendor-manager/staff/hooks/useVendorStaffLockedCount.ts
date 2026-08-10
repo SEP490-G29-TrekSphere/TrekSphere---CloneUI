@@ -16,6 +16,6 @@ export function useVendorStaffLockedCount() {
       const { staff } = await vendorStaffService.listMyStaff({}, 1, LOCKED_COUNT_SAMPLE_SIZE);
       return staff.filter((member) => !member.isActive).length;
     },
-    staleTime: 60_000,
+    staleTime: 0,
   });
 }

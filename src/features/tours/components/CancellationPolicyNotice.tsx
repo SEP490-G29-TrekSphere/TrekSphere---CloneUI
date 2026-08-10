@@ -12,7 +12,7 @@ interface CancellationPolicyNoticeProps {
 
 /**
  * Khối thông tin (chỉ đọc) về điều khoản hủy tour & hoàn tiền, hiển thị cho
- * Trekker ở màn Đặt tour để biết trước quyền lợi hoàn tiền khi phải hủy.
+ * Trekker ở màn Đặt tour và ở trang chi tiết tour.
  *
  * Chỉ hiển thị phần trăm đúng như vendor cấu hình — không tự nhân ra số tiền,
  * vì BE là nơi quyết định `refundAmount` cuối cùng lúc hủy.
@@ -21,18 +21,18 @@ export function CancellationPolicyNotice({ policies }: CancellationPolicyNoticeP
   const activePolicies = sortPoliciesByDaysDesc((policies ?? []).filter((p) => p.isActive));
 
   return (
-    <AppCard className="border-[#E5E4DE] rounded-3xl bg-white p-6 shadow-sm">
-      <div className="flex items-center gap-3 border-b border-[#F4F4F2] pb-4 mb-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E8F1EE] text-[#0B3025]">
-          <ReceiptText className="h-4 w-4" />
+    <AppCard className="rounded-2xl border-border bg-card p-6 shadow-sm">
+      <div className="mb-4 flex items-center gap-3 border-b border-border pb-4">
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <ReceiptText className="h-4 w-4" aria-hidden="true" />
         </div>
-        <h3 className="font-extrabold text-zinc-800 text-base">
+        <h3 className="text-base font-extrabold text-foreground">
           Chính sách hủy tour &amp; hoàn tiền
         </h3>
       </div>
 
       {activePolicies.length === 0 ? (
-        <p className="text-xs font-medium text-zinc-500 leading-relaxed">
+        <p className="text-xs font-medium leading-relaxed text-muted-foreground">
           Nhà tổ chức chưa công bố chính sách hủy cho tour này. Vui lòng liên hệ nhà tổ chức để nắm
           rõ quyền lợi hoàn tiền trước khi thanh toán.
         </p>
@@ -42,23 +42,23 @@ export function CancellationPolicyNotice({ policies }: CancellationPolicyNoticeP
             {activePolicies.map((policy) => (
               <li
                 key={policy.cancellationPolicyId}
-                className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl bg-[#FAF9F5] border border-[#E5E4DE] p-3.5"
+                className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl border border-border bg-muted/50 p-3.5"
               >
-                <span className="text-sm font-bold text-[#0B3025]">
+                <span className="text-sm font-bold text-foreground">
                   Hủy trước {policy.cancelBeforeDays} ngày
                 </span>
-                <span className="rounded-full bg-emerald-50 border border-emerald-100 px-2.5 py-0.5 text-xs font-extrabold text-emerald-800">
+                <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-extrabold text-primary">
                   Hoàn {policy.refundPercentage}%
                 </span>
                 {policy.description && (
-                  <p className="w-full text-[11px] font-semibold text-zinc-500">
+                  <p className="w-full text-[11px] font-semibold text-muted-foreground">
                     {policy.description}
                   </p>
                 )}
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-[11px] font-medium text-zinc-400 leading-relaxed">
+          <p className="mt-3 text-[11px] font-medium leading-relaxed text-muted-foreground">
             Khi bạn gửi yêu cầu hủy, hệ thống tự áp mốc phù hợp với số ngày còn lại tính đến ngày
             khởi hành để xác định số tiền được hoàn.
           </p>

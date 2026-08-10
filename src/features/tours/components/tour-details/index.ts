@@ -1,13 +1,21 @@
 /**
- * Tour Details Components
- * Re-exports all tour detail page sub-components
+ * Các section của trang chi tiết tour.
+ *
+ * Trang `TourDetails` chỉ còn lo bố cục và state dùng chung (lịch đang chọn);
+ * mỗi khối nội dung nằm trong một component riêng ở đây.
  */
 
-export { TourBookingCard } from './TourBookingCard';
-export { TourGallery } from './TourGallery';
-export { TourHero } from './TourHero';
-export { TourInfoCard } from './TourInfoCard';
-export { TourItinerary } from './TourItinerary';
-export { TourOverview } from './TourOverview';
-export { TourReviews } from './TourReviews';
-export { TourTabs } from './TourTabs';
+export * from './shared';
+export { TourBookingRail } from './TourBookingRail';
+export { TourDetailHero } from './TourDetailHero';
+export { TourDetailError, TourDetailSkeleton, TourNotFound } from './TourDetailStates';
+export { TourGallerySection } from './TourGallerySection';
+export { TourInclusionsSection } from './TourInclusionsSection';
+export { TourMobileBookingBar } from './TourMobileBookingBar';
+export { TourOverviewSection } from './TourOverviewSection';
+export { TourReviewsSection } from './TourReviewsSection';
+export { TourRouteSection } from './TourRouteSection';
+export { TourScheduleSection } from './TourScheduleSection';
+export { TourSectionNav } from './TourSectionNav';
+export { TourStatsGrid } from './TourStatsGrid';
+export { TourVendorCard } from './TourVendorCard';

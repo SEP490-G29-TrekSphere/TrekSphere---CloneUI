@@ -7,6 +7,5 @@ export function useAdminVendorStats() {
   return useQuery({
     queryKey: adminVendorKeys.stats(),
     queryFn: () => adminVendorService.getStats(),
-    staleTime: 30 * 1000,
   });
 }

@@ -21,6 +21,5 @@ export function useAdminVendors(filter: AdminVendorFilter, page: number, pageSiz
   return useQuery<AdminVendorsResponse>({
     queryKey: adminVendorKeys.list(filter, page, pageSize),
     queryFn: () => adminVendorService.listVendors(filter, page, pageSize),
-    staleTime: 30 * 1000,
   });
 }

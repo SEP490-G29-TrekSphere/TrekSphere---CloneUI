@@ -21,7 +21,6 @@ export function useAdminReports(filter: ReportFilterRequest) {
   return useQuery({
     queryKey: adminReportKeys.list(filter),
     queryFn: () => adminReportService.getReports(filter),
-    staleTime: 30 * 1000, // Cache 30 giây
     placeholderData: keepPreviousData, // Giữ data cũ khi chuyển trang giúp UX mượt hơn
   });
 }
@@ -34,7 +33,6 @@ export function useAdminReportDetail(id?: string) {
     queryKey: adminReportKeys.detail(id || ''),
     queryFn: () => adminReportService.getReportDetail(id || ''),
     enabled: Boolean(id),
-    staleTime: 30 * 1000,
   });
 }
 

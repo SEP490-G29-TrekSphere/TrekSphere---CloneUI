@@ -19,7 +19,6 @@ export function useMyVendorApplications(filter: VendorApplicationFilter) {
   return useQuery<VendorApplicationsResponse>({
     queryKey: myVendorApplicationKeys.list(filter),
     queryFn: () => vendorApplicationService.getMyApplications(filter),
-    staleTime: 30 * 1000,
   });
 }
 

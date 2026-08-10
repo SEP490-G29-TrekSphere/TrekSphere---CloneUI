@@ -10,6 +10,6 @@ export function useCancellationPolicies() {
   return useQuery({
     queryKey: cancellationPolicyKeys.all,
     queryFn: () => cancellationPolicyService.list(),
-    staleTime: 60_000,
+    staleTime: 0,
   });
 }

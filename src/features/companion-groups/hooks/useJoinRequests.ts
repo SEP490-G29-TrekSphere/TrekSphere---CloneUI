@@ -12,6 +12,6 @@ export function useJoinRequests(groupId: string | undefined, params: GetJoinRequ
       return companionGroupService.getJoinRequests(groupId, params);
     },
     enabled: Boolean(groupId),
-    staleTime: 1000 * 30, // 30 seconds — join requests change frequently
+    staleTime: 0, // join requests change frequently
   });
 }

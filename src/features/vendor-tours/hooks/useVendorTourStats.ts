@@ -27,6 +27,6 @@ export function useVendorTourStats() {
         rejected: tours.filter((tour) => tour.status === 'REJECTED').length,
       };
     },
-    staleTime: 60_000,
+    staleTime: 0,
   });
 }

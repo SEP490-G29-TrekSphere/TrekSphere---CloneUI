@@ -23,6 +23,5 @@ export function useAdminAccounts(filter: AdminAccountFilter, page: number, pageS
       const res = await adminAccountService.listAccounts(filter, page, pageSize);
       return res;
     },
-    staleTime: 30 * 1000,
   });
 }

@@ -23,7 +23,6 @@ export function useVendorApplications(filter: VendorApplicationFilter) {
   return useQuery<VendorApplicationsResponse>({
     queryKey: vendorApplicationKeys.list(filter),
     queryFn: () => vendorApplicationService.getApplications(filter),
-    staleTime: 30 * 1000,
   });
 }
 
@@ -35,7 +34,6 @@ export function useVendorApplicationDetail(id?: string) {
     queryKey: vendorApplicationKeys.detail(id || ''),
     queryFn: () => vendorApplicationService.getApplicationById(id || ''),
     enabled: Boolean(id),
-    staleTime: 30 * 1000,
   });
 }
 
@@ -46,7 +44,6 @@ export function useVendorApplicationStats() {
   return useQuery({
     queryKey: vendorApplicationKeys.stats(),
     queryFn: () => vendorApplicationService.getStats(),
-    staleTime: 60 * 1000,
   });
 }
 

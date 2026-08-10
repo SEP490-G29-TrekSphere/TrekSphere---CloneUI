@@ -16,6 +16,6 @@ export function useVendorEquipmentSummary() {
         totalQuantity: equipments.reduce((sum, equipment) => sum + equipment.totalQuantity, 0),
       };
     },
-    staleTime: 60_000,
+    staleTime: 0,
   });
 }
