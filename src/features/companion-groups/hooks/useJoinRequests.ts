@@ -3,10 +3,11 @@ import {
   companionGroupService,
   type GetJoinRequestsParams,
 } from '../services/companionGroupService';
+import { companionGroupKeys } from './companionGroupKeys';
 
 export function useJoinRequests(groupId: string | undefined, params: GetJoinRequestsParams = {}) {
   return useQuery({
-    queryKey: ['join-requests', groupId, params],
+    queryKey: companionGroupKeys.joinRequestList(groupId ?? '', params),
     queryFn: () => {
       if (!groupId) throw new Error('Group ID is required');
       return companionGroupService.getJoinRequests(groupId, params);

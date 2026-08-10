@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { companionGroupService } from '../services/companionGroupService';
+import { companionGroupKeys } from './companionGroupKeys';
 
 export function useDeleteMatchingGroup() {
   const queryClient = useQueryClient();
@@ -8,9 +9,9 @@ export function useDeleteMatchingGroup() {
     mutationFn: (matchingGroupId: string) =>
       companionGroupService.deleteMatchingGroup(matchingGroupId),
     onSuccess: (_, matchingGroupId) => {
-      // Invalidate matching groups lists and details
-      queryClient.invalidateQueries({ queryKey: ['matching-groups'] });
-      queryClient.invalidateQueries({ queryKey: ['matching-group', matchingGroupId] });
+      queryClient.invalidateQueries({ queryKey: companionGroupKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: companionGroupKeys.detail(matchingGroupId) });
+      queryClient.invalidateQueries({ queryKey: companionGroupKeys.myGroups() });
     },
   });
 }

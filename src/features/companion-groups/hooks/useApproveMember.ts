@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { companionGroupService } from '../services/companionGroupService';
+import { companionGroupKeys } from './companionGroupKeys';
 
 export function useApproveMember() {
   const queryClient = useQueryClient();
@@ -8,10 +9,11 @@ export function useApproveMember() {
     mutationFn: ({ groupId, memberId }: { groupId: string; memberId: string }) =>
       companionGroupService.approveMember(groupId, memberId),
     onSuccess: (_, { groupId }) => {
-      // Invalidate both lists, detail query, and join-requests panel
-      queryClient.invalidateQueries({ queryKey: ['matching-groups'] });
-      queryClient.invalidateQueries({ queryKey: ['matching-group-detail', groupId] });
-      queryClient.invalidateQueries({ queryKey: ['join-requests', groupId] });
+      queryClient.invalidateQueries({ queryKey: companionGroupKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: companionGroupKeys.detail(groupId) });
+      queryClient.invalidateQueries({ queryKey: companionGroupKeys.joinRequests() });
+      queryClient.invalidateQueries({ queryKey: companionGroupKeys.myJoinRequests() });
+      queryClient.invalidateQueries({ queryKey: companionGroupKeys.myGroups() });
     },
   });
 }

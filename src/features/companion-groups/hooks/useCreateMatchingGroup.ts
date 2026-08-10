@@ -3,6 +3,7 @@ import {
   companionGroupService,
   type MatchingGroupCreateRequest,
 } from '../services/companionGroupService';
+import { companionGroupKeys } from './companionGroupKeys';
 
 export function useCreateMatchingGroup() {
   const queryClient = useQueryClient();
@@ -11,8 +12,9 @@ export function useCreateMatchingGroup() {
     mutationFn: (payload: MatchingGroupCreateRequest) =>
       companionGroupService.createMatchingGroup(payload),
     onSuccess: () => {
-      // Invalidate the list so the new group appears on the board
-      queryClient.invalidateQueries({ queryKey: ['matching-groups'] });
+      // Invalidate the public list and my-groups so the new group appears
+      queryClient.invalidateQueries({ queryKey: companionGroupKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: companionGroupKeys.myGroups() });
     },
   });
 }

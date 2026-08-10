@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { companionGroupService } from '../services/companionGroupService';
+import { companionGroupKeys } from './companionGroupKeys';
 
 export function useJoinMatchingGroup() {
   const queryClient = useQueryClient();
@@ -8,9 +9,12 @@ export function useJoinMatchingGroup() {
     mutationFn: (matchingGroupId: string) =>
       companionGroupService.joinMatchingGroup(matchingGroupId),
     onSuccess: (_, matchingGroupId) => {
-      // Invalidate both lists and detail query so details are updated with the new pending/accepted member
-      queryClient.invalidateQueries({ queryKey: ['matching-groups'] });
-      queryClient.invalidateQueries({ queryKey: ['matching-group-detail', matchingGroupId] });
+      queryClient.invalidateQueries({ queryKey: companionGroupKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: companionGroupKeys.detail(matchingGroupId) });
+      queryClient.invalidateQueries({
+        queryKey: companionGroupKeys.memberStatus(matchingGroupId),
+      });
+      queryClient.invalidateQueries({ queryKey: companionGroupKeys.myJoinRequests() });
     },
   });
 }

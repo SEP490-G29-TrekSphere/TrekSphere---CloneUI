@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { companionGroupService } from '../services/companionGroupService';
+import { companionGroupKeys } from './companionGroupKeys';
 
 export function useCancelJoinRequest() {
   const queryClient = useQueryClient();
@@ -8,9 +9,13 @@ export function useCancelJoinRequest() {
     mutationFn: (matchingGroupId: string) =>
       companionGroupService.cancelJoinRequest(matchingGroupId),
     onSuccess: (_, matchingGroupId) => {
-      // Invalidate both lists and detail query so status updates correctly
-      queryClient.invalidateQueries({ queryKey: ['matching-groups'] });
-      queryClient.invalidateQueries({ queryKey: ['matching-group-detail', matchingGroupId] });
+      queryClient.invalidateQueries({ queryKey: companionGroupKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: companionGroupKeys.detail(matchingGroupId) });
+      queryClient.invalidateQueries({
+        queryKey: companionGroupKeys.memberStatus(matchingGroupId),
+      });
+      queryClient.invalidateQueries({ queryKey: companionGroupKeys.myJoinRequests() });
+      queryClient.invalidateQueries({ queryKey: companionGroupKeys.myGroups() });
     },
   });
 }

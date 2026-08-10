@@ -56,6 +56,7 @@ export function useVendorSessionMutations(sessionId: string) {
   const checkEquipment = useMutation({
     mutationFn: (payload: { sessionEquipmentId: string; isChecked: boolean }) =>
       vendorSessionService.checkEquipment(payload.sessionEquipmentId, payload.isChecked),
+    onSuccess: invalidate,
   });
 
   return {

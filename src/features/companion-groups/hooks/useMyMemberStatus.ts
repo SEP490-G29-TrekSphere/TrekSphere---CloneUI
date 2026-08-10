@@ -1,12 +1,13 @@
-﻿import { useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useAppStore } from '@/store/useAppStore';
 import { companionGroupService } from '../services/companionGroupService';
+import { companionGroupKeys } from './companionGroupKeys';
 
 export function useMyMemberStatus(matchingGroupId?: string) {
   const user = useAppStore((state) => state.user);
 
   return useQuery({
-    queryKey: ['matching-group-member-me', matchingGroupId],
+    queryKey: companionGroupKeys.memberStatus(matchingGroupId ?? ''),
     queryFn: () => {
       if (!matchingGroupId) throw new Error('Matching Group ID is required');
       return companionGroupService.getMyMemberStatus(matchingGroupId);

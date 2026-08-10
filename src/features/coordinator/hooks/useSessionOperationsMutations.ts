@@ -54,11 +54,13 @@ export function useSessionOperationsMutations(sessionId: string) {
       attendanceType: AttendanceType;
       participants: ParticipantAttendanceItem[];
     }) => trackingService.recordAttendance(sessionId, payload.attendanceType, payload.participants),
+    onSuccess: invalidateDetail,
   });
 
   const checkEquipment = useMutation({
     mutationFn: (payload: { sessionEquipmentId: string; isChecked: boolean }) =>
       trackingService.checkEquipment(payload.sessionEquipmentId, payload.isChecked),
+    onSuccess: invalidateDetail,
   });
 
   const sendSos = useMutation({
