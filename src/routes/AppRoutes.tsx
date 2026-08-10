@@ -74,6 +74,7 @@ const TourCreate = lazy(() => import('@/features/vendor-manager/tours/pages/Tour
 const TourEdit = lazy(() => import('@/features/vendor-manager/tours/pages/TourEdit'));
 const TourApprovals = lazy(() => import('@/features/vendor-manager/tours/pages/TourApprovals'));
 const TourSchedules = lazy(() => import('@/features/vendor-manager/tours/pages/TourSchedules'));
+const VendorReports = lazy(() => import('@/features/vendor-reports/pages/VendorReports'));
 const VendorStaffLayout = lazy(() => import('@/features/vendor-staff/layout/VendorStaffLayout'));
 const PartnerTourList = lazy(() => import('@/features/vendor-staff/tours/pages/TourList'));
 const PartnerTourCreate = lazy(() => import('@/features/vendor-staff/tours/pages/TourCreate'));
@@ -302,6 +303,7 @@ export default function AppRoutes() {
           <Route path={PATHS.VENDOR_MANAGER_EMERGENCY} element={<EmergencySosPage />} />
           <Route path={PATHS.VENDOR_MANAGER_VOUCHERS} element={<VendorVoucherList />} />
           <Route path={PATHS.VENDOR_MANAGER_CHAT} element={<ChatList hideSidebar />} />
+          <Route path={PATHS.VENDOR_MANAGER_REPORTS} element={<VendorReports />} />
         </Route>
 
         {/* Vendor Staff routes — yêu cầu role vendor_staff, dùng VendorStaffLayout riêng */}

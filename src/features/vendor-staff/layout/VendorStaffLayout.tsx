@@ -23,6 +23,7 @@ import { useAppStore } from '@/store/useAppStore';
  */
 const navItems = [
   { name: 'Tổng quan', path: PATHS.PARTNER_PROFILE, icon: LayoutGrid, disabled: false },
+  { name: 'Báo cáo', path: '', icon: BarChart3, disabled: true },
   { name: 'Lịch trình', path: PATHS.PARTNER_SESSIONS, icon: CalendarClock, disabled: false },
   { name: 'Tour', path: PATHS.PARTNER_TOURS, icon: MapIcon, disabled: false },
   { name: 'Đặt tour', path: PATHS.PARTNER_BOOKINGS, icon: Ticket, disabled: false },
@@ -31,7 +32,6 @@ const navItems = [
   { name: 'Porter', path: PATHS.PARTNER_PORTERS, icon: Footprints, disabled: false },
   { name: 'Viết Blog', path: PATHS.PARTNER_BLOG_CREATE, icon: PenSquare, disabled: false },
   { name: 'Trò chuyện', path: PATHS.PARTNER_CHAT, icon: MessageSquare, disabled: false },
-  { name: 'Báo cáo', path: '', icon: BarChart3, disabled: true },
 ];
 
 export default function VendorStaffLayout() {

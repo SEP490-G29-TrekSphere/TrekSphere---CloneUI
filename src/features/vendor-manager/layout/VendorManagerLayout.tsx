@@ -22,6 +22,7 @@ import { useAppStore } from '@/store/useAppStore';
 
 const navItems = [
   { name: 'Tổng quan', path: PATHS.VENDOR_MANAGER_PROFILE, icon: LayoutGrid, disabled: false },
+  { name: 'Báo cáo', path: PATHS.VENDOR_MANAGER_REPORTS, icon: BarChart3, disabled: false },
   { name: 'Lịch trình', path: PATHS.VENDOR_MANAGER_SESSIONS, icon: CalendarClock, disabled: false },
   { name: 'Nhân viên', path: PATHS.VENDOR_MANAGER_STAFF, icon: Users, disabled: false },
   { name: 'Tour', path: PATHS.VENDOR_MANAGER_TOURS, icon: MapIcon, disabled: false },
@@ -38,7 +39,6 @@ const navItems = [
   { name: 'Porter', path: PATHS.VENDOR_MANAGER_PORTERS, icon: Footprints, disabled: false },
   { name: 'Khẩn cấp (SOS)', path: PATHS.VENDOR_MANAGER_EMERGENCY, icon: Siren, disabled: false },
   { name: 'Trò chuyện', path: PATHS.VENDOR_MANAGER_CHAT, icon: MessageSquare, disabled: false },
-  { name: 'Báo cáo', path: '', icon: BarChart3, disabled: true },
 ];
 
 export default function VendorManagerLayout() {

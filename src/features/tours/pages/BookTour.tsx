@@ -696,8 +696,13 @@ export default function BookTour() {
 
         {/* ================================================================
             RIGHT COLUMN — Order Summary + Policies
+
+            `sticky` đặt ở wrapper (không phải riêng thẻ Tóm tắt) để 2 card dính
+            và cuộn cùng nhau — nếu chỉ thẻ Tóm tắt sticky, nó sẽ đè lên card
+            chính sách nằm dưới khi người dùng cuộn trang. Cao quá viewport thì
+            cuộn nội bộ; popover voucher render qua Portal nên không bị cắt.
         ================================================================ */}
-        <div className="space-y-6 lg:sticky lg:top-24 lg:self-start">
+        <div className="space-y-6 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
           {/* ── Order Summary Card ── */}
           <AppCard className="p-6">
             <h3 className="font-extrabold text-foreground text-base tracking-tight pb-4 border-b border-border mb-4">
@@ -945,7 +950,7 @@ export default function BookTour() {
             </p>
           </AppCard>
 
-          {/* ── Cancellation Policy ── */}
+          {/* ── Cancellation Policy — cho khách nắm rõ trước khi thanh toán ── */}
           <CancellationPolicyNotice policies={tour.cancellationPolicies} />
         </div>
       </form>

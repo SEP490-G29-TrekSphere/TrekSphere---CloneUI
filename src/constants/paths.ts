@@ -112,6 +112,7 @@ export const PATHS = {
   VENDOR_MANAGER_EMERGENCY: '/vendor-manager/emergency',
   VENDOR_MANAGER_VOUCHERS: '/vendor-manager/vouchers',
   VENDOR_MANAGER_CHAT: '/vendor-manager/chat',
+  VENDOR_MANAGER_REPORTS: '/vendor-manager/reports',
 
   // Vendor Staff (TrekPartner portal)
   PARTNER: '/partner',
