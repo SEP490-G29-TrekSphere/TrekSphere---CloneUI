@@ -58,7 +58,15 @@ export function canAccessPath(role: Role | null, pathname: string): boolean {
 export function extractRoles(input: unknown): string[] {
   if (!input || typeof input !== 'object') return [];
 
-  const roles = (input as { roles?: unknown }).roles;
+  return normalizeRoleList((input as { roles?: unknown }).roles);
+}
+
+/**
+ * Chuẩn hoá 1 mảng role bất kỳ (từ BE hoặc từ localStorage của phiên cũ) về
+ * lowercase. Mọi nơi so khớp role trong app đều dùng `ROLES` (lowercase), nên
+ * đây là điểm duy nhất được phép quyết định casing.
+ */
+export function normalizeRoleList(roles: unknown): string[] {
   if (!Array.isArray(roles)) return [];
 
   return roles
