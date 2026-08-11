@@ -27,10 +27,6 @@ jest.mock('@/shared/ui', () => ({
   AppSpinner: () => null,
 }));
 
-jest.mock('@/features/profile/services/profileService', () => ({
-  profileService: { uploadFile: jest.fn() },
-}));
-
 jest.mock('../hooks/useTrekkerBlog', () => ({
   useTrekkerBlogDetail: () => ({ data: undefined, isLoading: false }),
   useTrekkerBlogList: () => ({ data: undefined, isLoading: false }),
