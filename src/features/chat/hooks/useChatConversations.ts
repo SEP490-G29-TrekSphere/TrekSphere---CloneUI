@@ -9,5 +9,7 @@ export function useChatConversations(params: ChatConversationsParams = {}) {
   return useQuery({
     queryKey: ['chatConversations', page, size],
     queryFn: () => chatService.getConversations({ page, size }),
+    refetchOnMount: 'always',
+    gcTime: 0,
   });
 }

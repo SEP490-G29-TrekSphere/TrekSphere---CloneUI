@@ -11,6 +11,9 @@ interface GroupActionPanelProps {
   onLeave: () => void;
   onCancelRequest: () => void;
   onDissolve: () => void;
+  onCreateGroupChat: () => void;
+  acceptedMembersCount: number;
+  hasConversation?: boolean;
 }
 
 export function GroupActionPanel({
@@ -22,6 +25,9 @@ export function GroupActionPanel({
   onLeave,
   onCancelRequest,
   onDissolve,
+  onCreateGroupChat,
+  acceptedMembersCount,
+  hasConversation,
 }: GroupActionPanelProps) {
   return (
     <div className="space-y-6">
@@ -37,13 +43,39 @@ export function GroupActionPanel({
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={onOpenChat}
-          className="w-full rounded-full bg-white py-3.5 text-xs font-bold text-primary transition-all hover:bg-white/90 active:scale-[0.99] shadow-sm cursor-pointer"
-        >
-          Nhắn tin cho nhóm
-        </button>
+        {role === 'leader' ? (
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={onCreateGroupChat}
+              disabled={!hasConversation && acceptedMembersCount < 3}
+              className="w-full rounded-full bg-white py-3.5 text-xs font-bold text-primary transition-all hover:bg-white/90 active:scale-[0.99] shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {hasConversation
+                ? 'Vào nhóm chat'
+                : acceptedMembersCount >= 3
+                  ? 'Tạo / Vào nhóm chat'
+                  : 'Cần ít nhất 3 thành viên'}
+            </button>
+            {!hasConversation && acceptedMembersCount < 3 && (
+              <p className="text-[10px] text-white/80 text-center leading-tight">
+                (Chỉ có thể tạo nhóm chat chung khi có từ 3 người trở lên)
+              </p>
+            )}
+          </div>
+        ) : hasConversation ? (
+          <button
+            type="button"
+            onClick={onOpenChat}
+            className="w-full rounded-full bg-white py-3.5 text-xs font-bold text-primary transition-all hover:bg-white/90 active:scale-[0.99] shadow-sm cursor-pointer"
+          >
+            Vào nhóm chat
+          </button>
+        ) : (
+          <div className="rounded-full bg-white/20 py-3.5 text-xs font-medium text-white/70 text-center shadow-sm cursor-not-allowed">
+            Trưởng nhóm chưa tạo nhóm chat
+          </div>
+        )}
       </div>
 
       {/* Role-based action card */}

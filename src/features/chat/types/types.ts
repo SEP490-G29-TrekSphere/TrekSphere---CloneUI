@@ -16,6 +16,17 @@ export interface Conversation {
   timestamp: string;
   online?: boolean;
   startDate?: string;
+  isVirtual?: boolean;
+  virtualData?: VirtualConversationData;
+}
+
+export interface VirtualConversationData {
+  participantIds: string[];
+  type: 'DIRECT' | 'GROUP';
+  userName: string;
+  avatarUrl?: string;
+  matchingGroupId?: string;
+  title?: string;
 }
 
 export interface DetailMessage {
@@ -77,6 +88,7 @@ export interface ConversationCreateRequest {
   conversationType: 'DIRECT' | 'GROUP';
   title?: string;
   participantIds: string[];
+  matchingGroupId?: string;
 }
 
 export interface MessageCreateRequest {

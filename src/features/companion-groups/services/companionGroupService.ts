@@ -120,6 +120,7 @@ export interface MatchingGroupDetailResponse {
   status: MatchingGroupStatus;
   createdAt: string; // ISO string
   members: MatchingMemberItem[];
+  hasConversation?: boolean;
 }
 
 function unwrapResponse<T>(response: ApiResponse<T>): T {

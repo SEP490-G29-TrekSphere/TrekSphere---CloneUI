@@ -1,8 +1,9 @@
 import { Mail, MessageCircle, Phone } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ApiService } from '@/config/apiClient';
 import { getPrimaryRole, PATHS, ROLES } from '@/constants';
-import { chatService } from '@/features/chat/services/chatService';
+import type { ConversationResponse } from '@/features/chat/types/types';
 import type { TourDetailFromApi } from '@/features/tours/types';
 import { useAppStore } from '@/store/useAppStore';
 import { toast } from '@/store/useToastStore';
@@ -41,19 +42,31 @@ export function TourVendorCard({ tour }: TourVendorCardProps) {
 
     setIsConnecting(true);
     try {
-      const response = await chatService.createConversation({
+      // Check if conversation exists instead of creating it immediately
+      const response = await ApiService<ConversationResponse>('/chat/conversations/check', 'POST', {
         conversationType: 'DIRECT',
         participantIds: [tour.vendorManagerId],
       });
 
-      if (response.isNew) toast.success('Đã tạo cuộc trò chuyện');
-      else toast.info('Chuyển đến cuộc trò chuyện hiện tại');
-
-      navigate(resolveChatPath(user.roles), {
-        state: { conversationId: response.conversationId },
-      });
+      if (response.data && response.data.conversationId) {
+        navigate(resolveChatPath(user.roles), {
+          state: { conversationId: response.data.conversationId },
+        });
+      } else {
+        const vendorName = tour.vendorName || tour.creatorName || 'Nhà tổ chức';
+        navigate(resolveChatPath(user.roles), {
+          state: {
+            virtualConversation: {
+              type: 'DIRECT',
+              participantIds: [tour.vendorManagerId],
+              userName: vendorName,
+              title: vendorName,
+            },
+          },
+        });
+      }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Không thể tạo cuộc trò chuyện');
+      toast.error(error instanceof Error ? error.message : 'Không thể kết nối đến cuộc trò chuyện');
     } finally {
       setIsConnecting(false);
     }
