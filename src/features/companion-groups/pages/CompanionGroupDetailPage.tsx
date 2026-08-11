@@ -1,13 +1,17 @@
-import { AlertTriangle, Loader2, LogOut, ShieldAlert, UserCheck, X } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { PATHS } from '@/constants/paths';
+import { useCheckConversation } from '@/features/chat/hooks/useCheckConversation';
+import { useCreateConversation } from '@/features/chat/hooks/useCreateConversation';
 import { AppButton } from '@/shared/ui';
 import { useAppStore } from '@/store/useAppStore';
 import { GroupActionPanel } from '../components/detail/GroupActionPanel';
 import { GroupDetailHero } from '../components/detail/GroupDetailHero';
 import { GroupDetailSkeleton } from '../components/detail/GroupDetailSkeleton';
+import { GroupModals } from '../components/detail/GroupModals';
 import { type JoinRequestAction, JoinRequestsCard } from '../components/detail/JoinRequestsCard';
 import { MembersCard } from '../components/detail/MembersCard';
 import { useApproveMember } from '../hooks/useApproveMember';
@@ -55,6 +59,9 @@ export default function CompanionGroupDetailPage({
   const joinGroupMutation = useJoinMatchingGroup();
   const approveMemberMutation = useApproveMember();
   const rejectMemberMutation = useRejectMember();
+  const checkConversationMutation = useCheckConversation();
+  const createConversationMutation = useCreateConversation();
+  const queryClient = useQueryClient();
 
   // Fetch real group detail data from API GET /api/v1/matching-groups/{matchingGroupId}
   const { data: groupData, isLoading, isError, error, refetch } = useMatchingGroupDetail(groupId);
@@ -107,6 +114,85 @@ export default function CompanionGroupDetailPage({
   };
 
   // --- HANDLERS ---
+  const handleCreateGroupChat = () => {
+    if (!groupId || !groupData) return;
+
+    // Lọc ra các thành viên đã tham gia nhóm (ACCEPTED) và không phải là user hiện tại
+    const otherParticipantIds = (groupData.members || [])
+      .filter((m) => m.status === 'ACCEPTED' && String(m.userId) !== String(user?.id))
+      .map((m) => m.userId);
+
+    checkConversationMutation.mutate(
+      {
+        conversationType: 'GROUP',
+        title: groupData.groupName || 'Nhóm ghép',
+        participantIds: otherParticipantIds,
+        matchingGroupId: groupId,
+      },
+      {
+        onSuccess: (res) => {
+          if (res && res.conversationId) {
+            navigate(chatPath, { state: { conversationId: res.conversationId } });
+          } else {
+            createConversationMutation.mutate(
+              {
+                conversationType: 'GROUP',
+                title: groupData.groupName || 'Nhóm ghép',
+                participantIds: otherParticipantIds,
+                matchingGroupId: groupId,
+              },
+              {
+                onSuccess: (createRes) => {
+                  queryClient.invalidateQueries({
+                    queryKey: ['companionGroup', 'detail', groupId],
+                  });
+                  navigate(chatPath, { state: { conversationId: createRes.conversationId } });
+                },
+                onError: (err) => {
+                  showToast(err instanceof Error ? err.message : 'Lỗi khi tạo nhóm chat');
+                },
+              }
+            );
+          }
+        },
+        onError: (err) => {
+          showToast(err instanceof Error ? err.message : 'Lỗi khi kiểm tra nhóm chat');
+        },
+      }
+    );
+  };
+
+  const handleDirectChat = (memberId: string, memberName: string, memberAvatar?: string) => {
+    if (!memberId) return;
+    checkConversationMutation.mutate(
+      {
+        conversationType: 'DIRECT',
+        participantIds: [memberId],
+      },
+      {
+        onSuccess: (res) => {
+          if (res && res.conversationId) {
+            navigate(chatPath, { state: { conversationId: res.conversationId } });
+          } else {
+            navigate(chatPath, {
+              state: {
+                virtualConversation: {
+                  type: 'DIRECT',
+                  participantIds: [memberId],
+                  userName: memberName,
+                  avatarUrl: memberAvatar,
+                },
+              },
+            });
+          }
+        },
+        onError: (err) => {
+          showToast(err instanceof Error ? err.message : 'Lỗi khi kiểm tra phòng chat');
+        },
+      }
+    );
+  };
+
   const handleConfirmApprove = () => {
     if (!selectedRequest || !groupId) return;
     approveMemberMutation.mutate(
@@ -271,6 +357,8 @@ export default function CompanionGroupDetailPage({
               members={groupData.members}
               maxSize={groupData.maxSize}
               ownerName={groupData.ownerName}
+              currentUserId={user?.id?.toString()}
+              onDirectChat={handleDirectChat}
             />
 
             {currentUserRole === 'leader' && (
@@ -303,215 +391,34 @@ export default function CompanionGroupDetailPage({
               role={currentUserRole}
               groupStatus={groupData.status}
               isJoining={joinGroupMutation.isPending}
-              onOpenChat={() => navigate(chatPath)}
+              onOpenChat={handleCreateGroupChat}
               onJoin={handleJoinGroup}
               onLeave={() => setActiveModal('leave')}
               onCancelRequest={() => setActiveModal('leave')}
               onDissolve={() => setActiveModal('dissolve')}
+              onCreateGroupChat={handleCreateGroupChat}
+              acceptedMembersCount={groupData.members.filter((m) => m.status === 'ACCEPTED').length}
+              hasConversation={groupData.hasConversation}
             />
           </div>
         </div>
       </div>
 
-      {/* --- MODALS --- */}
-      {/* 1. Modal duyệt thành viên */}
-      {activeModal === 'approve' && selectedRequest && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-primary">
-                <UserCheck className="h-5 w-5" />
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveModal(null)}
-                className="text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-foreground">Duyệt thành viên gia nhập</h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                Bạn có chắc chắn muốn duyệt <strong>{selectedRequest.userName}</strong> tham gia vào
-                nhóm ghép này?
-              </p>
-            </div>
-            <div className="flex gap-2 pt-2">
-              <button
-                type="button"
-                disabled={approveMemberMutation.isPending}
-                onClick={() => setActiveModal(null)}
-                className="flex-1 rounded-full border border-border py-2.5 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-50 cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                disabled={approveMemberMutation.isPending}
-                onClick={handleConfirmApprove}
-                className="flex-1 rounded-full bg-primary py-2.5 text-xs font-bold text-white hover:bg-primary-hover disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                {approveMemberMutation.isPending && (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                )}
-                {approveMemberMutation.isPending ? 'Đang duyệt...' : 'Xác nhận duyệt'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 2. Modal từ chối yêu cầu */}
-      {activeModal === 'reject' && selectedRequest && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
-                <AlertTriangle className="h-5 w-5" />
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveModal(null)}
-                className="text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-foreground">Từ chối yêu cầu</h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                Từ chối <strong>{selectedRequest.userName}</strong> gia nhập nhóm? Hành động này
-                không thể hoàn tác.
-              </p>
-            </div>
-            <div className="flex gap-2 pt-2">
-              <button
-                type="button"
-                disabled={rejectMemberMutation.isPending}
-                onClick={() => setActiveModal(null)}
-                className="flex-1 rounded-full border border-border py-2.5 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-50 cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                disabled={rejectMemberMutation.isPending}
-                onClick={handleConfirmReject}
-                className="flex-1 rounded-full bg-destructive py-2.5 text-xs font-bold text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                {rejectMemberMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                {rejectMemberMutation.isPending ? 'Đang từ chối...' : 'Xác nhận từ chối'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 3. Modal Giải tán nhóm */}
-      {activeModal === 'dissolve' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
-                <ShieldAlert className="h-5 w-5" />
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveModal(null)}
-                className="text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-foreground">Xác nhận giải tán nhóm</h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                Hành động này sẽ giải tán toàn bộ nhóm ghép và thông báo tới tất cả thành viên. Hành
-                động này không thể hoàn tác.
-              </p>
-            </div>
-            <div className="flex gap-2 pt-2">
-              <button
-                type="button"
-                disabled={deleteGroupMutation.isPending}
-                onClick={() => setActiveModal(null)}
-                className="flex-1 rounded-full border border-border py-2.5 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-50 cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                disabled={deleteGroupMutation.isPending}
-                onClick={handleConfirmDissolveGroup}
-                className="flex-1 rounded-full bg-destructive py-2.5 text-xs font-bold text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                {deleteGroupMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                {deleteGroupMutation.isPending ? 'Đang giải tán...' : 'Giải tán ngay'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 4. Modal Rời khỏi nhóm / Hủy yêu cầu */}
-      {activeModal === 'leave' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
-                <LogOut className="h-5 w-5" />
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveModal(null)}
-                className="text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-foreground">
-                {currentUserRole === 'pending' ? 'Hủy yêu cầu tham gia' : 'Rời khỏi nhóm ghép'}
-              </h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                {currentUserRole === 'pending'
-                  ? 'Bạn có chắc chắn muốn hủy yêu cầu xin tham gia nhóm ghép này?'
-                  : 'Bạn có chắc chắn muốn rời khỏi chuyến đi này?'}
-              </p>
-            </div>
-            <div className="flex gap-2 pt-2">
-              <button
-                type="button"
-                disabled={isLeaveModalPending}
-                onClick={() => setActiveModal(null)}
-                className="flex-1 rounded-full border border-border py-2.5 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-50 cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                disabled={isLeaveModalPending}
-                onClick={
-                  currentUserRole === 'pending'
-                    ? handleConfirmCancelJoinRequest
-                    : handleConfirmLeaveGroup
-                }
-                className="flex-1 rounded-full bg-destructive py-2.5 text-xs font-bold text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                {isLeaveModalPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                {currentUserRole === 'pending'
-                  ? isLeaveModalPending
-                    ? 'Đang hủy...'
-                    : 'Xác nhận hủy'
-                  : isLeaveModalPending
-                    ? 'Đang thực hiện...'
-                    : 'Xác nhận rời'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <GroupModals
+        activeModal={activeModal}
+        setActiveModal={setActiveModal}
+        selectedRequest={selectedRequest}
+        currentUserRole={currentUserRole}
+        isApprovePending={approveMemberMutation.isPending}
+        isRejectPending={rejectMemberMutation.isPending}
+        isDissolvePending={deleteGroupMutation.isPending}
+        isLeaveModalPending={isLeaveModalPending}
+        onConfirmApprove={handleConfirmApprove}
+        onConfirmReject={handleConfirmReject}
+        onConfirmDissolveGroup={handleConfirmDissolveGroup}
+        onConfirmLeaveGroup={handleConfirmLeaveGroup}
+        onConfirmCancelJoinRequest={handleConfirmCancelJoinRequest}
+      />
     </div>
   );
 }

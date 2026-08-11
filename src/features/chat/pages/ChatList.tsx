@@ -1,14 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { queryClient } from '@/config/queryClient';
 import { ChatDetailPane } from '@/features/chat/components/ChatDetailPane';
 import { ConversationList } from '@/features/chat/components/ConversationList';
-import type { Conversation, DetailMessage, MessageResponse } from '@/features/chat/types/types';
+import type {
+  Conversation,
+  DetailMessage,
+  MessageResponse,
+  VirtualConversationData,
+} from '@/features/chat/types/types';
 import { useAppStore } from '@/store/useAppStore';
 import { toast } from '@/store/useToastStore';
 import { useChatWebSocket } from '../context/ChatWebSocketContext';
 import { useChatConversations } from '../hooks/useChatConversations';
 import { useChatMessages } from '../hooks/useChatMessages';
+import { useCreateConversation } from '../hooks/useCreateConversation';
 import { useMarkAsRead } from '../hooks/useMarkAsRead';
 import { useSendMessage } from '../hooks/useSendMessage';
 
@@ -24,7 +30,11 @@ export default function ChatList({ hideSidebar = false }: ChatListProps) {
   const [size, _setSize] = useState(10);
   const { data: apiResponse, isLoading, error } = useChatConversations({ page, size });
   const location = useLocation();
+  const navigate = useNavigate();
   const stateConversationId = location.state?.conversationId as string | undefined;
+  const virtualConversation = location.state?.virtualConversation as
+    | VirtualConversationData
+    | undefined;
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -32,20 +42,23 @@ export default function ChatList({ hideSidebar = false }: ChatListProps) {
 
   const { client, isConnected } = useChatWebSocket();
   const { mutate: sendMessage, isPending: isSending } = useSendMessage();
+  const { mutateAsync: createConversationAsync } = useCreateConversation();
+
+  const isVirtualSelected = selectedId?.startsWith('virtual_');
 
   const {
     data: messagesResponse,
     isLoading: isLoadingMessages,
     error: messagesError,
   } = useChatMessages({
-    id: selectedId || '',
+    id: selectedId && !isVirtualSelected ? selectedId : '',
     page: 1,
     size: 50,
   });
 
   // WebSocket Subscription
   useEffect(() => {
-    if (!client || !isConnected || !selectedId) return;
+    if (!client || !isConnected || !selectedId || isVirtualSelected) return;
 
     const subscription = client.subscribe(
       `/topic/chat/conversations/${selectedId}/messages`,
@@ -100,12 +113,12 @@ export default function ChatList({ hideSidebar = false }: ChatListProps) {
     return () => {
       subscription.unsubscribe();
     };
-  }, [client, isConnected, selectedId]);
+  }, [client, isConnected, selectedId, isVirtualSelected]);
 
   // Sync API response to local state
   useEffect(() => {
     if (apiResponse?.content) {
-      const mapped: Conversation[] = apiResponse.content.map((item) => {
+      let mapped: Conversation[] = apiResponse.content.map((item) => {
         const date = new Date(item.lastMessageAt);
         const lastMessageTime = !Number.isNaN(date.getTime())
           ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -128,10 +141,36 @@ export default function ChatList({ hideSidebar = false }: ChatListProps) {
           },
         };
       });
+
+      let initialSelectedId: string | null = null;
+      if (virtualConversation) {
+        const vId = 'virtual_' + virtualConversation.participantIds.join('_');
+        const vChat: Conversation = {
+          id: vId,
+          userName: virtualConversation.userName,
+          avatarUrl: virtualConversation.avatarUrl || '',
+          lastMessage: 'Bắt đầu cuộc trò chuyện...',
+          lastMessageTime: '',
+          unread: false,
+          unreadCount: 0,
+          timestamp: new Date().toISOString(),
+          online: false,
+          tag: {
+            text: virtualConversation.type,
+            variant: virtualConversation.type === 'DIRECT' ? 'secondary' : 'accent',
+          },
+          isVirtual: true,
+          virtualData: virtualConversation,
+        };
+        mapped = [vChat, ...mapped];
+        initialSelectedId = vId;
+      }
+
       setConversations(mapped);
 
       if (mapped.length > 0) {
         setSelectedId((prev) => {
+          if (initialSelectedId) return initialSelectedId;
           if (stateConversationId && mapped.some((c) => c.id === stateConversationId))
             return stateConversationId;
           if (prev && mapped.some((c) => c.id === prev)) return prev;
@@ -141,7 +180,7 @@ export default function ChatList({ hideSidebar = false }: ChatListProps) {
         setSelectedId(null);
       }
     }
-  }, [apiResponse, stateConversationId]);
+  }, [apiResponse, stateConversationId, virtualConversation]);
 
   const { mutate: markAsRead } = useMarkAsRead();
   const markedAsReadRef = useRef<Set<string>>(new Set());
@@ -212,8 +251,8 @@ export default function ChatList({ hideSidebar = false }: ChatListProps) {
   const filteredConversations = conversations
     .filter((c) => {
       const matchesSearch =
-        c.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.lastMessage.toLowerCase().includes(searchQuery.toLowerCase());
+        (c.userName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (c.lastMessage || '').toLowerCase().includes(searchQuery.toLowerCase());
       return matchesSearch;
     })
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
@@ -230,10 +269,79 @@ export default function ChatList({ hideSidebar = false }: ChatListProps) {
     );
   };
 
-  const handleSendMessage = (msgText: string) => {
+  const handleSendMessage = async (msgText: string) => {
     if (!selectedId) return;
 
-    // Gọi API để gửi tin nhắn
+    if (selectedConversation?.isVirtual && selectedConversation.virtualData) {
+      try {
+        const res = await createConversationAsync({
+          conversationType: selectedConversation.virtualData.type,
+          participantIds: selectedConversation.virtualData.participantIds,
+          title: selectedConversation.virtualData.title || selectedConversation.userName,
+          matchingGroupId: selectedConversation.virtualData.matchingGroupId,
+        });
+
+        // Xoá virtualConversation khỏi state và set conversationId mới
+        navigate(location.pathname, {
+          replace: true,
+          state: {
+            ...location.state,
+            virtualConversation: undefined,
+            conversationId: res.conversationId,
+          },
+        });
+
+        // Cập nhật React Query cache để conversation không bị chớp/biến mất
+        queryClient.setQueryData(['chatConversations', page, size], (old: any) => {
+          if (!old) return old;
+          return {
+            ...old,
+            content: [
+              {
+                conversationId: res.conversationId,
+                conversationType: selectedConversation.virtualData!.type,
+                title: selectedConversation.virtualData!.title || selectedConversation.userName,
+                avatarUrl: selectedConversation.avatarUrl,
+                lastMessageContent: msgText,
+                lastMessageAt: new Date().toISOString(),
+                unreadCount: 0,
+              },
+              ...old.content,
+            ],
+          };
+        });
+
+        setSelectedId(res.conversationId);
+
+        // Optimistic UI updates
+        setConversations((prev) =>
+          prev.map((c) =>
+            c.id === selectedId
+              ? {
+                  ...c,
+                  id: res.conversationId,
+                  isVirtual: false,
+                  lastMessage: msgText.length > 22 ? `${msgText.substring(0, 22)}...` : msgText,
+                  lastMessageTime: 'Vừa xong',
+                  timestamp: new Date().toISOString(),
+                }
+              : c
+          )
+        );
+
+        sendMessage({
+          conversationId: res.conversationId,
+          content: msgText,
+        });
+
+        queryClient.invalidateQueries({ queryKey: ['chatConversations'] });
+      } catch (err) {
+        toast.error('Không thể tạo phòng chat');
+      }
+      return;
+    }
+
+    // Normal send
     sendMessage({
       conversationId: selectedId,
       content: msgText,

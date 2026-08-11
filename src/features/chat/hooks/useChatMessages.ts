@@ -15,5 +15,7 @@ export function useChatMessages(params: UseChatMessagesParams) {
     queryKey: ['chatMessages', params.id, page, size],
     queryFn: () => chatService.getMessages({ id: params.id, page, size }),
     enabled: Boolean(params.id),
+    refetchOnMount: 'always',
+    gcTime: 0,
   });
 }

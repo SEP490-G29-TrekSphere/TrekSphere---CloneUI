@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Navigate, Route, Routes, useParams } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import {
   getTrekkerBlogEditPath,
   getTrekkerBookingPaymentPath,
@@ -7,12 +7,14 @@ import {
   PATHS,
   ROLES,
 } from '@/constants';
+import { getPrimaryRole } from '@/constants/roles';
 import { AccountDetail, AccountList, AdminDashboard, BlogManagement } from '@/features/admin';
 import ProtectedRoute from '@/routes/ProtectedRoute';
 import RequireRole from '@/routes/RequireRole';
 import MainLayout from '@/shared/layout/MainLayout';
 import PublicLayout from '@/shared/layout/PublicLayout';
 import { ScrollManager } from '@/shared/ui/ScrollManager';
+import { useAppStore } from '@/store/useAppStore';
 
 // Lazy loading features (code-splitting theo route)
 const Home = lazy(() => import('@/features/home/pages/Home'));
@@ -114,6 +116,30 @@ function LegacyBlogEditRedirect() {
   );
 }
 
+function ChatRedirect() {
+  const location = useLocation();
+  const user = useAppStore((state) => state.user);
+
+  if (!user) {
+    return <Navigate to={PATHS.LOGIN} state={{ from: location }} replace />;
+  }
+
+  const primaryRole = getPrimaryRole(user.roles);
+  let chatPath: string = PATHS.TREKKER_CHAT;
+
+  if (primaryRole === ROLES.ADMIN) {
+    chatPath = PATHS.ADMIN_CHAT;
+  } else if (primaryRole === ROLES.VENDOR_MANAGER) {
+    chatPath = PATHS.VENDOR_MANAGER_CHAT;
+  } else if (primaryRole === ROLES.VENDOR_STAFF) {
+    chatPath = PATHS.PARTNER_CHAT;
+  } else if (primaryRole === ROLES.COORDINATOR) {
+    chatPath = PATHS.COORDINATOR_CHAT;
+  }
+
+  return <Navigate to={chatPath} state={location.state} replace />;
+}
+
 function PageLoader() {
   return (
     <div className="flex h-screen w-full items-center justify-center">
@@ -142,7 +168,7 @@ export default function AppRoutes() {
           }
         />
         <Route path={PATHS.NOTIFICATIONS} element={<Notifications />} />
-        <Route path={PATHS.CHAT} element={<Navigate to={PATHS.TREKKER_CHAT} replace />} />
+        <Route path={PATHS.CHAT} element={<ChatRedirect />} />
 
         {/* Blog của tôi chỉ sống trong portal Trekker (TrekkerLayout có sidebar).
             Các path `/blog*` cũ nằm trong MainLayout nên vào là mất sidebar —
