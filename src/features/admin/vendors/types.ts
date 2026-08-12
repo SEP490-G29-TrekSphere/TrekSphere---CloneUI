@@ -5,6 +5,19 @@
 /** Trạng thái hoạt động của Vendor (mirror enum BE trả về ở `/vendors`). */
 export type VendorStatus = 'ACTIVE' | 'INACTIVE' | 'REVOKED';
 
+export interface VendorManager {
+  userId: string;
+  email: string;
+  fullName: string;
+  phone: string;
+  dateOfBirth?: string;
+  gender?: 'MALE' | 'FEMALE' | 'OTHER';
+  avatarUrl?: string;
+  status: 'ACTIVE' | 'LOCKED' | 'DEACTIVATED';
+  emailVerified: boolean;
+  roles: string[];
+}
+
 /** Thông tin 1 Vendor hiển thị trong bảng quản lý. */
 export interface AdminVendor {
   id: string;
@@ -13,7 +26,10 @@ export interface AdminVendor {
   logoUrl?: string;
   contactEmail: string;
   contactPhone?: string;
+  taxCode?: string;
+  businessLicenseUrl?: string;
   status: VendorStatus;
+  manager?: VendorManager;
 }
 
 /** Payload trả về từ API list vendors (pagination). */

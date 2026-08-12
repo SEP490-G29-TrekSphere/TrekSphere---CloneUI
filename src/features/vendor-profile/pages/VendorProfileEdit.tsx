@@ -85,6 +85,8 @@ export default function VendorProfileEdit() {
         onContactEmailChange={setContactEmail}
         contactPhone={contactPhone}
         onContactPhoneChange={setContactPhone}
+        logoPreview={logoPreview}
+        onLogoFileSelected={handleLogoFileSelected}
       />
 
       <div className="flex items-center justify-end gap-3 pb-6">

@@ -9,6 +9,8 @@ interface CompanyInfoCardProps {
   onContactEmailChange: (value: string) => void;
   contactPhone: string;
   onContactPhoneChange: (value: string) => void;
+  logoPreview?: string | null;
+  onLogoFileSelected?: (file: File) => void;
 }
 
 const inputStyle = { backgroundColor: '#FFFFFF', border: '1px solid #E0DCD1', color: '#06261D' };
@@ -28,6 +30,8 @@ export function CompanyInfoCard({
   onContactEmailChange,
   contactPhone,
   onContactPhoneChange,
+  logoPreview,
+  onLogoFileSelected,
 }: CompanyInfoCardProps) {
   return (
     <div className="rounded-[32px] p-6 sm:p-8" style={{ backgroundColor: '#F6F4EB' }}>
@@ -48,44 +52,80 @@ export function CompanyInfoCard({
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <div>
-          <label
-            className="mb-1.5 block text-xs font-semibold"
-            style={labelStyle}
-            htmlFor="companyName"
+      <div className="mt-6 flex flex-col sm:flex-row gap-6 items-center">
+        {/* Logo Upload Section */}
+        <div className="flex flex-col items-center gap-2">
+          <div
+            className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border text-2xl font-bold"
+            style={{ backgroundColor: '#FFFFFF', borderColor: '#E0DCD1', color: '#06261D' }}
           >
-            Tên công ty / Thương hiệu
-          </label>
-          <input
-            id="companyName"
-            type="text"
-            value={companyName}
-            disabled
-            title="Không thể chỉnh sửa — liên hệ Admin để thay đổi tên công ty"
-            className="h-11 w-full rounded-xl px-4 text-sm font-medium opacity-70"
-            style={inputStyle}
-          />
-        </div>
-        <div>
+            {logoPreview ? (
+              <img src={logoPreview} alt="Logo" className="h-full w-full object-cover" />
+            ) : (
+              <span>{companyName.charAt(0).toUpperCase()}</span>
+            )}
+          </div>
           <label
-            className="mb-1.5 block text-xs font-semibold"
-            style={labelStyle}
-            htmlFor="taxCode"
+            className="cursor-pointer rounded-full px-4 py-1.5 text-xs font-semibold transition-colors hover:opacity-90"
+            style={{ backgroundColor: '#06261D', color: '#FFFFFF' }}
           >
-            Mã số thuế (MST)
+            Thay đổi Logo
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file && onLogoFileSelected) {
+                  onLogoFileSelected(file);
+                }
+              }}
+            />
           </label>
-          <input
-            id="taxCode"
-            type="text"
-            value={taxCode}
-            disabled
-            title="Không thể chỉnh sửa — liên hệ Admin để thay đổi mã số thuế"
-            className="h-11 w-full rounded-xl px-4 text-sm font-medium opacity-70"
-            style={inputStyle}
-          />
         </div>
 
+        {/* Company Details Grid */}
+        <div className="flex-1 grid grid-cols-1 gap-5 sm:grid-cols-2 w-full">
+          <div>
+            <label
+              className="mb-1.5 block text-xs font-semibold"
+              style={labelStyle}
+              htmlFor="companyName"
+            >
+              Tên công ty / Thương hiệu
+            </label>
+            <input
+              id="companyName"
+              type="text"
+              value={companyName}
+              disabled
+              title="Không thể chỉnh sửa — liên hệ Admin để thay đổi tên công ty"
+              className="h-11 w-full rounded-xl px-4 text-sm font-medium opacity-70"
+              style={inputStyle}
+            />
+          </div>
+          <div>
+            <label
+              className="mb-1.5 block text-xs font-semibold"
+              style={labelStyle}
+              htmlFor="taxCode"
+            >
+              Mã số thuế (MST)
+            </label>
+            <input
+              id="taxCode"
+              type="text"
+              value={taxCode}
+              disabled
+              title="Không thể chỉnh sửa — liên hệ Admin để thay đổi mã số thuế"
+              className="h-11 w-full rounded-xl px-4 text-sm font-medium opacity-70"
+              style={inputStyle}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2">
         <div className="sm:col-span-2">
           <label
             className="mb-1.5 block text-xs font-semibold"

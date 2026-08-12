@@ -17,7 +17,6 @@ export interface VendorProfileDetail {
   status: VendorProfileStatus;
 }
 
-/** Payload cập nhật hồ sơ — chỉ các field `VendorProfileUpdateRequest` hỗ trợ. */
 export interface UpdateVendorProfilePayload {
   description?: string;
   contactEmail?: string;

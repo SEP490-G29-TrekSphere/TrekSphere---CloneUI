@@ -29,7 +29,21 @@ interface VendorResponseDto {
   logoUrl?: string | null;
   contactEmail: string;
   contactPhone?: string | null;
+  taxCode?: string | null;
+  businessLicenseUrl?: string | null;
   status: VendorStatus;
+  manager?: {
+    userId: string;
+    email: string;
+    fullName: string;
+    phone: string;
+    dateOfBirth?: string | null;
+    gender?: 'MALE' | 'FEMALE' | 'OTHER' | null;
+    avatarUrl?: string | null;
+    status: 'ACTIVE' | 'LOCKED' | 'DEACTIVATED';
+    emailVerified: boolean;
+    roles: string[];
+  } | null;
 }
 
 interface PaginationResponseDto<T> {
@@ -59,7 +73,23 @@ function mapVendor(dto: VendorResponseDto): AdminVendor {
     logoUrl: dto.logoUrl ?? undefined,
     contactEmail: dto.contactEmail,
     contactPhone: dto.contactPhone ?? undefined,
+    taxCode: dto.taxCode ?? undefined,
+    businessLicenseUrl: dto.businessLicenseUrl ?? undefined,
     status: dto.status,
+    manager: dto.manager
+      ? {
+          userId: dto.manager.userId,
+          email: dto.manager.email,
+          fullName: dto.manager.fullName,
+          phone: dto.manager.phone,
+          dateOfBirth: dto.manager.dateOfBirth ?? undefined,
+          gender: dto.manager.gender ?? undefined,
+          avatarUrl: dto.manager.avatarUrl ?? undefined,
+          status: dto.manager.status,
+          emailVerified: dto.manager.emailVerified,
+          roles: dto.manager.roles,
+        }
+      : undefined,
   };
 }
 
@@ -139,10 +169,10 @@ export const adminVendorService = {
   },
 
   /** Đổi trạng thái Vendor — ACTIVE, INACTIVE hoặc REVOKED. */
-  async updateStatus(vendorId: string, status: VendorStatus): Promise<void> {
-    const response = await ApiService<void>(`/vendors/${vendorId}/status`, 'PUT', { status });
-    if (response.error) {
-      throw new Error(response.error);
-    }
+  async updateStatus(vendorId: string, status: VendorStatus): Promise<AdminVendor> {
+    const response = await ApiService<VendorResponseDto>(`/vendors/${vendorId}/status`, 'PUT', {
+      status,
+    });
+    return mapVendor(unwrapResponse(response));
   },
 };

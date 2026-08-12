@@ -170,7 +170,7 @@ export function ScheduleFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px] max-h-[85vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[480px] max-h-[85vh] overflow-y-auto" initialFocus={false}>
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">
             {isEdit ? 'Sửa lịch khởi hành' : 'Tạo lịch khởi hành mới'}
