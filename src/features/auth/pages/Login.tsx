@@ -7,6 +7,7 @@ import { queryClient } from '@/config/queryClient';
 import { PATHS } from '@/constants';
 import { extractRoles, getPostLoginRoute } from '@/constants/roles';
 import { authService, toAppStoreUser } from '@/features/auth';
+import { parseAuthSessionPayload } from '@/features/auth/utils/authSession';
 import { useAuthCheck } from '@/shared/hooks/useAuthCheck';
 import {
   AppButton,
@@ -98,21 +99,17 @@ export default function Login() {
           return;
         }
 
-        const raw = result.data as unknown as Record<string, unknown>;
-        const responseData = raw;
-        const accessToken =
-          (responseData.accessToken as string | undefined) ??
-          (responseData.access_token as string | undefined) ??
-          '';
-        const refreshToken =
-          (responseData.refreshToken as string | undefined) ??
-          (responseData.refresh_token as string | undefined) ??
-          '';
+        const session = parseAuthSessionPayload(result.data);
+        if (!session) {
+          storage.remove('accessToken');
+          storage.remove('refreshToken');
+          toast.error('Máy chủ không trả về phiên đăng nhập hợp lệ. Vui lòng thử lại.');
+          return;
+        }
 
+        const { accessToken, refreshToken, userData } = session;
         storage.set('accessToken', accessToken);
         storage.set('refreshToken', refreshToken);
-
-        const userData = (responseData.user ?? responseData) as Record<string, unknown>;
         const normalizedRoles = extractRoles(userData);
 
         const user = {
@@ -128,6 +125,8 @@ export default function Login() {
         };
 
         if (!user.id) {
+          storage.remove('accessToken');
+          storage.remove('refreshToken');
           toast.error('Đăng nhập Google thất bại. Vui lòng thử lại.');
           return;
         }
@@ -173,46 +172,17 @@ export default function Login() {
         }
 
         // Lưu tokens vào storage
-        const raw = result.data as unknown as Record<string, unknown>;
-        // `handleResponse` ở apiClient đã unwrap đúng cấu trúc (có thể phẳng
-        // hoặc có 1-2 lớp envelope). Ở đây `raw` luôn là object đã unwrap —
-        // chứa `user`, `access_token`, `refresh_token` ở cùng cấp.
-        const responseData = raw;
-        console.log('[Login] response keys:', Object.keys(responseData));
-        const accessToken =
-          (responseData.accessToken as string | undefined) ??
-          (responseData.access_token as string | undefined) ??
-          '';
-        // QUAN TRỌNG: KHÔNG fallback refreshToken = accessToken.
-        // Nếu BE không trả `refresh_token` riêng → để trống để API refresh biết
-        // mà fail thay vì âm thầm dùng lại expired accessToken.
-        const refreshToken =
-          (responseData.refreshToken as string | undefined) ??
-          (responseData.refresh_token as string | undefined) ??
-          '';
+        const session = parseAuthSessionPayload(result.data);
+        if (!session) {
+          storage.remove('accessToken');
+          storage.remove('refreshToken');
+          toast.error('Máy chủ không trả về phiên đăng nhập hợp lệ. Vui lòng thử lại.');
+          return;
+        }
 
-        console.log(
-          '[Login] accessToken length:',
-          accessToken.length,
-          'preview:',
-          accessToken.slice(0, 30)
-        );
-        console.log(
-          '[Login] refreshToken present:',
-          refreshToken.length > 0,
-          'length:',
-          refreshToken.length
-        );
+        const { accessToken, refreshToken, userData } = session;
         storage.set('accessToken', accessToken);
         storage.set('refreshToken', refreshToken);
-        console.log('[Login] token saved. Verify:', storage.get('accessToken') ? 'OK' : 'MISSING');
-
-        // Lấy thông tin user từ login response.
-        // BE `POST /auth/login` thường unwrap trả về `{ user, accessToken }` ở
-        // top-level (handleResponse trong apiClient đã unwrap envelope).
-        // Tuy nhiên một số môi trường BE trả phẳng (không có `user` key) nên
-        // fallback responseData để vẫn đọc được.
-        const userData = (responseData.user ?? responseData) as Record<string, unknown>;
 
         // Dùng `extractRoles` để chuẩn hoá roles về lowercase + bỏ prefix
         // `role_`. Cờ `ROLES.ADMIN = 'admin'` được khai báo lowercase, nên nếu
@@ -231,14 +201,9 @@ export default function Login() {
           roles: normalizedRoles,
         };
 
-        console.log('[Login] user (after normalize):', {
-          id: user.id,
-          email: user.email,
-          fullName: user.fullName,
-          roles: user.roles,
-        });
-
         if (!user.id) {
+          storage.remove('accessToken');
+          storage.remove('refreshToken');
           toast.error('Đăng nhập thất bại. Vui lòng thử lại.');
           return;
         }

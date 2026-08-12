@@ -4,7 +4,6 @@ import { VendorCancellationPolicyCard } from '@/features/vendor-cancellation-pol
 import { useVendorTourStats } from '@/features/vendor-tours/hooks/useVendorTourStats';
 import { useAppStore } from '@/store/useAppStore';
 import { VendorAccountStatusCard } from '../components/VendorAccountStatusCard';
-import { VendorBankingCard } from '../components/VendorBankingCard';
 import { VendorContactCard } from '../components/VendorContactCard';
 import { VendorLegalCard } from '../components/VendorLegalCard';
 import { VendorProfileHeroCard } from '../components/VendorProfileHeroCard';
@@ -59,10 +58,9 @@ export default function VendorProfileOverview() {
       />
 
       {/* Bento chi tiết */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <VendorLegalCard profile={profile} />
         <VendorContactCard profile={profile} />
-        <VendorBankingCard profile={profile} />
       </div>
 
       {/* Chính sách hủy tour — full width vì có danh sách điều khoản + thao tác CRUD */}

@@ -3,9 +3,19 @@ import type { BookingStats } from '../types';
 
 interface BookingStatsCardsProps {
   stats?: BookingStats;
+  onShowAll: () => void;
+  onShowPendingPayments: () => void;
+  onShowConfirmed: () => void;
+  onShowPendingRefunds: () => void;
 }
 
-export function BookingStatsCards({ stats }: BookingStatsCardsProps) {
+export function BookingStatsCards({
+  stats,
+  onShowAll,
+  onShowPendingPayments,
+  onShowConfirmed,
+  onShowPendingRefunds,
+}: BookingStatsCardsProps) {
   const cards = [
     {
       title: 'TỔNG ĐƠN ĐẶT',
@@ -14,6 +24,7 @@ export function BookingStatsCards({ stats }: BookingStatsCardsProps) {
       bgColor: '#F4F8F5',
       iconBg: '#E2EFE7',
       iconColor: '#06261D',
+      onClick: onShowAll,
     },
     {
       title: 'CHỜ THANH TOÁN',
@@ -22,6 +33,7 @@ export function BookingStatsCards({ stats }: BookingStatsCardsProps) {
       bgColor: '#FFF5F5',
       iconBg: '#FEE2E2',
       iconColor: '#DC2626',
+      onClick: onShowPendingPayments,
     },
     {
       title: 'ĐÃ XÁC NHẬN',
@@ -30,14 +42,16 @@ export function BookingStatsCards({ stats }: BookingStatsCardsProps) {
       bgColor: '#F0FDF4',
       iconBg: '#DCFCE7',
       iconColor: '#16A34A',
+      onClick: onShowConfirmed,
     },
     {
-      title: 'ĐÃ HOÀN TIỀN',
-      value: stats?.refunded ?? 0,
+      title: 'CẦN HOÀN TIỀN',
+      value: stats?.pendingRefunds ?? 0,
       icon: ArrowLeftRight,
       bgColor: '#F5F5F5',
       iconBg: '#E5E5E5',
-      iconColor: '#525252',
+      iconColor: '#C2410C',
+      onClick: onShowPendingRefunds,
     },
   ];
 
@@ -46,9 +60,11 @@ export function BookingStatsCards({ stats }: BookingStatsCardsProps) {
       {cards.map((card) => {
         const Icon = card.icon;
         return (
-          <div
+          <button
+            type="button"
+            onClick={card.onClick}
             key={card.title}
-            className="flex items-center gap-4 rounded-3xl p-5 shadow-sm transition-all"
+            className="flex items-center gap-4 rounded-3xl p-5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
             style={{ backgroundColor: '#FFFFFF', border: '1px solid #E6E2D1' }}
           >
             <div
@@ -70,7 +86,7 @@ export function BookingStatsCards({ stats }: BookingStatsCardsProps) {
                 {card.value.toLocaleString('vi-VN')}
               </p>
             </div>
-          </div>
+          </button>
         );
       })}
     </div>

@@ -1,4 +1,4 @@
-import { Search } from 'lucide-react';
+import { RotateCcw, Search } from 'lucide-react';
 import type { BookingStatus, PaymentStatus, VendorBookingFilter } from '../types';
 
 interface BookingFilterBarProps {
@@ -7,7 +7,8 @@ interface BookingFilterBarProps {
   onReset: () => void;
 }
 
-export function BookingFilterBar({ filter, onFilterChange }: BookingFilterBarProps) {
+export function BookingFilterBar({ filter, onFilterChange, onReset }: BookingFilterBarProps) {
+  const hasActiveFilter = Boolean(filter.keyword || filter.bookingStatus || filter.paymentStatus);
   return (
     <div
       className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-3xl p-4 shadow-sm"
@@ -45,10 +46,14 @@ export function BookingFilterBar({ filter, onFilterChange }: BookingFilterBarPro
           className="w-full sm:w-auto rounded-full border-none px-4 py-2.5 text-sm font-medium focus:outline-none cursor-pointer"
           style={{ backgroundColor: '#FFFFFF', color: '#06261D', border: '1px solid #E0DCD1' }}
         >
-          <option value="">Tất cả trạng thái tour</option>
-          <option value="PENDING">Chờ xác nhận</option>
+          <option value="">Trạng thái đơn</option>
+          <option value="PAYMENT_PENDING">Chờ thanh toán</option>
+          <option value="PENDING_CONFIRMATION">Chờ xác nhận</option>
           <option value="CONFIRMED">Đã xác nhận</option>
+          <option value="IN_PROGRESS">Đang diễn ra</option>
           <option value="CANCELLED">Đã hủy</option>
+          <option value="EXPIRED">Hết hạn</option>
+          <option value="REJECTED">Bị từ chối</option>
           <option value="COMPLETED">Đã hoàn thành</option>
         </select>
 
@@ -64,12 +69,23 @@ export function BookingFilterBar({ filter, onFilterChange }: BookingFilterBarPro
           className="w-full sm:w-auto rounded-full border-none px-4 py-2.5 text-sm font-medium focus:outline-none cursor-pointer"
           style={{ backgroundColor: '#FFFFFF', color: '#06261D', border: '1px solid #E0DCD1' }}
         >
-          <option value="">Tất cả trạng thái thanh toán</option>
-          <option value="PENDING">Chờ thanh toán</option>
+          <option value="">Trạng thái thanh toán</option>
+          <option value="UNPAID">Chưa thanh toán</option>
+          <option value="PARTIALLY_PAID">Đã đặt cọc</option>
           <option value="PAID">Đã thanh toán</option>
+          <option value="REFUND_PENDING">Chờ hoàn tiền</option>
           <option value="REFUNDED">Đã hoàn tiền</option>
           <option value="PARTIALLY_REFUNDED">Hoàn tiền một phần</option>
         </select>
+        {hasActiveFilter && (
+          <button
+            type="button"
+            onClick={onReset}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold text-[#6F7B75] hover:bg-white sm:w-auto"
+          >
+            <RotateCcw className="h-4 w-4" /> Xóa lọc
+          </button>
+        )}
       </div>
     </div>
   );

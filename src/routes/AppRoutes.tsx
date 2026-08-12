@@ -31,6 +31,7 @@ const TourDetails = lazy(() => import('@/features/tours/pages/TourDetails'));
 const BookTour = lazy(() => import('@/features/tours/pages/BookTour'));
 const BookingDetail = lazy(() => import('@/features/tours/pages/BookingDetail'));
 const PayBooking = lazy(() => import('@/features/tours/pages/PayBooking'));
+const PaymentReturn = lazy(() => import('@/features/payments/pages/PaymentReturn'));
 const MyBookings = lazy(() => import('@/features/tours/pages/MyBookings'));
 const BlogList = lazy(() => import('@/features/news/pages/BlogList'));
 const BlogDetails = lazy(() => import('@/features/news/pages/BlogDetails'));
@@ -86,6 +87,7 @@ const PartnerTourSchedules = lazy(
 );
 const EquipmentList = lazy(() => import('@/features/vendor-equipment/pages/EquipmentList'));
 const VendorBookingList = lazy(() => import('@/features/vendor-bookings/pages/BookingList'));
+const VendorPaymentSettings = lazy(() => import('@/features/payments/pages/VendorPaymentSettings'));
 const PorterList = lazy(() => import('@/features/vendor-porters/pages/PorterList'));
 const PorterCreate = lazy(() => import('@/features/vendor-porters/pages/PorterCreate'));
 const PorterEdit = lazy(() => import('@/features/vendor-porters/pages/PorterEdit'));
@@ -207,6 +209,8 @@ export default function AppRoutes() {
           <Route path={PATHS.BOOK_TOUR} element={<BookTour />} />
           <Route path={PATHS.BOOKING_DETAIL} element={<BookingDetail />} />
           <Route path={PATHS.BOOKING_PAYMENT} element={<PayBooking />} />
+          <Route path={PATHS.PAYMENT_SUCCESS} element={<PaymentReturn />} />
+          <Route path={PATHS.PAYMENT_CANCEL} element={<PaymentReturn cancelled />} />
           <Route path={PATHS.MY_TOURS} element={<MyBookings />} />
           <Route path={PATHS.MY_VENDOR_APPLICATIONS} element={<MyApplications />} />
         </Route>
@@ -320,6 +324,7 @@ export default function AppRoutes() {
           <Route path={PATHS.VENDOR_MANAGER_TOUR_APPROVALS} element={<TourApprovals />} />
           <Route path={PATHS.VENDOR_MANAGER_TOUR_SCHEDULES} element={<TourSchedules />} />
           <Route path={PATHS.VENDOR_MANAGER_BOOKINGS} element={<VendorBookingList />} />
+          <Route path={PATHS.VENDOR_MANAGER_PAYMENT_SETTINGS} element={<VendorPaymentSettings />} />
           <Route path={PATHS.VENDOR_MANAGER_EQUIPMENT} element={<EquipmentList />} />
           <Route path={PATHS.VENDOR_MANAGER_PORTERS} element={<PorterList />} />
           <Route path={PATHS.VENDOR_MANAGER_PORTER_CREATE} element={<PorterCreate />} />

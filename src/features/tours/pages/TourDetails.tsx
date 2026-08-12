@@ -6,6 +6,7 @@ import {
   SECTION_IDS,
   SECTION_SCROLL_OFFSET,
   sortSchedulesByDeparture,
+  splitField,
   TourBookingRail,
   TourDetailError,
   TourDetailHero,
@@ -15,6 +16,7 @@ import {
   TourMobileBookingBar,
   TourNotFound,
   TourOverviewSection,
+  TourParticipationPolicySection,
   TourReviewsSection,
   TourRouteSection,
   TourScheduleSection,
@@ -35,6 +37,7 @@ const SECTIONS: TourSection[] = [
   { id: SECTION_IDS.route, label: 'Lộ trình' },
   { id: SECTION_IDS.inclusions, label: 'Bao gồm' },
   { id: SECTION_IDS.gallery, label: 'Hình ảnh' },
+  { id: SECTION_IDS.requirements, label: 'Điều kiện' },
   { id: SECTION_IDS.policy, label: 'Chính sách' },
   { id: SECTION_IDS.reviews, label: 'Đánh giá' },
 ];
@@ -79,6 +82,17 @@ export default function TourDetailsPage() {
   const selectedSchedule =
     bookableSchedules.find((schedule) => schedule.scheduleId === selectedScheduleId) ?? null;
 
+  const hasInclusions =
+    splitField(tour?.includes).length > 0 || splitField(tour?.excludes).length > 0;
+  const hasGallery = (tour?.images.length ?? 0) > 0;
+  const hasParticipationPolicy = Boolean(tour?.participationPolicy);
+  const visibleSections = SECTIONS.filter(
+    (section) =>
+      (section.id !== SECTION_IDS.inclusions || hasInclusions) &&
+      (section.id !== SECTION_IDS.gallery || hasGallery) &&
+      (section.id !== SECTION_IDS.requirements || hasParticipationPolicy)
+  );
+
   /** Bấm "Ngày khởi hành" ở thẻ đặt tour → cuộn tới danh sách lịch bên trái. */
   function scrollToSchedules() {
     const target = document.getElementById(SECTION_IDS.schedules);
@@ -108,7 +122,7 @@ export default function TourDetailsPage() {
   return (
     <div className="min-h-screen bg-background pt-16">
       <TourDetailHero tour={tour} />
-      <TourSectionNav sections={SECTIONS} />
+      <TourSectionNav sections={visibleSections} />
 
       <div className="mx-auto max-w-[1200px] px-4 py-8 sm:px-6 md:py-10">
         <div className="grid items-start gap-8 lg:grid-cols-[1fr_360px] lg:gap-10">
@@ -143,20 +157,40 @@ export default function TourDetailsPage() {
               <TourRouteSection checkpoints={checkpoints} isLoading={isLoadingCheckpoints} />
             </section>
 
-            <section id={SECTION_IDS.inclusions} style={{ scrollMarginTop: SECTION_SCROLL_OFFSET }}>
-              <SectionHeading title="Bao gồm & không bao gồm" />
-              <TourInclusionsSection tour={tour} />
-            </section>
+            {hasInclusions && (
+              <section
+                id={SECTION_IDS.inclusions}
+                style={{ scrollMarginTop: SECTION_SCROLL_OFFSET }}
+              >
+                <SectionHeading title="Bao gồm & không bao gồm" />
+                <TourInclusionsSection tour={tour} />
+              </section>
+            )}
 
-            <section id={SECTION_IDS.gallery} style={{ scrollMarginTop: SECTION_SCROLL_OFFSET }}>
-              <SectionHeading title="Hình ảnh" />
-              <TourGallerySection tour={tour} />
-            </section>
+            {hasGallery && (
+              <section id={SECTION_IDS.gallery} style={{ scrollMarginTop: SECTION_SCROLL_OFFSET }}>
+                <SectionHeading title="Hình ảnh" />
+                <TourGallerySection tour={tour} />
+              </section>
+            )}
+
+            {tour.participationPolicy && (
+              <section
+                id={SECTION_IDS.requirements}
+                style={{ scrollMarginTop: SECTION_SCROLL_OFFSET }}
+              >
+                <TourParticipationPolicySection policy={tour.participationPolicy} />
+              </section>
+            )}
 
             <section id={SECTION_IDS.policy} style={{ scrollMarginTop: SECTION_SCROLL_OFFSET }}>
               {/* Không đặt SectionHeading ở đây: CancellationPolicyNotice đã tự mang
                   tiêu đề của nó (dùng chung với màn Đặt tour) */}
-              <CancellationPolicyNotice policies={tour.cancellationPolicies} />
+              <CancellationPolicyNotice
+                policies={tour.cancellationPolicies}
+                paymentPolicy={tour.paymentPolicy}
+                nonRefundableCost={tour.nonRefundableCost}
+              />
             </section>
 
             <section id={SECTION_IDS.reviews} style={{ scrollMarginTop: SECTION_SCROLL_OFFSET }}>

@@ -62,9 +62,9 @@ test('Manager: ẩn nút Sửa khi tour đang DRAFT', () => {
   expect(screen.queryByTitle('Sửa tour')).toBeNull();
 });
 
-test('Manager: ẩn nút Sửa khi tour đã APPROVED', () => {
+test('Manager: hiện nút Sửa khi tour đã APPROVED', () => {
   renderRow('APPROVED', { editableStatuses: MANAGER_EDITABLE_STATUSES });
-  expect(screen.queryByTitle('Sửa tour')).toBeNull();
+  expect(screen.getByTitle('Sửa tour')).toBeTruthy();
 });
 
 test('Gửi kiểm duyệt: hiện khi có handler và status DRAFT', () => {

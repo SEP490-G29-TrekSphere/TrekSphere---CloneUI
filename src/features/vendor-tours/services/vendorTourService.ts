@@ -71,6 +71,8 @@ interface VendorTourResponseDto {
   status: ApiStatus;
   coverImageUrl: string | null;
   createdAt: string;
+  onlineBookingEnabled?: boolean;
+  onlineBookingDisabledReason?: string | null;
 }
 
 interface TourDetailResponseDto {
@@ -103,6 +105,30 @@ function toFormData(
   return formData;
 }
 
+function participationPolicyFields(
+  policy: CreateTourPayload['participationPolicy']
+): Record<string, string | number | boolean | undefined> {
+  return {
+    'participationPolicy.minAge': policy.minAge,
+    'participationPolicy.maxAge': policy.maxAge,
+    'participationPolicy.minHeightCm': policy.minHeightCm,
+    'participationPolicy.maxHeightCm': policy.maxHeightCm,
+    'participationPolicy.minWeightKg': policy.minWeightKg,
+    'participationPolicy.maxWeightKg': policy.maxWeightKg,
+    'participationPolicy.fitnessLevel': policy.fitnessLevel,
+    'participationPolicy.healthRequirements': policy.healthRequirements,
+    'participationPolicy.restrictedMedicalConditions': policy.restrictedMedicalConditions,
+    'participationPolicy.requiredExperience': policy.requiredExperience,
+    'participationPolicy.requiredSkills': policy.requiredSkills,
+    'participationPolicy.requiredEquipment': policy.requiredEquipment,
+    'participationPolicy.requiredDocuments': policy.requiredDocuments,
+    'participationPolicy.requiresHealthDeclaration': policy.requiresHealthDeclaration,
+    'participationPolicy.requiresMedicalCertificate': policy.requiresMedicalCertificate,
+    'participationPolicy.guardianRequiredUnderAge': policy.guardianRequiredUnderAge,
+    'participationPolicy.additionalRequirements': policy.additionalRequirements,
+  };
+}
+
 function unwrapResponse<T>(response: ApiResponse<T>): T {
   if (response.error) {
     throw new Error(response.error);
@@ -122,6 +148,8 @@ function mapVendorTour(dto: VendorTourResponseDto): VendorTourListItem {
     difficulty: dto.difficulty,
     status: dto.status,
     createdAt: dto.createdAt,
+    onlineBookingEnabled: dto.onlineBookingEnabled === true,
+    onlineBookingDisabledReason: dto.onlineBookingDisabledReason,
   };
 }
 
@@ -169,6 +197,7 @@ export const vendorTourService = {
       maxCapacity: payload.maxCapacity,
       coverImageUrl: payload.coverImageUrl,
       coverImage: payload.coverImage,
+      ...participationPolicyFields(payload.participationPolicy),
     });
     const response = await ApiUpload<TourDetailResponseDto>('/vendor/tours', formData);
     const data = unwrapResponse(response);
@@ -180,7 +209,7 @@ export const vendorTourService = {
    * `/vendor/tours/{id}` không có GET nên phải gọi endpoint public `/tours/{id}`.
    */
   async getTourDetail(tourId: string): Promise<VendorTourDetail> {
-    const response = await ApiService<VendorTourDetail>(`/tours/${tourId}`, 'GET');
+    const response = await ApiService<VendorTourDetail>(`/vendor/tours/${tourId}`, 'GET');
     return unwrapResponse(response);
   },
 
@@ -197,6 +226,7 @@ export const vendorTourService = {
       maxCapacity: payload.maxCapacity,
       coverImageUrl: payload.coverImageUrl,
       coverImage: payload.coverImage,
+      ...participationPolicyFields(payload.participationPolicy),
     });
     const response = await ApiUpload<TourDetailResponseDto>(
       `/vendor/tours/${tourId}`,

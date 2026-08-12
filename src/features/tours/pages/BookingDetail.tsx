@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
   ArrowLeft,
@@ -11,7 +12,6 @@ import {
   Phone,
   ShieldCheck,
   Star,
-  Upload,
   User,
   Users,
   XCircle,
@@ -27,6 +27,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { getBookingPaymentPath } from '@/constants/paths';
+import { BookingFinancialTimeline } from '@/features/payments/components/BookingFinancialTimeline';
+import { paymentService } from '@/features/payments/services/paymentService';
+import type { CancellationQuote } from '@/features/payments/types';
+import {
+  isInitialCheckoutAvailable,
+  isRemainingCheckoutAvailable,
+} from '@/features/payments/utils/paymentState';
 // import { profileService } from '@/features/profile/services/profileService';
 import { BookingSosPanel } from '@/features/tours/components/BookingSosPanel';
 import { useBookingCountdown } from '@/features/tours/hooks/useBookingCountdown';
@@ -54,6 +61,7 @@ export default function BookingDetail({
 }) {
   const { bookingId } = useParams<{ bookingId: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [booking, setBooking] = useState<BookingDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -61,6 +69,8 @@ export default function BookingDetail({
   const [cancellationReason, setCancellationReason] = useState('');
   const [cancelling, setCancelling] = useState(false);
   const [reasonError, setReasonError] = useState('');
+  const [cancellationQuote, setCancellationQuote] = useState<CancellationQuote | null>(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
   const [refundBankName, setRefundBankName] = useState('');
   const [refundAccountNumber, setRefundAccountNumber] = useState('');
   const [refundAccountHolder, setRefundAccountHolder] = useState('');
@@ -69,12 +79,6 @@ export default function BookingDetail({
     accountNumber?: string;
     accountHolder?: string;
   }>({});
-
-  const [isProofModalOpen, setIsProofModalOpen] = useState(false);
-  const [proofFile, setProofFile] = useState<File | null>(null);
-  const [proofPreviewUrl, setProofPreviewUrl] = useState<string>('');
-  const [updatingProof, setUpdatingProof] = useState(false);
-  const [proofError, setProofError] = useState('');
 
   const [pendingSos, setPendingSos] = useState<{ message?: string } | null>(null);
   const [sendingSos, setSendingSos] = useState(false);
@@ -85,38 +89,41 @@ export default function BookingDetail({
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewError, setReviewError] = useState('');
 
-  const isPendingPayment =
-    booking?.bookingStatus === 'PENDING' &&
-    booking?.paymentStatus === 'PENDING' &&
-    !booking?.proofImageUrl;
+  const isPendingPayment = Boolean(booking && isInitialCheckoutAvailable(booking));
+  const canPayRemaining = Boolean(booking && isRemainingCheckoutAvailable(booking));
+  const canContinuePayment = isPendingPayment || canPayRemaining;
 
-  const isAwaitingVendorApproval =
-    booking?.bookingStatus === 'PENDING' &&
-    booking?.paymentStatus === 'PENDING' &&
-    Boolean(booking?.proofImageUrl);
+  const isAwaitingVendorApproval = booking?.bookingStatus === 'PENDING_CONFIRMATION';
 
   /**
    * Tiền đã (hoặc có thể đã) rời khỏi tài khoản trekker → khi hủy sẽ phát sinh
    * hoàn tiền, nên cần thu tài khoản nhận tiền. Đơn chưa chuyển khoản thì không
    * hỏi để tránh làm nặng form.
    */
-  const showRefundFields = booking?.paymentStatus === 'PAID' || Boolean(booking?.proofImageUrl);
+  const showRefundFields = (booking?.paidAmount ?? 0) > 0;
   /** Đã xác nhận thanh toán thì chắc chắn có hoàn tiền → bắt buộc nhập. */
-  const isRefundInfoRequired = booking?.paymentStatus === 'PAID';
+  const isRefundInfoRequired = Boolean(cancellationQuote?.refundDestinationRequired);
+
+  const openCancellationDialog = async () => {
+    if (!booking) return;
+    setReasonError('');
+    setRefundErrors({});
+    setIsCancelModalOpen(true);
+    setQuoteLoading(true);
+    try {
+      setCancellationQuote(await paymentService.getCancellationQuote(booking.bookingId));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Không thể tính trước số tiền hoàn.');
+    } finally {
+      setQuoteLoading(false);
+    }
+  };
 
   const timeLeft = useBookingCountdown(
     booking?.createdAt,
     isPendingPayment,
     PAYMENT_DEADLINE_SECONDS
   );
-
-  useEffect(() => {
-    return () => {
-      if (proofPreviewUrl?.startsWith('blob:')) {
-        URL.revokeObjectURL(proofPreviewUrl);
-      }
-    };
-  }, [proofPreviewUrl]);
 
   useEffect(() => {
     async function fetchDetail() {
@@ -212,7 +219,11 @@ export default function BookingDetail({
     if (showRefundFields) {
       const hasAnyRefundInput = Boolean(bankName || accountNumber || accountHolder);
       if (isRefundInfoRequired || hasAnyRefundInput) {
-        if (!bankName) nextRefundErrors.bankName = 'Vui lòng nhập tên ngân hàng.';
+        if (!bankName) {
+          nextRefundErrors.bankName = 'Vui lòng nhập mã BIN ngân hàng.';
+        } else if (!/^\d{6}$/.test(bankName)) {
+          nextRefundErrors.bankName = 'Mã BIN phải gồm đúng 6 chữ số.';
+        }
         if (!accountNumber) {
           nextRefundErrors.accountNumber = 'Vui lòng nhập số tài khoản.';
         } else if (!/^\d{6,20}$/.test(accountNumber.replace(/[\s-]/g, ''))) {
@@ -232,13 +243,15 @@ export default function BookingDetail({
         trimmedReason,
         showRefundFields
           ? {
-              refundBankName: bankName,
+              refundBankBin: bankName,
               refundAccountNumber: accountNumber.replace(/[\s-]/g, ''),
-              refundAccountHolder: accountHolder,
+              refundAccountName: accountHolder,
             }
           : undefined
       );
       setBooking(updatedBooking);
+      queryClient.invalidateQueries({ queryKey: ['booking-refunds', booking.bookingId] });
+      queryClient.invalidateQueries({ queryKey: ['booking-detail', booking.bookingId] });
       setIsCancelModalOpen(false);
       setCancellationReason('');
       setRefundBankName('');
@@ -250,48 +263,6 @@ export default function BookingDetail({
       toast.error(err instanceof Error ? err.message : 'Không thể hủy đặt tour. Vui lòng thử lại.');
     } finally {
       setCancelling(false);
-    }
-  };
-
-  const handleProofFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 5 * 1024 * 1024) {
-      setProofError('Kích thước file vượt quá giới hạn 5MB.');
-      return;
-    }
-
-    setProofError('');
-    setProofFile(file);
-    if (proofPreviewUrl?.startsWith('blob:')) {
-      URL.revokeObjectURL(proofPreviewUrl);
-    }
-    setProofPreviewUrl(URL.createObjectURL(file));
-  };
-
-  const handleConfirmUpdateProof = async () => {
-    if (!booking) return;
-    if (!proofFile) {
-      setProofError('Vui lòng chọn ảnh minh chứng thanh toán.');
-      return;
-    }
-
-    setProofError('');
-    setUpdatingProof(true);
-    try {
-      const updatedBooking = await tourService.updatePaymentProof(booking.bookingId, proofFile);
-      setBooking(updatedBooking);
-      setIsProofModalOpen(false);
-      setProofFile(null);
-      setProofPreviewUrl('');
-      toast.success('Cập nhật minh chứng thanh toán thành công');
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : 'Không thể cập nhật minh chứng. Vui lòng thử lại.'
-      );
-    } finally {
-      setUpdatingProof(false);
     }
   };
 
@@ -356,10 +327,16 @@ export default function BookingDetail({
         {/* Status Badges */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Booking Status Badge */}
-          {booking.bookingStatus === 'PENDING' && (
+          {booking.bookingStatus === 'PAYMENT_PENDING' && (
             <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1 rounded-full text-xs font-extrabold">
               <Clock className="w-3.5 h-3.5" />
-              Đang chờ xác nhận
+              Chờ thanh toán
+            </span>
+          )}
+          {booking.bookingStatus === 'PENDING_CONFIRMATION' && (
+            <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1 rounded-full text-xs font-extrabold">
+              <Clock className="w-3.5 h-3.5" />
+              Chờ Vendor xác nhận
             </span>
           )}
           {booking.bookingStatus === 'CONFIRMED' && (
@@ -388,10 +365,22 @@ export default function BookingDetail({
               Đã thanh toán
             </span>
           )}
-          {booking.paymentStatus === 'PENDING' && (
+          {booking.paymentStatus === 'UNPAID' && (
             <span className="inline-flex items-center gap-1.5 bg-amber-100 text-amber-900 border border-amber-300 px-3 py-1 rounded-full text-xs font-extrabold">
               <CreditCard className="w-3.5 h-3.5" />
-              Đang chờ Vendor duyệt thanh toán
+              Chưa thanh toán
+            </span>
+          )}
+          {booking.paymentStatus === 'PARTIALLY_PAID' && (
+            <span className="inline-flex items-center gap-1.5 bg-blue-100 text-blue-900 border border-blue-300 px-3 py-1 rounded-full text-xs font-extrabold">
+              <CreditCard className="w-3.5 h-3.5" />
+              Đã thanh toán tiền cọc
+            </span>
+          )}
+          {booking.paymentStatus === 'REFUND_PENDING' && (
+            <span className="inline-flex items-center gap-1.5 bg-orange-100 text-orange-900 border border-orange-300 px-3 py-1 rounded-full text-xs font-extrabold">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Chờ hoàn tiền
             </span>
           )}
           {booking.paymentStatus === 'REFUNDED' && (
@@ -443,14 +432,35 @@ export default function BookingDetail({
             <Clock className="w-5 h-5 text-blue-800 shrink-0" />
             <div>
               <p className="text-xs font-extrabold text-blue-900">
-                Đã tải lên minh chứng thanh toán!
+                Thanh toán đã được xác nhận tự động
               </p>
               <p className="text-[11px] font-semibold text-blue-700 mt-0.5">
-                Đơn hàng của bạn đã gửi minh chứng thành công và đang chờ Nhà cung cấp (Vendor)
-                duyệt thanh toán.
+                TrekSphere đã nhận xác nhận từ payOS và đang chờ nhà cung cấp duyệt booking.
               </p>
             </div>
           </div>
+        </div>
+      )}
+
+      {canPayRemaining && (
+        <div className="flex flex-col items-start justify-between gap-4 rounded-3xl border border-amber-200 bg-amber-50 p-4 sm:flex-row sm:items-center">
+          <div className="flex items-center gap-3">
+            <CreditCard className="h-5 w-5 shrink-0 text-amber-800" />
+            <div>
+              <p className="text-xs font-extrabold text-amber-900">Còn phần thanh toán cuối</p>
+              <p className="mt-0.5 text-[11px] font-semibold text-amber-700">
+                Hoàn tất trước{' '}
+                {booking.remainingDueAt ? formatDate(booking.remainingDueAt) : 'hạn thanh toán'} để
+                booking tiếp tục có hiệu lực.
+              </p>
+            </div>
+          </div>
+          <AppButton
+            onClick={() => navigate((paymentPath ?? getBookingPaymentPath)(booking.bookingId))}
+            className="border-none bg-amber-600 px-4 py-2 text-xs font-bold text-white hover:bg-amber-700"
+          >
+            Thanh toán phần còn lại
+          </AppButton>
         </div>
       )}
 
@@ -738,7 +748,7 @@ export default function BookingDetail({
             </div>
 
             <div className="space-y-3 pt-2">
-              {isPendingPayment && (
+              {canContinuePayment && (
                 <AppButton
                   onClick={() =>
                     navigate((paymentPath ?? getBookingPaymentPath)(booking.bookingId))
@@ -746,7 +756,7 @@ export default function BookingDetail({
                   className="w-full bg-[#0B3025] hover:bg-[#072019] text-white font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-sm transition-colors border-none text-xs"
                 >
                   <CreditCard className="h-4 w-4" />
-                  Thanh toán ngay
+                  {canPayRemaining ? 'Thanh toán phần còn lại' : 'Thanh toán ngay'}
                 </AppButton>
               )}
 
@@ -765,13 +775,11 @@ export default function BookingDetail({
                 </AppButton>
               )}
 
-              {(booking.bookingStatus === 'PENDING' || booking.bookingStatus === 'CONFIRMED') && (
+              {['PAYMENT_PENDING', 'PENDING_CONFIRMATION', 'CONFIRMED'].includes(
+                booking.bookingStatus
+              ) && (
                 <AppButton
-                  onClick={() => {
-                    setReasonError('');
-                    setRefundErrors({});
-                    setIsCancelModalOpen(true);
-                  }}
+                  onClick={openCancellationDialog}
                   variant="destructive"
                   className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-sm transition-colors border-none text-xs cursor-pointer"
                 >
@@ -782,28 +790,24 @@ export default function BookingDetail({
             </div>
           </AppCard>
 
-          {/* Proof of Payment Image (if available) */}
+          {/* Legacy proof is read-only; new payments are verified automatically by payOS. */}
           {booking.proofImageUrl && (
             <AppCard className="border-[#E5E4DE] rounded-3xl bg-white p-6 shadow-sm space-y-4">
               <div className="flex items-center justify-between border-b border-[#F4F4F2] pb-3">
                 <div className="flex items-center gap-2">
                   <FileImage className="h-4 w-4 text-[#0B3025]" />
-                  <h3 className="font-extrabold text-zinc-800 text-base">Minh chứng thanh toán</h3>
+                  <div>
+                    <h3 className="font-extrabold text-zinc-800 text-base">
+                      Minh chứng giao dịch cũ
+                    </h3>
+                    <p className="mt-0.5 text-[11px] font-medium text-zinc-500">
+                      Chỉ lưu để đối chiếu. Giao dịch mới được xác nhận tự động qua payOS.
+                    </p>
+                  </div>
                 </div>
-                {booking.bookingStatus === 'PENDING' && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setProofFile(null);
-                      setProofPreviewUrl(booking.proofImageUrl || '');
-                      setProofError('');
-                      setIsProofModalOpen(true);
-                    }}
-                    className="text-xs font-bold text-[#0B3025] hover:underline cursor-pointer"
-                  >
-                    Cập nhật lại
-                  </button>
-                )}
+                <span className="shrink-0 rounded-full bg-[#F2F0EB] px-2.5 py-1 text-[10px] font-extrabold text-[#6F7E72]">
+                  Lưu trữ
+                </span>
               </div>
               <div className="overflow-hidden rounded-2xl border border-[#E5E4DE]">
                 <img
@@ -823,6 +827,10 @@ export default function BookingDetail({
             />
           )}
         </div>
+      </div>
+
+      <div className="mt-6">
+        <BookingFinancialTimeline bookingId={booking.bookingId} audience="trekker" />
       </div>
 
       {pendingSos && (
@@ -855,6 +863,33 @@ export default function BookingDetail({
           </DialogHeader>
 
           <div className="space-y-4 my-2 text-xs">
+            {quoteLoading ? (
+              <div className="flex items-center justify-center gap-2 rounded-2xl bg-zinc-50 p-4 font-bold text-zinc-500">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#0B3025] border-t-transparent" />
+                Đang tính quyền lợi hoàn tiền...
+              </div>
+            ) : cancellationQuote ? (
+              <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
+                <p className="text-[11px] font-extrabold uppercase tracking-wide text-emerald-700">
+                  Số tiền dự kiến được hoàn
+                </p>
+                <p className="mt-1 text-2xl font-extrabold text-emerald-900">
+                  {formatPrice(cancellationQuote.refundAmount)}đ
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] font-semibold text-emerald-800">
+                  <span>Tỷ lệ: {cancellationQuote.refundPercentage}%</span>
+                  <span>Phí hủy: {formatPrice(cancellationQuote.cancellationFee)}đ</span>
+                  <span>Đã trả: {formatPrice(cancellationQuote.paidAmount)}đ</span>
+                  <span>Còn {cancellationQuote.daysBeforeDeparture} ngày</span>
+                </div>
+                {cancellationQuote.appliedPolicyDescription && (
+                  <p className="mt-3 border-t border-emerald-200 pt-3 text-[11px] font-medium leading-relaxed text-emerald-800">
+                    {cancellationQuote.appliedPolicyDescription}
+                  </p>
+                )}
+              </div>
+            ) : null}
+
             <div>
               <label htmlFor="cancel-reason-input" className="block text-zinc-700 font-bold mb-2">
                 Lý do hủy đơn <span className="text-red-500">*</span>
@@ -897,7 +932,8 @@ export default function BookingDetail({
 
                 <div>
                   <label htmlFor="refund-bank-name" className="block text-zinc-700 font-bold mb-2">
-                    Ngân hàng {isRefundInfoRequired && <span className="text-red-500">*</span>}
+                    Mã BIN ngân hàng{' '}
+                    {isRefundInfoRequired && <span className="text-red-500">*</span>}
                   </label>
                   <input
                     id="refund-bank-name"
@@ -910,7 +946,8 @@ export default function BookingDetail({
                         setRefundErrors((prev) => ({ ...prev, bankName: undefined }));
                       }
                     }}
-                    placeholder="Ví dụ: Vietcombank"
+                    inputMode="numeric"
+                    placeholder="Ví dụ: 970436"
                     className={`w-full p-3 rounded-2xl border bg-zinc-50/50 text-xs font-semibold text-zinc-800 focus:outline-none focus:bg-white transition-colors ${
                       refundErrors.bankName
                         ? 'border-red-500 focus:border-red-600'
@@ -1015,88 +1052,6 @@ export default function BookingDetail({
                 </>
               ) : (
                 'Xác nhận hủy tour'
-              )}
-            </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Update Payment Proof Dialog */}
-      <Dialog open={isProofModalOpen} onOpenChange={setIsProofModalOpen}>
-        <DialogContent className="sm:max-w-md bg-white rounded-3xl p-6 border border-[#E5E4DE]">
-          <DialogHeader className="space-y-2">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-100 mb-1">
-              <FileImage className="h-6 w-6" />
-            </div>
-            <DialogTitle className="text-xl font-extrabold text-[#0B3025]">
-              Cập nhật minh chứng thanh toán
-            </DialogTitle>
-            <DialogDescription className="text-xs text-zinc-500 font-medium leading-relaxed">
-              Tải lên ảnh mới hóa đơn hoặc ảnh chụp giao dịch chuyển khoản thành công của bạn.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 my-2 text-xs">
-            <div className="flex flex-col w-full">
-              <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-[#E5E4DE] rounded-2xl cursor-pointer bg-[#FAF9F5] hover:bg-zinc-50 transition-colors">
-                <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
-                  <Upload className="w-8 h-8 text-zinc-400 mb-2" />
-                  <p className="mb-1 text-xs text-zinc-600 font-semibold">
-                    <span className="text-[#0B3025] font-extrabold">Nhấp để tải lên</span> hoặc kéo
-                    thả file
-                  </p>
-                  <p className="text-[11px] text-zinc-400 font-semibold">
-                    PNG, JPG hoặc JPEG (Tối đa 10MB)
-                  </p>
-                </div>
-                <input
-                  type="file"
-                  className="hidden"
-                  accept="image/png, image/jpeg, image/jpg"
-                  onChange={handleProofFileChange}
-                />
-              </label>
-              {proofError && (
-                <p className="text-xs text-red-500 font-semibold mt-1.5">{proofError}</p>
-              )}
-            </div>
-
-            {proofPreviewUrl && (
-              <div className="space-y-1.5">
-                <span className="text-[11px] text-zinc-500 font-bold">Xem trước minh chứng:</span>
-                <div className="overflow-hidden rounded-2xl border border-[#E5E4DE] max-h-48 bg-zinc-50 p-2 flex justify-center">
-                  <img
-                    src={proofPreviewUrl}
-                    alt="Xem trước minh chứng"
-                    className="max-h-44 object-contain rounded-xl"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-4">
-            <button
-              type="button"
-              onClick={() => setIsProofModalOpen(false)}
-              disabled={updatingProof}
-              className="flex-1 py-3 px-4 rounded-2xl border border-[#E5E4DE] text-zinc-700 font-bold text-xs hover:bg-zinc-50 transition-colors cursor-pointer disabled:opacity-50"
-            >
-              Hủy
-            </button>
-            <button
-              type="button"
-              onClick={handleConfirmUpdateProof}
-              disabled={updatingProof || (!proofFile && !proofPreviewUrl)}
-              className="flex-1 py-3 px-4 rounded-2xl bg-[#0B3025] hover:bg-[#072019] text-white font-bold text-xs transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {updatingProof ? (
-                <>
-                  <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  <span>Đang cập nhật...</span>
-                </>
-              ) : (
-                'Lưu minh chứng'
               )}
             </button>
           </DialogFooter>

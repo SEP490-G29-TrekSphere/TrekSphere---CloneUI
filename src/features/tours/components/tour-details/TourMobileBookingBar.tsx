@@ -27,6 +27,11 @@ export function TourMobileBookingBar({
   const bookingPath = selectedSchedule
     ? `${getBookTourPath(tour.tourId)}?scheduleId=${selectedSchedule.scheduleId}`
     : getBookTourPath(tour.tourId);
+  const contactHref = tour.vendorContactPhone
+    ? `tel:${tour.vendorContactPhone}`
+    : tour.vendorContactEmail
+      ? `mailto:${tour.vendorContactEmail}`
+      : null;
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur-md lg:hidden">
@@ -45,7 +50,24 @@ export function TourMobileBookingBar({
           </p>
         </div>
 
-        {!isLoggedIn ? (
+        {tour.onlineBookingEnabled !== true ? (
+          contactHref ? (
+            <a
+              href={contactHref}
+              title={tour.onlineBookingDisabledReason ?? undefined}
+              className="shrink-0 rounded-full bg-amber-100 px-5 py-2.5 text-xs font-bold text-amber-950"
+            >
+              Liên hệ
+            </a>
+          ) : (
+            <span
+              title={tour.onlineBookingDisabledReason ?? undefined}
+              className="shrink-0 rounded-full bg-amber-100 px-5 py-2.5 text-xs font-bold text-amber-950"
+            >
+              Chưa nhận đặt online
+            </span>
+          )
+        ) : !isLoggedIn ? (
           <Link
             to={PATHS.LOGIN}
             className="shrink-0 rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary-hover"

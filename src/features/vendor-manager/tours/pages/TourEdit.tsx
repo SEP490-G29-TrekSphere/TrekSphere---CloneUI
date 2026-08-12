@@ -125,24 +125,53 @@ export default function TourEdit() {
   const { startingPoint, endingPoint } = splitLocation(tour.location);
 
   return (
-    <TourForm
-      mode="edit"
-      defaultValues={{
-        tourName: tour.tourName,
-        difficulty: toFormDifficulty(tour.difficulty),
-        basePrice: tour.basePrice,
-        startingPoint,
-        endingPoint,
-        minCapacity: tour.minCapacity ?? 1,
-        maxCapacity: tour.maxCapacity,
-        durationDays: tour.durationDays,
-        description: tour.description,
-      }}
-      existingCoverImageUrl={tour.coverImageUrl ?? undefined}
-      initialCheckpoints={(checkpoints ?? []).map(toCheckpointDraft)}
-      isSubmitting={updateTourWithCheckpoints.isPending}
-      onCancel={handleCancel}
-      onSubmit={handleSubmit}
-    />
+    <div className="space-y-4">
+      {tour.status === 'APPROVED' && (
+        <div className="rounded-2xl bg-[#EAF4EE] px-5 py-4 text-sm text-[#1E3932]">
+          <p className="font-bold">Bạn đang cập nhật một tour đã duyệt.</p>
+          <p className="mt-1 text-xs leading-relaxed text-[#527066]">
+            Policy mới áp dụng cho đơn tạo sau khi lưu. Các đơn đã đặt vẫn giữ nguyên policy tại
+            thời điểm xác nhận.
+          </p>
+        </div>
+      )}
+      <TourForm
+        mode="edit"
+        defaultValues={{
+          tourName: tour.tourName,
+          difficulty: toFormDifficulty(tour.difficulty),
+          basePrice: tour.basePrice,
+          startingPoint,
+          endingPoint,
+          minCapacity: tour.minCapacity ?? 1,
+          maxCapacity: tour.maxCapacity,
+          durationDays: tour.durationDays,
+          description: tour.description,
+          minAge: tour.participationPolicy?.minAge?.toString() ?? '18',
+          maxAge: tour.participationPolicy?.maxAge?.toString() ?? '',
+          minHeightCm: tour.participationPolicy?.minHeightCm?.toString() ?? '',
+          maxHeightCm: tour.participationPolicy?.maxHeightCm?.toString() ?? '',
+          minWeightKg: tour.participationPolicy?.minWeightKg?.toString() ?? '',
+          maxWeightKg: tour.participationPolicy?.maxWeightKg?.toString() ?? '',
+          fitnessLevel: tour.participationPolicy?.fitnessLevel ?? 'ANY',
+          healthRequirements: tour.participationPolicy?.healthRequirements ?? '',
+          restrictedMedicalConditions: tour.participationPolicy?.restrictedMedicalConditions ?? '',
+          requiredExperience: tour.participationPolicy?.requiredExperience ?? '',
+          requiredSkills: tour.participationPolicy?.requiredSkills ?? '',
+          requiredEquipment: tour.participationPolicy?.requiredEquipment ?? '',
+          requiredDocuments: tour.participationPolicy?.requiredDocuments ?? '',
+          requiresHealthDeclaration: tour.participationPolicy?.requiresHealthDeclaration ?? true,
+          requiresMedicalCertificate: tour.participationPolicy?.requiresMedicalCertificate ?? false,
+          guardianRequiredUnderAge:
+            tour.participationPolicy?.guardianRequiredUnderAge?.toString() ?? '',
+          additionalRequirements: tour.participationPolicy?.additionalRequirements ?? '',
+        }}
+        existingCoverImageUrl={tour.coverImageUrl ?? undefined}
+        initialCheckpoints={(checkpoints ?? []).map(toCheckpointDraft)}
+        isSubmitting={updateTourWithCheckpoints.isPending}
+        onCancel={handleCancel}
+        onSubmit={handleSubmit}
+      />
+    </div>
   );
 }

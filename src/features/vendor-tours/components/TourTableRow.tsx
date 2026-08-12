@@ -29,8 +29,12 @@ const REVERTABLE_STATUSES = new Set(['REJECTED']);
  * (revert-to-draft) đưa về DRAFT trước, theo đúng tài liệu tích hợp của BE.
  */
 export const STAFF_EDITABLE_STATUSES = new Set<ApiStatus>(['DRAFT']);
-/** Manager chỉ sửa được tour đang chờ duyệt (trước khi tự duyệt/từ chối). */
-export const MANAGER_EDITABLE_STATUSES = new Set<ApiStatus>(['PENDING_APPROVAL']);
+/** Manager được cập nhật cả tour đang bán; booking cũ vẫn dùng policy snapshot. */
+export const MANAGER_EDITABLE_STATUSES = new Set<ApiStatus>([
+  'PENDING_APPROVAL',
+  'APPROVED',
+  'HIDDEN',
+]);
 
 interface TourTableRowProps {
   tour: VendorTourListItem;
@@ -103,7 +107,19 @@ export function TourTableRow({
       </td>
 
       <td className="px-6 py-4" style={{ verticalAlign: 'middle' }}>
-        <TourStatusBadge status={tour.status} />
+        <div className="space-y-1.5">
+          <TourStatusBadge status={tour.status} />
+          {tour.status === 'APPROVED' && (
+            <p
+              className={`text-[11px] font-semibold ${
+                tour.onlineBookingEnabled ? 'text-emerald-700' : 'text-amber-700'
+              }`}
+              title={tour.onlineBookingDisabledReason ?? undefined}
+            >
+              {tour.onlineBookingEnabled ? 'Đang nhận đặt online' : 'Chưa sẵn sàng đặt online'}
+            </p>
+          )}
+        </div>
       </td>
 
       <td className="px-6 py-4" style={{ verticalAlign: 'middle' }}>

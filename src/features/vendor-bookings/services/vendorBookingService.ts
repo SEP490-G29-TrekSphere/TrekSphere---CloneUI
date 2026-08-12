@@ -16,8 +16,24 @@ interface ApiBookingDto {
   returnDate: string;
   numberOfParticipants: number;
   totalPrice: number;
-  bookingStatus: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
-  paymentStatus: 'PENDING' | 'PAID' | 'REFUNDED' | 'PARTIALLY_REFUNDED';
+  bookingStatus:
+    | 'PENDING'
+    | 'PAYMENT_PENDING'
+    | 'PENDING_CONFIRMATION'
+    | 'CONFIRMED'
+    | 'IN_PROGRESS'
+    | 'COMPLETED'
+    | 'EXPIRED'
+    | 'REJECTED'
+    | 'CANCELLED';
+  paymentStatus:
+    | 'PENDING'
+    | 'UNPAID'
+    | 'PARTIALLY_PAID'
+    | 'PAID'
+    | 'REFUND_PENDING'
+    | 'PARTIALLY_REFUNDED'
+    | 'REFUNDED';
   createdAt: string;
   customerName?: string;
   proofImageUrl?: string | null;
@@ -43,6 +59,13 @@ function unwrapResponse<T>(response: ApiResponse<T>): T {
 }
 
 function mapBookingItem(dto: ApiBookingDto): VendorBookingItem {
+  const paymentStatus = dto.paymentStatus === 'PENDING' ? 'UNPAID' : dto.paymentStatus;
+  const bookingStatus =
+    dto.bookingStatus === 'PENDING'
+      ? paymentStatus === 'PAID'
+        ? 'PENDING_CONFIRMATION'
+        : 'PAYMENT_PENDING'
+      : dto.bookingStatus;
   return {
     bookingId: dto.bookingId,
     bookingCode: dto.bookingCode,
@@ -52,12 +75,22 @@ function mapBookingItem(dto: ApiBookingDto): VendorBookingItem {
     returnDate: dto.returnDate,
     numberOfParticipants: dto.numberOfParticipants,
     totalPrice: dto.totalPrice,
-    bookingStatus: dto.bookingStatus,
-    paymentStatus: dto.paymentStatus,
+    bookingStatus,
+    paymentStatus,
     createdAt: dto.createdAt,
     customerName: dto.customerName,
     proofImageUrl: dto.proofImageUrl ?? undefined,
   };
+}
+
+async function countBookings(params: Record<string, string>): Promise<number> {
+  const response = await ApiService<PaginationBookingDto>('/vendor/bookings', 'GET', undefined, {
+    page: '0',
+    size: '1',
+    ...params,
+  });
+  if (response.error || !response.data) return 0;
+  return response.data.totalElements ?? 0;
 }
 
 export const vendorBookingService = {
@@ -65,33 +98,18 @@ export const vendorBookingService = {
    * Lấy tổng số lượng thống kê các đơn hàng thực tế từ backend.
    */
   async getStats(): Promise<BookingStats> {
-    const [totalRes, pendingPaymentRes, confirmedRes, refundedRes] = await Promise.all([
-      ApiService<PaginationBookingDto>('/vendor/bookings', 'GET', undefined, {
-        page: '0',
-        size: '1',
-      }),
-      ApiService<PaginationBookingDto>('/vendor/bookings', 'GET', undefined, {
-        page: '0',
-        size: '1',
-        paymentStatus: 'PENDING',
-      }),
-      ApiService<PaginationBookingDto>('/vendor/bookings', 'GET', undefined, {
-        page: '0',
-        size: '1',
-        bookingStatus: 'CONFIRMED',
-      }),
-      ApiService<PaginationBookingDto>('/vendor/bookings', 'GET', undefined, {
-        page: '0',
-        size: '1',
-        paymentStatus: 'REFUNDED',
-      }),
+    const [totalBookings, pendingPayments, confirmedTreks, pendingRefunds] = await Promise.all([
+      countBookings({}),
+      countBookings({ paymentStatus: 'UNPAID' }),
+      countBookings({ bookingStatus: 'CONFIRMED' }),
+      countBookings({ paymentStatus: 'REFUND_PENDING' }),
     ]);
 
     return {
-      totalBookings: unwrapResponse(totalRes).totalElements ?? 0,
-      pendingPayments: unwrapResponse(pendingPaymentRes).totalElements ?? 0,
-      confirmedTreks: unwrapResponse(confirmedRes).totalElements ?? 0,
-      refunded: unwrapResponse(refundedRes).totalElements ?? 0,
+      totalBookings,
+      pendingPayments,
+      confirmedTreks,
+      pendingRefunds,
     };
   },
 
@@ -151,49 +169,17 @@ export const vendorBookingService = {
   },
 
   /**
-   * Xác nhận đã nhận tiền thanh toán thành công cho đơn đặt tour (chuyển sang PAID).
-   * Endpoint: PUT /api/v1/vendor/bookings/{id}/confirm-payment
-   */
-  async confirmPayment(bookingId: string): Promise<BookingDetailResponse> {
-    const response = await ApiService<BookingDetailResponse>(
-      `/vendor/bookings/${bookingId}/confirm-payment`,
-      'PUT'
-    );
-    return unwrapResponse(response);
-  },
-
-  /**
-   * Xác nhận đã hoàn tiền cho khách cho đơn bị hủy (chuyển sang REFUNDED).
-   * Endpoint: PUT /api/v1/vendor/bookings/{id}/refund
-   */
-  async confirmRefund(bookingId: string): Promise<BookingDetailResponse> {
-    const response = await ApiService<BookingDetailResponse>(
-      `/vendor/bookings/${bookingId}/refund`,
-      'PUT'
-    );
-    return unwrapResponse(response);
-  },
-
-  /**
    * Từ chối / Hủy đơn đặt tour của khách.
    * Endpoint: PUT /api/v1/vendor/bookings/{id}/reject
    */
   async rejectBooking(
     bookingId: string,
-    cancellationReason: string,
-    refundBankName?: string,
-    refundAccountNumber?: string,
-    refundAccountHolder?: string
+    cancellationReason: string
   ): Promise<BookingDetailResponse> {
     const response = await ApiService<BookingDetailResponse>(
       `/vendor/bookings/${bookingId}/reject`,
       'PUT',
-      {
-        cancellationReason,
-        refundBankName,
-        refundAccountNumber,
-        refundAccountHolder,
-      }
+      { cancellationReason }
     );
     return unwrapResponse(response);
   },

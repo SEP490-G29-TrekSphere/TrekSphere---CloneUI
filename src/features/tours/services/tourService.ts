@@ -1,4 +1,4 @@
-import { type ApiResponse, ApiService, ApiUpload } from '@/config/apiClient';
+import { type ApiResponse, ApiService } from '@/config/apiClient';
 import type {
   BookingCancelRequest,
   BookingDetailResponse,
@@ -96,7 +96,19 @@ export const tourService = {
 
   async getTourById(tourId: string): Promise<TourDetailFromApi> {
     const response = await ApiService<TourDetailFromApi>(`/tours/${tourId}`, 'GET');
-    return unwrapResponse(response);
+    const data = unwrapResponse(response);
+    const hasRequiredPolicies = Boolean(data.paymentPolicy && data.participationPolicy);
+    return {
+      ...data,
+      onlineBookingEnabled: data.onlineBookingEnabled === true && hasRequiredPolicies,
+      onlineBookingDisabledReason:
+        data.onlineBookingDisabledReason ??
+        (!data.participationPolicy
+          ? 'Tour chưa có điều kiện tham gia.'
+          : !data.paymentPolicy
+            ? 'Tour chưa có chính sách thanh toán.'
+            : 'Tour chưa sẵn sàng nhận đặt online.'),
+    };
   },
 
   async validateVoucher(
@@ -128,14 +140,36 @@ export const tourService = {
     };
   },
 
-  async createBooking(bookingData: CreateBookingRequest): Promise<BookingDetailResponse> {
-    const response = await ApiService<BookingDetailResponse>('/bookings', 'POST', bookingData);
+  async createBooking(
+    bookingData: CreateBookingRequest,
+    idempotencyKey: string
+  ): Promise<BookingDetailResponse> {
+    const response = await ApiService<BookingDetailResponse>(
+      '/bookings',
+      'POST',
+      bookingData,
+      undefined,
+      { 'Idempotency-Key': idempotencyKey }
+    );
     return unwrapResponse(response);
   },
 
   async getBookingDetail(bookingId: string): Promise<BookingDetailResponse> {
     const response = await ApiService<BookingDetailResponse>(`/bookings/${bookingId}`, 'GET');
-    return unwrapResponse(response);
+    const data = unwrapResponse(response);
+    const rawPaymentStatus = data.paymentStatus as string;
+    const paymentStatus = rawPaymentStatus === 'PENDING' ? 'UNPAID' : data.paymentStatus;
+    const rawBookingStatus = data.bookingStatus as string;
+    return {
+      ...data,
+      paymentStatus,
+      bookingStatus:
+        rawBookingStatus === 'PENDING'
+          ? paymentStatus === 'PAID'
+            ? 'PENDING_CONFIRMATION'
+            : 'PAYMENT_PENDING'
+          : data.bookingStatus,
+    };
   },
 
   /**
@@ -152,32 +186,20 @@ export const tourService = {
   ): Promise<BookingDetailResponse> {
     const payload: BookingCancelRequest = { cancellationReason };
 
-    if (refundInfo?.refundBankName?.trim()) {
-      payload.refundBankName = refundInfo.refundBankName.trim();
+    if (refundInfo?.refundBankBin?.trim()) {
+      payload.refundBankBin = refundInfo.refundBankBin.trim();
     }
     if (refundInfo?.refundAccountNumber?.trim()) {
       payload.refundAccountNumber = refundInfo.refundAccountNumber.trim();
     }
-    if (refundInfo?.refundAccountHolder?.trim()) {
-      payload.refundAccountHolder = refundInfo.refundAccountHolder.trim();
+    if (refundInfo?.refundAccountName?.trim()) {
+      payload.refundAccountName = refundInfo.refundAccountName.trim();
     }
 
     const response = await ApiService<BookingDetailResponse>(
       `/bookings/${bookingId}/cancel`,
       'POST',
       payload
-    );
-    return unwrapResponse(response);
-  },
-
-  async updatePaymentProof(bookingId: string, file: File): Promise<BookingDetailResponse> {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const response = await ApiUpload<BookingDetailResponse>(
-      `/bookings/${bookingId}/payment-proof`,
-      formData,
-      'POST'
     );
     return unwrapResponse(response);
   },

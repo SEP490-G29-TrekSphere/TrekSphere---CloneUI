@@ -22,9 +22,6 @@ interface VendorProfileResponseDto {
   contactPhone?: string | null;
   taxCode?: string | null;
   businessLicenseUrl?: string | null;
-  bankAccount?: string | null;
-  bankName?: string | null;
-  paymentQrUrl?: string | null;
   status: VendorProfileStatus;
 }
 
@@ -48,9 +45,6 @@ function mapProfile(dto: VendorProfileResponseDto): VendorProfileDetail {
     contactPhone: dto.contactPhone ?? undefined,
     taxCode: dto.taxCode ?? undefined,
     businessLicenseUrl: dto.businessLicenseUrl ?? undefined,
-    bankAccount: dto.bankAccount ?? undefined,
-    bankName: dto.bankName ?? undefined,
-    paymentQrUrl: dto.paymentQrUrl ?? undefined,
     status: dto.status,
   };
 }
@@ -72,10 +66,6 @@ export const vendorProfileService = {
     if (payload.description !== undefined) formData.append('description', payload.description);
     if (payload.contactEmail !== undefined) formData.append('contactEmail', payload.contactEmail);
     if (payload.contactPhone !== undefined) formData.append('contactPhone', payload.contactPhone);
-    if (payload.bankAccount !== undefined) formData.append('bankAccount', payload.bankAccount);
-    if (payload.bankName !== undefined) formData.append('bankName', payload.bankName);
-    if (payload.paymentQrFile) formData.append('paymentQr', payload.paymentQrFile);
-
     const response = await ApiService<VendorProfileResponseDto>(
       '/vendors/profile',
       'PUT',

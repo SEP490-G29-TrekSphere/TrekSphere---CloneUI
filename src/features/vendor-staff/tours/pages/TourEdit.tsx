@@ -137,6 +137,24 @@ export default function TourEdit() {
         maxCapacity: tour.maxCapacity,
         durationDays: tour.durationDays,
         description: tour.description,
+        minAge: tour.participationPolicy?.minAge?.toString() ?? '18',
+        maxAge: tour.participationPolicy?.maxAge?.toString() ?? '',
+        minHeightCm: tour.participationPolicy?.minHeightCm?.toString() ?? '',
+        maxHeightCm: tour.participationPolicy?.maxHeightCm?.toString() ?? '',
+        minWeightKg: tour.participationPolicy?.minWeightKg?.toString() ?? '',
+        maxWeightKg: tour.participationPolicy?.maxWeightKg?.toString() ?? '',
+        fitnessLevel: tour.participationPolicy?.fitnessLevel ?? 'ANY',
+        healthRequirements: tour.participationPolicy?.healthRequirements ?? '',
+        restrictedMedicalConditions: tour.participationPolicy?.restrictedMedicalConditions ?? '',
+        requiredExperience: tour.participationPolicy?.requiredExperience ?? '',
+        requiredSkills: tour.participationPolicy?.requiredSkills ?? '',
+        requiredEquipment: tour.participationPolicy?.requiredEquipment ?? '',
+        requiredDocuments: tour.participationPolicy?.requiredDocuments ?? '',
+        requiresHealthDeclaration: tour.participationPolicy?.requiresHealthDeclaration ?? true,
+        requiresMedicalCertificate: tour.participationPolicy?.requiresMedicalCertificate ?? false,
+        guardianRequiredUnderAge:
+          tour.participationPolicy?.guardianRequiredUnderAge?.toString() ?? '',
+        additionalRequirements: tour.participationPolicy?.additionalRequirements ?? '',
       }}
       existingCoverImageUrl={tour.coverImageUrl ?? undefined}
       initialCheckpoints={(checkpoints ?? []).map(toCheckpointDraft)}
