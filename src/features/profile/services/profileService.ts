@@ -3,7 +3,6 @@ import axios from 'axios';
 import type { ApiResponse } from '@/config/apiClient';
 import apiClient, { handleResponse } from '@/config/apiClient';
 import type { UserProfile } from '@/features/auth';
-import { storage } from '@/utils/storage';
 
 /**
  * Service gọi API liên quan tới profile.
@@ -23,7 +22,7 @@ export const profileService = {
    *
    * KHÔNG set Content-Type header thủ công - axios sẽ tự set multipart boundary.
    */
-  updateProfile: (data: FormData) => updateProfileMultipart<UserProfile>(data),
+  updateProfile: (data: FormData) => ApiService<UserProfile>('/users/me', 'PUT', data),
   /**
    * Upload 1 file (ảnh) lên BE → trả về URL string.
    * Endpoint: POST /files/upload?folder=<folder>
@@ -63,7 +62,7 @@ export const profileService = {
 };
 
 /**
- * Wrapper để dùng chung ApiService cho GET/POST/DELETE (body JSON).
+ * Wrapper dùng chung cho request JSON và FormData.
  */
 function ApiService<T>(
   path: string,
@@ -105,31 +104,4 @@ function ApiUpload<T>(path: string, formData: FormData): Promise<ApiResponse<T>>
       }
       return { error: 'An unknown error occurred', message: 'An unknown error occurred' };
     });
-}
-
-/**
- * Cập nhật profile bằng PUT với body là FormData (multipart/form-data).
- * Dùng trực tiếp axios thay vì ApiService vì body là FormData chứ không phải JSON.
- */
-async function updateProfileMultipart<T>(formData: FormData): Promise<ApiResponse<T>> {
-  try {
-    const token = storage.get<string>('accessToken');
-    const response = await axios.put<T>(`/api/v1/users/me`, formData, {
-      headers: {
-        Authorization: token ? `Bearer ${token}` : undefined,
-      },
-      withCredentials: true,
-    });
-    return handleResponse<T>(response as Parameters<typeof handleResponse<T>>[0]);
-  } catch (err) {
-    if (axios.isAxiosError(err)) {
-      const responseData = err.response?.data as { message?: string; error?: string } | undefined;
-      return {
-        error: responseData?.message || responseData?.error || err.message,
-        message: responseData?.message || responseData?.error || err.message,
-        status: err.response?.status || 500,
-      };
-    }
-    return { error: 'An unknown error occurred', message: 'An unknown error occurred' };
-  }
 }
