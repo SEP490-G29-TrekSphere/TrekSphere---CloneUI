@@ -3,6 +3,7 @@ import type {
   ChatConversationsParams,
   ChatMessagesParams,
   ConversationCreateRequest,
+  ConversationMember,
   ConversationResponse,
   MessageCreateRequest,
   MessageResponse,
@@ -100,5 +101,43 @@ export const chatService = {
     if (response.error) {
       throw new Error(response.error);
     }
+  },
+
+  deleteConversation: async (id: string): Promise<void> => {
+    const response = await ApiService<void>(`/chat/conversations/${id}`, 'DELETE');
+    if (response.error) {
+      throw new Error(response.error);
+    }
+  },
+
+  removeMember: async (conversationId: string, memberId: string): Promise<void> => {
+    const response = await ApiService<void>(
+      `/chat/conversations/${conversationId}/members/${memberId}`,
+      'DELETE'
+    );
+    if (response.error) {
+      throw new Error(response.error);
+    }
+  },
+
+  addMember: async (conversationId: string, memberId: string): Promise<void> => {
+    const response = await ApiService<void>(
+      `/chat/conversations/${conversationId}/members/${memberId}`,
+      'POST'
+    );
+    if (response.error) {
+      throw new Error(response.error);
+    }
+  },
+
+  getConversationMembers: async (conversationId: string): Promise<ConversationMember[]> => {
+    const response = await ApiService<ConversationMember[]>(
+      `/chat/conversations/${conversationId}/members`,
+      'GET'
+    );
+    if (response.error || !response.data) {
+      throw new Error(response.error || 'Failed to fetch conversation members');
+    }
+    return response.data;
   },
 };

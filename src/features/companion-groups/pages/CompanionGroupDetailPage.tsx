@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { PATHS } from '@/constants/paths';
+import { useAddMemberToConversation } from '@/features/chat/hooks/useAddMemberToConversation';
 import { useCheckConversation } from '@/features/chat/hooks/useCheckConversation';
 import { useCreateConversation } from '@/features/chat/hooks/useCreateConversation';
 import { AppButton } from '@/shared/ui';
@@ -14,6 +15,7 @@ import { GroupDetailSkeleton } from '../components/detail/GroupDetailSkeleton';
 import { GroupModals } from '../components/detail/GroupModals';
 import { type JoinRequestAction, JoinRequestsCard } from '../components/detail/JoinRequestsCard';
 import { MembersCard } from '../components/detail/MembersCard';
+import { companionGroupKeys } from '../hooks/companionGroupKeys';
 import { useApproveMember } from '../hooks/useApproveMember';
 import { useCancelJoinRequest } from '../hooks/useCancelJoinRequest';
 import { useDeleteMatchingGroup } from '../hooks/useDeleteMatchingGroup';
@@ -61,6 +63,7 @@ export default function CompanionGroupDetailPage({
   const rejectMemberMutation = useRejectMember();
   const checkConversationMutation = useCheckConversation();
   const createConversationMutation = useCreateConversation();
+  const addMemberToConversationMutation = useAddMemberToConversation();
   const queryClient = useQueryClient();
 
   // Fetch real group detail data from API GET /api/v1/matching-groups/{matchingGroupId}
@@ -104,9 +107,13 @@ export default function CompanionGroupDetailPage({
 
   // Active Modals
   const [activeModal, setActiveModal] = useState<
-    'dissolve' | 'leave' | 'reject' | 'approve' | null
+    'dissolve' | 'leave' | 'reject' | 'approve' | 'addBackToChat' | null
   >(null);
   const [selectedRequest, setSelectedRequest] = useState<JoinRequestAction | null>(null);
+  const [selectedAddBackMember, setSelectedAddBackMember] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -188,6 +195,56 @@ export default function CompanionGroupDetailPage({
         },
         onError: (err) => {
           showToast(err instanceof Error ? err.message : 'Lỗi khi kiểm tra phòng chat');
+        },
+      }
+    );
+  };
+
+  const handleAddMemberToChatPrompt = (memberId: string, memberName: string) => {
+    setSelectedAddBackMember({ id: memberId, name: memberName });
+    setActiveModal('addBackToChat');
+  };
+
+  const handleConfirmAddBackToChat = () => {
+    if (!selectedAddBackMember || !groupData?.hasConversation) return;
+
+    // Tìm conversationId thông qua checkConversation (vì backend hiện quản lý conversation độc lập)
+    checkConversationMutation.mutate(
+      {
+        conversationType: 'GROUP',
+        title: groupData.groupName || 'Nhóm ghép',
+        participantIds: [selectedAddBackMember.id], // Pass ID to bypass @NotEmpty validation
+        matchingGroupId: groupId,
+      },
+      {
+        onSuccess: (res) => {
+          if (res && res.conversationId) {
+            addMemberToConversationMutation.mutate(
+              { conversationId: res.conversationId, memberId: selectedAddBackMember.id },
+              {
+                onSuccess: () => {
+                  showToast(`Đã thêm ${selectedAddBackMember.name} vào nhóm chat!`);
+                  setActiveModal(null);
+                  setSelectedAddBackMember(null);
+                  if (groupId) {
+                    queryClient.invalidateQueries({
+                      queryKey: companionGroupKeys.detail(groupId),
+                    });
+                  }
+                },
+                onError: (err) => {
+                  showToast(
+                    err instanceof Error ? err.message : 'Có lỗi xảy ra khi thêm thành viên.'
+                  );
+                },
+              }
+            );
+          } else {
+            showToast('Không tìm thấy nhóm chat tương ứng.');
+          }
+        },
+        onError: () => {
+          showToast('Lỗi khi kiểm tra nhóm chat.');
         },
       }
     );
@@ -358,7 +415,10 @@ export default function CompanionGroupDetailPage({
               maxSize={groupData.maxSize}
               ownerName={groupData.ownerName}
               currentUserId={user?.id?.toString()}
+              role={currentUserRole}
+              hasConversation={groupData.hasConversation}
               onDirectChat={handleDirectChat}
+              onAddMemberToChat={handleAddMemberToChatPrompt}
             />
 
             {currentUserRole === 'leader' && (
@@ -399,6 +459,7 @@ export default function CompanionGroupDetailPage({
               onCreateGroupChat={handleCreateGroupChat}
               acceptedMembersCount={groupData.members.filter((m) => m.status === 'ACCEPTED').length}
               hasConversation={groupData.hasConversation}
+              isInConversation={groupData.isInConversation}
             />
           </div>
         </div>
@@ -408,16 +469,21 @@ export default function CompanionGroupDetailPage({
         activeModal={activeModal}
         setActiveModal={setActiveModal}
         selectedRequest={selectedRequest}
+        selectedAddBackMember={selectedAddBackMember}
         currentUserRole={currentUserRole}
         isApprovePending={approveMemberMutation.isPending}
         isRejectPending={rejectMemberMutation.isPending}
         isDissolvePending={deleteGroupMutation.isPending}
         isLeaveModalPending={isLeaveModalPending}
+        isAddBackPending={
+          addMemberToConversationMutation.isPending || checkConversationMutation.isPending
+        }
         onConfirmApprove={handleConfirmApprove}
         onConfirmReject={handleConfirmReject}
         onConfirmDissolveGroup={handleConfirmDissolveGroup}
         onConfirmLeaveGroup={handleConfirmLeaveGroup}
         onConfirmCancelJoinRequest={handleConfirmCancelJoinRequest}
+        onConfirmAddBackToChat={handleConfirmAddBackToChat}
       />
     </div>
   );

@@ -14,6 +14,7 @@ interface GroupActionPanelProps {
   onCreateGroupChat: () => void;
   acceptedMembersCount: number;
   hasConversation?: boolean;
+  isInConversation?: boolean;
 }
 
 export function GroupActionPanel({
@@ -28,6 +29,7 @@ export function GroupActionPanel({
   onCreateGroupChat,
   acceptedMembersCount,
   hasConversation,
+  isInConversation,
 }: GroupActionPanelProps) {
   return (
     <div className="space-y-6">
@@ -64,13 +66,19 @@ export function GroupActionPanel({
             )}
           </div>
         ) : hasConversation ? (
-          <button
-            type="button"
-            onClick={onOpenChat}
-            className="w-full rounded-full bg-white py-3.5 text-xs font-bold text-primary transition-all hover:bg-white/90 active:scale-[0.99] shadow-sm cursor-pointer"
-          >
-            Vào nhóm chat
-          </button>
+          isInConversation ? (
+            <button
+              type="button"
+              onClick={onOpenChat}
+              className="w-full rounded-full bg-white py-3.5 text-xs font-bold text-primary transition-all hover:bg-white/90 active:scale-[0.99] shadow-sm cursor-pointer"
+            >
+              Vào nhóm chat
+            </button>
+          ) : (
+            <div className="rounded-full bg-white/20 py-3.5 text-xs font-medium text-white/70 text-center shadow-sm cursor-not-allowed">
+              Bạn không nằm trong nhóm chat này
+            </div>
+          )
         ) : (
           <div className="rounded-full bg-white/20 py-3.5 text-xs font-medium text-white/70 text-center shadow-sm cursor-not-allowed">
             Trưởng nhóm chưa tạo nhóm chat

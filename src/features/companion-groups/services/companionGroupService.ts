@@ -102,6 +102,7 @@ export interface MatchingMemberItem {
   role: MatchingMemberRole;
   status: MatchingMemberStatus;
   createdAt: string; // ISO string
+  isInConversation?: boolean;
 }
 
 export interface MatchingGroupDetailResponse {
@@ -121,6 +122,7 @@ export interface MatchingGroupDetailResponse {
   createdAt: string; // ISO string
   members: MatchingMemberItem[];
   hasConversation?: boolean;
+  isInConversation?: boolean;
 }
 
 function unwrapResponse<T>(response: ApiResponse<T>): T {
