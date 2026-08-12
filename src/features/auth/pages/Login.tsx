@@ -101,15 +101,16 @@ export default function Login() {
 
         const session = parseAuthSessionPayload(result.data);
         if (!session) {
-          storage.remove('accessToken');
-          storage.remove('refreshToken');
-          toast.error('Máy chủ không trả về phiên đăng nhập hợp lệ. Vui lòng thử lại.');
+          toast.error('Đăng nhập Google thất bại. Vui lòng thử lại.');
           return;
         }
-
         const { accessToken, refreshToken, userData } = session;
-        storage.set('accessToken', accessToken);
-        storage.set('refreshToken', refreshToken);
+
+        if (accessToken) storage.set('accessToken', accessToken);
+        else storage.remove('accessToken');
+        if (refreshToken) storage.set('refreshToken', refreshToken);
+        else storage.remove('refreshToken');
+
         const normalizedRoles = extractRoles(userData);
 
         const user = {
@@ -171,18 +172,17 @@ export default function Login() {
           return;
         }
 
-        // Lưu tokens vào storage
         const session = parseAuthSessionPayload(result.data);
         if (!session) {
-          storage.remove('accessToken');
-          storage.remove('refreshToken');
-          toast.error('Máy chủ không trả về phiên đăng nhập hợp lệ. Vui lòng thử lại.');
+          toast.error('Đăng nhập thất bại. Vui lòng thử lại.');
           return;
         }
-
         const { accessToken, refreshToken, userData } = session;
-        storage.set('accessToken', accessToken);
-        storage.set('refreshToken', refreshToken);
+
+        if (accessToken) storage.set('accessToken', accessToken);
+        else storage.remove('accessToken');
+        if (refreshToken) storage.set('refreshToken', refreshToken);
+        else storage.remove('refreshToken');
 
         // Dùng `extractRoles` để chuẩn hoá roles về lowercase + bỏ prefix
         // `role_`. Cờ `ROLES.ADMIN = 'admin'` được khai báo lowercase, nên nếu
