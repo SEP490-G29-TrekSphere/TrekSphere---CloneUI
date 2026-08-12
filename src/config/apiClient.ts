@@ -41,8 +41,8 @@ const deriveApiUrl = (rawUrl?: string): string => {
   return `${cleanUrl}/api/v1`;
 };
 
-// Dev mặc định dùng relative path để Vite proxy forward tới BE, kể cả khi
-// VITE_API_URL được dùng làm proxy target. Có thể tắt bằng VITE_API_USE_PROXY=false.
+// Development luôn đi qua Vite proxy để cookie HttpOnly của Backend trở thành
+// same-origin với localhost. VITE_API_URL chỉ được dùng làm proxy target.
 // Prod without VITE_API_URL → fail fast with a clear error rather than silently
 // pointing at a hardcoded URL.
 const getBaseURL = (): string => {
@@ -81,8 +81,10 @@ type RetryableRequest = AxiosError['config'] & {
   __skipRefresh?: boolean;
 };
 
-// Một Promise dùng chung giúp mọi request 401 cùng chờ đúng một lần refresh.
-// Cách này cũng bảo đảm các request không bị treo khi refresh thất bại.
+const COOKIE_AUTH = '__COOKIE_AUTH__';
+
+// Mọi request 401 cùng chờ một Promise refresh; khi refresh lỗi không request
+// nào bị treo trong hàng đợi.
 let refreshPromise: Promise<string | null> | null = null;
 
 /**
@@ -92,8 +94,8 @@ let refreshPromise: Promise<string | null> | null = null;
  * là còn coi như đã login) và clear cache React Query (nếu không, các trang
  * đang mount vẫn hiển thị dữ liệu cũ từ cache dù đã "mất" đăng nhập).
  *
- * Guard theo toàn bộ session (token hoặc user) để vẫn dọn được trường hợp login
- * response thiếu token nhưng Zustand đã lưu user.
+ * Guard theo `accessToken` còn tồn tại không — tránh nhiều request 401 cùng
+ * lúc (cùng 1 đợt hết hạn) gọi clear/toast lặp lại nhiều lần.
  */
 const clearExpiredSession = (): void => {
   const hasSession = Boolean(
@@ -102,7 +104,6 @@ const clearExpiredSession = (): void => {
       useAppStore.getState().user
   );
   if (!hasSession) return;
-
   storage.remove('accessToken');
   storage.remove('refreshToken');
   useAppStore.getState().setUser(null);
@@ -121,8 +122,9 @@ function buildAbsoluteBaseURL(): string {
  * Gọi /auth/refresh để lấy access_token mới.
  * Trả về access_token mới, hoặc null nếu thất bại.
  *
- * Gửi refresh token trong body theo contract hiện tại và vẫn bật credentials
- * để Backend có thể dùng cookie HttpOnly làm fallback.
+ * Lưu ý: Vì không biết chính xác BE expect body shape nào, thử lần lượt các
+ * shape phổ biến. Vì `apiClient` đã có `withCredentials: true` nên cookie
+ * (nếu BE set) sẽ tự gửi kèm — không cần truyền thêm gì.
  */
 async function performRefresh(): Promise<string | null> {
   const refreshToken = storage.get<string>('refreshToken');
@@ -133,47 +135,68 @@ async function performRefresh(): Promise<string | null> {
   }
 
   const absoluteURL = `${buildAbsoluteBaseURL()}/auth/refresh-token`;
-  try {
-    const response = await axios.post<{
-      access_token?: string;
-      accessToken?: string;
-      data?: {
+  const bodyCandidates: Array<Record<string, unknown> | null> = refreshToken
+    ? [{ refreshToken }, { refresh_token: refreshToken }, { token: refreshToken }, null]
+    : [null];
+
+  for (const _body of bodyCandidates) {
+    try {
+      const response = await axios.post<{
         access_token?: string;
         accessToken?: string;
         refresh_token?: string;
         refreshToken?: string;
-      };
-    }>(absoluteURL, refreshToken ? { refreshToken } : {}, { timeout: TIME_OUT, withCredentials });
+        token?: string;
+        data?: {
+          access_token?: string;
+          accessToken?: string;
+          token?: string;
+          refresh_token?: string;
+          refreshToken?: string;
+        };
+      }>(absoluteURL, _body ?? {}, { timeout: TIME_OUT, withCredentials });
 
-    const root = response.data as Record<string, unknown>;
-    const inner = (root.data as Record<string, unknown> | undefined) ?? {};
-    const newAccess =
-      (inner.access_token as string | undefined) ??
-      (inner.accessToken as string | undefined) ??
-      (root.access_token as string | undefined) ??
-      (root.accessToken as string | undefined);
-    const newRefresh =
-      (inner.refresh_token as string | undefined) ??
-      (inner.refreshToken as string | undefined) ??
-      (root.refresh_token as string | undefined) ??
-      (root.refreshToken as string | undefined);
+      const root = response.data as Record<string, unknown>;
+      const inner = (root.data as Record<string, unknown> | undefined) ?? {};
+      const newAccess =
+        (inner.access_token as string | undefined) ??
+        (inner.accessToken as string | undefined) ??
+        (inner.token as string | undefined) ??
+        (root.access_token as string | undefined) ??
+        (root.accessToken as string | undefined) ??
+        (root.token as string | undefined);
+      const newRefresh =
+        (inner.refresh_token as string | undefined) ??
+        (inner.refreshToken as string | undefined) ??
+        (root.refresh_token as string | undefined) ??
+        (root.refreshToken as string | undefined) ??
+        refreshToken ??
+        '';
 
-    if (!newAccess || !newRefresh) {
-      console.error('[apiClient] refresh response is missing tokens');
-      return null;
-    }
+      if (!newAccess) {
+        // Backend production cũ trả user trong body và rotate token hoàn toàn
+        // bằng cookie HttpOnly. HTTP 2xx ở đây nghĩa là cookie mới đã được set.
+        if (response.status >= 200 && response.status < 300 && inner) return COOKIE_AUTH;
+        continue;
+      }
 
-    storage.set('accessToken', newAccess);
-    storage.set('refreshToken', newRefresh);
-    return newAccess;
-  } catch (err) {
-    if (axios.isAxiosError(err) && err.response?.status === 401) {
-      console.error('[apiClient] refresh token returned 401 — refresh token invalid/expired');
-    } else {
+      storage.set('accessToken', newAccess);
+      if (newRefresh) storage.set('refreshToken', newRefresh);
+      return newAccess;
+    } catch (err) {
+      // Nếu lỗi 401 → refresh token sai/hết hạn → KHÔNG thử shape khác nữa
+      // (vì BE đã từ chối), trả về null để caller clear storage.
+      if (axios.isAxiosError(err) && err.response?.status === 401) {
+        console.error('[apiClient] refresh token returned 401 — refresh token invalid/expired');
+        return null;
+      }
+      // Lỗi khác (network, 5xx) → thử shape tiếp theo
       console.warn('[apiClient] refresh attempt failed:', err);
     }
-    return null;
   }
+
+  console.error('[apiClient] refresh token: all body shapes failed');
+  return null;
 }
 
 // Request interceptor for token
@@ -214,13 +237,16 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Không bao giờ refresh lại chính request refresh-token để tránh vòng lặp.
-    // `performRefresh` dùng axios instance riêng, nhánh này bảo vệ các call site khác.
+    // Endpoint /auth/refresh-token tự nó cũng có thể 401 khi refresh token hết hạn —
+    // trong trường hợp đó axios.post trong `performRefresh` đã xử lý rồi, không
+    // cần chạy vào flow này. Cờ __skipRefresh được set cho request /auth/refresh-token
+    // qua `performRefresh` rồi, nên logic ở đây an toàn.
     if (originalConfig.url?.includes('/auth/refresh-token')) {
       return Promise.reject(error);
     }
 
     originalConfig.__retried = true;
+
     refreshPromise ??= performRefresh().finally(() => {
       refreshPromise = null;
     });
@@ -232,7 +258,11 @@ apiClient.interceptors.response.use(
     }
 
     originalConfig.headers = originalConfig.headers ?? new axios.AxiosHeaders();
-    originalConfig.headers.Authorization = `Bearer ${newToken}`;
+    if (newToken === COOKIE_AUTH) {
+      originalConfig.headers.delete('Authorization');
+    } else {
+      originalConfig.headers.Authorization = `Bearer ${newToken}`;
+    }
     return apiClient.request(originalConfig);
   }
 );
@@ -288,6 +318,9 @@ const handleError = (error: unknown): ApiResponse<never> => {
       | {
           message?: string;
           error?: string;
+          detail?: string;
+          title?: string;
+          error_name?: string;
           errors?: Array<{ field?: string; message?: string }>;
         }
       | undefined;
@@ -295,7 +328,14 @@ const handleError = (error: unknown): ApiResponse<never> => {
       ?.map((e) => e.message)
       .filter(Boolean)
       .join('; ');
-    const message = fieldErrors || responseData?.message || responseData?.error || error.message;
+    const cloudflareOriginError = responseData?.error_name === 'origin_bad_gateway';
+    const message =
+      fieldErrors ||
+      responseData?.message ||
+      responseData?.error ||
+      (cloudflareOriginError
+        ? 'Backend không nhận được phản hồi hợp lệ từ payOS. Vui lòng thử lại sau.'
+        : responseData?.detail || responseData?.title || error.message);
     return {
       error: message,
       message,
