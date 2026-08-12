@@ -9,6 +9,7 @@ import type {
   MessageResponse,
   VirtualConversationData,
 } from '@/features/chat/types/types';
+import { companionGroupKeys } from '@/features/companion-groups/hooks/companionGroupKeys';
 import { useAppStore } from '@/store/useAppStore';
 import { toast } from '@/store/useToastStore';
 import { useChatWebSocket } from '../context/ChatWebSocketContext';
@@ -380,6 +381,8 @@ export default function ChatList({ hideSidebar = false }: ChatListProps) {
     try {
       await chatService.removeMember(conversationId, memberId);
       toast.success('Đã xóa thành viên khỏi nhóm');
+      // Invalidate matching group queries so the member can be re-added from the group interface
+      queryClient.invalidateQueries({ queryKey: companionGroupKeys.all });
     } catch (error) {
       toast.error('Xóa thành viên thất bại');
     }

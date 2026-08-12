@@ -120,6 +120,16 @@ export const chatService = {
     }
   },
 
+  addMember: async (conversationId: string, memberId: string): Promise<void> => {
+    const response = await ApiService<void>(
+      `/chat/conversations/${conversationId}/members/${memberId}`,
+      'POST'
+    );
+    if (response.error) {
+      throw new Error(response.error);
+    }
+  },
+
   getConversationMembers: async (conversationId: string): Promise<ConversationMember[]> => {
     const response = await ApiService<ConversationMember[]>(
       `/chat/conversations/${conversationId}/members`,

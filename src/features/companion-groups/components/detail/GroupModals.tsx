@@ -3,9 +3,12 @@ import type { UserRoleInGroup } from '../../types';
 import type { JoinRequestAction } from './JoinRequestsCard';
 
 interface GroupModalsProps {
-  activeModal: 'dissolve' | 'leave' | 'reject' | 'approve' | null;
-  setActiveModal: (modal: 'dissolve' | 'leave' | 'reject' | 'approve' | null) => void;
+  activeModal: 'dissolve' | 'leave' | 'reject' | 'approve' | 'addBackToChat' | null;
+  setActiveModal: (
+    modal: 'dissolve' | 'leave' | 'reject' | 'approve' | 'addBackToChat' | null
+  ) => void;
   selectedRequest: JoinRequestAction | null;
+  selectedAddBackMember?: { id: string; name: string } | null;
   currentUserRole: UserRoleInGroup;
 
   // Pending states
@@ -13,6 +16,7 @@ interface GroupModalsProps {
   isRejectPending: boolean;
   isDissolvePending: boolean;
   isLeaveModalPending: boolean;
+  isAddBackPending?: boolean;
 
   // Action Handlers
   onConfirmApprove: () => void;
@@ -20,22 +24,26 @@ interface GroupModalsProps {
   onConfirmDissolveGroup: () => void;
   onConfirmLeaveGroup: () => void;
   onConfirmCancelJoinRequest: () => void;
+  onConfirmAddBackToChat?: () => void;
 }
 
 export function GroupModals({
   activeModal,
   setActiveModal,
   selectedRequest,
+  selectedAddBackMember,
   currentUserRole,
   isApprovePending,
   isRejectPending,
   isDissolvePending,
   isLeaveModalPending,
+  isAddBackPending = false,
   onConfirmApprove,
   onConfirmReject,
   onConfirmDissolveGroup,
   onConfirmLeaveGroup,
   onConfirmCancelJoinRequest,
+  onConfirmAddBackToChat,
 }: GroupModalsProps) {
   return (
     <>
@@ -228,6 +236,52 @@ export function GroupModals({
                   : isLeaveModalPending
                     ? 'Đang thực hiện...'
                     : 'Xác nhận rời'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. Modal Thêm lại thành viên vào nhóm chat */}
+      {activeModal === 'addBackToChat' && selectedAddBackMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-primary">
+                <UserCheck className="h-5 w-5" />
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveModal(null)}
+                className="text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-foreground">Thêm vào nhóm chat</h2>
+              <p className="text-xs text-muted-foreground mt-1">
+                Bạn có chắc chắn muốn thêm lại <strong>{selectedAddBackMember.name}</strong> vào
+                nhóm chat?
+              </p>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                disabled={isAddBackPending}
+                onClick={() => setActiveModal(null)}
+                className="flex-1 rounded-full border border-border py-2.5 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-50 cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                disabled={isAddBackPending}
+                onClick={onConfirmAddBackToChat}
+                className="flex-1 rounded-full bg-primary py-2.5 text-xs font-bold text-white hover:bg-primary-hover disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                {isAddBackPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {isAddBackPending ? 'Đang thêm...' : 'Xác nhận'}
               </button>
             </div>
           </div>
