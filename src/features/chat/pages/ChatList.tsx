@@ -17,6 +17,7 @@ import { useChatMessages } from '../hooks/useChatMessages';
 import { useCreateConversation } from '../hooks/useCreateConversation';
 import { useMarkAsRead } from '../hooks/useMarkAsRead';
 import { useSendMessage } from '../hooks/useSendMessage';
+import { chatService } from '../services/chatService';
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
@@ -135,6 +136,7 @@ export default function ChatList({ hideSidebar = false }: ChatListProps) {
           timestamp: item.lastMessageAt,
           online: false,
           startDate: undefined,
+          isGroupLeader: item.isGroupLeader,
           tag: {
             text: item.conversationType === 'DIRECT' ? 'DIRECT' : 'GROUP',
             variant: item.conversationType === 'DIRECT' ? 'secondary' : 'accent',
@@ -362,6 +364,27 @@ export default function ChatList({ hideSidebar = false }: ChatListProps) {
     );
   };
 
+  const handleDeleteConversation = async (conversationId: string) => {
+    try {
+      await chatService.deleteConversation(conversationId);
+      toast.success('Đã xóa cuộc hội thoại');
+      setSelectedId(null);
+      setConversations((prev) => prev.filter((c) => c.id !== conversationId));
+      queryClient.invalidateQueries({ queryKey: ['chatConversations'] });
+    } catch (error) {
+      toast.error('Xóa cuộc hội thoại thất bại');
+    }
+  };
+
+  const handleRemoveMember = async (conversationId: string, memberId: string) => {
+    try {
+      await chatService.removeMember(conversationId, memberId);
+      toast.success('Đã xóa thành viên khỏi nhóm');
+    } catch (error) {
+      toast.error('Xóa thành viên thất bại');
+    }
+  };
+
   return (
     <div
       className={`flex w-full overflow-hidden bg-background text-foreground ${
@@ -383,6 +406,8 @@ export default function ChatList({ hideSidebar = false }: ChatListProps) {
             isSending={isSending}
             onSendMessage={handleSendMessage}
             onBack={() => setSelectedId(null)}
+            onDeleteConversation={handleDeleteConversation}
+            onRemoveMember={handleRemoveMember}
           />
         </div>
       </div>

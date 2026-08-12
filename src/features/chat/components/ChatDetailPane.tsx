@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/message-scroller';
 import type { Conversation, DetailMessage } from '@/features/chat/types/types';
 import { AppSpinner } from '@/shared/ui';
+import { ChatActionsMenu } from './ChatActionsMenu';
 
 const chatMessageSchema = z.object({
   message: z
@@ -89,6 +90,8 @@ interface ChatDetailPaneProps {
   isSending: boolean;
   onSendMessage: (message: string) => void;
   onBack: () => void;
+  onDeleteConversation: (conversationId: string) => void;
+  onRemoveMember: (conversationId: string, memberId: string) => void;
 }
 
 export function ChatDetailPane({
@@ -98,6 +101,8 @@ export function ChatDetailPane({
   isSending,
   onSendMessage,
   onBack,
+  onDeleteConversation,
+  onRemoveMember,
 }: ChatDetailPaneProps) {
   const {
     register,
@@ -186,6 +191,11 @@ export function ChatDetailPane({
                   {selectedConversation.tag.text}
                 </Badge>
               )}
+              <ChatActionsMenu
+                conversation={selectedConversation}
+                onDeleteConversation={onDeleteConversation}
+                onRemoveMember={onRemoveMember}
+              />
             </div>
           </div>
 

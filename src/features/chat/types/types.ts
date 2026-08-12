@@ -18,6 +18,7 @@ export interface Conversation {
   startDate?: string;
   isVirtual?: boolean;
   virtualData?: VirtualConversationData;
+  isGroupLeader?: boolean;
 }
 
 export interface VirtualConversationData {
@@ -51,6 +52,7 @@ export interface ConversationResponse {
   lastMessageContent: string;
   unreadCount: number;
   isNew?: boolean;
+  isGroupLeader?: boolean;
 }
 
 export interface PaginationResponse<T> {
@@ -59,7 +61,14 @@ export interface PaginationResponse<T> {
   pageSize: number;
   totalElements: number;
   totalPages: number;
-  last: boolean;
+  isLast: boolean;
+}
+
+export interface ConversationMember {
+  id: string;
+  email: string;
+  fullName: string;
+  avatarUrl?: string;
 }
 
 export interface ChatConversationsParams {
