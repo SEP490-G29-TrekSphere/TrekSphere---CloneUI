@@ -38,6 +38,11 @@ export function TourBookingRail({
   const bookingPath = selectedSchedule
     ? `${getBookTourPath(tour.tourId)}?scheduleId=${selectedSchedule.scheduleId}`
     : getBookTourPath(tour.tourId);
+  const contactHref = tour.vendorContactPhone
+    ? `tel:${tour.vendorContactPhone}`
+    : tour.vendorContactEmail
+      ? `mailto:${tour.vendorContactEmail}`
+      : null;
 
   function scrollToPolicy(event: React.MouseEvent<HTMLAnchorElement>) {
     event.preventDefault();
@@ -110,7 +115,22 @@ export function TourBookingRail({
       )}
 
       {/* CTA — hành động chính duy nhất của cả trang */}
-      {!isLoggedIn ? (
+      {tour.onlineBookingEnabled !== true ? (
+        <div className="rounded-xl bg-amber-50 px-4 py-3 text-center">
+          <p className="text-sm font-bold text-amber-950">Chưa nhận đặt online</p>
+          <p className="mt-1 text-xs leading-relaxed text-amber-800">
+            {tour.onlineBookingDisabledReason ?? 'Tour chưa đủ điều kiện nhận đặt online.'}
+          </p>
+          {contactHref && (
+            <a
+              href={contactHref}
+              className="mt-2 inline-block text-xs font-bold text-amber-950 underline underline-offset-4"
+            >
+              Liên hệ nhà tổ chức
+            </a>
+          )}
+        </div>
+      ) : !isLoggedIn ? (
         <>
           <Link
             to={PATHS.LOGIN}

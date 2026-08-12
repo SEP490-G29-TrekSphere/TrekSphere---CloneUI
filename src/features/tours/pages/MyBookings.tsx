@@ -12,7 +12,8 @@ type TabType = 'ALL' | BookingStatus;
 
 const TAB_OPTIONS: Array<{ label: string; value: TabType }> = [
   { label: 'Tất cả', value: 'ALL' },
-  { label: 'Chờ xử lý', value: 'PENDING' },
+  { label: 'Chờ thanh toán', value: 'PAYMENT_PENDING' },
+  { label: 'Chờ xác nhận', value: 'PENDING_CONFIRMATION' },
   { label: 'Đã xác nhận', value: 'CONFIRMED' },
   { label: 'Đã hoàn thành', value: 'COMPLETED' },
   { label: 'Đã hủy', value: 'CANCELLED' },
@@ -25,7 +26,14 @@ export default function MyBookings({ useTrekkerPaths = false }: { useTrekkerPath
   const [bookings, setBookings] = useState<BookingItemFromApi[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     const saved = sessionStorage.getItem('myBookingsActiveTab');
-    const validTabs: TabType[] = ['ALL', 'PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED'];
+    const validTabs: TabType[] = [
+      'ALL',
+      'PAYMENT_PENDING',
+      'PENDING_CONFIRMATION',
+      'CONFIRMED',
+      'COMPLETED',
+      'CANCELLED',
+    ];
     if (saved && validTabs.includes(saved as TabType)) {
       return saved as TabType;
     }
@@ -197,9 +205,14 @@ export default function MyBookings({ useTrekkerPaths = false }: { useTrekkerPath
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
                       {/* Booking Status badge */}
-                      {booking.bookingStatus === 'PENDING' && (
+                      {booking.bookingStatus === 'PAYMENT_PENDING' && (
                         <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
-                          Chờ xử lý
+                          Chờ thanh toán
+                        </span>
+                      )}
+                      {booking.bookingStatus === 'PENDING_CONFIRMATION' && (
+                        <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                          Chờ xác nhận
                         </span>
                       )}
                       {booking.bookingStatus === 'CONFIRMED' && (
@@ -217,6 +230,16 @@ export default function MyBookings({ useTrekkerPaths = false }: { useTrekkerPath
                           Đã hủy
                         </span>
                       )}
+                      {booking.bookingStatus === 'IN_PROGRESS' && (
+                        <span className="inline-flex items-center gap-1 bg-sky-50 text-sky-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                          Đang diễn ra
+                        </span>
+                      )}
+                      {['EXPIRED', 'REJECTED'].includes(booking.bookingStatus) && (
+                        <span className="inline-flex items-center gap-1 bg-red-50 text-red-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                          {booking.bookingStatus === 'EXPIRED' ? 'Hết hạn' : 'Bị từ chối'}
+                        </span>
+                      )}
 
                       {/* Payment Status badge */}
                       {booking.paymentStatus === 'PAID' && (
@@ -224,9 +247,19 @@ export default function MyBookings({ useTrekkerPaths = false }: { useTrekkerPath
                           Đã thanh toán
                         </span>
                       )}
-                      {booking.paymentStatus === 'PENDING' && (
+                      {booking.paymentStatus === 'UNPAID' && (
                         <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-900 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
                           Chưa thanh toán
+                        </span>
+                      )}
+                      {booking.paymentStatus === 'PARTIALLY_PAID' && (
+                        <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                          Đã đặt cọc
+                        </span>
+                      )}
+                      {booking.paymentStatus === 'REFUND_PENDING' && (
+                        <span className="inline-flex items-center gap-1 bg-orange-50 text-orange-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                          Chờ hoàn tiền
                         </span>
                       )}
                       {booking.paymentStatus === 'REFUNDED' && (

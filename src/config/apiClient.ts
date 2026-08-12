@@ -41,12 +41,13 @@ const deriveApiUrl = (rawUrl?: string): string => {
   return `${cleanUrl}/api/v1`;
 };
 
-// Dev without VITE_API_URL → use relative path so Vite proxy forwards to BE.
+// Dev mặc định dùng relative path để Vite proxy forward tới BE, kể cả khi
+// VITE_API_URL được dùng làm proxy target. Có thể tắt bằng VITE_API_USE_PROXY=false.
 // Prod without VITE_API_URL → fail fast with a clear error rather than silently
 // pointing at a hardcoded URL.
 const getBaseURL = (): string => {
+  if (isDev && import.meta.env.VITE_API_USE_PROXY !== 'false') return '/api/v1';
   if (envApiUrl) return deriveApiUrl(envApiUrl);
-  if (isDev) return '/api/v1';
   throw new Error(
     '[apiClient] VITE_API_URL is not set. ' +
       'Set it in your .env file before running a production build.'
@@ -80,23 +81,9 @@ type RetryableRequest = AxiosError['config'] & {
   __skipRefresh?: boolean;
 };
 
-// Biến shared state cho refresh flow — đảm bảo nhiều request 401 đồng thời
-// chỉ trigger 1 lần refresh, các request còn lại sẽ đợi token mới rồi retry.
-let isRefreshing = false;
-let refreshSubscribers: Array<(token: string) => void> = [];
-
-const subscribeTokenRefresh = (cb: (token: string) => void): void => {
-  refreshSubscribers.push(cb);
-};
-
-const onTokenRefreshed = (token: string): void => {
-  for (const cb of refreshSubscribers) cb(token);
-  refreshSubscribers = [];
-};
-
-const onRefreshFailed = (): void => {
-  refreshSubscribers = [];
-};
+// Một Promise dùng chung giúp mọi request 401 cùng chờ đúng một lần refresh.
+// Cách này cũng bảo đảm các request không bị treo khi refresh thất bại.
+let refreshPromise: Promise<string | null> | null = null;
 
 /**
  * Dọn sạch session khi token hết hạn hẳn (không refresh được nữa) — không chỉ
@@ -105,11 +92,17 @@ const onRefreshFailed = (): void => {
  * là còn coi như đã login) và clear cache React Query (nếu không, các trang
  * đang mount vẫn hiển thị dữ liệu cũ từ cache dù đã "mất" đăng nhập).
  *
- * Guard theo `accessToken` còn tồn tại không — tránh nhiều request 401 cùng
- * lúc (cùng 1 đợt hết hạn) gọi clear/toast lặp lại nhiều lần.
+ * Guard theo toàn bộ session (token hoặc user) để vẫn dọn được trường hợp login
+ * response thiếu token nhưng Zustand đã lưu user.
  */
 const clearExpiredSession = (): void => {
-  if (!storage.get<string>('accessToken')) return;
+  const hasSession = Boolean(
+    storage.get<string>('accessToken') ||
+      storage.get<string>('refreshToken') ||
+      useAppStore.getState().user
+  );
+  if (!hasSession) return;
+
   storage.remove('accessToken');
   storage.remove('refreshToken');
   useAppStore.getState().setUser(null);
@@ -128,9 +121,8 @@ function buildAbsoluteBaseURL(): string {
  * Gọi /auth/refresh để lấy access_token mới.
  * Trả về access_token mới, hoặc null nếu thất bại.
  *
- * Lưu ý: Vì không biết chính xác BE expect body shape nào, thử lần lượt các
- * shape phổ biến. Vì `apiClient` đã có `withCredentials: true` nên cookie
- * (nếu BE set) sẽ tự gửi kèm — không cần truyền thêm gì.
+ * Gửi refresh token trong body theo contract hiện tại và vẫn bật credentials
+ * để Backend có thể dùng cookie HttpOnly làm fallback.
  */
 async function performRefresh(): Promise<string | null> {
   const refreshToken = storage.get<string>('refreshToken');
@@ -141,69 +133,47 @@ async function performRefresh(): Promise<string | null> {
   }
 
   const absoluteURL = `${buildAbsoluteBaseURL()}/auth/refresh-token`;
-  const bodyCandidates: Array<Record<string, unknown> | null> = [
-    refreshToken ? { refreshToken } : null,
-    refreshToken ? { refresh_token: refreshToken } : null,
-    refreshToken ? { token: refreshToken } : null,
-    null,
-  ];
-
-  for (const _body of bodyCandidates) {
-    try {
-      const response = await axios.post<{
+  try {
+    const response = await axios.post<{
+      access_token?: string;
+      accessToken?: string;
+      data?: {
         access_token?: string;
         accessToken?: string;
         refresh_token?: string;
         refreshToken?: string;
-        token?: string;
-        data?: {
-          access_token?: string;
-          accessToken?: string;
-          token?: string;
-          refresh_token?: string;
-          refreshToken?: string;
-        };
-      }>(absoluteURL, _body ?? {}, { timeout: TIME_OUT, withCredentials });
+      };
+    }>(absoluteURL, refreshToken ? { refreshToken } : {}, { timeout: TIME_OUT, withCredentials });
 
-      const root = response.data as Record<string, unknown>;
-      const inner = (root.data as Record<string, unknown> | undefined) ?? {};
-      const newAccess =
-        (inner.access_token as string | undefined) ??
-        (inner.accessToken as string | undefined) ??
-        (inner.token as string | undefined) ??
-        (root.access_token as string | undefined) ??
-        (root.accessToken as string | undefined) ??
-        (root.token as string | undefined);
-      const newRefresh =
-        (inner.refresh_token as string | undefined) ??
-        (inner.refreshToken as string | undefined) ??
-        (root.refresh_token as string | undefined) ??
-        (root.refreshToken as string | undefined) ??
-        refreshToken ??
-        '';
+    const root = response.data as Record<string, unknown>;
+    const inner = (root.data as Record<string, unknown> | undefined) ?? {};
+    const newAccess =
+      (inner.access_token as string | undefined) ??
+      (inner.accessToken as string | undefined) ??
+      (root.access_token as string | undefined) ??
+      (root.accessToken as string | undefined);
+    const newRefresh =
+      (inner.refresh_token as string | undefined) ??
+      (inner.refreshToken as string | undefined) ??
+      (root.refresh_token as string | undefined) ??
+      (root.refreshToken as string | undefined);
 
-      if (!newAccess) {
-        // Shape này không đúng → thử shape tiếp theo
-        continue;
-      }
+    if (!newAccess || !newRefresh) {
+      console.error('[apiClient] refresh response is missing tokens');
+      return null;
+    }
 
-      storage.set('accessToken', newAccess);
-      if (newRefresh) storage.set('refreshToken', newRefresh);
-      return newAccess;
-    } catch (err) {
-      // Nếu lỗi 401 → refresh token sai/hết hạn → KHÔNG thử shape khác nữa
-      // (vì BE đã từ chối), trả về null để caller clear storage.
-      if (axios.isAxiosError(err) && err.response?.status === 401) {
-        console.error('[apiClient] refresh token returned 401 — refresh token invalid/expired');
-        return null;
-      }
-      // Lỗi khác (network, 5xx) → thử shape tiếp theo
+    storage.set('accessToken', newAccess);
+    storage.set('refreshToken', newRefresh);
+    return newAccess;
+  } catch (err) {
+    if (axios.isAxiosError(err) && err.response?.status === 401) {
+      console.error('[apiClient] refresh token returned 401 — refresh token invalid/expired');
+    } else {
       console.warn('[apiClient] refresh attempt failed:', err);
     }
+    return null;
   }
-
-  console.error('[apiClient] refresh token: all body shapes failed');
-  return null;
 }
 
 // Request interceptor for token
@@ -244,51 +214,26 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Endpoint /auth/refresh-token tự nó cũng có thể 401 khi refresh token hết hạn —
-    // trong trường hợp đó axios.post trong `performRefresh` đã xử lý rồi, không
-    // cần chạy vào flow này. Cờ __skipRefresh được set cho request /auth/refresh-token
-    // qua `performRefresh` rồi, nên logic ở đây an toàn.
+    // Không bao giờ refresh lại chính request refresh-token để tránh vòng lặp.
+    // `performRefresh` dùng axios instance riêng, nhánh này bảo vệ các call site khác.
     if (originalConfig.url?.includes('/auth/refresh-token')) {
       return Promise.reject(error);
     }
 
-    // Có refresh token trong storage không?
-    const hasRefreshToken = Boolean(storage.get<string>('refreshToken'));
-    if (!hasRefreshToken) {
-      console.warn('[apiClient] 401 received, no refresh token available:', originalConfig?.url);
+    originalConfig.__retried = true;
+    refreshPromise ??= performRefresh().finally(() => {
+      refreshPromise = null;
+    });
+    const newToken = await refreshPromise;
+
+    if (!newToken) {
       clearExpiredSession();
       return Promise.reject(error);
     }
 
-    originalConfig.__retried = true;
-
-    if (!isRefreshing) {
-      isRefreshing = true;
-      const newToken = await performRefresh();
-      isRefreshing = false;
-
-      if (!newToken) {
-        // Refresh thất bại → xóa token + user + cache, để user phải login lại
-        clearExpiredSession();
-        onRefreshFailed();
-        return Promise.reject(error);
-      }
-
-      onTokenRefreshed(newToken);
-      // Retry request hiện tại với token mới
-      originalConfig.headers = originalConfig.headers ?? new axios.AxiosHeaders();
-      originalConfig.headers.Authorization = `Bearer ${newToken}`;
-      return apiClient.request(originalConfig);
-    }
-
-    // Đang refresh rồi → đợi token mới rồi retry
-    return new Promise<AxiosResponse>((resolve, reject) => {
-      subscribeTokenRefresh((token) => {
-        originalConfig.headers = originalConfig.headers ?? new axios.AxiosHeaders();
-        originalConfig.headers.Authorization = `Bearer ${token}`;
-        apiClient.request(originalConfig).then(resolve).catch(reject);
-      });
-    });
+    originalConfig.headers = originalConfig.headers ?? new axios.AxiosHeaders();
+    originalConfig.headers.Authorization = `Bearer ${newToken}`;
+    return apiClient.request(originalConfig);
   }
 );
 
@@ -400,7 +345,8 @@ export const ApiService = async <T>(
   path: string,
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   data?: unknown,
-  params?: Record<string, string>
+  params?: Record<string, string>,
+  headers?: Record<string, string>
 ): Promise<ApiResponse<T>> => {
   try {
     const response = await apiClient.request({
@@ -408,6 +354,7 @@ export const ApiService = async <T>(
       method,
       data,
       params,
+      headers,
     });
 
     return handleResponse<T>(response);

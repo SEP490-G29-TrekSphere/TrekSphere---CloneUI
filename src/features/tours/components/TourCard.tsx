@@ -87,6 +87,11 @@ export default function TourCard({ tour, className = '', layout = 'list' }: Tour
           {tour.level && (
             <LevelBadge level={tour.level} className="absolute right-3 top-3 backdrop-blur-xs" />
           )}
+          {tour.onlineBookingEnabled !== true && (
+            <span className="absolute bottom-3 left-3 rounded-full bg-amber-50/95 px-2.5 py-1 text-[10px] font-bold text-amber-950 backdrop-blur-sm">
+              Chưa nhận đặt online
+            </span>
+          )}
         </Link>
 
         {/* Content body */}
@@ -157,6 +162,11 @@ export default function TourCard({ tour, className = '', layout = 'list' }: Tour
           loading="lazy"
         />
         {tour.level && <LevelBadge level={tour.level} className="absolute right-2 top-2" />}
+        {tour.onlineBookingEnabled !== true && (
+          <span className="absolute bottom-2 left-2 rounded-full bg-amber-50/95 px-2.5 py-1 text-[10px] font-bold text-amber-950 backdrop-blur-sm">
+            Chưa nhận đặt online
+          </span>
+        )}
       </Link>
 
       {/* Middle content */}

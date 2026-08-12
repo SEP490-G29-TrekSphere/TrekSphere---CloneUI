@@ -7,13 +7,7 @@ interface RejectBookingModalProps {
   isOpen: boolean;
   isPending: boolean;
   onClose: () => void;
-  onConfirm: (
-    bookingId: string,
-    cancellationReason: string,
-    refundBankName?: string,
-    refundAccountNumber?: string,
-    refundAccountHolder?: string
-  ) => void;
+  onConfirm: (bookingId: string, cancellationReason: string) => void;
 }
 
 export function RejectBookingModal({
@@ -24,22 +18,13 @@ export function RejectBookingModal({
   onConfirm,
 }: RejectBookingModalProps) {
   const [reason, setReason] = useState('');
-  const [refundBankName, setRefundBankName] = useState('');
-  const [refundAccountNumber, setRefundAccountNumber] = useState('');
-  const [refundAccountHolder, setRefundAccountHolder] = useState('');
 
   if (!isOpen || !booking) return null;
 
   const handleConfirm = (e: React.FormEvent) => {
     e.preventDefault();
     if (!reason.trim()) return;
-    onConfirm(
-      booking.bookingId,
-      reason.trim(),
-      refundBankName.trim() || undefined,
-      refundAccountNumber.trim() || undefined,
-      refundAccountHolder.trim() || undefined
-    );
+    onConfirm(booking.bookingId, reason.trim());
   };
 
   const bookingCode = booking.bookingCode || booking.bookingId.substring(0, 8);
@@ -109,70 +94,10 @@ export function RejectBookingModal({
             />
           </div>
 
-          {/* Refund Info Section */}
-          <div className="mb-6 space-y-4">
-            <div className="border-t border-[#E6E2D1] pt-4">
-              <h4 className="text-sm font-extrabold text-[#06261D] mb-3">
-                Thông tin hoàn tiền (nếu cần hoàn)
-              </h4>
-            </div>
-
-            <div>
-              <label
-                htmlFor="refundBankName"
-                className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5"
-              >
-                Ngân hàng
-              </label>
-              <input
-                type="text"
-                id="refundBankName"
-                value={refundBankName}
-                onChange={(e) => setRefundBankName(e.target.value)}
-                placeholder="Ví dụ: Vietcombank"
-                disabled={isPending}
-                className="w-full rounded-2xl border border-[#E6E2D1] bg-[#FAF8F1] px-4 py-3 text-sm text-[#06261D] focus:outline-hidden focus:ring-2 focus:ring-[#06261D]/20 focus:border-[#06261D] placeholder:text-gray-400 transition-all"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label
-                  htmlFor="refundAccountNumber"
-                  className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5"
-                >
-                  Số tài khoản
-                </label>
-                <input
-                  type="text"
-                  id="refundAccountNumber"
-                  value={refundAccountNumber}
-                  onChange={(e) => setRefundAccountNumber(e.target.value)}
-                  placeholder="Ví dụ: 1234567890"
-                  disabled={isPending}
-                  className="w-full rounded-2xl border border-[#E6E2D1] bg-[#FAF8F1] px-4 py-3 text-sm text-[#06261D] focus:outline-hidden focus:ring-2 focus:ring-[#06261D]/20 focus:border-[#06261D] placeholder:text-gray-400 transition-all"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="refundAccountHolder"
-                  className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5"
-                >
-                  Tên chủ tài khoản
-                </label>
-                <input
-                  type="text"
-                  id="refundAccountHolder"
-                  value={refundAccountHolder}
-                  onChange={(e) => setRefundAccountHolder(e.target.value)}
-                  placeholder="Ví dụ: NGUYEN VAN A"
-                  disabled={isPending}
-                  className="w-full rounded-2xl border border-[#E6E2D1] bg-[#FAF8F1] px-4 py-3 text-sm text-[#06261D] focus:outline-hidden focus:ring-2 focus:ring-[#06261D]/20 focus:border-[#06261D] placeholder:text-gray-400 transition-all"
-                />
-              </div>
-            </div>
-          </div>
+          <p className="mb-6 rounded-2xl bg-amber-50 px-4 py-3 text-xs font-medium leading-relaxed text-amber-900">
+            Nếu đơn đã thu tiền, hệ thống sẽ tự tạo yêu cầu hoàn tiền. Khách cập nhật tài khoản nhận
+            tiền và quản lý xử lý tại tab <strong>Hoàn tiền</strong> trong chi tiết đơn.
+          </p>
 
           {/* Modal Actions */}
           <div className="flex items-center gap-3">

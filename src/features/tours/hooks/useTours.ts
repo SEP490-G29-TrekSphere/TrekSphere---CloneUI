@@ -34,6 +34,8 @@ export function mapApiItemToTour(item: TourApiItem): Tour {
     includes: [],
     isPopular: false,
     isNew: false,
+    onlineBookingEnabled: item.onlineBookingEnabled === true,
+    onlineBookingDisabledReason: item.onlineBookingDisabledReason,
   };
 }
 

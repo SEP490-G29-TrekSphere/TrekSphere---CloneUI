@@ -2,15 +2,12 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PATHS } from '@/constants';
 import { toast } from '@/store/useToastStore';
-import { BankInfoCard } from '../components/edit/BankInfoCard';
 import { CompanyInfoCard } from '../components/edit/CompanyInfoCard';
-import { PaymentQrCard } from '../components/edit/PaymentQrCard';
 import { useUpdateVendorProfile } from '../hooks/useUpdateVendorProfile';
 import { useVendorProfile } from '../hooks/useVendorProfile';
 
 /**
- * Trang "Chi tiết hồ sơ" — Vendor Manager cập nhật thông tin công ty, ngân
- * hàng, mã QR thanh toán. Gọi `PUT /vendors/profile` (multipart/form-data).
+ * Trang "Chi tiết hồ sơ" — Vendor Manager cập nhật thông tin công ty và liên hệ.
  */
 export default function VendorProfileEdit() {
   const navigate = useNavigate();
@@ -20,10 +17,6 @@ export default function VendorProfileEdit() {
   const [description, setDescription] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
-  const [bankName, setBankName] = useState('');
-  const [bankAccount, setBankAccount] = useState('');
-  const [qrFile, setQrFile] = useState<File | null>(null);
-  const [qrPreview, setQrPreview] = useState<string | null>(null);
 
   // Nạp giá trị hiện tại khi profile tải xong.
   useEffect(() => {
@@ -31,20 +24,7 @@ export default function VendorProfileEdit() {
     setDescription(profile.description ?? '');
     setContactEmail(profile.contactEmail ?? '');
     setContactPhone(profile.contactPhone ?? '');
-    setBankName(profile.bankName ?? '');
-    setBankAccount(profile.bankAccount ?? '');
-    setQrPreview(profile.paymentQrUrl ?? null);
   }, [profile]);
-
-  const handleQrFileSelected = (file: File) => {
-    setQrFile(file);
-    setQrPreview(URL.createObjectURL(file));
-  };
-
-  const handleClearQrPreview = () => {
-    setQrFile(null);
-    setQrPreview(null);
-  };
 
   const handleSave = () => {
     updateMutation.mutate(
@@ -52,9 +32,6 @@ export default function VendorProfileEdit() {
         description,
         contactEmail,
         contactPhone,
-        bankName,
-        bankAccount,
-        paymentQrFile: qrFile,
       },
       {
         onSuccess: () => {
@@ -95,7 +72,7 @@ export default function VendorProfileEdit() {
           Chi tiết hồ sơ
         </h2>
         <p className="mt-1 text-sm font-medium" style={{ color: '#6F7B75' }}>
-          Cập nhật thông tin công ty, ngân hàng và mã QR thanh toán.
+          Cập nhật thông tin giới thiệu và kênh liên hệ của doanh nghiệp.
         </p>
       </div>
 
@@ -108,19 +85,6 @@ export default function VendorProfileEdit() {
         onContactEmailChange={setContactEmail}
         contactPhone={contactPhone}
         onContactPhoneChange={setContactPhone}
-      />
-
-      <BankInfoCard
-        bankName={bankName}
-        onBankNameChange={setBankName}
-        bankAccount={bankAccount}
-        onBankAccountChange={setBankAccount}
-      />
-
-      <PaymentQrCard
-        preview={qrPreview}
-        onFileSelected={handleQrFileSelected}
-        onClearPreview={handleClearQrPreview}
       />
 
       <div className="flex items-center justify-end gap-3 pb-6">

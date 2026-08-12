@@ -1,391 +1,463 @@
-import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertCircle, FileImage, QrCode, Upload } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import {
+  AlertCircle,
+  ArrowLeft,
+  CheckCircle2,
+  Clock3,
+  CreditCard,
+  ExternalLink,
+  Loader2,
+  ReceiptText,
+  RefreshCw,
+  ShieldCheck,
+  WalletCards,
+} from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import * as z from 'zod';
 import { getBookingDetailPath } from '@/constants/paths';
-import { useBookingCountdown } from '@/features/tours/hooks/useBookingCountdown';
-import { PAYMENT_DEADLINE_SECONDS, tourService } from '@/features/tours/services/tourService';
-import type { BookingDetailResponse } from '@/features/tours/types';
-import { AppButton, AppCard } from '@/shared/ui';
+import { BookingFinancialTimeline } from '@/features/payments/components/BookingFinancialTimeline';
+import { paymentService } from '@/features/payments/services/paymentService';
+import type { PaymentCheckout, PaymentTransaction } from '@/features/payments/types';
+import { canCreateCheckout } from '@/features/payments/utils/paymentState';
+import { tourService } from '@/features/tours/services/tourService';
+import { AppCard } from '@/shared/ui';
 import { toast } from '@/store/useToastStore';
-import { formatCountdown, formatPrice } from '@/utils/format';
 
-const isValidImageFile = async (file: File): Promise<boolean> => {
-  const header = new Uint8Array(await file.slice(0, 8).arrayBuffer());
-  const isPng =
-    header.length >= 8 &&
-    header[0] === 0x89 &&
-    header[1] === 0x50 &&
-    header[2] === 0x4e &&
-    header[3] === 0x47 &&
-    header[4] === 0x0d &&
-    header[5] === 0x0a &&
-    header[6] === 0x1a &&
-    header[7] === 0x0a;
+function money(value: number, currency = 'VND'): string {
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency }).format(value);
+}
 
-  const isJpg =
-    header.length >= 3 && header[0] === 0xff && header[1] === 0xd8 && header[2] === 0xff;
+function dateTime(value?: string | null): string {
+  if (!value) return '—';
+  return new Intl.DateTimeFormat('vi-VN', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(new Date(value));
+}
 
-  return isPng || isJpg;
-};
+function stageLabel(stage: PaymentCheckout['paymentStage']): string {
+  if (stage === 'DEPOSIT') return 'Tiền đặt cọc';
+  if (stage === 'REMAINING') return 'Phần thanh toán còn lại';
+  return 'Toàn bộ đơn hàng';
+}
 
-const paymentSchema = z.object({
-  paymentProof: z
-    .instanceof(File, { message: 'Vui lòng chọn ảnh minh chứng thanh toán' })
-    .nullable()
-    .refine((file) => file !== null, 'Vui lòng chọn file minh chứng thanh toán.')
-    .refine((file) => {
-      if (!file) return true;
-      const maxSize = 10 * 1024 * 1024;
-      return file.size <= maxSize;
-    }, 'Kích thước file vượt quá giới hạn 10MB. Vui lòng chọn file nhỏ hơn.')
-    .refine(async (file) => {
-      if (!file) return true;
-      return await isValidImageFile(file);
-    }, 'Nội dung file không hợp lệ. Vui lòng tải lên ảnh PNG hoặc JPG/JPEG hợp lệ.'),
-});
+function paymentPlanLabel(plan?: string): string {
+  return plan === 'DEPOSIT' ? 'Thanh toán 2 đợt' : 'Thanh toán toàn bộ';
+}
+
+function isLive(transaction: PaymentTransaction): boolean {
+  return ['CREATED', 'PENDING', 'PROCESSING'].includes(transaction.status);
+}
+
+function formatCountdown(seconds: number): string {
+  const safe = Math.max(0, seconds);
+  const minutes = Math.floor(safe / 60);
+  return `${String(minutes).padStart(2, '0')}:${String(safe % 60).padStart(2, '0')}`;
+}
 
 export default function PayBooking({ backPath }: { backPath?: string }) {
   const { bookingId } = useParams<{ bookingId: string }>();
   const navigate = useNavigate();
+  const [checkout, setCheckout] = useState<PaymentCheckout | null>(null);
+  const [now, setNow] = useState(() => Date.now());
 
-  const [booking, setBooking] = useState<BookingDetailResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  // Time Countdown state (BR-08: 15 minutes)
-  const [isExpired, setIsExpired] = useState(false);
-  const timeLeft = useBookingCountdown(
-    booking?.createdAt,
-    !loading && !isExpired && booking?.bookingStatus === 'PENDING',
-    PAYMENT_DEADLINE_SECONDS
-  );
-
-  const [paymentProofUrl, setPaymentProofUrl] = useState<string | null>(null);
-  const [isMutating, setIsMutating] = useState(false);
-
-  const {
-    handleSubmit,
-    setValue,
-    watch,
-    formState: { errors },
-  } = useForm({
-    resolver: zodResolver(paymentSchema, undefined, { mode: 'async' }),
-    defaultValues: {
-      paymentProof: null as File | null,
+  const bookingQuery = useQuery({
+    queryKey: ['booking-detail', bookingId],
+    queryFn: () => tourService.getBookingDetail(bookingId as string),
+    enabled: Boolean(bookingId),
+    refetchInterval: (query) => {
+      const status = query.state.data?.paymentStatus;
+      return status === 'UNPAID' || status === 'PARTIALLY_PAID' ? 4_000 : false;
     },
   });
 
-  const paymentProof = watch('paymentProof');
+  const paymentsQuery = useQuery({
+    queryKey: ['booking-payments', bookingId],
+    queryFn: () => paymentService.getPayments(bookingId as string),
+    enabled: Boolean(bookingId),
+    refetchInterval: (query) => (query.state.data?.some(isLive) ? 4_000 : false),
+  });
+
+  const checkoutMutation = useMutation({
+    mutationFn: () => paymentService.createCheckout(bookingId as string),
+    onSuccess: (data) => {
+      setCheckout(data);
+      paymentsQuery.refetch();
+      bookingQuery.refetch();
+    },
+    onError: (error: Error) => toast.error(error.message || 'Không thể tạo phiên thanh toán.'),
+  });
 
   useEffect(() => {
-    return () => {
-      if (paymentProofUrl) {
-        URL.revokeObjectURL(paymentProofUrl);
-      }
-    };
-  }, [paymentProofUrl]);
+    const timer = window.setInterval(() => setNow(Date.now()), 1_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const latestLivePayment = useMemo(
+    () =>
+      [...(paymentsQuery.data ?? [])]
+        .filter(isLive)
+        .sort((a, b) => b.attemptNumber - a.attemptNumber)[0],
+    [paymentsQuery.data]
+  );
+
+  const booking = bookingQuery.data;
+  const canPay = Boolean(booking && canCreateCheckout(booking, now));
+  const isPaid = booking?.paymentStatus === 'PAID';
+  const isRefundPending = booking?.paymentStatus === 'REFUND_PENDING';
+  const isRefunded = ['PARTIALLY_REFUNDED', 'REFUNDED'].includes(booking?.paymentStatus ?? '');
+  const netPaid = Math.max(0, (booking?.paidAmount ?? 0) - (booking?.refundAmount ?? 0));
 
   useEffect(() => {
-    async function fetchBooking() {
-      if (!bookingId) return;
-      try {
-        const data = await tourService.getBookingDetail(bookingId);
-        setBooking(data);
-
-        // If it's already awaiting confirmation, confirmed, cancelled or proof is already uploaded, we shouldn't show the pay screen
-        if (data.bookingStatus !== 'PENDING' || data.proofImageUrl) {
-          toast.info('Đơn hàng đã gửi minh chứng hoặc đang chờ Vendor xác nhận.');
-          navigate(backPath ?? getBookingDetailPath(bookingId));
-          return;
-        }
-
-        // Calculate exact remaining time based on booking creation date
-        const createdTime = new Date(data.createdAt).getTime();
-        const elapsedSeconds = Math.floor((Date.now() - createdTime) / 1000);
-        const remaining = Math.max(0, PAYMENT_DEADLINE_SECONDS - elapsedSeconds);
-
-        if (remaining <= 0) {
-          setIsExpired(true);
-          await tourService.cancelBooking(bookingId, 'Hết thời gian thanh toán');
-        }
-      } catch {
-        toast.error('Không thể tải thông tin đơn đặt chỗ.');
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchBooking();
-  }, [bookingId, navigate, backPath]);
-
-  // Handle timer expiration side effects
-  useEffect(() => {
-    if (timeLeft === 0 && !isExpired && booking?.bookingStatus === 'PENDING') {
-      setIsExpired(true);
-      if (bookingId) {
-        tourService.cancelBooking(bookingId, 'Hết thời gian thanh toán');
-      }
-      toast.error('Đã hết 15 phút thanh toán! Chỗ của bạn đã được giải phóng.');
-    }
-  }, [timeLeft, isExpired, bookingId, booking]);
-
-  // Upload proof of payment validation (E1)
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setValue('paymentProof', file, { shouldValidate: true });
-
-    if (paymentProofUrl) {
-      URL.revokeObjectURL(paymentProofUrl);
-    }
-    setPaymentProofUrl(URL.createObjectURL(file));
-  };
-
-  // Submit payment proof
-  const onSubmit = async (data: { paymentProof: File | null }) => {
-    if (!bookingId || !data.paymentProof) return;
-    if (isExpired) {
-      toast.error('Đã hết hạn thanh toán 15 phút!');
+    if (
+      !canPay ||
+      !latestLivePayment?.checkoutUrl ||
+      latestLivePayment.orderCode == null ||
+      checkout
+    ) {
       return;
     }
+    setCheckout({
+      paymentTransactionId: latestLivePayment.paymentTransactionId,
+      bookingId: bookingId as string,
+      paymentStage: latestLivePayment.paymentStage,
+      amount: latestLivePayment.amount,
+      currency: latestLivePayment.currency,
+      status: latestLivePayment.status,
+      orderCode: latestLivePayment.orderCode,
+      checkoutUrl: latestLivePayment.checkoutUrl,
+      expiredAt: latestLivePayment.expiredAt ?? new Date().toISOString(),
+    });
+  }, [bookingId, canPay, checkout, latestLivePayment]);
 
-    setIsMutating(true);
-    try {
-      await tourService.updatePaymentProof(bookingId, data.paymentProof);
-
-      toast.success('Cập nhật minh chứng thanh toán thành công!');
-      navigate(backPath ?? getBookingDetailPath(bookingId));
-    } catch (error) {
-      const errMsg = error instanceof Error ? error.message : 'Đã xảy ra lỗi khi gửi minh chứng.';
-      toast.error(errMsg);
-    } finally {
-      setIsMutating(false);
+  useEffect(() => {
+    if (!checkout) return;
+    const currentTransaction = paymentsQuery.data?.find(
+      (payment) => payment.paymentTransactionId === checkout.paymentTransactionId
+    );
+    if (
+      !canPay ||
+      isPaid ||
+      isRefundPending ||
+      isRefunded ||
+      (currentTransaction && !isLive(currentTransaction))
+    ) {
+      setCheckout(null);
     }
-  };
+  }, [canPay, checkout, isPaid, isRefundPending, isRefunded, paymentsQuery.data]);
 
-  if (loading) {
+  const resolvedBackPath = booking
+    ? backPath
+      ? backPath.replace(':bookingId', booking.bookingId)
+      : getBookingDetailPath(booking.bookingId)
+    : (backPath ?? '/my-tours');
+  const expiresAt = checkout?.expiredAt ?? latestLivePayment?.expiredAt;
+  const secondsLeft = expiresAt
+    ? Math.max(0, Math.floor((new Date(expiresAt).getTime() - now) / 1_000))
+    : 0;
+
+  if (bookingQuery.isLoading) {
     return (
-      <div className="flex min-h-[calc(100vh-4rem)] w-full items-center justify-center bg-[#FAF9F5]">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#0B3025] border-t-transparent" />
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  if (!booking) {
+  if (!bookingId || bookingQuery.isError || !booking) {
     return (
-      <div className="min-h-[calc(100vh-4rem)] w-full flex flex-col items-center justify-center p-6 text-center bg-[#FAF9F5]">
-        <div className="max-w-md w-full bg-white p-8 rounded-3xl border border-red-100 shadow-lg space-y-4">
-          <AlertCircle className="w-12 h-12 text-rose-500 mx-auto" />
-          <h2 className="text-xl font-extrabold text-[#0B3025]">
-            Không tìm thấy thông tin đặt chỗ
-          </h2>
-          <p className="text-xs text-zinc-500 leading-relaxed">
-            Vui lòng kiểm tra lại mã đặt chỗ của bạn.
+      <div className="mx-auto flex min-h-[60vh] max-w-lg items-center px-4 text-center">
+        <AppCard className="w-full rounded-3xl p-8">
+          <AlertCircle className="mx-auto h-10 w-10 text-destructive" />
+          <h1 className="mt-4 text-xl font-extrabold">Không thể mở phiên thanh toán</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {bookingQuery.error instanceof Error
+              ? bookingQuery.error.message
+              : 'Đơn đặt tour không tồn tại hoặc bạn không có quyền truy cập.'}
           </p>
-          <div className="pt-2">
-            <AppButton
-              onClick={() => navigate(backPath ?? '/my-tours')}
-              className="bg-[#0B3025] hover:bg-[#072019] text-white font-bold px-6 py-2.5 rounded-full text-xs shadow-sm border-none cursor-pointer"
-            >
-              Quay lại danh sách tour đã đặt
-            </AppButton>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (isExpired) {
-    return (
-      <div className="min-h-[calc(100vh-4rem)] w-full flex flex-col items-center justify-center p-6 text-center bg-[#FAF9F5]">
-        <div className="max-w-md w-full bg-white p-8 rounded-3xl border border-red-100 shadow-lg space-y-4">
-          <AlertCircle className="w-12 h-12 text-rose-500 mx-auto" />
-          <h2 className="text-xl font-extrabold text-[#0B3025]">Giao dịch đã hết hạn</h2>
-          <p className="text-xs text-zinc-500 leading-relaxed">
-            Đơn đặt chỗ <strong>{booking.bookingId}</strong> đã tự động hủy do quá thời gian giữ chỗ
-            15 phút. Vui lòng quay lại đặt chỗ mới.
-          </p>
-          <div className="pt-2">
-            <AppButton
-              onClick={() => navigate(`/tours/${booking.tourId}`)}
-              className="bg-[#0B3025] hover:bg-[#072019] text-white font-bold px-6 py-2.5 rounded-full text-xs shadow-sm border-none cursor-pointer"
-            >
-              Quay lại đặt tour
-            </AppButton>
-          </div>
-        </div>
+          <button
+            type="button"
+            onClick={() => navigate(backPath ?? '/my-tours')}
+            className="mt-5 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground"
+          >
+            Quay lại
+          </button>
+        </AppCard>
       </div>
     );
   }
 
   return (
-    <div className="w-full bg-[#FAF9F5] min-h-screen py-8">
-      <div className="mx-auto max-w-[1400px] w-full px-4 sm:px-6 lg:px-8 space-y-6">
-        {/* Countdown timer banner (BR-08) */}
-        <div className="p-4 bg-amber-50 text-amber-800 border border-amber-100 rounded-2xl text-xs font-semibold flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            <span>
-              Vui lòng hoàn tất thanh toán chuyển khoản trước khi thời gian giữ chỗ kết thúc:
-            </span>
+    <div className="min-h-screen bg-[#F2F0EB] py-6 sm:py-9">
+      <div className="mx-auto max-w-6xl space-y-6 px-4 sm:px-6">
+        <button
+          type="button"
+          onClick={() => navigate(resolvedBackPath)}
+          className="inline-flex items-center gap-2 rounded-full px-1 py-2 text-sm font-bold text-[#56655F] transition-colors hover:text-[#1E3932]"
+        >
+          <ArrowLeft className="h-4 w-4" /> Chi tiết đơn
+        </button>
+
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#6F7E72]">
+              Thanh toán bảo mật
+            </p>
+            <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-[#1E3932]">
+              Thanh toán đơn {booking.bookingCode}
+            </h1>
+            <p className="mt-2 text-sm font-medium text-[#6F7E72]">{booking.tourName}</p>
           </div>
-          <span className="text-sm font-extrabold tracking-wider bg-white px-3 py-1 rounded-xl shadow-sm border border-amber-200">
-            {formatCountdown(timeLeft)}
-          </span>
+          <div className="flex items-center gap-2 rounded-full border border-[#CFE0D5] bg-white px-4 py-2 text-xs font-bold text-[#006241]">
+            <ShieldCheck className="h-4 w-4" /> Thanh toán qua payOS
+          </div>
+        </header>
+
+        <div className="grid overflow-hidden rounded-[24px] border border-[#DED9CA] bg-white sm:grid-cols-3">
+          {[
+            {
+              step: '1',
+              label: 'Tạo phiên thanh toán',
+              complete: Boolean(checkout) || isPaid,
+              active: !checkout && !isPaid,
+            },
+            {
+              step: '2',
+              label: 'Hoàn tất trên payOS',
+              complete: isPaid,
+              active: Boolean(checkout) && !isPaid,
+            },
+            {
+              step: '3',
+              label: 'Xác nhận tự động',
+              complete: isPaid,
+              active: false,
+            },
+          ].map(({ step, label, complete, active }, index) => (
+            <div
+              key={String(step)}
+              className={`flex items-center gap-3 px-4 py-3.5 sm:px-5 ${
+                index > 0 ? 'border-t border-[#EAE6DC] sm:border-l sm:border-t-0' : ''
+              }`}
+            >
+              <span
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-extrabold ${
+                  complete || active ? 'bg-[#006241] text-white' : 'bg-[#F2F0EB] text-[#6F7E72]'
+                }`}
+              >
+                {complete ? <CheckCircle2 className="h-4 w-4" /> : step}
+              </span>
+              <p
+                className={`text-xs font-bold ${
+                  complete || active ? 'text-[#1E3932]' : 'text-[#87918C]'
+                }`}
+              >
+                {String(label)}
+              </p>
+            </div>
+          ))}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-          {/* Payment Account Details */}
-          <AppCard className="border-[#E5E4DE] rounded-3xl bg-white p-6 shadow-sm">
-            <h3 className="font-extrabold text-base text-zinc-800 tracking-tight pb-4 border-b border-[#F4F4F2] mb-6">
-              Thông tin chuyển khoản ngân hàng
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-              {/* QR Mockup */}
-              <div className="flex flex-col items-center justify-center p-4 bg-[#FAF9F5] border border-[#E5E4DE] rounded-2xl">
-                <div className="w-48 h-48 bg-white border border-[#E5E4DE] rounded-xl flex flex-col items-center justify-center relative overflow-hidden shadow-sm">
-                  {booking.paymentQrUrl ? (
-                    <img
-                      src={booking.paymentQrUrl}
-                      alt="Mã QR Thanh toán"
-                      className="w-full h-full object-contain p-2"
-                    />
-                  ) : (
-                    <QrCode className="h-32 w-32 text-zinc-800" />
-                  )}
-                </div>
-              </div>
-
-              {/* Bank text details */}
-              <div className="space-y-4">
-                <div className="flex justify-between items-center py-2 border-b border-[#F4F4F2]">
-                  <span className="text-zinc-500 text-xs font-semibold">Tên ngân hàng</span>
-                  <span className="text-zinc-800 text-xs font-bold">
-                    {booking.vendorBankName || '—'}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-2 border-b border-[#F4F4F2]">
-                  <span className="text-zinc-500 text-xs font-semibold">Số tài khoản</span>
-                  <span className="text-zinc-800 text-xs font-bold">
-                    {booking.vendorBankAccount || '—'}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-2 border-b border-[#F4F4F2]">
-                  <span className="text-zinc-500 text-xs font-semibold">Tên chủ tài khoản</span>
-                  <span className="text-zinc-800 text-xs font-bold">
-                    {booking.vendorCompanyName || '—'}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-2 border-b border-[#F4F4F2]">
-                  <span className="text-zinc-500 text-xs font-semibold">Số tiền cần chuyển</span>
-                  <span className="text-red-600 text-sm font-extrabold">
-                    {formatPrice(booking.totalPrice)} VNĐ
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-2 border-b border-[#F4F4F2]">
-                  <span className="text-zinc-500 text-xs font-semibold">Nội dung chuyển khoản</span>
-                  <span className="text-zinc-800 text-xs font-bold select-all">
-                    {booking.bookingCode || '—'}
-                  </span>
-                </div>
+        {isPaid && (
+          <div className="flex flex-col gap-4 rounded-[28px] border border-emerald-200 bg-emerald-50 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="mt-0.5 h-6 w-6 text-emerald-700" />
+              <div>
+                <h2 className="font-extrabold text-emerald-950">Thanh toán đã hoàn tất</h2>
+                <p className="mt-1 text-sm font-medium text-emerald-800">
+                  Hệ thống đã nhận webhook và cập nhật đơn của bạn.
+                </p>
               </div>
             </div>
-          </AppCard>
+            <button
+              type="button"
+              onClick={() => navigate(resolvedBackPath)}
+              className="rounded-full bg-[#006241] px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#004F35]"
+            >
+              Xem chi tiết đơn
+            </button>
+          </div>
+        )}
 
-          {/* Proof of Payment Upload Component */}
-          <AppCard className="border-[#E5E4DE] rounded-3xl bg-white p-6 shadow-sm">
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <h3 className="font-extrabold text-base text-zinc-800 tracking-tight pb-4 border-b border-[#F4F4F2] mb-4">
-                Tải lên minh chứng thanh toán
-              </h3>
+        {isRefundPending && (
+          <div className="flex items-start gap-3 rounded-[28px] border border-amber-200 bg-amber-50 p-5 sm:p-6">
+            <AlertCircle className="mt-0.5 h-6 w-6 shrink-0 text-amber-700" />
+            <div>
+              <h2 className="font-extrabold text-amber-950">Khoản tiền đang được hoàn lại</h2>
+              <p className="mt-1 text-sm font-medium text-amber-800">
+                Giao dịch đến khi đơn không còn đủ điều kiện thanh toán. Hệ thống đã ghi nhận tiền
+                và tạo yêu cầu hoàn; bạn không cần tạo thêm phiên thanh toán.
+              </p>
+            </div>
+          </div>
+        )}
 
-              <div className="space-y-4">
-                <div className="flex flex-col w-full">
-                  <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-[#E5E4DE] rounded-2xl cursor-pointer bg-[#FAF9F5] hover:bg-zinc-50 transition-colors">
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <Upload className="w-8 h-8 text-zinc-400 mb-2" />
-                      <p className="mb-2 text-sm text-zinc-500 font-semibold">
-                        <span className="text-[#0B3025]">Nhấp để tải lên</span> hoặc kéo thả file
-                      </p>
-                      <p className="text-xs text-zinc-400 font-semibold">
-                        PNG, JPG hoặc JPEG (Tối đa 10MB)
-                      </p>
-                    </div>
-                    <input
-                      type="file"
-                      className="hidden"
-                      accept="image/png, image/jpeg, image/jpg"
-                      onChange={handleFileChange}
-                    />
-                  </label>
-                  {errors.paymentProof && (
-                    <p className="text-xs text-destructive font-semibold mt-1">
-                      {errors.paymentProof.message}
+        {isRefunded && (
+          <div className="flex items-start gap-3 rounded-[28px] border border-slate-200 bg-slate-50 p-5 sm:p-6">
+            <ReceiptText className="mt-0.5 h-6 w-6 shrink-0 text-slate-700" />
+            <div>
+              <h2 className="font-extrabold text-slate-950">Giao dịch đã được hoàn tiền</h2>
+              <p className="mt-1 text-sm font-medium text-slate-700">
+                Xem chi tiết đơn và lịch sử tài chính để kiểm tra số tiền cùng trạng thái hoàn.
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div className="grid items-start gap-6 lg:grid-cols-[1fr_360px]">
+          <div className="space-y-6">
+            <AppCard className="overflow-hidden rounded-[28px] border-[#DED9CA] bg-white p-0 shadow-[0_10px_35px_rgba(30,57,50,0.06)]">
+              <div className="flex items-center justify-between border-b border-[#EAE6DC] bg-[#FBF8F0] p-5 sm:px-6">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1E3932] text-[#FBF8F0]">
+                    <WalletCards className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <h2 className="font-extrabold text-[#1E3932]">Phiên thanh toán</h2>
+                    <p className="text-xs font-medium text-[#6F7E72]">
+                      Tạo phiên và hoàn tất an toàn trên payOS
                     </p>
-                  )}
-                </div>
-
-                {/* Display selected file details */}
-                {paymentProof && (
-                  <div className="flex items-center gap-3 p-3 bg-zinc-50 border border-[#E5E4DE] rounded-xl">
-                    <FileImage className="h-6 w-6 text-zinc-500" />
-                    <div className="flex-1 overflow-hidden">
-                      <p className="text-xs font-bold text-zinc-800 truncate">
-                        {paymentProof.name}
-                      </p>
-                      <p className="text-[10px] text-zinc-500 font-semibold">
-                        {(paymentProof.size / 1024).toFixed(0)} KB
-                      </p>
-                    </div>
-                    {paymentProofUrl && (
-                      <img
-                        src={paymentProofUrl.startsWith('blob:') ? paymentProofUrl : ''}
-                        alt="Xem trước"
-                        className="w-12 h-12 rounded-lg object-cover border border-[#E5E4DE]"
-                      />
-                    )}
                   </div>
+                </div>
+                {(paymentsQuery.isFetching || bookingQuery.isFetching) && (
+                  <RefreshCw className="h-4 w-4 animate-spin text-[#6F7B75]" />
                 )}
+              </div>
 
-                <div className="flex gap-4 pt-4">
-                  <AppButton
+              {!isPaid && canPay && checkout && secondsLeft > 0 ? (
+                <div className="px-5 py-8 text-center sm:px-8">
+                  <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full border border-[#CFE0D5] bg-[#F3F8F5]">
+                    <CreditCard className="h-10 w-10 text-[#006241]" />
+                  </div>
+                  <p className="mt-5 text-xs font-bold uppercase tracking-wide text-[#6F7E72]">
+                    {stageLabel(checkout.paymentStage)}
+                  </p>
+                  <p className="mt-1 text-3xl font-extrabold text-[#1E3932] sm:text-4xl">
+                    {money(checkout.amount, checkout.currency || 'VND')}
+                  </p>
+                  <div
+                    aria-live="polite"
+                    className="mx-auto mt-4 flex w-fit items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-extrabold text-amber-900"
+                  >
+                    <Clock3 className="h-4 w-4" /> Còn {formatCountdown(secondsLeft)}
+                  </div>
+                  <a
+                    href={checkout.checkoutUrl}
+                    className="mx-auto mt-6 inline-flex items-center gap-2 rounded-full bg-[#006241] px-7 py-3.5 text-sm font-extrabold text-white shadow-sm transition-colors hover:bg-[#004F35]"
+                  >
+                    Tiếp tục đến payOS <ExternalLink className="h-4 w-4" />
+                  </a>
+                  <p className="mx-auto mt-3 max-w-md text-xs font-medium leading-relaxed text-[#6F7E72]">
+                    Sau khi thanh toán, payOS sẽ đưa bạn trở lại TrekSphere và đơn được cập nhật tự
+                    động.
+                  </p>
+                </div>
+              ) : canPay && !isPaid ? (
+                <div className="flex flex-col items-center px-5 py-12 text-center">
+                  <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#F2F0EB]">
+                    <CreditCard className="h-7 w-7 text-[#1E3932]" />
+                  </span>
+                  <h3 className="mt-4 font-extrabold text-[#1E3932]">
+                    {checkout && secondsLeft === 0
+                      ? 'Phiên thanh toán đã hết hạn'
+                      : 'Sẵn sàng thanh toán'}
+                  </h3>
+                  <p className="mt-1 max-w-sm text-xs font-medium leading-relaxed text-[#6F7E72]">
+                    Phiên mới có đường dẫn riêng và thời hạn rõ ràng. Bạn chưa bị trừ tiền ở bước
+                    này.
+                  </p>
+                  <button
                     type="button"
-                    variant="ghost"
-                    onClick={async () => {
-                      if (!bookingId) return;
-                      setIsMutating(true);
-                      try {
-                        await tourService.cancelBooking(
-                          bookingId,
-                          'Khách hàng tự hủy giao dịch thanh toán'
-                        );
-                        toast.success('Hủy giao dịch thành công.');
-                        navigate(getBookingDetailPath(bookingId));
-                      } catch {
-                        toast.error('Đã xảy ra lỗi khi hủy giao dịch.');
-                      } finally {
-                        setIsMutating(false);
-                      }
+                    disabled={checkoutMutation.isPending}
+                    onClick={() => checkoutMutation.mutate()}
+                    className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#006241] px-6 py-3.5 text-sm font-extrabold text-white transition-colors hover:bg-[#004F35] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {checkoutMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                    {checkout ? 'Tạo phiên mới' : 'Tạo phiên thanh toán'}
+                  </button>
+                </div>
+              ) : !isPaid ? (
+                <div className="px-5 py-12 text-center">
+                  <AlertCircle className="mx-auto h-9 w-9 text-amber-600" />
+                  <h3 className="mt-3 font-extrabold text-[#1E3932]">
+                    {isRefundPending
+                      ? 'Đang chờ hoàn tiền'
+                      : isRefunded
+                        ? 'Giao dịch đã đóng'
+                        : booking.onlinePaymentEnabled === false
+                          ? 'Nhà tổ chức chưa kết nối payOS'
+                          : 'Chưa thể thanh toán'}
+                  </h3>
+                  <p className="mt-1 text-xs font-medium text-[#6F7E72]">
+                    {isRefundPending
+                      ? 'Không tạo thêm giao dịch trong khi yêu cầu hoàn tiền đang được xử lý.'
+                      : isRefunded
+                        ? 'Booking này không còn khoản thanh toán trực tuyến có thể thực hiện.'
+                        : booking.onlinePaymentEnabled === false
+                          ? 'Đơn cũ vẫn được giữ để đối chiếu, nhưng không thể tạo giao dịch payOS mới.'
+                          : 'Trạng thái hiện tại của đơn không cho phép tạo giao dịch mới.'}
+                  </p>
+                </div>
+              ) : null}
+            </AppCard>
+
+            <BookingFinancialTimeline bookingId={booking.bookingId} audience="trekker" />
+          </div>
+
+          <aside className="space-y-4 lg:sticky lg:top-24">
+            <AppCard className="rounded-[28px] border-[#DED9CA] bg-white p-6 shadow-[0_10px_35px_rgba(30,57,50,0.06)]">
+              <div className="flex items-center gap-2 border-b border-[#EEEADF] pb-4">
+                <ReceiptText className="h-4 w-4 text-[#1E3932]" />
+                <h2 className="font-extrabold text-[#1E3932]">Tóm tắt đơn hàng</h2>
+              </div>
+              <dl className="mt-4 space-y-3 text-sm">
+                <div className="flex justify-between gap-3">
+                  <dt className="text-[#6F7B75]">Tổng giá trị</dt>
+                  <dd className="font-extrabold text-[#06261D]">{money(booking.totalPrice)}</dd>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <dt className="text-[#6F7B75]">Đã thanh toán</dt>
+                  <dd className="font-extrabold text-emerald-700">{money(netPaid)}</dd>
+                </div>
+                <div className="flex justify-between gap-3 border-t border-[#EEEADF] pt-3">
+                  <dt className="font-bold text-[#1E3932]">Còn lại</dt>
+                  <dd className="font-extrabold text-[#1E3932]">
+                    {money(Math.max(0, booking.totalPrice - netPaid))}
+                  </dd>
+                </div>
+              </dl>
+              <div className="mt-4">
+                <div className="mb-2 flex items-center justify-between text-[11px] font-bold text-[#6F7E72]">
+                  <span>{paymentPlanLabel(booking.paymentPlan)}</span>
+                  <span>{Math.round((netPaid / Math.max(1, booking.totalPrice)) * 100)}%</span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-[#F2F0EB]">
+                  <div
+                    className="h-full rounded-full bg-[#006241]"
+                    style={{
+                      width: `${Math.min(100, Math.max(0, (netPaid / Math.max(1, booking.totalPrice)) * 100))}%`,
                     }}
-                    disabled={isMutating}
-                    className="flex-1 text-zinc-500 font-bold hover:text-zinc-800"
-                  >
-                    Hủy giao dịch
-                  </AppButton>
-                  <AppButton
-                    type="submit"
-                    disabled={isMutating || !paymentProof}
-                    className="flex-1 bg-[#0B3025] hover:bg-[#072019] text-white font-bold py-3.5 rounded-2xl border-none shadow-sm transition-colors"
-                  >
-                    {isMutating ? 'Đang gửi...' : 'Gửi bằng chứng thanh toán'}
-                  </AppButton>
+                  />
                 </div>
               </div>
-            </form>
-          </AppCard>
+              {booking.remainingDueAt && (
+                <p className="mt-4 rounded-2xl bg-amber-50 p-3 text-xs font-semibold text-amber-900">
+                  Hạn trả phần còn lại: {dateTime(booking.remainingDueAt)}
+                </p>
+              )}
+            </AppCard>
+
+            <div className="rounded-[28px] border border-[#CFE0D5] bg-[#F3F8F5] p-5">
+              <div className="flex items-center gap-2 text-[#006241]">
+                <ShieldCheck className="h-4 w-4" />
+                <p className="text-xs font-extrabold uppercase tracking-wide">An toàn giao dịch</p>
+              </div>
+              <p className="mt-2 text-xs font-medium leading-relaxed text-[#446258]">
+                Trạng thái chỉ được ghi nhận từ kết nối payOS đã xác thực. TrekSphere không yêu cầu
+                tải ảnh chuyển khoản thủ công.
+              </p>
+            </div>
+          </aside>
         </div>
       </div>
     </div>

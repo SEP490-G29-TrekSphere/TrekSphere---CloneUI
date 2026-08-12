@@ -13,6 +13,7 @@ export { TourGallerySection } from './TourGallerySection';
 export { TourInclusionsSection } from './TourInclusionsSection';
 export { TourMobileBookingBar } from './TourMobileBookingBar';
 export { TourOverviewSection } from './TourOverviewSection';
+export { TourParticipationPolicySection } from './TourParticipationPolicySection';
 export { TourReviewsSection } from './TourReviewsSection';
 export { TourRouteSection } from './TourRouteSection';
 export { TourScheduleSection } from './TourScheduleSection';

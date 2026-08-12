@@ -19,12 +19,11 @@ export function useAuthCheck() {
     return { isAuthenticated: false, isLoading: true };
   }
 
-  // Sau khi hydrated:
-  // - Có user trong store → đã login
-  // - Không có user nhưng có token → có thể token hết hạn hoặc lỗi
-  // - Không có gì → chưa login
+  // User và access token phải cùng tồn tại. Trước đây dùng phép OR khiến response
+  // login chỉ có user (không có token) vẫn được coi là đã đăng nhập, rồi mọi API
+  // phía sau đồng loạt trả 401.
   const hasToken = Boolean(storage.get<string>('accessToken'));
-  const isAuthenticated = Boolean(user) || hasToken;
+  const isAuthenticated = Boolean(user) && hasToken;
 
   return { isAuthenticated, isLoading: false };
 }

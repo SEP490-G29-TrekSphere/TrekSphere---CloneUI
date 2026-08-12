@@ -13,6 +13,7 @@ import {
   Ticket,
   UserRound,
   Users,
+  WalletCards,
 } from 'lucide-react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { PATHS } from '@/constants';
@@ -32,7 +33,13 @@ const navItems = [
     icon: ClipboardCheck,
     disabled: false,
   },
-  { name: 'Đặt tour', path: PATHS.VENDOR_MANAGER_BOOKINGS, icon: Ticket, disabled: false },
+  { name: 'Đơn đặt tour', path: PATHS.VENDOR_MANAGER_BOOKINGS, icon: Ticket, disabled: false },
+  {
+    name: 'Cấu hình thanh toán',
+    path: PATHS.VENDOR_MANAGER_PAYMENT_SETTINGS,
+    icon: WalletCards,
+    disabled: false,
+  },
   { name: 'Voucher', path: PATHS.VENDOR_MANAGER_VOUCHERS, icon: Tag, disabled: false },
   { name: 'Khách hàng', path: '', icon: UserRound, disabled: true },
   { name: 'Thiết bị', path: PATHS.VENDOR_MANAGER_EQUIPMENT, icon: Backpack, disabled: false },

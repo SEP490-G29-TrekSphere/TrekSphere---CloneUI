@@ -11,7 +11,6 @@ import {
   Mail,
   MapPin,
   Phone,
-  QrCode,
   ReceiptText,
   RefreshCw,
   RotateCcw,
@@ -22,14 +21,18 @@ import {
   ZoomIn,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import { ROLES } from '@/constants/roles';
+import { BookingFinancialTimeline } from '@/features/payments/components/BookingFinancialTimeline';
 import { tourService } from '@/features/tours/services/tourService';
 import type { BookingDetailResponse } from '@/features/tours/types';
+import { useAppStore } from '@/store/useAppStore';
 import { formatDate, formatDateTime, formatPrice } from '@/utils/format';
 import type { BookingStatus, PaymentStatus } from '../types';
 
 interface BookingDetailModalProps {
   bookingId: string | null;
   isOpen: boolean;
+  initialTab?: BookingDetailTab;
   onClose: () => void;
 }
 
@@ -41,15 +44,36 @@ interface StatusStyle {
 }
 
 const bookingStatusConfig: Record<BookingStatus, StatusStyle> = {
-  PENDING: { label: 'Chờ xác nhận', bg: '#FEF3C7', text: '#92400E', dot: '#D97706' },
+  PAYMENT_PENDING: {
+    label: 'Chờ thanh toán',
+    bg: '#FEF3C7',
+    text: '#92400E',
+    dot: '#D97706',
+  },
+  PENDING_CONFIRMATION: {
+    label: 'Chờ xác nhận',
+    bg: '#FEF3C7',
+    text: '#92400E',
+    dot: '#D97706',
+  },
   CONFIRMED: { label: 'Đã xác nhận', bg: '#DBEAFE', text: '#1E40AF', dot: '#2563EB' },
+  IN_PROGRESS: { label: 'Đang diễn ra', bg: '#E0F2FE', text: '#075985', dot: '#0284C7' },
   CANCELLED: { label: 'Đã hủy', bg: '#FEE2E2', text: '#991B1B', dot: '#DC2626' },
+  EXPIRED: { label: 'Hết hạn', bg: '#F3F4F6', text: '#6B7280', dot: '#9CA3AF' },
+  REJECTED: { label: 'Bị từ chối', bg: '#FEE2E2', text: '#991B1B', dot: '#DC2626' },
   COMPLETED: { label: 'Hoàn thành', bg: '#D1FAE5', text: '#065F46', dot: '#059669' },
 };
 
 const paymentStatusConfig: Record<PaymentStatus, StatusStyle> = {
-  PENDING: { label: 'Chờ thanh toán', bg: '#FEF3C7', text: '#B45309', dot: '#D97706' },
+  UNPAID: { label: 'Chưa thanh toán', bg: '#FEF3C7', text: '#B45309', dot: '#D97706' },
+  PARTIALLY_PAID: { label: 'Đã đặt cọc', bg: '#DBEAFE', text: '#1D4ED8', dot: '#2563EB' },
   PAID: { label: 'Đã thanh toán', bg: '#D1FAE5', text: '#047857', dot: '#059669' },
+  REFUND_PENDING: {
+    label: 'Chờ hoàn tiền',
+    bg: '#FFEDD5',
+    text: '#C2410C',
+    dot: '#EA580C',
+  },
   REFUNDED: { label: 'Đã hoàn tiền', bg: '#CCFBF1', text: '#0F766E', dot: '#0D9488' },
   PARTIALLY_REFUNDED: {
     label: 'Hoàn tiền một phần',
@@ -76,9 +100,10 @@ const TABS = [
   { id: 'overview', label: 'Tổng quan', icon: ReceiptText },
   { id: 'participants', label: 'Thành viên', icon: Users },
   { id: 'payment', label: 'Thanh toán', icon: CreditCard },
+  { id: 'refund', label: 'Hoàn tiền', icon: RotateCcw },
 ] as const;
 
-type TabId = (typeof TABS)[number]['id'];
+export type BookingDetailTab = (typeof TABS)[number]['id'];
 
 function money(value?: number | null): string {
   if (value === undefined || value === null || Number.isNaN(value)) return '—';
@@ -481,14 +506,11 @@ function PaymentPanel({
   booking: BookingDetailResponse;
   onZoom: (src: string, title: string) => void;
 }) {
-  const hasProof = Boolean(booking.proofImageUrl || booking.refundProofImageUrl);
-  const hasBankInfo = Boolean(
-    booking.vendorCompanyName || booking.vendorBankName || booking.vendorBankAccount
-  );
+  const hasProof = Boolean(booking.proofImageUrl);
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div>
         <SectionCard title="Chi tiết thanh toán" icon={ReceiptText}>
           <div className="space-y-2 text-sm">
             <div className="flex items-center justify-between">
@@ -531,48 +553,15 @@ function PaymentPanel({
             )}
           </div>
         </SectionCard>
-
-        <SectionCard title="Tài khoản nhận thanh toán" icon={Landmark}>
-          {hasBankInfo ? (
-            <div className="space-y-2">
-              <FieldBlock label="Đơn vị thụ hưởng" value={booking.vendorCompanyName} />
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <FieldBlock label="Ngân hàng" value={booking.vendorBankName} />
-                <FieldBlock label="Số tài khoản" value={booking.vendorBankAccount} />
-              </div>
-              {booking.paymentQrUrl && (
-                <button
-                  type="button"
-                  onClick={() => onZoom(booking.paymentQrUrl as string, 'Mã QR thanh toán')}
-                  className="flex w-full items-center gap-2 rounded-xl border border-[#EDE9DC] bg-[#FBFAF5] px-3 py-2.5 text-xs font-bold text-[#06261D] transition-colors hover:bg-[#F1EEE4] cursor-pointer"
-                >
-                  <QrCode className="h-4 w-4 text-[#7B8C82]" />
-                  Xem mã QR thanh toán
-                  <ZoomIn className="ml-auto h-3.5 w-3.5 text-gray-400" />
-                </button>
-              )}
-            </div>
-          ) : (
-            <EmptyHint icon={Landmark} message="Chưa có thông tin tài khoản nhận thanh toán." />
-          )}
-        </SectionCard>
       </div>
 
       {hasProof ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
           {booking.proofImageUrl && (
             <ProofCard
               title="Ảnh minh chứng thanh toán"
               icon={ImageIcon}
               src={booking.proofImageUrl}
-              onZoom={onZoom}
-            />
-          )}
-          {booking.refundProofImageUrl && (
-            <ProofCard
-              title="Ảnh minh chứng hoàn tiền"
-              icon={RotateCcw}
-              src={booking.refundProofImageUrl}
               onZoom={onZoom}
             />
           )}
@@ -588,11 +577,19 @@ function PaymentPanel({
 /* Modal                                                               */
 /* ------------------------------------------------------------------ */
 
-export function BookingDetailModal({ bookingId, isOpen, onClose }: BookingDetailModalProps) {
+export function BookingDetailModal({
+  bookingId,
+  isOpen,
+  initialTab = 'overview',
+  onClose,
+}: BookingDetailModalProps) {
+  const canManageRefunds = useAppStore((state) =>
+    Boolean(state.user?.roles?.includes(ROLES.VENDOR_MANAGER))
+  );
   const [booking, setBooking] = useState<BookingDetailResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabId>('overview');
+  const [activeTab, setActiveTab] = useState<BookingDetailTab>(initialTab);
   const [lightbox, setLightbox] = useState<{ src: string; title: string } | null>(null);
 
   const fetchDetail = useCallback(async () => {
@@ -616,10 +613,10 @@ export function BookingDetailModal({ bookingId, isOpen, onClose }: BookingDetail
     if (!isOpen) return;
     setBooking(null);
     setHasError(false);
-    setActiveTab('overview');
+    setActiveTab(initialTab);
     setLightbox(null);
     fetchDetail();
-  }, [isOpen, fetchDetail]);
+  }, [isOpen, fetchDetail, initialTab]);
 
   // Escape closes the lightbox first, then the modal. Body scroll stays locked.
   useEffect(() => {
@@ -743,6 +740,15 @@ export function BookingDetailModal({ bookingId, isOpen, onClose }: BookingDetail
               </div>
 
               <div className="flex shrink-0 flex-wrap items-center gap-2">
+                {booking.paymentStatus === 'REFUND_PENDING' && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('refund')}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-900 hover:bg-amber-200"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" /> Xử lý hoàn tiền
+                  </button>
+                )}
                 {bStatus && <StatusPill style={bStatus} />}
                 {pStatus && <StatusPill style={pStatus} />}
               </div>
@@ -824,7 +830,35 @@ export function BookingDetailModal({ bookingId, isOpen, onClose }: BookingDetail
             >
               {activeTab === 'overview' && <OverviewPanel booking={booking} />}
               {activeTab === 'participants' && <ParticipantsPanel booking={booking} />}
-              {activeTab === 'payment' && <PaymentPanel booking={booking} onZoom={handleZoom} />}
+              {activeTab === 'payment' && (
+                <div className="space-y-5">
+                  <PaymentPanel booking={booking} onZoom={handleZoom} />
+                  <BookingFinancialTimeline
+                    bookingId={booking.bookingId}
+                    audience="vendor"
+                    canManageRefunds={canManageRefunds}
+                    view="payments"
+                  />
+                </div>
+              )}
+              {activeTab === 'refund' && (
+                <div className="space-y-5">
+                  {booking.refundProofImageUrl && (
+                    <ProofCard
+                      title="Ảnh minh chứng hoàn tiền của đơn cũ"
+                      icon={RotateCcw}
+                      src={booking.refundProofImageUrl}
+                      onZoom={handleZoom}
+                    />
+                  )}
+                  <BookingFinancialTimeline
+                    bookingId={booking.bookingId}
+                    audience="vendor"
+                    canManageRefunds={canManageRefunds}
+                    view="refunds"
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -17,9 +17,17 @@ import * as z from 'zod';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { getBookingPaymentPath } from '@/constants/paths';
 import { CancellationPolicyNotice } from '@/features/tours/components/CancellationPolicyNotice';
+import { TourParticipationPolicySection } from '@/features/tours/components/tour-details';
 import { useTourDetail } from '@/features/tours/hooks/useTourDetail';
 import { tourService } from '@/features/tours/services/tourService';
 import type { ParticipantGender } from '@/features/tours/types';
+import {
+  type BookingSubmissionIdentity,
+  clearBookingSubmission,
+  loadBookingSubmission,
+  persistBookingSubmission,
+  resolveBookingSubmission,
+} from '@/features/tours/utils/bookingIdempotency';
 import { useVendorActiveVouchers } from '@/features/vendor-vouchers';
 import { AppButton, AppCard, AppFormDatePicker, AppFormInput } from '@/shared/ui';
 import { toast } from '@/store/useToastStore';
@@ -52,7 +60,8 @@ const participantSchema = z.object({
 
 const bookingFormSchema = z.object({
   scheduleId: z.string().min(1, 'Vui lòng chọn ngày khởi hành'),
-  paymentMethod: z.enum(['card', 'bank', 'wallet']),
+  paymentPlan: z.enum(['FULL_PAYMENT', 'DEPOSIT']),
+  participationPolicyAccepted: z.boolean(),
   participants: z
     .array(participantSchema)
     .min(1, 'Vui lòng nhập thông tin ít nhất 1 người tham gia'),
@@ -116,6 +125,7 @@ export default function BookTour() {
 
   // Refs for auto-scroll to newly added participant
   const participantRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  const bookingSubmissionRef = useRef<BookingSubmissionIdentity | null>(null);
 
   // Form
   const createDefaultParticipant = () => ({
@@ -140,7 +150,9 @@ export default function BookTour() {
     resolver: zodResolver(bookingFormSchema),
     defaultValues: {
       scheduleId: urlScheduleId,
-      paymentMethod: 'bank',
+      paymentPlan:
+        tour?.paymentPolicy?.paymentOption === 'DEPOSIT_ONLY' ? 'DEPOSIT' : 'FULL_PAYMENT',
+      participationPolicyAccepted: false,
       participants: Array.from({ length: preSelectedParticipantsCount }, createDefaultParticipant),
     },
   });
@@ -151,12 +163,19 @@ export default function BookTour() {
   });
 
   const selectedScheduleId = watch('scheduleId');
+  const paymentPlan = watch('paymentPlan');
   const participantsList = watch('participants');
   const participantsCount = participantsList?.length || 0;
 
   const selectedSchedule = tour?.schedules.find((s) => s.scheduleId === selectedScheduleId);
 
   // --- Effects ---
+
+  useEffect(() => {
+    if (tour?.paymentPolicy?.paymentOption === 'DEPOSIT_ONLY') {
+      setValue('paymentPlan', 'DEPOSIT');
+    }
+  }, [setValue, tour?.paymentPolicy?.paymentOption]);
 
   useEffect(() => {
     if (urlScheduleId && urlScheduleId !== selectedScheduleId) {
@@ -295,6 +314,9 @@ export default function BookTour() {
   const onFormSubmit = async (data: BookingFormValues) => {
     setIsSubmitting(true);
     try {
+      if (tour?.participationPolicy && !data.participationPolicyAccepted) {
+        throw new Error('Vui lòng xác nhận điều kiện tham gia trước khi đặt tour.');
+      }
       const formattedParticipants = data.participants.map((p) => {
         let formattedDOB = p.dateOfBirth;
         if (p.dateOfBirth?.includes('T')) {
@@ -312,12 +334,23 @@ export default function BookTour() {
         };
       });
 
-      const bookingResponse = await tourService.createBooking({
+      const payload = {
         scheduleId: data.scheduleId,
         voucherCode: appliedVoucher?.code || undefined,
+        paymentPlan: data.paymentPlan,
+        participationPolicyAccepted: data.participationPolicyAccepted,
         participants: formattedParticipants,
-      });
+      };
+      const previousSubmission =
+        bookingSubmissionRef.current ?? loadBookingSubmission(payload.scheduleId);
+      const submission = resolveBookingSubmission(payload, previousSubmission);
+      bookingSubmissionRef.current = submission;
+      persistBookingSubmission(payload.scheduleId, submission);
 
+      const bookingResponse = await tourService.createBooking(payload, submission.key);
+
+      clearBookingSubmission(payload.scheduleId);
+      bookingSubmissionRef.current = null;
       toast.success('Đặt tour thành công! Đang chuyển đến trang thanh toán.');
       navigate(getBookingPaymentPath(bookingResponse.bookingId));
     } catch (err) {
@@ -353,6 +386,28 @@ export default function BookTour() {
             <AppButton onClick={() => navigate('/tours')}>Quay lại danh sách tour</AppButton>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (tour.onlineBookingEnabled !== true) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-10">
+        <AppCard className="w-full max-w-lg rounded-2xl border-amber-200 bg-white p-6 text-center shadow-none">
+          <p className="text-xs font-extrabold uppercase tracking-wider text-amber-700">
+            Đặt tour trực tuyến đang tạm khóa
+          </p>
+          <h1 className="mt-2 text-xl font-extrabold text-[#1E3932]">
+            Tour chưa sẵn sàng nhận đặt online
+          </h1>
+          <p className="mt-2 text-sm leading-relaxed text-[#6F7E72]">
+            {tour.onlineBookingDisabledReason ??
+              'Tour vẫn được công khai để tham khảo nhưng chưa đủ điều kiện tạo booking an toàn.'}
+          </p>
+          <AppButton className="mt-5" onClick={() => navigate(`/tours/${tour.tourId}`)}>
+            Quay lại chi tiết tour
+          </AppButton>
+        </AppCard>
       </div>
     );
   }
@@ -497,6 +552,23 @@ export default function BookTour() {
               <p className="text-xs text-destructive mt-3">{errors.scheduleId.message}</p>
             )}
           </AppCard>
+
+          {tour.participationPolicy && (
+            <div className="space-y-3">
+              <TourParticipationPolicySection policy={tour.participationPolicy} compact />
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-[#EAF4EE] px-4 py-3 text-sm font-semibold text-[#1E3932]">
+                <input
+                  type="checkbox"
+                  {...register('participationPolicyAccepted')}
+                  className="mt-0.5 h-4 w-4 accent-[#006241]"
+                />
+                <span>
+                  Tôi xác nhận tất cả người tham gia đáp ứng các điều kiện trên và thông tin khai
+                  báo là chính xác.
+                </span>
+              </label>
+            </div>
+          )}
 
           {/* ── Participant List ── */}
           <AppCard className="p-6">
@@ -950,8 +1022,73 @@ export default function BookTour() {
             </p>
           </AppCard>
 
-          {/* ── Cancellation Policy — cho khách nắm rõ trước khi thanh toán ── */}
-          <CancellationPolicyNotice policies={tour.cancellationPolicies} />
+          {/* ── Payment plan + policies — khách xác nhận trước khi tạo booking ── */}
+          <AppCard className="rounded-2xl border-[#DED9CA] bg-white p-4 shadow-none sm:p-5">
+            <div>
+              <h3 className="text-base font-extrabold text-[#1E3932]">Cách thanh toán</h3>
+              <p className="mt-0.5 text-xs font-medium text-[#6F7E72]">
+                Bạn sẽ kiểm tra số tiền lần cuối trước khi sang payOS.
+              </p>
+            </div>
+
+            <div
+              className={`mt-3 grid gap-2 ${
+                tour.paymentPolicy?.paymentOption === 'FULL_OR_DEPOSIT' ? 'sm:grid-cols-2' : ''
+              }`}
+            >
+              {tour.paymentPolicy?.paymentOption !== 'DEPOSIT_ONLY' && (
+                <button
+                  type="button"
+                  onClick={() => setValue('paymentPlan', 'FULL_PAYMENT', { shouldValidate: true })}
+                  aria-pressed={paymentPlan === 'FULL_PAYMENT'}
+                  className={`w-full rounded-xl px-3.5 py-3 text-left transition-colors ${
+                    paymentPlan === 'FULL_PAYMENT'
+                      ? 'bg-[#EAF4EE] ring-1 ring-inset ring-[#78A68D]'
+                      : 'bg-[#F7F5EF] hover:bg-[#F1EFE8]'
+                  }`}
+                >
+                  <span className="block text-sm font-extrabold text-[#1E3932]">
+                    Thanh toán toàn bộ
+                  </span>
+                  <span className="mt-0.5 block text-[11px] font-medium leading-relaxed text-[#6F7E72]">
+                    Trả một lần, không có khoản còn lại.
+                  </span>
+                </button>
+              )}
+
+              {tour.paymentPolicy && tour.paymentPolicy.paymentOption !== 'FULL_PAYMENT_ONLY' && (
+                <button
+                  type="button"
+                  onClick={() => setValue('paymentPlan', 'DEPOSIT', { shouldValidate: true })}
+                  aria-pressed={paymentPlan === 'DEPOSIT'}
+                  className={`w-full rounded-xl px-3.5 py-3 text-left transition-colors ${
+                    paymentPlan === 'DEPOSIT'
+                      ? 'bg-[#EAF4EE] ring-1 ring-inset ring-[#78A68D]'
+                      : 'bg-[#F7F5EF] hover:bg-[#F1EFE8]'
+                  }`}
+                >
+                  <span className="block text-sm font-extrabold text-[#1E3932]">
+                    Đặt cọc giữ chỗ
+                  </span>
+                  <span className="mt-0.5 block text-[11px] font-medium leading-relaxed text-[#6F7E72]">
+                    {tour.paymentPolicy.depositType === 'PERCENTAGE'
+                      ? `${tour.paymentPolicy.depositValue}% giá trị đơn`
+                      : `${(tour.paymentPolicy.depositValue ?? 0).toLocaleString('vi-VN')}đ`}
+                    {tour.paymentPolicy.remainingDueDaysBeforeDeparture != null
+                      ? ` · trả phần còn lại trước khởi hành ${tour.paymentPolicy.remainingDueDaysBeforeDeparture} ngày`
+                      : ''}
+                  </span>
+                </button>
+              )}
+            </div>
+          </AppCard>
+
+          <CancellationPolicyNotice
+            policies={tour.cancellationPolicies}
+            paymentPolicy={tour.paymentPolicy}
+            nonRefundableCost={tour.nonRefundableCost}
+            showPaymentSummary={false}
+          />
         </div>
       </form>
 

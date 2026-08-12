@@ -94,6 +94,7 @@ export const SECTION_IDS = {
   route: 'lo-trinh',
   inclusions: 'bao-gom',
   gallery: 'hinh-anh',
+  requirements: 'dieu-kien-tham-gia',
   policy: 'chinh-sach',
   reviews: 'danh-gia',
 } as const;

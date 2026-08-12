@@ -1,17 +1,13 @@
 import { ChevronLeft, ChevronRight, ShieldAlert } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useDebounce } from '@/shared/hooks';
-import { BookingDetailModal } from '../components/BookingDetailModal';
+import { BookingDetailModal, type BookingDetailTab } from '../components/BookingDetailModal';
 import { BookingFilterBar } from '../components/BookingFilterBar';
 import { BookingStatsCards } from '../components/BookingStatsCards';
 import { BookingTableRow } from '../components/BookingTableRow';
 import { ConfirmBookingModal } from '../components/ConfirmBookingModal';
-import { ConfirmPaymentModal } from '../components/ConfirmPaymentModal';
-import { ConfirmRefundModal } from '../components/ConfirmRefundModal';
 import { RejectBookingModal } from '../components/RejectBookingModal';
 import { useConfirmBooking } from '../hooks/useConfirmBooking';
-import { useConfirmPayment } from '../hooks/useConfirmPayment';
-import { useConfirmRefund } from '../hooks/useConfirmRefund';
 import { useRejectBooking } from '../hooks/useRejectBooking';
 import { useVendorBookingStats } from '../hooks/useVendorBookingStats';
 import { useVendorBookings } from '../hooks/useVendorBookings';
@@ -29,17 +25,14 @@ export default function BookingList() {
   });
   const [selectedBookingForConfirm, setSelectedBookingForConfirm] =
     useState<VendorBookingItem | null>(null);
-  const [selectedBookingForConfirmPayment, setSelectedBookingForConfirmPayment] =
-    useState<VendorBookingItem | null>(null);
-  const [selectedBookingForConfirmRefund, setSelectedBookingForConfirmRefund] =
-    useState<VendorBookingItem | null>(null);
   const [selectedBookingForReject, setSelectedBookingForReject] =
     useState<VendorBookingItem | null>(null);
-  const [selectedBookingIdForDetail, setSelectedBookingIdForDetail] = useState<string | null>(null);
+  const [selectedBookingDetail, setSelectedBookingDetail] = useState<{
+    id: string;
+    tab?: BookingDetailTab;
+  } | null>(null);
 
   const confirmBookingMutation = useConfirmBooking();
-  const confirmPaymentMutation = useConfirmPayment();
-  const confirmRefundMutation = useConfirmRefund();
   const rejectBookingMutation = useRejectBooking();
 
   const { data: stats } = useVendorBookingStats();
@@ -85,36 +78,11 @@ export default function BookingList() {
     });
   };
 
-  const handleConfirmPaymentSubmit = (bookingId: string) => {
-    confirmPaymentMutation.mutate(bookingId, {
-      onSuccess: () => {
-        setSelectedBookingForConfirmPayment(null);
-      },
-    });
-  };
-
-  const handleConfirmRefundSubmit = (bookingId: string) => {
-    confirmRefundMutation.mutate(bookingId, {
-      onSuccess: () => {
-        setSelectedBookingForConfirmRefund(null);
-      },
-    });
-  };
-
-  const handleRejectSubmit = (
-    bookingId: string,
-    cancellationReason: string,
-    refundBankName?: string,
-    refundAccountNumber?: string,
-    refundAccountHolder?: string
-  ) => {
+  const handleRejectSubmit = (bookingId: string, cancellationReason: string) => {
     rejectBookingMutation.mutate(
       {
         bookingId,
         cancellationReason,
-        refundBankName,
-        refundAccountNumber,
-        refundAccountHolder,
       },
       {
         onSuccess: () => {
@@ -133,16 +101,40 @@ export default function BookingList() {
             className="text-2xl sm:text-3xl font-extrabold tracking-tight"
             style={{ color: '#06261D' }}
           >
-            Quản Lý Đặt Tour - TrekOps
+            Đơn đặt tour
           </h2>
           <p className="text-sm font-medium mt-1" style={{ color: '#6F7B75' }}>
-            Theo dõi danh sách khách đặt chỗ và quản lý đơn hàng của nhà cung cấp.
+            Xác nhận đơn, theo dõi thanh toán và xử lý hoàn tiền tại một nơi.
           </p>
         </div>
       </div>
 
       {/* Metrics Section */}
-      <BookingStatsCards stats={stats} />
+      <BookingStatsCards
+        stats={stats}
+        onShowAll={handleResetFilter}
+        onShowPendingPayments={() =>
+          setFilter((current) => ({
+            ...current,
+            bookingStatus: undefined,
+            paymentStatus: 'UNPAID',
+          }))
+        }
+        onShowConfirmed={() =>
+          setFilter((current) => ({
+            ...current,
+            bookingStatus: 'CONFIRMED',
+            paymentStatus: undefined,
+          }))
+        }
+        onShowPendingRefunds={() =>
+          setFilter((current) => ({
+            ...current,
+            bookingStatus: undefined,
+            paymentStatus: 'REFUND_PENDING',
+          }))
+        }
+      />
 
       {/* Filters Section */}
       <BookingFilterBar
@@ -220,10 +212,9 @@ export default function BookingList() {
                     key={booking.bookingId}
                     booking={booking}
                     onConfirm={(b) => setSelectedBookingForConfirm(b)}
-                    onConfirmPayment={(b) => setSelectedBookingForConfirmPayment(b)}
-                    onConfirmRefund={(b) => setSelectedBookingForConfirmRefund(b)}
                     onReject={(b) => setSelectedBookingForReject(b)}
-                    onViewDetail={(id) => setSelectedBookingIdForDetail(id)}
+                    onViewDetail={(id) => setSelectedBookingDetail({ id })}
+                    onOpenRefund={(id) => setSelectedBookingDetail({ id, tab: 'refund' })}
                   />
                 ))
               )}
@@ -296,24 +287,6 @@ export default function BookingList() {
         onConfirm={handleConfirmSubmit}
       />
 
-      {/* Confirm Payment Modal */}
-      <ConfirmPaymentModal
-        booking={selectedBookingForConfirmPayment}
-        isOpen={!!selectedBookingForConfirmPayment}
-        isPending={confirmPaymentMutation.isPending}
-        onClose={() => setSelectedBookingForConfirmPayment(null)}
-        onConfirm={handleConfirmPaymentSubmit}
-      />
-
-      {/* Confirm Refund Modal */}
-      <ConfirmRefundModal
-        booking={selectedBookingForConfirmRefund}
-        isOpen={!!selectedBookingForConfirmRefund}
-        isPending={confirmRefundMutation.isPending}
-        onClose={() => setSelectedBookingForConfirmRefund(null)}
-        onConfirm={handleConfirmRefundSubmit}
-      />
-
       {/* Reject Booking Modal */}
       <RejectBookingModal
         booking={selectedBookingForReject}
@@ -325,9 +298,10 @@ export default function BookingList() {
 
       {/* Booking Detail Modal */}
       <BookingDetailModal
-        bookingId={selectedBookingIdForDetail}
-        isOpen={!!selectedBookingIdForDetail}
-        onClose={() => setSelectedBookingIdForDetail(null)}
+        bookingId={selectedBookingDetail?.id ?? null}
+        initialTab={selectedBookingDetail?.tab}
+        isOpen={!!selectedBookingDetail}
+        onClose={() => setSelectedBookingDetail(null)}
       />
     </div>
   );
