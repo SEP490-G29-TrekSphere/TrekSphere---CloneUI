@@ -48,7 +48,7 @@ export function TourVendorCard({ tour }: TourVendorCardProps) {
         participantIds: [tour.vendorManagerId],
       });
 
-      if (response.data && response.data.conversationId) {
+      if (response.data?.conversationId) {
         navigate(resolveChatPath(user.roles), {
           state: { conversationId: response.data.conversationId },
         });

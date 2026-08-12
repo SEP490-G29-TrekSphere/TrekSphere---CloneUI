@@ -173,6 +173,8 @@ export interface TourFilter {
    * (xem ghi chú ở `ApiSortField`).
    */
   sortBy?: 'price-asc' | 'price-desc' | 'newest' | 'duration-asc' | 'duration-desc' | 'name-asc';
+  departureDate?: string;
+  returnDate?: string;
 }
 
 // ============================================================
@@ -226,6 +228,8 @@ export interface TourListParams {
   keyword?: string;
   location?: string;
   difficulty?: ApiDifficulty;
+  departureDate?: string;
+  returnDate?: string;
   page?: number;
   size?: number;
   sortBy?: ApiSortField;
@@ -241,9 +245,15 @@ export interface TourApiItem {
   location: string;
   durationDays: number;
   basePrice: number;
+  minCapacity: number;
+  maxCapacity: number;
+  totalDistanceKm: number;
   difficulty: ApiDifficulty;
   status: ApiStatus;
   coverImageUrl: string;
+  highlights: string;
+  includes: string;
+  excludes: string;
   vendorId: string;
   vendorName: string;
   averageRating: number | null;

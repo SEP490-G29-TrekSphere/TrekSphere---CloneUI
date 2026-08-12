@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { MapPin, Search, X } from 'lucide-react';
+import { CalendarDays, MapPin, Search, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -14,11 +14,16 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useTourLocations } from '@/features/tours/hooks/useTourLocations';
 import type { TourSearchValues } from '@/features/tours/types';
+import { AppDatePicker } from '@/shared/ui';
 
 interface TourSearchBarProps {
   onSearch: (values: TourSearchValues) => void;
   initialValues?: Partial<TourSearchValues>;
   className?: string;
+  departureDate?: string;
+  returnDate?: string;
+  onDepartureDateChange?: (date: string) => void;
+  onReturnDateChange?: (date: string) => void;
 }
 
 const EMPTY_VALUES: TourSearchValues = {
@@ -35,14 +40,27 @@ const tourSearchSchema = z.object({
   budget: z.string(),
 });
 
+/** Normalise a JS Date to a local YYYY-MM-DD string. */
+function toLocalDateStr(date: Date): string {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 /**
  * TourSearchBar — search card that overlaps the hero on the List Tours page.
  * Uses shadcn Popover + Command to render a searchable location Combobox.
+ * Also houses departure / return date pickers for quick date filtering.
  */
 export default function TourSearchBar({
   onSearch,
   initialValues,
   className = '',
+  departureDate,
+  returnDate,
+  onDepartureDateChange,
+  onReturnDateChange,
 }: TourSearchBarProps) {
   const { register, handleSubmit, setValue, watch, reset } = useForm<TourSearchValues>({
     resolver: zodResolver(tourSearchSchema),
@@ -77,14 +95,17 @@ export default function TourSearchBar({
     onSearch(data);
   };
 
+  const departureDateObj = departureDate ? new Date(departureDate) : null;
+  const returnDateObj = returnDate ? new Date(returnDate) : null;
+
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
       className={`relative z-20 mx-auto mt-6 w-full max-w-[1100px] rounded-2xl bg-white p-3 shadow-xl ring-1 ring-black/5 sm:mt-8 sm:p-4 lg:p-3 ${className}`}
     >
-      <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:gap-0">
+      <div className="flex flex-col items-stretch gap-2 lg:flex-row lg:items-center lg:gap-0">
         {/* Từ khóa */}
-        <label className="flex flex-1 cursor-pointer items-center justify-between gap-3 rounded-xl px-3 py-2 transition-colors hover:bg-muted/50 sm:rounded-none sm:px-4 sm:py-3">
+        <label className="flex flex-1 cursor-pointer items-center justify-between gap-3 rounded-xl px-3 py-2 transition-colors hover:bg-muted/50 lg:rounded-none lg:px-4 lg:py-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
               <Search className="h-5 w-5" />
@@ -118,10 +139,10 @@ export default function TourSearchBar({
           )}
         </label>
 
-        <div className="hidden h-10 w-px bg-border sm:block" />
+        <div className="hidden h-10 w-px bg-border lg:block" />
 
         {/* Điểm đến (Combobox) */}
-        <div className="flex flex-1 items-center justify-between gap-3 rounded-xl px-3 py-2 transition-colors hover:bg-muted/50 sm:rounded-none sm:px-4 sm:py-3">
+        <div className="flex flex-1 items-center justify-between gap-3 rounded-xl px-3 py-2 transition-colors hover:bg-muted/50 lg:rounded-none lg:px-4 lg:py-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
               <MapPin className="h-5 w-5" />
@@ -193,10 +214,61 @@ export default function TourSearchBar({
           )}
         </div>
 
+        <div className="hidden h-10 w-px bg-border lg:block" />
+
+        {/* Ngày khởi hành */}
+        <div className="flex items-center justify-between gap-3 rounded-xl px-3 py-2 transition-colors hover:bg-muted/50 lg:rounded-none lg:px-4 lg:py-3">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <CalendarDays className="h-5 w-5" />
+            </span>
+            <span className="flex flex-col flex-1 min-w-0">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">
+                Ngày đi
+              </span>
+              <AppDatePicker
+                selected={departureDateObj}
+                onChange={(date: Date | null) => {
+                  onDepartureDateChange?.(date ? toLocalDateStr(date) : '');
+                }}
+                placeholderText="Chọn ngày"
+                className="!h-auto !border-0 !bg-transparent !p-0 !text-sm !font-semibold !text-foreground !ring-0 !ring-offset-0 placeholder:!font-normal placeholder:!text-muted-foreground/70 focus-visible:!ring-0 focus-visible:!ring-offset-0"
+                isClearable
+              />
+            </span>
+          </div>
+        </div>
+
+        <div className="hidden h-10 w-px bg-border lg:block" />
+
+        {/* Ngày kết thúc */}
+        <div className="flex items-center justify-between gap-3 rounded-xl px-3 py-2 transition-colors hover:bg-muted/50 lg:rounded-none lg:px-4 lg:py-3">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <CalendarDays className="h-5 w-5" />
+            </span>
+            <span className="flex flex-col flex-1 min-w-0">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">
+                Ngày về
+              </span>
+              <AppDatePicker
+                selected={returnDateObj}
+                onChange={(date: Date | null) => {
+                  onReturnDateChange?.(date ? toLocalDateStr(date) : '');
+                }}
+                placeholderText="Chọn ngày"
+                className="!h-auto !border-0 !bg-transparent !p-0 !text-sm !font-semibold !text-foreground !ring-0 !ring-offset-0 placeholder:!font-normal placeholder:!text-muted-foreground/70 focus-visible:!ring-0 focus-visible:!ring-offset-0"
+                minDate={departureDateObj || undefined}
+                isClearable
+              />
+            </span>
+          </div>
+        </div>
+
         {/* Submit */}
         <button
           type="submit"
-          className="ml-auto inline-flex h-12 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-primary px-5 text-sm font-semibold text-white shadow-md transition-all hover:bg-primary-hover hover:shadow-lg sm:ml-3 lg:px-6"
+          className="ml-auto inline-flex h-12 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-primary px-5 text-sm font-semibold text-white shadow-md transition-all hover:bg-primary-hover hover:shadow-lg lg:ml-3 lg:px-6"
           aria-label="Tìm kiếm"
         >
           <Search className="h-4 w-4" />

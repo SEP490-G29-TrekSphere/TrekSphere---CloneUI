@@ -98,9 +98,19 @@ export default function ListTours() {
     setPage(0);
   };
 
+  const handleDepartureDateChange = (date: string) => {
+    setFilters((prev) => ({ ...prev, departureDate: date }));
+    setPage(0);
+  };
+
+  const handleReturnDateChange = (date: string) => {
+    setFilters((prev) => ({ ...prev, returnDate: date }));
+    setPage(0);
+  };
+
   const handleResetFilters = () => {
     setDraft({ keyword: '', location: '', departureDate: '', budget: '' });
-    setFilters({ sortBy: 'newest' });
+    setFilters({ sortBy: 'newest', departureDate: '', returnDate: '' });
     setPriceRange([0, 0]); // will be re-synced from useTourPriceRange
     setPage(0);
   };
@@ -144,12 +154,23 @@ export default function ListTours() {
       keyword: debouncedKeyword,
       location: filters.location,
       difficulty: filters.difficulty,
+      departureDate: filters.departureDate,
+      returnDate: filters.returnDate,
       page,
       size: PAGE_SIZE,
       sortBy,
       sortDir,
     }),
-    [debouncedKeyword, filters.location, filters.difficulty, page, sortBy, sortDir]
+    [
+      debouncedKeyword,
+      filters.location,
+      filters.difficulty,
+      filters.departureDate,
+      filters.returnDate,
+      page,
+      sortBy,
+      sortDir,
+    ]
   );
 
   const { tours, totalElements, totalPages, pageNumber, isLoading, error, refetch } =
@@ -169,7 +190,15 @@ export default function ListTours() {
       <div className="relative z-10">
         {/* Centered max-width container — aligns search bar and grid */}
         <div className="mx-auto max-w-[1400px] w-full px-4 sm:px-6 lg:px-8">
-          <TourSearchBar onSearch={handleSearch} initialValues={draft} className="mx-auto" />
+          <TourSearchBar
+            onSearch={handleSearch}
+            initialValues={draft}
+            className="mx-auto"
+            departureDate={filters.departureDate}
+            returnDate={filters.returnDate}
+            onDepartureDateChange={handleDepartureDateChange}
+            onReturnDateChange={handleReturnDateChange}
+          />
 
           {/* Grid Layout below Search: Left Sidebar Filters, Right Content Area */}
           <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-12 sm:mt-14">

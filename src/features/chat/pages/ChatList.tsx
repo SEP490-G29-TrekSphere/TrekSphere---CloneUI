@@ -5,8 +5,10 @@ import { ChatDetailPane } from '@/features/chat/components/ChatDetailPane';
 import { ConversationList } from '@/features/chat/components/ConversationList';
 import type {
   Conversation,
+  ConversationResponse,
   DetailMessage,
   MessageResponse,
+  PaginationResponse,
   VirtualConversationData,
 } from '@/features/chat/types/types';
 import { companionGroupKeys } from '@/features/companion-groups/hooks/companionGroupKeys';
@@ -147,7 +149,7 @@ export default function ChatList({ hideSidebar = false }: ChatListProps) {
 
       let initialSelectedId: string | null = null;
       if (virtualConversation) {
-        const vId = 'virtual_' + virtualConversation.participantIds.join('_');
+        const vId = `virtual_${virtualConversation.participantIds.join('_')}`;
         const vChat: Conversation = {
           id: vId,
           userName: virtualConversation.userName,
@@ -295,24 +297,27 @@ export default function ChatList({ hideSidebar = false }: ChatListProps) {
         });
 
         // Cập nhật React Query cache để conversation không bị chớp/biến mất
-        queryClient.setQueryData(['chatConversations', page, size], (old: any) => {
-          if (!old) return old;
-          return {
-            ...old,
-            content: [
-              {
-                conversationId: res.conversationId,
-                conversationType: selectedConversation.virtualData!.type,
-                title: selectedConversation.virtualData!.title || selectedConversation.userName,
-                avatarUrl: selectedConversation.avatarUrl,
-                lastMessageContent: msgText,
-                lastMessageAt: new Date().toISOString(),
-                unreadCount: 0,
-              },
-              ...old.content,
-            ],
-          };
-        });
+        queryClient.setQueryData<PaginationResponse<ConversationResponse>>(
+          ['chatConversations', page, size],
+          (old) => {
+            if (!old) return old;
+            return {
+              ...old,
+              content: [
+                {
+                  conversationId: res.conversationId,
+                  conversationType: selectedConversation.virtualData!.type,
+                  title: selectedConversation.virtualData!.title || selectedConversation.userName,
+                  avatarUrl: selectedConversation.avatarUrl,
+                  lastMessageContent: msgText,
+                  lastMessageAt: new Date().toISOString(),
+                  unreadCount: 0,
+                },
+                ...old.content,
+              ],
+            };
+          }
+        );
 
         setSelectedId(res.conversationId);
 
@@ -338,7 +343,7 @@ export default function ChatList({ hideSidebar = false }: ChatListProps) {
         });
 
         queryClient.invalidateQueries({ queryKey: ['chatConversations'] });
-      } catch (err) {
+      } catch (_err) {
         toast.error('Không thể tạo phòng chat');
       }
       return;
