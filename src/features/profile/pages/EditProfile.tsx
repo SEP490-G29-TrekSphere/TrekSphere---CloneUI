@@ -98,12 +98,17 @@ export default function EditProfile({ returnPath }: { returnPath?: string }) {
       // trước khi map sang AppUser, nếu không avatar/tên ở Header sẽ không đổi theo.
       if (res.data) {
         const updatedUser = normalizeProfile(res.data as unknown as Record<string, unknown>);
+        // Response của PUT không phải nguồn sự thật về danh tính/phân quyền:
+        // form này chỉ sửa được tên + avatar. Nếu BE trả thiếu field nào thì
+        // giữ giá trị của phiên đang đăng nhập, tuyệt đối không ghi đè rỗng —
+        // mất `roles` là user bị RequireRole đá khỏi portal ngay sau khi lưu.
+        const currentUser = useAppStore.getState().user;
         setUser({
-          id: updatedUser.id,
-          name: updatedUser.name,
-          email: updatedUser.email,
-          avatarUrl: updatedUser.avatar,
-          roles: updatedUser.roles,
+          id: updatedUser.id || (currentUser?.id ?? ''),
+          name: updatedUser.name || (currentUser?.name ?? ''),
+          email: updatedUser.email || currentUser?.email,
+          avatarUrl: updatedUser.avatar ?? currentUser?.avatarUrl,
+          roles: updatedUser.roles.length > 0 ? updatedUser.roles : currentUser?.roles,
         });
       }
       queryClient.invalidateQueries({ queryKey: profileKeys.me() });

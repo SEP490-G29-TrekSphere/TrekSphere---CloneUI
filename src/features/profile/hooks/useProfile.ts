@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { extractRoles } from '@/constants/roles';
 import type { UserProfile } from '@/features/auth';
 import { profileService } from '../services/profileService';
 
@@ -35,7 +36,11 @@ export const profileKeys = {
  */
 export function normalizeProfile(raw: Record<string, unknown>): UserProfile {
   const fullName = (raw.fullName as string | undefined) ?? '';
-  const roles = Array.isArray(raw.roles) ? (raw.roles as string[]) : [];
+  // BE trả roles UPPERCASE (`["TREKKER"]`) còn `ROLES`/`getPrimaryRole`/
+  // `RequireRole` đều so khớp lowercase. Bắt buộc đi qua `extractRoles` —
+  // nếu để nguyên, `EditProfile` ghi roles uppercase vào store và user bị
+  // RequireRole đá khỏi khu vực role của mình sau khi lưu hồ sơ.
+  const roles = extractRoles(raw);
 
   // Map gender từ BE (MALE/FEMALE/OTHER) sang FE (male/female/other)
   const rawGender = (raw.gender as string | null | undefined) ?? '';
@@ -47,7 +52,13 @@ export function normalizeProfile(raw: Record<string, unknown>): UserProfile {
   const gender = genderMap[rawGender.toUpperCase()] ?? undefined;
 
   return {
-    id: (raw.userID as string | undefined) ?? (raw.id as string | undefined) ?? '',
+    // Swagger `UserProfileResponse` dùng `userId`; giữ thêm `userID`/`id` cho
+    // các endpoint/phiên bản BE cũ.
+    id:
+      (raw.userId as string | undefined) ??
+      (raw.userID as string | undefined) ??
+      (raw.id as string | undefined) ??
+      '',
     email: (raw.email as string | undefined) ?? '',
     name: fullName,
     phone: (raw.phone as string | null | undefined) ?? undefined,

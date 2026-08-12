@@ -49,16 +49,22 @@ export interface TrekkerBlogListParams {
   sortDir?: 'asc' | 'desc';
 }
 
-/** Payload tạo bài viết mới (~ CreateBlogRequest). */
+/**
+ * Payload tạo bài viết mới (~ CreateBlogRequest).
+ *
+ * `POST /blogs` nhận `multipart/form-data`: `title`/`content` bind qua
+ * `@ModelAttribute`, ảnh bìa là FILE THẬT ở part `coverImage` — BE tự upload
+ * rồi trả `coverImageUrl` trong response. FE KHÔNG upload trước rồi gửi URL.
+ */
 export interface CreateBlogPayload {
   title: string;
   content: string;
-  coverImageUrl?: string;
+  coverImage?: File;
 }
 
-/** Payload cập nhật bài viết (~ UpdateBlogRequest). */
+/** Payload cập nhật bài viết (~ UpdateBlogRequest) — cũng là multipart/form-data. */
 export interface UpdateBlogPayload {
   title?: string;
   content?: string;
-  coverImageUrl?: string;
+  coverImage?: File;
 }

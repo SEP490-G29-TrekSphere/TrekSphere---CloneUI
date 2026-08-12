@@ -7,7 +7,6 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { getPrimaryRole, PATHS, ROLES } from '@/constants';
-import { profileService } from '@/features/profile/services/profileService';
 import { AppSpinner } from '@/shared/ui';
 import { useAppStore } from '@/store/useAppStore';
 import { toast } from '@/store/useToastStore';
@@ -48,8 +47,6 @@ export function CreateBlogPost({ editMode = false }: { editMode?: boolean }) {
 
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
-  const [coverRemoved, setCoverRemoved] = useState(false);
-  const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [staffPostsPage, setStaffPostsPage] = useState(1);
 
@@ -86,7 +83,6 @@ export function CreateBlogPost({ editMode = false }: { editMode?: boolean }) {
     if (!existingBlog) return;
     reset({ title: existingBlog.title, content: existingBlog.content });
     setCoverPreview(existingBlog.coverImageUrl ?? null);
-    setCoverRemoved(false);
   }, [existingBlog, reset]);
 
   // Dọn dẹp blob preview khi đổi ảnh hoặc unmount
@@ -110,34 +106,23 @@ export function CreateBlogPost({ editMode = false }: { editMode?: boolean }) {
     if (coverPreview?.startsWith('blob:')) URL.revokeObjectURL(coverPreview);
     setCoverFile(file);
     setCoverPreview(URL.createObjectURL(file));
-    setCoverRemoved(false);
   };
 
   const handleRemoveCover = () => {
     if (coverPreview?.startsWith('blob:')) URL.revokeObjectURL(coverPreview);
     setCoverFile(null);
-    setCoverPreview(null);
-    setCoverRemoved(true);
+    // Ở chế độ Sửa, bỏ file vừa chọn = quay lại ảnh bìa đang lưu trên server.
+    // BE không có trường nào để XOÁ ảnh bìa (`UpdateBlogRequest` chỉ có
+    // title/content + part `coverImage`), nên nút xoá chỉ hiện khi user vừa
+    // chọn file mới — xem `canRemoveCover`.
+    setCoverPreview(editMode ? (existingBlog?.coverImageUrl ?? null) : null);
   };
 
-  const isSubmitting = isUploadingCover || createBlog.isPending || updateBlog.isPending;
+  const isSubmitting = createBlog.isPending || updateBlog.isPending;
 
-  const onSubmit = async (values: BlogFormValues) => {
-    let coverImageUrl: string | undefined;
-
-    if (coverFile) {
-      setIsUploadingCover(true);
-      const uploadRes = await profileService.uploadFile(coverFile, 'blogs');
-      setIsUploadingCover(false);
-      if (uploadRes.error || !uploadRes.data) {
-        toast.error(uploadRes.error || 'Không thể tải ảnh bìa lên.');
-        return;
-      }
-      coverImageUrl = uploadRes.data;
-    } else if (editMode && coverRemoved) {
-      coverImageUrl = '';
-    }
-
+  // Ảnh bìa đi kèm luôn trong multipart của POST/PUT /blogs (part `coverImage`),
+  // BE tự lưu file và trả về `coverImageUrl` — không upload trước qua /files/upload.
+  const onSubmit = (values: BlogFormValues) => {
     if (editMode && blogId) {
       updateBlog.mutate(
         {
@@ -145,7 +130,7 @@ export function CreateBlogPost({ editMode = false }: { editMode?: boolean }) {
           payload: {
             title: values.title,
             content: values.content,
-            ...(coverImageUrl !== undefined ? { coverImageUrl } : {}),
+            ...(coverFile ? { coverImage: coverFile } : {}),
           },
         },
         {
@@ -164,7 +149,7 @@ export function CreateBlogPost({ editMode = false }: { editMode?: boolean }) {
       {
         title: values.title,
         content: values.content,
-        ...(coverImageUrl ? { coverImageUrl } : {}),
+        ...(coverFile ? { coverImage: coverFile } : {}),
       },
       {
         onSuccess: () => {
@@ -196,6 +181,10 @@ export function CreateBlogPost({ editMode = false }: { editMode?: boolean }) {
 
   const readStats = computeReadStats(content ?? '');
   const safeCoverPreview = getSafeImageUrl(coverPreview);
+  // Chỉ cho gỡ ảnh khi ảnh đó do user vừa chọn ở phiên này. Ảnh bìa đã lưu trên
+  // server thì BE chưa hỗ trợ xoá, nếu vẫn hiện nút X thì user bấm xong tưởng
+  // đã xoá nhưng bài viết vẫn giữ nguyên ảnh cũ.
+  const canRemoveCover = !editMode || coverFile !== null;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#FAF8F1' }}>
@@ -270,9 +259,10 @@ export function CreateBlogPost({ editMode = false }: { editMode?: boolean }) {
                   borderStyle: safeCoverPreview ? 'none' : 'dashed',
                   backgroundColor: safeCoverPreview ? 'transparent' : '#F8F6EF',
                 }}
-                onClick={() => {
-                  if (!safeCoverPreview) document.getElementById('cover-image-input')?.click();
-                }}
+                // Bấm vào khung để chọn ảnh, kể cả khi đã có ảnh — đây là cách
+                // duy nhất để đổi ảnh bìa ở chế độ Sửa (nút X không hiện với
+                // ảnh đã lưu trên server).
+                onClick={() => document.getElementById('cover-image-input')?.click()}
               >
                 {safeCoverPreview ? (
                   <>
@@ -281,16 +271,19 @@ export function CreateBlogPost({ editMode = false }: { editMode?: boolean }) {
                       alt="Cover"
                       className="h-full w-full rounded-3xl object-cover"
                     />
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemoveCover();
-                      }}
-                      className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
+                    {canRemoveCover && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveCover();
+                        }}
+                        aria-label="Gỡ ảnh bìa"
+                        className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                   </>
                 ) : (
                   <>

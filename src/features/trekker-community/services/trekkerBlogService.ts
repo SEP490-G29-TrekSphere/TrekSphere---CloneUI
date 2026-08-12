@@ -1,4 +1,4 @@
-import { type ApiResponse, ApiService } from '@/config/apiClient';
+import { type ApiResponse, ApiService, ApiUpload } from '@/config/apiClient';
 import type {
   CreateBlogPayload,
   TrekkerBlogDetail,
@@ -15,8 +15,8 @@ import type {
  * Endpoints (BE thật):
  *   GET    /blogs?authorId=&keyword=&page=&size=&sortBy=&sortDir=
  *   GET    /blogs/{id}
- *   POST   /blogs
- *   PUT    /blogs/{id}
+ *   POST   /blogs        — multipart/form-data
+ *   PUT    /blogs/{id}   — multipart/form-data
  *   PUT    /blogs/{id}/hide   — không có body, BE tự toggle PUBLISHED <-> HIDDEN theo status hiện tại
  *   DELETE /blogs/{id}
  */
@@ -27,6 +27,24 @@ interface PaginationResponseDto<T> {
   pageSize: number;
   totalElements: number;
   totalPages: number;
+}
+
+/**
+ * Dựng body `multipart/form-data` cho POST/PUT `/blogs`.
+ *
+ * BE khai báo `consumes = MULTIPART_FORM_DATA_VALUE` nên nếu gửi object JSON
+ * thì Spring chặn ngay ở tầng content negotiation
+ * (`HttpMediaTypeNotSupportedException`), không bao giờ vào tới controller.
+ *
+ * Ảnh bìa gửi thẳng file qua part `coverImage` — KHÔNG upload trước qua
+ * `/files/upload` rồi gửi URL, vì BE không có trường nào nhận URL.
+ */
+function buildBlogFormData(payload: CreateBlogPayload | UpdateBlogPayload): FormData {
+  const formData = new FormData();
+  if (payload.title !== undefined) formData.append('title', payload.title);
+  if (payload.content !== undefined) formData.append('content', payload.content);
+  if (payload.coverImage) formData.append('coverImage', payload.coverImage);
+  return formData;
 }
 
 function unwrapResponse<T>(response: ApiResponse<T>): T {
@@ -82,13 +100,21 @@ export const trekkerBlogService = {
 
   /** Tạo bài viết mới — đăng ngay ở trạng thái PUBLISHED. */
   async createBlog(payload: CreateBlogPayload): Promise<TrekkerBlogDetail> {
-    const response = await ApiService<TrekkerBlogDetail>('/blogs', 'POST', payload);
+    const response = await ApiUpload<TrekkerBlogDetail>(
+      '/blogs',
+      buildBlogFormData(payload),
+      'POST'
+    );
     return unwrapResponse(response);
   },
 
   /** Cập nhật bài viết (chỉ chủ bài viết). */
   async updateBlog(blogId: string, payload: UpdateBlogPayload): Promise<TrekkerBlogDetail> {
-    const response = await ApiService<TrekkerBlogDetail>(`/blogs/${blogId}`, 'PUT', payload);
+    const response = await ApiUpload<TrekkerBlogDetail>(
+      `/blogs/${blogId}`,
+      buildBlogFormData(payload),
+      'PUT'
+    );
     return unwrapResponse(response);
   },
 
