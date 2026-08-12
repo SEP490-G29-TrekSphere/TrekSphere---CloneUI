@@ -44,6 +44,12 @@ function buildQuery(params: TourListParams): string {
   if (params.difficulty) {
     search.set('difficulty', params.difficulty);
   }
+  if (params.departureDate !== undefined && params.departureDate !== '') {
+    search.set('departureDate', params.departureDate);
+  }
+  if (params.returnDate !== undefined && params.returnDate !== '') {
+    search.set('returnDate', params.returnDate);
+  }
   if (params.page !== undefined) {
     search.set('page', String(params.page));
   }

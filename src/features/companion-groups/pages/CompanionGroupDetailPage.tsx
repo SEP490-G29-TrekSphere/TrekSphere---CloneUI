@@ -131,7 +131,7 @@ export default function CompanionGroupDetailPage({
       },
       {
         onSuccess: (res) => {
-          if (res && res.conversationId) {
+          if (res?.conversationId) {
             navigate(chatPath, { state: { conversationId: res.conversationId } });
           } else {
             createConversationMutation.mutate(
@@ -171,7 +171,7 @@ export default function CompanionGroupDetailPage({
       },
       {
         onSuccess: (res) => {
-          if (res && res.conversationId) {
+          if (res?.conversationId) {
             navigate(chatPath, { state: { conversationId: res.conversationId } });
           } else {
             navigate(chatPath, {
