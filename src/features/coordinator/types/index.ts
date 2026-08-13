@@ -109,6 +109,7 @@ export interface SessionCheckpointStatus {
   longitude?: number;
   altitude?: number;
   status: CheckpointProgressStatus;
+  note?: string;
 }
 
 export interface CheckpointLogResult {
@@ -117,6 +118,7 @@ export interface CheckpointLogResult {
   checkpointOrder: number;
   status: CheckpointProgressStatus;
   reachedAt?: string;
+  note?: string;
 }
 
 export type SosStatus = 'PENDING' | 'RESOLVED';
@@ -164,6 +166,7 @@ export type TrackingEventType =
   | 'ATTENDANCE_END_RECORDED'
   | 'SESSION_STARTED'
   | 'CHECKPOINT_REACHED'
+  | 'CHECKPOINT_SKIPPED'
   | 'SOS_CREATED'
   | 'SOS_RESOLVED'
   | 'SESSION_ENDED';

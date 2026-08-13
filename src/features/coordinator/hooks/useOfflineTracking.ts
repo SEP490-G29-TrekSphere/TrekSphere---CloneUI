@@ -104,18 +104,10 @@ function optimisticSnapshot(
   }
 
   if (type === 'SESSION_STARTED') {
-    const firstCheckpoint = [...snapshot.checkpoints].sort(
-      (a, b) => a.checkpointOrder - b.checkpointOrder
-    )[0];
     return {
       ...snapshot,
       status: 'IN_PROGRESS',
       startedAt: occurredAt,
-      checkpoints: snapshot.checkpoints.map((item) =>
-        item.checkpointId === firstCheckpoint?.checkpointId
-          ? { ...item, status: 'REACHED', reachedAt: occurredAt }
-          : item
-      ),
     };
   }
 
@@ -130,19 +122,27 @@ function optimisticSnapshot(
     };
   }
 
+  if (type === 'CHECKPOINT_SKIPPED') {
+    return {
+      ...snapshot,
+      checkpoints: snapshot.checkpoints.map((item) =>
+        item.checkpointId === payload.checkpointId
+          ? {
+              ...item,
+              status: 'SKIPPED',
+              reachedAt: undefined,
+              note: typeof payload.reason === 'string' ? payload.reason : undefined,
+            }
+          : item
+      ),
+    };
+  }
+
   if (type === 'SESSION_ENDED') {
-    const lastCheckpoint = [...snapshot.checkpoints].sort(
-      (a, b) => b.checkpointOrder - a.checkpointOrder
-    )[0];
     return {
       ...snapshot,
       status: 'COMPLETED',
       endedAt: occurredAt,
-      checkpoints: snapshot.checkpoints.map((item) =>
-        item.checkpointId === lastCheckpoint?.checkpointId
-          ? { ...item, status: 'REACHED', reachedAt: occurredAt }
-          : item
-      ),
     };
   }
 
@@ -478,14 +478,8 @@ export function useOfflineTracking(sessionId: string, sessionMeta?: CoordinatorS
 
   const command = useMemo(
     () => ({
-      startSession: async (note?: string) => {
-        const position = await getCurrentGpsPosition();
-        return enqueueEvent('SESSION_STARTED', { ...position, note });
-      },
-      endSession: async (note?: string) => {
-        const position = await getCurrentGpsPosition();
-        return enqueueEvent('SESSION_ENDED', { ...position, note });
-      },
+      startSession: () => enqueueEvent('SESSION_STARTED', {}),
+      endSession: () => enqueueEvent('SESSION_ENDED', {}),
       checkinCheckpoint: async (note?: string) => {
         const nextCheckpoint = record?.pack.snapshot.checkpoints
           .filter((item) => item.status === 'PENDING')
@@ -496,6 +490,18 @@ export function useOfflineTracking(sessionId: string, sessionMeta?: CoordinatorS
           checkpointId: nextCheckpoint.checkpointId,
           ...position,
           note,
+        });
+      },
+      skipCheckpoint: (reason: string) => {
+        const nextCheckpoint = record?.pack.snapshot.checkpoints
+          .filter((item) => item.status === 'PENDING')
+          .sort((a, b) => a.checkpointOrder - b.checkpointOrder)[0];
+        if (!nextCheckpoint) throw new Error('Không còn checkpoint nào đang chờ xử lý.');
+        const normalizedReason = reason.trim();
+        if (!normalizedReason) throw new Error('Vui lòng nhập lý do bỏ qua checkpoint.');
+        return enqueueEvent('CHECKPOINT_SKIPPED', {
+          checkpointId: nextCheckpoint.checkpointId,
+          reason: normalizedReason,
         });
       },
       recordAttendance: (type: 'START' | 'END', participants: ParticipantAttendanceItem[]) =>

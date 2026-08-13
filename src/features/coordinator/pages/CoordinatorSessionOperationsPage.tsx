@@ -173,6 +173,15 @@ export default function CoordinatorSessionOperationsPage() {
     );
   };
 
+  const handleSkipCheckpoint = (reason: string) => {
+    const nextCheckpoint = checkpoints.find((checkpoint) => checkpoint.status === 'PENDING');
+    return runCommand(
+      'skip-checkpoint',
+      () => offline.command.skipCheckpoint(reason),
+      `Đã bỏ qua checkpoint${nextCheckpoint ? `: ${nextCheckpoint.checkpointName}` : ''}.`
+    );
+  };
+
   const handleToggleEquipment = (sessionEquipmentId: string, next: boolean) => {
     setPendingEquipmentId(sessionEquipmentId);
     return runCommand(
@@ -280,6 +289,7 @@ export default function CoordinatorSessionOperationsPage() {
 
   const lastReachedCheckpoint = [...checkpoints].reverse().find((cp) => cp.status === 'REACHED');
   const finalCheckpoint = checkpoints[checkpoints.length - 1];
+  const hasPendingCheckpoints = checkpoints.some((checkpoint) => checkpoint.status === 'PENDING');
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
@@ -300,6 +310,8 @@ export default function CoordinatorSessionOperationsPage() {
         onEnd={handleEnd}
         isStarting={pendingAction === 'start'}
         isEnding={pendingAction === 'end'}
+        canEnd={!hasPendingCheckpoints}
+        endDisabledReason="Hãy check-in hoặc bỏ qua có lý do tất cả checkpoint trước khi kết thúc tour."
       />
 
       <OfflineSyncPanel
@@ -325,7 +337,9 @@ export default function CoordinatorSessionOperationsPage() {
             checkpoints={checkpoints}
             canCheckin={effectiveSession.status === 'IN_PROGRESS'}
             isCheckingIn={pendingAction === 'checkin'}
+            isSkipping={pendingAction === 'skip-checkpoint'}
             onCheckin={(note) => setPendingGpsAction({ type: 'checkin', note })}
+            onSkip={handleSkipCheckpoint}
             isLoading={isCheckpointsLoading}
           />
         </div>

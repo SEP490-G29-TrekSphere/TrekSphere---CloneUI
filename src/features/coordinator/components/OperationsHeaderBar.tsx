@@ -8,6 +8,8 @@ interface OperationsHeaderBarProps {
   onEnd: () => void;
   isStarting: boolean;
   isEnding: boolean;
+  canEnd: boolean;
+  endDisabledReason?: string;
 }
 
 const STATUS_LABEL: Record<CoordinatorSessionDetail['status'], string> = {
@@ -31,6 +33,8 @@ export function OperationsHeaderBar({
   onEnd,
   isStarting,
   isEnding,
+  canEnd,
+  endDisabledReason,
 }: OperationsHeaderBarProps) {
   const lead = session.coordinators.find((c) => c.isLead) ?? session.coordinators[0];
   const statusStyle = STATUS_STYLE[session.status];
@@ -75,7 +79,8 @@ export function OperationsHeaderBar({
         <button
           type="button"
           onClick={onEnd}
-          disabled={session.status !== 'IN_PROGRESS' || isEnding}
+          disabled={session.status !== 'IN_PROGRESS' || !canEnd || isEnding}
+          title={session.status === 'IN_PROGRESS' && !canEnd ? endDisabledReason : undefined}
           className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90"
           style={{ backgroundColor: '#06261D' }}
         >

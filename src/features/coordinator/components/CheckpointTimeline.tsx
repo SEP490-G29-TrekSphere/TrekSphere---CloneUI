@@ -10,7 +10,9 @@ interface CheckpointTimelineProps {
   checkpoints: SessionCheckpointStatus[];
   canCheckin: boolean;
   isCheckingIn: boolean;
+  isSkipping: boolean;
   onCheckin: (note?: string) => void;
+  onSkip: (reason: string) => void;
   isLoading: boolean;
 }
 
@@ -18,7 +20,9 @@ export function CheckpointTimeline({
   checkpoints,
   canCheckin,
   isCheckingIn,
+  isSkipping,
   onCheckin,
+  onSkip,
   isLoading,
 }: CheckpointTimelineProps) {
   const [note, setNote] = useState('');
@@ -30,6 +34,13 @@ export function CheckpointTimeline({
 
   const handleCheckin = () => {
     onCheckin(note.trim() || undefined);
+    setNote('');
+  };
+
+  const handleSkip = () => {
+    const reason = note.trim();
+    if (!reason) return;
+    onSkip(reason);
     setNote('');
   };
 
@@ -116,6 +127,11 @@ export function CheckpointTimeline({
                         {cp.description}
                       </p>
                     )}
+                    {isSkipped && cp.note && (
+                      <p className="mt-1 text-xs font-semibold text-amber-800">
+                        Lý do bỏ qua: {cp.note}
+                      </p>
+                    )}
 
                     {isCurrent && canCheckin && (
                       <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -123,19 +139,35 @@ export function CheckpointTimeline({
                           type="text"
                           value={note}
                           onChange={(e) => setNote(e.target.value)}
-                          placeholder="Ghi chú (tuỳ chọn)..."
+                          placeholder="Ghi chú check-in hoặc lý do bỏ qua..."
                           className="flex-1 rounded-full border px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-600"
                           style={{ borderColor: '#D8D3C4', backgroundColor: '#FFFFFF' }}
                         />
                         <button
                           type="button"
                           onClick={handleCheckin}
-                          disabled={isCheckingIn}
+                          disabled={isCheckingIn || isSkipping}
                           className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold text-white transition-all disabled:opacity-50"
                           style={{ backgroundColor: '#06261D' }}
                         >
                           {isCheckingIn && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                           Check-in
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSkip}
+                          disabled={isCheckingIn || isSkipping || !note.trim()}
+                          title={
+                            !note.trim() ? 'Nhập lý do trước khi bỏ qua checkpoint' : undefined
+                          }
+                          className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full border border-amber-600 px-4 py-1.5 text-xs font-bold text-amber-800 transition-all disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          {isSkipping ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <SkipForward className="h-3.5 w-3.5" />
+                          )}
+                          Bỏ qua
                         </button>
                       </div>
                     )}

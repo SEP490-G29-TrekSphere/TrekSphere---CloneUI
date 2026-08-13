@@ -55,6 +55,7 @@ interface SessionCheckpointStatusDto {
   checkpointLongitude?: number;
   checkpointAltitude?: number;
   status: SessionCheckpointStatus['status'];
+  note?: string;
 }
 
 interface SessionSosStatusDto {
@@ -159,27 +160,19 @@ export const trackingService = {
   },
 
   /** `POST /tracking/sessions/{sessionId}/start` */
-  async startSession(
-    sessionId: string,
-    payload: GpsPayload
-  ): Promise<{ status: TourSessionStatus; startedAt: string }> {
+  async startSession(sessionId: string): Promise<{ status: TourSessionStatus; startedAt: string }> {
     const response = await ApiService<{ status: TourSessionStatus; startedAt: string }>(
       `/tracking/sessions/${sessionId}/start`,
-      'POST',
-      payload
+      'POST'
     );
     return unwrapResponse(response);
   },
 
   /** `POST /tracking/sessions/{sessionId}/end` */
-  async endSession(
-    sessionId: string,
-    payload: GpsPayload
-  ): Promise<{ status: TourSessionStatus; endedAt: string }> {
+  async endSession(sessionId: string): Promise<{ status: TourSessionStatus; endedAt: string }> {
     const response = await ApiService<{ status: TourSessionStatus; endedAt: string }>(
       `/tracking/sessions/${sessionId}/end`,
-      'POST',
-      payload
+      'POST'
     );
     return unwrapResponse(response);
   },
@@ -209,6 +202,7 @@ export const trackingService = {
         longitude: dto.checkpointLongitude,
         altitude: dto.checkpointAltitude,
         status: dto.status,
+        note: dto.note,
       }));
   },
 
@@ -236,6 +230,20 @@ export const trackingService = {
       `/tracking/sessions/${sessionId}/checkpoint-logs`,
       'POST',
       payload
+    );
+    return unwrapResponse(response);
+  },
+
+  /** Bỏ qua checkpoint tiếp theo; BE yêu cầu Lead Coordinator và lý do bắt buộc. */
+  async skipCheckpoint(
+    sessionId: string,
+    checkpointId: string,
+    reason: string
+  ): Promise<CheckpointLogResult> {
+    const response = await ApiService<CheckpointLogResult>(
+      `/tracking/sessions/${sessionId}/checkpoints/${checkpointId}/skip`,
+      'POST',
+      { reason }
     );
     return unwrapResponse(response);
   },

@@ -5,8 +5,8 @@ import type { AttendanceType, ParticipantAttendanceItem } from '../types';
 import { sessionOperationsKeys } from './useSessionOperations';
 
 /**
- * Mutation cho toàn bộ hành động vận hành tour thực địa. Các hành động cần GPS
- * (start/end/check-in/sos) tự lấy vị trí hiện tại của trình duyệt trước khi gọi API.
+ * Mutation cho toàn bộ hành động vận hành tour thực địa. Chỉ check-in và SOS
+ * cần GPS; start/end chỉ chuyển trạng thái của phiên tour.
  */
 export function useSessionOperationsMutations(sessionId: string) {
   const queryClient = useQueryClient();
@@ -17,13 +17,8 @@ export function useSessionOperationsMutations(sessionId: string) {
   const invalidateSosStatus = () =>
     queryClient.invalidateQueries({ queryKey: sessionOperationsKeys.sosStatus(sessionId) });
 
-  // Start/end đều đổi trạng thái phiên và nhật ký checkpoint (start khởi tạo
-  // nhật ký, end tự check-in trạm đích) nên phải làm mới cả hai.
   const startSession = useMutation({
-    mutationFn: async (note?: string) => {
-      const position = await getCurrentPosition();
-      return trackingService.startSession(sessionId, { ...position, note });
-    },
+    mutationFn: () => trackingService.startSession(sessionId),
     onSuccess: () => {
       invalidateDetail();
       invalidateCheckpointLogs();
@@ -31,10 +26,7 @@ export function useSessionOperationsMutations(sessionId: string) {
   });
 
   const endSession = useMutation({
-    mutationFn: async (note?: string) => {
-      const position = await getCurrentPosition();
-      return trackingService.endSession(sessionId, { ...position, note });
-    },
+    mutationFn: () => trackingService.endSession(sessionId),
     onSuccess: () => {
       invalidateDetail();
       invalidateCheckpointLogs();
@@ -46,6 +38,12 @@ export function useSessionOperationsMutations(sessionId: string) {
       const position = await getCurrentPosition();
       return trackingService.checkinCheckpoint(sessionId, { ...position, note });
     },
+    onSuccess: invalidateCheckpointLogs,
+  });
+
+  const skipCheckpoint = useMutation({
+    mutationFn: (payload: { checkpointId: string; reason: string }) =>
+      trackingService.skipCheckpoint(sessionId, payload.checkpointId, payload.reason),
     onSuccess: invalidateCheckpointLogs,
   });
 
@@ -80,6 +78,7 @@ export function useSessionOperationsMutations(sessionId: string) {
     startSession,
     endSession,
     checkinCheckpoint,
+    skipCheckpoint,
     recordAttendance,
     checkEquipment,
     sendSos,
