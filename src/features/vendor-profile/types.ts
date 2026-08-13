@@ -21,6 +21,7 @@ export interface UpdateVendorProfilePayload {
   description?: string;
   contactEmail?: string;
   contactPhone?: string;
+  logo?: File;
 }
 
 /** Labels tiếng Việt cho trạng thái Vendor. */
