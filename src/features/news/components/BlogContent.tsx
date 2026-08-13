@@ -1,5 +1,6 @@
 import type { BlogPostDetail } from '../types';
 import 'react-quill-new/dist/quill.snow.css';
+import { sanitizeHtml, stripHtml } from '@/utils/sanitize';
 
 interface BlogContentProps {
   post: BlogPostDetail;
@@ -22,11 +23,11 @@ export function BlogContent({ post }: BlogContentProps) {
       className="flex flex-col gap-5 text-base leading-relaxed text-primary/90 md:text-lg ql-editor [&_img]:mx-auto [&_img]:block [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-xl"
       style={{ padding: 0 }}
     >
-      {content.replace(/<[^>]+>/g, '').trim().length === 0 ? (
+      {stripHtml(content).trim().length === 0 ? (
         <p className="italic text-muted-foreground">Nội dung đang được cập nhật.</p>
       ) : (
         // biome-ignore lint/security/noDangerouslySetInnerHtml: Biome warns about XSS, but this content is sanitized on the backend before being rendered here.
-        <div dangerouslySetInnerHTML={{ __html: content }} />
+        <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }} />
       )}
 
       {/* Tags ở cuối bài */}

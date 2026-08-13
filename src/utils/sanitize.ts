@@ -1,3 +1,5 @@
+import DOMPurify from 'dompurify';
+
 /**
  * Chỉ cho phép URL http(s), data: hoặc blob: khi gán vào các sink hiển thị ảnh
  * (img src, background-image, ...) — chặn các scheme nguy hiểm như javascript:
@@ -14,4 +16,22 @@ export function getSafeImageUrl(url: string | null | undefined): string | undefi
   } catch {
     return undefined;
   }
+}
+
+/**
+ * Sanitize HTML content to prevent XSS.
+ * Removes dangerous tags like <script>, <iframe>, etc.
+ */
+export function sanitizeHtml(html: string | null | undefined): string {
+  if (!html) return '';
+  return DOMPurify.sanitize(html);
+}
+
+/**
+ * Extract plain text from HTML, stripping out all tags.
+ * Safer than using RegExp /<[^>]+>/g which can be bypassed.
+ */
+export function stripHtml(html: string | null | undefined): string {
+  if (!html) return '';
+  return DOMPurify.sanitize(html, { ALLOWED_TAGS: [] });
 }

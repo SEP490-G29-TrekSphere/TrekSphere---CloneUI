@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { PATHS } from '@/constants';
+import { stripHtml } from '@/utils/sanitize';
 import type { BlogListItem } from '../types';
 
 interface BlogCardProps {
@@ -77,7 +78,7 @@ export function BlogCard({ post }: BlogCardProps) {
 
         {/* Excerpt */}
         <p className="line-clamp-3 text-xs md:text-sm leading-relaxed text-muted-foreground flex-1">
-          {post.excerpt?.replace(/<[^>]+>/g, '')}
+          {stripHtml(post.excerpt)}
         </p>
 
         {/* CTA */}

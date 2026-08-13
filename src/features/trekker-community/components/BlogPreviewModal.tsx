@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { getSafeImageUrl } from '@/utils/sanitize';
+import { getSafeImageUrl, sanitizeHtml, stripHtml } from '@/utils/sanitize';
 
 export interface BlogPreviewModalProps {
   title: string;
@@ -61,11 +61,11 @@ export function BlogPreviewModal({
         </div>
 
         <article className="flex flex-col gap-4 p-0 text-sm leading-relaxed text-[#06261D] ql-editor sm:text-base [&_img]:mx-auto [&_img]:block [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-xl">
-          {content.replace(/<[^>]+>/g, '').trim().length === 0 ? (
+          {stripHtml(content).trim().length === 0 ? (
             <p className="italic text-[#9E9A92]">Nội dung đang được cập nhật.</p>
           ) : (
             // biome-ignore lint/security/noDangerouslySetInnerHtml: The content is sanitized on the backend before being rendered here.
-            <div dangerouslySetInnerHTML={{ __html: content }} />
+            <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }} />
           )}
         </article>
       </div>

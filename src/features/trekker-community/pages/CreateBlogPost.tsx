@@ -8,7 +8,7 @@ import { getPrimaryRole, PATHS, ROLES } from '@/constants';
 import { AppSpinner } from '@/shared/ui';
 import { useAppStore } from '@/store/useAppStore';
 import { toast } from '@/store/useToastStore';
-import { getSafeImageUrl } from '@/utils/sanitize';
+import { getSafeImageUrl, stripHtml } from '@/utils/sanitize';
 import 'react-quill-new/dist/quill.snow.css';
 import { useNavigate, useParams } from 'react-router-dom';
 import { z } from 'zod';
@@ -184,7 +184,7 @@ export function CreateBlogPost({ editMode = false }: { editMode?: boolean }) {
   }
 
   // Remove HTML tags for word counting
-  const plainTextContent = (content ?? '').replace(/<[^>]+>/g, '');
+  const plainTextContent = stripHtml(content ?? '');
   const readStats = computeReadStats(plainTextContent);
   const safeCoverPreview = getSafeImageUrl(coverPreview);
   // Chỉ cho gỡ ảnh khi ảnh đó do user vừa chọn ở phiên này. Ảnh bìa đã lưu trên
