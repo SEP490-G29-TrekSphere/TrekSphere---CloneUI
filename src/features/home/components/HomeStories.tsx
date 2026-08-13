@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { PATHS } from '@/constants';
 import { useBlogList } from '@/features/news/hooks/useBlog';
+import { stripHtml } from '@/utils/sanitize';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -170,7 +171,7 @@ export default function HomeStories() {
 
                   {/* Excerpt */}
                   <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed flex-1">
-                    {story.excerpt}
+                    {stripHtml(story.excerpt)}
                   </p>
 
                   <Link

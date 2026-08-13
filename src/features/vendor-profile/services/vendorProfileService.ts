@@ -66,6 +66,7 @@ export const vendorProfileService = {
     if (payload.description !== undefined) formData.append('description', payload.description);
     if (payload.contactEmail !== undefined) formData.append('contactEmail', payload.contactEmail);
     if (payload.contactPhone !== undefined) formData.append('contactPhone', payload.contactPhone);
+    if (payload.logo !== undefined) formData.append('logo', payload.logo);
     const response = await ApiService<VendorProfileResponseDto>(
       '/vendors/profile',
       'PUT',

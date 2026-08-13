@@ -18,13 +18,35 @@ export default function VendorProfileEdit() {
   const [contactEmail, setContactEmail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
 
+  // File object của logo mới (null = không đổi)
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  // Preview local để hiển thị ngay khi user vừa chọn file
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+
   // Nạp giá trị hiện tại khi profile tải xong.
   useEffect(() => {
     if (!profile) return;
     setDescription(profile.description ?? '');
     setContactEmail(profile.contactEmail ?? '');
     setContactPhone(profile.contactPhone ?? '');
-  }, [profile]);
+    if (!logoFile) {
+      setLogoPreview(profile.logoUrl ?? null);
+    }
+  }, [profile, logoFile]);
+
+  const handleLogoFileSelected = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Vui lòng chọn file ảnh.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Ảnh tối đa 5MB.');
+      return;
+    }
+    const previewUrl = URL.createObjectURL(file);
+    setLogoPreview(previewUrl);
+    setLogoFile(file);
+  };
 
   const handleSave = () => {
     updateMutation.mutate(
@@ -32,6 +54,7 @@ export default function VendorProfileEdit() {
         description,
         contactEmail,
         contactPhone,
+        logo: logoFile ?? undefined,
       },
       {
         onSuccess: () => {
