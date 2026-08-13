@@ -157,70 +157,68 @@ export default function Login() {
     googleButtonRef.current?.click();
   };
 
-  const onSubmit = (data: LoginFormValues) => {
-    void (async () => {
-      try {
-        const result = await authService.login(data);
+  const onSubmit = async (data: LoginFormValues) => {
+    try {
+      const result = await authService.login(data);
 
-        if (result.error || (result.status && result.status >= 400)) {
-          toast.error(result.error || 'Đăng nhập thất bại. Vui lòng thử lại.');
-          return;
-        }
-
-        if (!result.data) {
-          toast.error('Đăng nhập thất bại. Vui lòng thử lại.');
-          return;
-        }
-
-        const session = parseAuthSessionPayload(result.data);
-        if (!session) {
-          toast.error('Đăng nhập thất bại. Vui lòng thử lại.');
-          return;
-        }
-        const { accessToken, refreshToken, userData } = session;
-
-        if (accessToken) storage.set('accessToken', accessToken);
-        else storage.remove('accessToken');
-        if (refreshToken) storage.set('refreshToken', refreshToken);
-        else storage.remove('refreshToken');
-
-        // Dùng `extractRoles` để chuẩn hoá roles về lowercase + bỏ prefix
-        // `role_`. Cờ `ROLES.ADMIN = 'admin'` được khai báo lowercase, nên nếu
-        // giữ nguyên `["ADMIN"]` từ BE thì RequireRole sẽ từ chối truy cập.
-        const normalizedRoles = extractRoles(userData);
-
-        const user = {
-          id: (userData.id as string | undefined) ?? '',
-          email: (userData.email as string | undefined) ?? data.email,
-          fullName:
-            (userData.fullName as string | undefined) ??
-            (userData.name as string | undefined) ??
-            data.email.split('@')[0],
-          avatarUrl:
-            (userData.avatar as string | undefined) ?? (userData.avatarUrl as string | undefined),
-          roles: normalizedRoles,
-        };
-
-        if (!user.id) {
-          storage.remove('accessToken');
-          storage.remove('refreshToken');
-          toast.error('Đăng nhập thất bại. Vui lòng thử lại.');
-          return;
-        }
-
-        // Xoá cache React Query của phiên trước (nếu có) — tránh trường hợp
-        // đăng nhập tài khoản khác mà vẫn thấy dữ liệu cũ do staleTime 5 phút.
-        queryClient.clear();
-        setUser(toAppStoreUser(user));
-        toast.success(`Chào mừng quay trở lại, ${user.fullName}!`);
-
-        // Điều hướng theo role (roles đã được normalize ở trên).
-        navigate(getPostLoginRoute(user.roles), { replace: true });
-      } catch (err) {
-        console.error('Login error:', err);
-        toast.error('Đăng nhập thất bại. Vui lòng thử lại.');
+      if (result.error || (result.status && result.status >= 400)) {
+        toast.error(result.error || 'Đăng nhập thất bại. Vui lòng thử lại.');
+        return;
       }
-    })();
+
+      if (!result.data) {
+        toast.error('Đăng nhập thất bại. Vui lòng thử lại.');
+        return;
+      }
+
+      const session = parseAuthSessionPayload(result.data);
+      if (!session) {
+        toast.error('Đăng nhập thất bại. Vui lòng thử lại.');
+        return;
+      }
+      const { accessToken, refreshToken, userData } = session;
+
+      if (accessToken) storage.set('accessToken', accessToken);
+      else storage.remove('accessToken');
+      if (refreshToken) storage.set('refreshToken', refreshToken);
+      else storage.remove('refreshToken');
+
+      // Dùng `extractRoles` để chuẩn hoá roles về lowercase + bỏ prefix
+      // `role_`. Cờ `ROLES.ADMIN = 'admin'` được khai báo lowercase, nên nếu
+      // giữ nguyên `["ADMIN"]` từ BE thì RequireRole sẽ từ chối truy cập.
+      const normalizedRoles = extractRoles(userData);
+
+      const user = {
+        id: (userData.id as string | undefined) ?? '',
+        email: (userData.email as string | undefined) ?? data.email,
+        fullName:
+          (userData.fullName as string | undefined) ??
+          (userData.name as string | undefined) ??
+          data.email.split('@')[0],
+        avatarUrl:
+          (userData.avatar as string | undefined) ?? (userData.avatarUrl as string | undefined),
+        roles: normalizedRoles,
+      };
+
+      if (!user.id) {
+        storage.remove('accessToken');
+        storage.remove('refreshToken');
+        toast.error('Đăng nhập thất bại. Vui lòng thử lại.');
+        return;
+      }
+
+      // Xoá cache React Query của phiên trước (nếu có) — tránh trường hợp
+      // đăng nhập tài khoản khác mà vẫn thấy dữ liệu cũ do staleTime 5 phút.
+      queryClient.clear();
+      setUser(toAppStoreUser(user));
+      toast.success(`Chào mừng quay trở lại, ${user.fullName}!`);
+
+      // Điều hướng theo role (roles đã được normalize ở trên).
+      navigate(getPostLoginRoute(user.roles), { replace: true });
+    } catch (err) {
+      console.error('Login error:', err);
+      toast.error('Đăng nhập thất bại. Vui lòng thử lại.');
+    }
   };
 
   // Đang chờ hydrate hoặc đã login (chuẩn bị redirect ở effect trên) → không
