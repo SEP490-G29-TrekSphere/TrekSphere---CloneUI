@@ -19,6 +19,7 @@ interface CompanionGroupCardProps {
   layout?: 'list' | 'grid';
   /** Func tạo link chi tiết nhóm — dùng khi cần trỏ sang portal khác (vd trekker). */
   getDetailPath?: (groupId: string) => string;
+  hasJoined?: boolean;
 }
 
 function StatusBadge({ status }: { status: MatchingGroupStatus | 'OPEN' }) {
@@ -65,6 +66,7 @@ export function CompanionGroupCard({
   onViewDetail,
   layout = 'grid',
   getDetailPath,
+  hasJoined = false,
 }: CompanionGroupCardProps) {
   const user = useAppStore((state) => state.user);
   const isApiData = isMatchingGroupItem(group);
@@ -145,7 +147,7 @@ export function CompanionGroupCard({
             <Eye className="h-3.5 w-3.5" />
             Chi tiết
           </button>
-          {!isOwner && (
+          {!isOwner && !hasJoined && (
             <button
               type="button"
               disabled={status !== 'OPEN'}
@@ -223,7 +225,7 @@ export function CompanionGroupCard({
           Chi tiết
         </button>
 
-        {!isOwner && (
+        {!isOwner && !hasJoined && (
           <button
             type="button"
             disabled={status !== 'OPEN'}

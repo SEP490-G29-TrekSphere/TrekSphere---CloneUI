@@ -1,4 +1,4 @@
-import { LayoutGrid, List, RotateCcw, SearchX } from 'lucide-react';
+import { LayoutGrid, List, RotateCcw, Search, SearchX } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
@@ -12,6 +12,8 @@ import { useAppStore } from '@/store/useAppStore';
 import { CompanionGroupCard, type GroupCardData } from '../components/CompanionGroupCard';
 import { CreateCompanionGroupModal } from '../components/CreateCompanionGroupModal';
 import { useMatchingGroups } from '../hooks/useMatchingGroups';
+import { useMyJoinRequests } from '../hooks/useMyJoinRequests';
+import { useMyMatchingGroups } from '../hooks/useMyMatchingGroups';
 
 const PAGE_SIZE = 9;
 
@@ -33,6 +35,27 @@ export default function CompanionGroupsPage() {
   const navigate = useNavigate();
   const user = useAppStore((s) => s.user);
   const isGuest = !user;
+
+  // --- Fetch my joined groups ---
+  const { data: myGroupsData } = useMyMatchingGroups({ size: 100 }, { enabled: !isGuest });
+  const { data: myJoinRequestsData } = useMyJoinRequests({ size: 100 }, { enabled: !isGuest });
+
+  const joinedGroupIds = useMemo(() => {
+    const set = new Set<string>();
+    if (myGroupsData?.content) {
+      myGroupsData.content.forEach((g) => {
+        set.add(g.matchingGroupId);
+      });
+    }
+    if (myJoinRequestsData?.content) {
+      myJoinRequestsData.content.forEach((req) => {
+        if (req.status === 'PENDING' || req.status === 'ACCEPTED') {
+          set.add(req.matchingGroupId);
+        }
+      });
+    }
+    return set;
+  }, [myGroupsData, myJoinRequestsData]);
 
   // --- Filter state ---
   const [searchQuery, setSearchQuery] = useState('');
@@ -106,43 +129,41 @@ export default function CompanionGroupsPage() {
 
   return (
     <div className="min-h-screen bg-background pt-16">
-      <div className="relative z-10">
+      {/* Hero Section */}
+      <section className="relative h-[350px] sm:h-[450px] w-full">
+        <img
+          src="/image2.jpg"
+          alt="Tìm Bạn Đồng Hành"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 bg-black/40" />
+        <div className="relative z-10 flex h-full flex-col items-center justify-center text-center text-white px-4">
+          <h1 className="mb-4 text-3xl font-bold sm:text-5xl lg:text-6xl text-white">
+            Tìm Bạn Đồng Hành
+          </h1>
+          <p className="max-w-2xl text-base sm:text-lg text-white/90">
+            Kết nối với những người cùng đam mê để chinh phục những cung đường huyền thoại.
+          </p>
+        </div>
+      </section>
+
+      <div className="relative z-20 -mt-8 sm:-mt-10">
         {/* Centered container matching ListTours */}
         <div className="mx-auto max-w-[1400px] w-full px-4 sm:px-6 lg:px-8">
           {/* ── Page header (search bar area) ── */}
-          <div className="pt-10 pb-8 text-center sm:pt-14">
-            <h1 className="text-3xl sm:text-4xl font-black text-primary tracking-tight">
-              Tìm Bạn Đồng Hành
-            </h1>
-            <p className="mt-3 text-sm text-muted-foreground max-w-xl mx-auto leading-relaxed">
-              Kết nối với những người cùng đam mê để chinh phục những cung đường huyền thoại.
-            </p>
-
+          <div className="pb-8 text-center">
             {/* Search bar pill */}
-            <div className="mt-7 mx-auto max-w-2xl bg-white border border-border rounded-full p-2 shadow-md flex items-center gap-2">
-              <div className="flex-1 flex items-center gap-2 px-3">
-                <svg
-                  className="h-4 w-4 text-muted-foreground shrink-0"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
-                  />
-                </svg>
+            <div className="mx-auto max-w-[800px] bg-card border border-border/60 rounded-full p-2 shadow-xl flex items-center gap-3">
+              <label className="flex flex-1 items-center gap-3 rounded-full bg-muted/50 px-4 py-2.5 transition-colors hover:bg-muted">
+                <Search className="h-5 w-5 text-muted-foreground shrink-0" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Tìm theo tên nhóm, tour..."
-                  className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+                  className="w-full bg-transparent text-sm sm:text-base text-foreground placeholder:text-muted-foreground outline-none"
                 />
-              </div>
+              </label>
             </div>
           </div>
 
@@ -342,6 +363,7 @@ export default function CompanionGroupsPage() {
                       layout={layout}
                       onJoinGroup={handleJoinGroup}
                       onViewDetail={handleViewDetail}
+                      hasJoined={joinedGroupIds.has(group.matchingGroupId)}
                     />
                   ))}
                 </div>

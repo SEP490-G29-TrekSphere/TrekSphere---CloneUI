@@ -49,19 +49,21 @@ export default function BlogList() {
       <BlogHeroSection />
 
       {/* Filter bar */}
-      <div className="mx-auto max-w-[1400px] w-full px-4 sm:px-6 mt-6 md:mt-8">
-        <BlogFilterBar
-          searchQuery={search}
-          onSearchChange={handleSearchChange}
-          sortBy={sortBy}
-          sortDir={sortDir}
-          onSortChange={handleSortChange}
-        />
+      <div className="relative z-20 -mt-7 sm:-mt-8">
+        <div className="mx-auto max-w-[1400px] w-full px-4 sm:px-6">
+          <div className="mx-auto max-w-4xl">
+            <BlogFilterBar
+              searchQuery={search}
+              onSearchChange={handleSearchChange}
+              sortBy={sortBy}
+              sortDir={sortDir}
+              onSortChange={handleSortChange}
+            />
+          </div>
+        </div>
       </div>
 
-      <main className="mx-auto max-w-[1400px] w-full px-4 pb-16 sm:px-6">
-        <div className="h-10 md:h-12" aria-hidden />
-
+      <main className="mx-auto max-w-[1400px] w-full px-4 pb-16 sm:px-6 mt-10 sm:mt-14">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <AppSpinner size="lg" className="text-primary" />
