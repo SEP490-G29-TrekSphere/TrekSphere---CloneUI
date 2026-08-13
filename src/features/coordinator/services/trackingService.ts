@@ -7,6 +7,13 @@ import type {
   SosAlertResult,
   SosStatus,
   TourSessionStatus,
+  TrackingLocation,
+  TrackingLocationBatchResponse,
+  TrackingLocationSample,
+  TrackingOfflinePack,
+  TrackingSyncEvent,
+  TrackingSyncResponse,
+  TrackingSyncStateResponse,
 } from '../types';
 
 /** Service gọi API tag "Tracking Management" — vận hành tour thực địa theo thời gian thực. */
@@ -68,6 +75,89 @@ interface SessionSosStatusDto {
 }
 
 export const trackingService = {
+  /** Đăng ký thiết bị và tải snapshot dùng khi mất mạng. */
+  async createOfflinePack(sessionId: string, deviceId: string): Promise<TrackingOfflinePack> {
+    const response = await ApiService<TrackingOfflinePack>(
+      `/tracking/sessions/${sessionId}/offline-pack`,
+      'POST',
+      { deviceId }
+    );
+    return unwrapResponse(response);
+  },
+
+  /** Gửi tối đa 100 command đã lưu trên thiết bị. */
+  async syncEvents(
+    sessionId: string,
+    payload: {
+      deviceSessionId: string;
+      deviceId: string;
+      lastKnownRevision: number;
+      events: TrackingSyncEvent[];
+    }
+  ): Promise<TrackingSyncResponse> {
+    const response = await ApiService<TrackingSyncResponse>(
+      `/tracking/sessions/${sessionId}/sync-events`,
+      'POST',
+      payload
+    );
+    return unwrapResponse(response);
+  },
+
+  /** Reconcile local state với revision/snapshot mới nhất của server. */
+  async getSyncState(sessionId: string, afterRevision: number): Promise<TrackingSyncStateResponse> {
+    const response = await ApiService<TrackingSyncStateResponse>(
+      `/tracking/sessions/${sessionId}/sync-state`,
+      'GET',
+      undefined,
+      { afterRevision: String(afterRevision) }
+    );
+    return unwrapResponse(response);
+  },
+
+  /** Gửi tối đa 200 GPS samples đã thu online/offline. */
+  async sendLocationBatch(
+    sessionId: string,
+    payload: {
+      deviceSessionId: string;
+      deviceId: string;
+      samples: TrackingLocationSample[];
+    }
+  ): Promise<TrackingLocationBatchResponse> {
+    const response = await ApiService<TrackingLocationBatchResponse>(
+      `/tracking/sessions/${sessionId}/locations:batch`,
+      'POST',
+      payload
+    );
+    return unwrapResponse(response);
+  },
+
+  async getLatestLocations(sessionId: string): Promise<TrackingLocation[]> {
+    const response = await ApiService<TrackingLocation[]>(
+      `/tracking/sessions/${sessionId}/locations/latest`,
+      'GET'
+    );
+    return unwrapResponse(response) ?? [];
+  },
+
+  async getLocationHistory(
+    sessionId: string,
+    params: { from: string; to: string; actorId?: string; limit?: number }
+  ): Promise<TrackingLocation[]> {
+    const query: Record<string, string> = {
+      from: params.from,
+      to: params.to,
+      limit: String(params.limit ?? 2000),
+    };
+    if (params.actorId) query.actorId = params.actorId;
+    const response = await ApiService<TrackingLocation[]>(
+      `/tracking/sessions/${sessionId}/locations`,
+      'GET',
+      undefined,
+      query
+    );
+    return unwrapResponse(response) ?? [];
+  },
+
   /** `POST /tracking/sessions/{sessionId}/start` */
   async startSession(
     sessionId: string,
