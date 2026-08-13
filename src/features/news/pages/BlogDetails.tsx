@@ -1,6 +1,6 @@
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Flag } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { PATHS } from '@/constants';
 import { AppSpinner, ReportModal } from '@/shared/ui';
 import { useAppStore } from '@/store/useAppStore';
@@ -8,22 +8,18 @@ import { BlogComments } from '../components/BlogComments';
 import { BlogContent } from '../components/BlogContent';
 import { BlogDetailsHero } from '../components/BlogDetailsHero';
 import { BlogSidebar } from '../components/BlogSidebar';
-import { useBlogComments, useBlogDetail } from '../hooks/useBlog';
+import { useBlogComments, useBlogDetail, useBlogRelated } from '../hooks/useBlog';
 import { flattenComments } from '../types';
 
 /**
  * Màn hình 2: Chi tiết bài viết Blog.
  * - Hero
  * - 2 cột: nội dung 65% + sidebar 35%
- * - Comments full width phía dưới
- *
- * URL dùng `:blogId` — BE nhận blogId làm định danh.
- * Data flow:
- *   - Detail:  GET /blogs/{blogId} — đã bao gồm comments nested + totalComments
- *   - Related: hiện tại BE chưa có related endpoint, sidebar sẽ hiển thị empty state
+ * - Comments full width phía dưới content
  */
 export default function BlogDetails() {
   const { blogId } = useParams<{ blogId: string }>();
+  const navigate = useNavigate();
   const user = useAppStore((state) => state.user);
   const isLoggedIn = Boolean(user);
 
@@ -31,9 +27,11 @@ export default function BlogDetails() {
 
   const detailQuery = useBlogDetail(blogId);
   const commentsQuery = useBlogComments(blogId);
+  const relatedQuery = useBlogRelated(blogId);
 
   const post = detailQuery.data ?? null;
   const comments = commentsQuery.data?.items ?? [];
+  const relatedPosts = relatedQuery.data ?? [];
   const totalComments = flattenComments(comments).length;
 
   if (detailQuery.isLoading) {
@@ -66,51 +64,58 @@ export default function BlogDetails() {
 
   return (
     <div className="min-h-screen bg-background">
-      <BlogDetailsHero
-        post={post!}
-        onReport={isLoggedIn ? () => setIsReportModalOpen(true) : undefined}
-      />
+      <BlogDetailsHero post={post} />
 
-      <main className="mx-auto max-w-none w-full px-4 py-10 sm:px-6 md:py-12">
-        {/* Breadcrumb */}
-        <nav className="mb-6 flex items-center gap-2 text-sm" aria-label="Điều hướng">
-          <Link
-            to={PATHS.HOME}
-            className="text-muted-foreground transition-colors hover:text-foreground"
+      <main className="mx-auto max-w-[1400px] w-full px-4 py-10 sm:px-6 md:py-12">
+        {/* Navigation & Actions */}
+        <div className="mb-6 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => navigate(PATHS.NEWS)}
+            className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
           >
-            Trang chủ
-          </Link>
-          <span className="text-muted-foreground">/</span>
-          <Link
-            to={PATHS.NEWS}
-            className="text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Tin tức
-          </Link>
-          <span className="text-muted-foreground">/</span>
-          <span className="line-clamp-1 font-medium text-primary">{post!.title}</span>
-        </nav>
+            <ChevronLeft className="h-4 w-4" />
+            Quay lại
+          </button>
 
-        {/* 2 cột: nội dung + sidebar */}
-        <div className="grid gap-10 lg:grid-cols-[1fr_360px]">
-          <div className="min-w-0">
-            <BlogContent post={post!} />
-          </div>
-
-          <div className="lg:sticky lg:top-6 lg:self-start">
-            {/* TODO: Khi BE có endpoint related blogs thì truyền relatedPosts prop */}
-            <BlogSidebar relatedPosts={[]} />
-          </div>
+          {isLoggedIn && (
+            <button
+              type="button"
+              onClick={() => setIsReportModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-red-50 text-red-600 hover:bg-red-100 text-xs font-semibold transition-colors"
+              title="Báo cáo vi phạm"
+            >
+              <Flag className="size-3.5" />
+              Báo cáo vi phạm
+            </button>
+          )}
         </div>
 
-        {/* Comments full width */}
-        <BlogComments
-          comments={comments}
-          total={totalComments}
-          isLoggedIn={isLoggedIn}
-          currentUserId={user?.id}
-          blogId={blogId}
-        />
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+          {/* Cột trái: Nội dung + Comment */}
+          <div className="lg:col-span-8 flex flex-col gap-10">
+            {/* Nội dung bài viết */}
+            <div className="min-w-0 rounded-2xl bg-white p-6 shadow-sm sm:p-8">
+              <BlogContent post={post} />
+            </div>
+
+            {/* Comments */}
+            <div className="min-w-0">
+              <BlogComments
+                comments={comments}
+                total={totalComments}
+                isLoggedIn={isLoggedIn}
+                currentUserId={user?.id}
+                blogId={blogId}
+              />
+            </div>
+          </div>
+
+          {/* Cột phải: Sidebar */}
+          <div className="lg:col-span-4 h-fit sticky top-24">
+            <BlogSidebar relatedPosts={relatedPosts} isLoggedIn={isLoggedIn} />
+          </div>
+        </div>
       </main>
 
       {/* Report Violation Modal */}
@@ -119,7 +124,7 @@ export default function BlogDetails() {
         onClose={() => setIsReportModalOpen(false)}
         targetId={blogId || 'TREK-8829'}
         targetType="BLOG"
-        targetTitle={post!.title}
+        targetTitle={post.title}
       />
     </div>
   );

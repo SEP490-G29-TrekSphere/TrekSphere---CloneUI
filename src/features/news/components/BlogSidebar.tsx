@@ -5,6 +5,7 @@ import type { BlogListItem } from '../types';
 
 interface BlogSidebarProps {
   relatedPosts: BlogListItem[];
+  isLoggedIn?: boolean;
 }
 
 const formatDate = (iso: string): string => {
@@ -23,12 +24,12 @@ const formatDate = (iso: string): string => {
  * BE hiện không trả `related_blogs` trong detail → `relatedPosts` thường rỗng
  * hoặc được fill từ hook (xem useBlogRelated). Khi rỗng sẽ fallback text.
  */
-export function BlogSidebar({ relatedPosts }: BlogSidebarProps) {
+export function BlogSidebar({ relatedPosts, isLoggedIn }: BlogSidebarProps) {
   return (
     <aside className="flex flex-col gap-6">
       {/* Related */}
       <section className="rounded-2xl bg-card p-5 shadow-sm">
-        <h3 className="mb-4 text-base font-bold text-primary">Bài viết liên quan</h3>
+        <h3 className="mb-4 text-base font-bold text-primary">Bài viết liên khác</h3>
 
         {relatedPosts.length === 0 ? (
           <p className="text-sm text-muted-foreground">Chưa có bài viết liên quan.</p>
@@ -62,22 +63,24 @@ export function BlogSidebar({ relatedPosts }: BlogSidebarProps) {
       </section>
 
       {/* CTA */}
-      <section className="rounded-2xl bg-primary p-6 text-white">
-        <h3 className="text-lg font-bold leading-tight md:text-xl">
-          Tham gia cộng đồng TrekSphere
-        </h3>
-        <p className="mt-3 text-sm leading-relaxed text-white/85">
-          Kết nối với hơn 10.000 trekker Việt Nam. Chia sẻ hành trình, nhận tips chuyên gia và đồng
-          hành cùng nhau chinh phục đỉnh cao.
-        </p>
-        <Link
-          to={PATHS.REGISTER}
-          className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-accent px-4 py-3 text-sm font-semibold text-primary transition-opacity hover:opacity-90"
-        >
-          Tham gia ngay
-          <ArrowRight className="h-4 w-4" />
-        </Link>
-      </section>
+      {!isLoggedIn && (
+        <section className="rounded-2xl bg-primary p-6 text-white">
+          <h3 className="text-lg font-bold leading-tight md:text-xl">
+            Tham gia cộng đồng TrekSphere
+          </h3>
+          <p className="mt-3 text-sm leading-relaxed text-white/85">
+            Kết nối với hơn 10.000 trekker Việt Nam. Chia sẻ hành trình, nhận tips chuyên gia và
+            đồng hành cùng nhau chinh phục đỉnh cao.
+          </p>
+          <Link
+            to={PATHS.REGISTER}
+            className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-accent px-4 py-3 text-sm font-semibold text-primary transition-opacity hover:opacity-90"
+          >
+            Tham gia ngay
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </section>
+      )}
 
       {/* Newsletter */}
       <section className="rounded-2xl bg-muted p-5">

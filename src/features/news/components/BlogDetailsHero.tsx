@@ -1,9 +1,7 @@
-import { Flag } from 'lucide-react';
 import type { BlogPostDetail } from '../types';
 
 interface BlogDetailsHeroProps {
   post: BlogPostDetail;
-  onReport?: () => void;
 }
 
 const formatDate = (iso: string): string => {
@@ -20,7 +18,7 @@ const formatDate = (iso: string): string => {
  * Hero của trang chi tiết: full-screen ngang, ảnh nền + gradient overlay,
  * nội dung nằm ở góc dưới bên trái (badge, title, meta).
  */
-export function BlogDetailsHero({ post, onReport }: BlogDetailsHeroProps) {
+export function BlogDetailsHero({ post }: BlogDetailsHeroProps) {
   return (
     <section
       className="relative flex h-[60vh] min-h-[420px] w-full items-end px-4 py-10 sm:px-6 md:h-[70vh]"
@@ -30,7 +28,7 @@ export function BlogDetailsHero({ post, onReport }: BlogDetailsHeroProps) {
         backgroundPosition: 'center',
       }}
     >
-      <div className="mx-auto w-full max-w-none">
+      <div className="mx-auto w-full max-w-4xl">
         <div className="flex items-center justify-between gap-4">
           {post.categoryName ? (
             <span className="inline-flex items-center rounded-full bg-accent px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary shadow-sm">
@@ -38,18 +36,6 @@ export function BlogDetailsHero({ post, onReport }: BlogDetailsHeroProps) {
             </span>
           ) : (
             <div />
-          )}
-
-          {onReport && (
-            <button
-              type="button"
-              onClick={onReport}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-white text-xs font-semibold transition-all border border-white/30"
-              title="Báo cáo vi phạm"
-            >
-              <Flag className="size-3.5" />
-              Báo cáo vi phạm
-            </button>
           )}
         </div>
 
@@ -66,10 +52,12 @@ export function BlogDetailsHero({ post, onReport }: BlogDetailsHeroProps) {
             />
           ) : null}
           <span className="font-medium text-white">{post.authorName}</span>
-          <span aria-hidden>•</span>
-          <span>{formatDate(post.publishedAt)}</span>
-          <span aria-hidden>•</span>
-          <span>{post.readingTimeMinutes} phút đọc</span>
+          {post.publishedAt ? (
+            <>
+              <span aria-hidden>•</span>
+              <span>{formatDate(post.publishedAt)}</span>
+            </>
+          ) : null}
         </div>
       </div>
     </section>
