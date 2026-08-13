@@ -1,4 +1,5 @@
 import type { BlogPostDetail } from '../types';
+import 'react-quill-new/dist/quill.snow.css';
 
 interface BlogContentProps {
   post: BlogPostDetail;
@@ -15,21 +16,17 @@ interface BlogContentProps {
  */
 export function BlogContent({ post }: BlogContentProps) {
   const content = post.content ?? '';
-  // Tách theo 1 hoặc nhiều dòng trống để giữ cấu trúc đoạn văn.
-  const paragraphs = content
-    .split(/\n{2,}/)
-    .map((p) => p.trim())
-    .filter(Boolean);
 
   return (
-    <article className="flex flex-col gap-5 text-base leading-relaxed text-primary/90 md:text-lg">
-      {paragraphs.length === 0 ? (
+    <article
+      className="flex flex-col gap-5 text-base leading-relaxed text-primary/90 md:text-lg ql-editor [&_img]:mx-auto [&_img]:block [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-xl"
+      style={{ padding: 0 }}
+    >
+      {content.replace(/<[^>]+>/g, '').trim().length === 0 ? (
         <p className="italic text-muted-foreground">Nội dung đang được cập nhật.</p>
       ) : (
-        paragraphs.map((p, idx) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: content thuần không có stable id
-          <p key={`p-${idx}`}>{p}</p>
-        ))
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: Biome warns about XSS, but this content is sanitized on the backend before being rendered here.
+        <div dangerouslySetInnerHTML={{ __html: content }} />
       )}
 
       {/* Tags ở cuối bài */}

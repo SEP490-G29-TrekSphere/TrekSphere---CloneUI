@@ -170,7 +170,7 @@ export default function HomeStories() {
 
                   {/* Excerpt */}
                   <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed flex-1">
-                    {story.excerpt}
+                    {story.excerpt?.replace(/<[^>]+>/g, '')}
                   </p>
 
                   <Link

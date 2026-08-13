@@ -1,16 +1,18 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ImageIcon, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { useNavigate, useParams } from 'react-router-dom';
-import { z } from 'zod';
+import { Controller, useForm } from 'react-hook-form';
+import ReactQuill from 'react-quill-new';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { getPrimaryRole, PATHS, ROLES } from '@/constants';
 import { AppSpinner } from '@/shared/ui';
 import { useAppStore } from '@/store/useAppStore';
 import { toast } from '@/store/useToastStore';
 import { getSafeImageUrl } from '@/utils/sanitize';
+import 'react-quill-new/dist/quill.snow.css';
+import { useNavigate, useParams } from 'react-router-dom';
+import { z } from 'zod';
+import { BlogPreviewModal } from '../components/BlogPreviewModal';
 import { MyBlogPagination } from '../components/MyBlogPagination';
 import { MyBlogTable } from '../components/MyBlogTable';
 import { useTrekkerBlogDetail, useTrekkerBlogList } from '../hooks/useTrekkerBlog';
@@ -69,6 +71,7 @@ export function CreateBlogPost({ editMode = false }: { editMode?: boolean }) {
     handleSubmit,
     watch,
     reset,
+    control,
     formState: { errors },
   } = useForm<BlogFormValues>({
     resolver: zodResolver(blogFormSchema),
@@ -138,7 +141,7 @@ export function CreateBlogPost({ editMode = false }: { editMode?: boolean }) {
             toast.success('Đã lưu thay đổi.');
             navigate(PATHS.TREKKER_BLOG_LIST);
           },
-          onError: (err) =>
+          onError: (err: unknown) =>
             toast.error(err instanceof Error ? err.message : 'Không thể lưu thay đổi.'),
         }
       );
@@ -164,7 +167,8 @@ export function CreateBlogPost({ editMode = false }: { editMode?: boolean }) {
             navigate(PATHS.TREKKER_BLOG_LIST);
           }
         },
-        onError: (err) => toast.error(err instanceof Error ? err.message : 'Đăng bài thất bại.'),
+        onError: (err: unknown) =>
+          toast.error(err instanceof Error ? err.message : 'Đăng bài thất bại.'),
       }
     );
   };
@@ -179,7 +183,9 @@ export function CreateBlogPost({ editMode = false }: { editMode?: boolean }) {
     );
   }
 
-  const readStats = computeReadStats(content ?? '');
+  // Remove HTML tags for word counting
+  const plainTextContent = (content ?? '').replace(/<[^>]+>/g, '');
+  const readStats = computeReadStats(plainTextContent);
   const safeCoverPreview = getSafeImageUrl(coverPreview);
   // Chỉ cho gỡ ảnh khi ảnh đó do user vừa chọn ở phiên này. Ảnh bìa đã lưu trên
   // server thì BE chưa hỗ trợ xoá, nếu vẫn hiện nút X thì user bấm xong tưởng
@@ -333,17 +339,40 @@ export function CreateBlogPost({ editMode = false }: { editMode?: boolean }) {
 
             {/* Content Editor */}
             <div
-              className="mt-4 rounded-3xl border"
+              className="mt-4 rounded-3xl border overflow-hidden [&_.quill]:flex [&_.quill]:flex-col [&_.quill]:h-[400px] lg:[&_.quill]:h-[500px] [&_.quill]:border-none [&_.ql-container]:flex-1 [&_.ql-container]:overflow-y-auto [&_.ql-container]:!border-none [&_.ql-container]:text-base [&_.ql-container]:font-inherit [&_.ql-toolbar]:!border-none [&_.ql-toolbar]:!border-b [&_.ql-toolbar]:!border-[#E6E2D1] [&_.ql-editor.ql-blank::before]:text-[#9E9A92] [&_.ql-editor.ql-blank::before]:not-italic"
               style={{
                 borderColor: errors.content ? '#EF4444' : '#E6E2D1',
                 backgroundColor: '#FFFFFF',
               }}
             >
-              <Textarea
-                placeholder="Bắt đầu chia sẻ hành trình của bạn..."
-                {...register('content')}
-                className="min-h-[400px] resize-none rounded-3xl border-0 p-6 text-base placeholder:text-[#9E9A92] focus-visible:ring-0"
-                style={{ backgroundColor: 'transparent' }}
+              <Controller
+                name="content"
+                control={control}
+                render={({ field }) => (
+                  <ReactQuill
+                    theme="snow"
+                    value={field.value}
+                    onChange={field.onChange}
+                    modules={{
+                      toolbar: [
+                        [{ header: [1, 2, 3, false] }],
+                        [{ font: [] }],
+                        [{ size: [] }],
+                        ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+                        [
+                          { list: 'ordered' },
+                          { list: 'bullet' },
+                          { indent: '-1' },
+                          { indent: '+1' },
+                        ],
+                        [{ align: [] }],
+                        ['link', 'image', 'video'],
+                        ['clean'],
+                      ],
+                    }}
+                    placeholder="Bắt đầu chia sẻ hành trình của bạn..."
+                  />
+                )}
               />
             </div>
             {errors.content && (
@@ -362,15 +391,12 @@ export function CreateBlogPost({ editMode = false }: { editMode?: boolean }) {
             >
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold" style={{ color: '#06261D' }}>
-                  Thời gian đọc
+                  Số lượng từ
                 </h3>
                 <span className="text-sm font-bold" style={{ color: '#06261D' }}>
-                  ~ {readStats.minutes} phút
+                  {readStats.words} từ
                 </span>
               </div>
-              <p className="mt-2 text-xs" style={{ color: '#6F7B75' }}>
-                {readStats.words} từ
-              </p>
             </div>
 
             {/* Publish Info Card */}
@@ -459,107 +485,6 @@ export function CreateBlogPost({ editMode = false }: { editMode?: boolean }) {
           onClose={() => setShowPreview(false)}
         />
       )}
-    </div>
-  );
-}
-
-interface BlogPreviewModalProps {
-  title: string;
-  content: string;
-  coverPreview?: string;
-  authorName: string;
-  authorAvatarUrl?: string;
-  onClose: () => void;
-}
-
-/** Modal xem trước — mô phỏng cách bài viết hiển thị trên trang đọc công khai. */
-function BlogPreviewModal({
-  title,
-  content,
-  coverPreview,
-  authorName,
-  authorAvatarUrl,
-  onClose,
-}: BlogPreviewModalProps) {
-  const paragraphs = content
-    .split(/\n{2,}/)
-    .map((p) => p.trim())
-    .filter(Boolean);
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-    >
-      <div
-        className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-3xl p-8"
-        style={{ backgroundColor: '#FFFFFF' }}
-      >
-        <div className="mb-4 flex items-center justify-between">
-          <span
-            className="text-xs font-semibold uppercase tracking-wide"
-            style={{ color: '#6F7B75' }}
-          >
-            Xem trước
-          </span>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-muted"
-            style={{ color: '#6F7B75' }}
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        {getSafeImageUrl(coverPreview) && (
-          <img
-            src={getSafeImageUrl(coverPreview)}
-            alt="Cover"
-            className="mb-6 h-56 w-full rounded-2xl object-cover"
-          />
-        )}
-
-        <h1 className="mb-3 text-2xl font-bold" style={{ color: '#06261D' }}>
-          {title}
-        </h1>
-
-        <div className="mb-6 flex items-center gap-2">
-          <div
-            className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full text-xs font-bold text-white"
-            style={{ backgroundColor: '#06261D' }}
-          >
-            {getSafeImageUrl(authorAvatarUrl) ? (
-              <img
-                src={getSafeImageUrl(authorAvatarUrl)}
-                alt={authorName}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <span>{authorName.charAt(0).toUpperCase()}</span>
-            )}
-          </div>
-          <span className="text-sm font-medium" style={{ color: '#6F7B75' }}>
-            {authorName}
-          </span>
-        </div>
-
-        <article
-          className="flex flex-col gap-4 text-base leading-relaxed"
-          style={{ color: '#06261D' }}
-        >
-          {paragraphs.length === 0 ? (
-            <p className="italic" style={{ color: '#9E9A92' }}>
-              Nội dung đang được cập nhật.
-            </p>
-          ) : (
-            paragraphs.map((p, idx) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: nội dung xem trước không có id ổn định
-              <p key={`preview-p-${idx}`}>{p}</p>
-            ))
-          )}
-        </article>
-      </div>
     </div>
   );
 }

@@ -39,6 +39,7 @@
     "react-dom": "^19.2.6",
     "react-hook-form": "^7.80.0",
     "react-leaflet": "^5.0.0",
+    "react-quill-new": "^3.8.3",
     "react-router-dom": "^7.18.0",
     "recharts": "^3.10.1",
     "sockjs-client": "^1.6.1",

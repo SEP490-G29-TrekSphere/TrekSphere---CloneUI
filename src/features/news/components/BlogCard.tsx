@@ -1,4 +1,3 @@
-import { ArrowRight, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { PATHS } from '@/constants';
 import type { BlogListItem } from '../types';
@@ -26,11 +25,11 @@ export function BlogCard({ post }: BlogCardProps) {
   const detailLink = PATHS.NEWS_DETAIL.replace(':blogId', post.blogId);
 
   return (
-    <article className="flex h-full flex-col overflow-hidden rounded-3xl bg-card shadow-sm transition-shadow hover:shadow-md">
-      {/* Cover image full-width — wrapper có height cố định, bg-muted làm fallback khi ảnh lỗi */}
+    <article className="tour-card flex h-full flex-col">
+      {/* Cover image full-width */}
       <Link
         to={detailLink}
-        className="relative block h-48 overflow-hidden bg-muted md:h-56"
+        className="tour-image-wrapper relative block h-48 md:h-56 overflow-hidden bg-muted"
         aria-label={post.title}
       >
         <img
@@ -40,10 +39,10 @@ export function BlogCard({ post }: BlogCardProps) {
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).style.opacity = '0';
           }}
-          className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+          className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
         />
 
-        {/* Category badge (nếu BE trả) */}
+        {/* Category badge */}
         {post.categoryName ? (
           <span className="absolute left-4 top-4 inline-flex items-center rounded-full bg-accent px-3 py-1 text-xs font-semibold text-primary shadow-sm">
             {post.categoryName}
@@ -52,7 +51,7 @@ export function BlogCard({ post }: BlogCardProps) {
       </Link>
 
       {/* Content */}
-      <div className="flex flex-1 flex-col p-5">
+      <div className="tour-content-wrapper flex flex-1 flex-col p-5 gap-3">
         {/* Author meta */}
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {post.authorAvatarUrl ? (
@@ -62,32 +61,31 @@ export function BlogCard({ post }: BlogCardProps) {
               className="h-5 w-5 rounded-full object-cover"
             />
           ) : (
-            <User className="h-3.5 w-3.5" />
+            <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-bold">
+              {post.authorName?.[0] || 'U'}
+            </div>
           )}
-          <span className="font-medium text-primary/80">{post.authorName}</span>
+          <span className="font-semibold text-primary/80">{post.authorName}</span>
           <span aria-hidden>•</span>
           <span>{formatDate(post.publishedAt)}</span>
         </div>
 
         {/* Title */}
-        <h3 className="mt-3 line-clamp-2 text-base font-bold leading-snug text-primary md:text-lg">
-          <Link to={detailLink} className="transition-colors hover:text-primary-hover">
-            {post.title}
-          </Link>
+        <h3 className="line-clamp-2 text-base font-bold leading-snug text-primary transition-colors hover:text-primary/80 md:text-lg">
+          <Link to={detailLink}>{post.title}</Link>
         </h3>
 
         {/* Excerpt */}
-        <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
-          {post.excerpt}
+        <p className="line-clamp-3 text-xs md:text-sm leading-relaxed text-muted-foreground flex-1">
+          {post.excerpt?.replace(/<[^>]+>/g, '')}
         </p>
 
         {/* CTA */}
         <Link
           to={detailLink}
-          className="mt-auto inline-flex w-fit items-center gap-1 pt-4 text-xs font-bold uppercase tracking-wider text-primary transition-opacity hover:opacity-80"
+          className="mt-auto w-fit px-5 py-2 rounded-full text-xs font-semibold text-white bg-primary hover:opacity-90 transition-opacity cursor-pointer"
         >
           Đọc thêm
-          <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </div>
     </article>

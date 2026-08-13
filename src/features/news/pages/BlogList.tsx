@@ -14,25 +14,29 @@ const PAGE_SIZE = 6;
  * - Filter bar đè xuống ranh giới giữa hero và nội dung
  * - Grid 3 cột trên desktop
  * - Phân trang — BE trả sẵn `data.totalPages` (Spring Data convention).
- *
- * Lưu ý: BE hiện chỉ hỗ trợ filter `keyword` (search) — không có filter category.
- * → `BlogFilterBar` chỉ dùng phần ô tìm kiếm, các tab category hiển thị nhưng
- *   không gửi param (giữ UI để khi BE bổ sung thì chỉ cần nối lại).
  */
 export default function BlogList() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
   const { data, isLoading, isError, isFetching } = useBlogList({
     page,
     size: PAGE_SIZE,
     keyword: search.trim() || undefined,
-    sortBy: 'id',
-    sortDir: 'desc',
+    sortBy,
+    sortDir,
   });
 
   const handleSearchChange = (q: string) => {
     setSearch(q);
+    setPage(1);
+  };
+
+  const handleSortChange = (newSortBy: string, newSortDir: 'asc' | 'desc') => {
+    setSortBy(newSortBy);
+    setSortDir(newSortDir);
     setPage(1);
   };
 
@@ -45,11 +49,17 @@ export default function BlogList() {
       <BlogHeroSection />
 
       {/* Filter bar */}
-      <div className="mx-auto max-w-none w-full px-4 sm:px-6 mt-6 md:mt-8">
-        <BlogFilterBar searchQuery={search} onSearchChange={handleSearchChange} />
+      <div className="mx-auto max-w-[1400px] w-full px-4 sm:px-6 mt-6 md:mt-8">
+        <BlogFilterBar
+          searchQuery={search}
+          onSearchChange={handleSearchChange}
+          sortBy={sortBy}
+          sortDir={sortDir}
+          onSortChange={handleSortChange}
+        />
       </div>
 
-      <main className="mx-auto max-w-none w-full px-4 pb-16 sm:px-6">
+      <main className="mx-auto max-w-[1400px] w-full px-4 pb-16 sm:px-6">
         <div className="h-10 md:h-12" aria-hidden />
 
         {isLoading ? (
@@ -69,7 +79,7 @@ export default function BlogList() {
           <div className="flex flex-col items-center justify-center rounded-2xl bg-card py-20 text-center shadow-sm">
             <p className="text-base font-semibold text-primary">Không tìm thấy bài viết</p>
             <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-              Thử thay đổi từ khóa tìm kiếm khác.
+              Thử thay đổi từ khóa hoặc bộ lọc tìm kiếm khác.
             </p>
           </div>
         ) : (
