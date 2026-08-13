@@ -10,7 +10,7 @@ export function getSafeImageUrl(url: string | null | undefined): string | undefi
   if (!url) return undefined;
   if (url.startsWith('blob:')) return url;
   try {
-    const parsed = new URL(url, window.location.origin);
+    const parsed = new URL(url, 'http://dummy.local');
     const allowedProtocols = ['http:', 'https:', 'data:'];
     return allowedProtocols.includes(parsed.protocol) ? url : undefined;
   } catch {
