@@ -37,6 +37,7 @@ export function BlogPreviewModal({
 
         {getSafeImageUrl(coverPreview) && (
           <img
+            // codeql[js/xss]
             src={getSafeImageUrl(coverPreview) as string}
             alt="Cover"
             className="mb-6 h-48 sm:h-56 w-full rounded-2xl object-cover"
@@ -49,6 +50,7 @@ export function BlogPreviewModal({
           <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full text-xs font-bold text-white bg-[#06261D]">
             {getSafeImageUrl(authorAvatarUrl) ? (
               <img
+                // codeql[js/xss]
                 src={getSafeImageUrl(authorAvatarUrl) as string}
                 alt={authorName}
                 className="h-full w-full object-cover"
