@@ -187,7 +187,25 @@ export default function ListTours() {
 
   return (
     <div className="min-h-screen bg-background pt-16">
-      <div className="relative z-10">
+      {/* Hero Section */}
+      <section className="relative h-[350px] sm:h-[450px] w-full">
+        <img
+          src="/image1.jpg"
+          alt="Khám phá các tour Trekking"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 bg-black/40" />
+        <div className="relative z-10 flex h-full flex-col items-center justify-center text-center text-white px-4">
+          <h1 className="mb-4 text-3xl font-bold sm:text-5xl lg:text-6xl text-white">
+            Khám Phá Các Hành Trình Trekking
+          </h1>
+          <p className="max-w-2xl text-base sm:text-lg text-white/90">
+            Tìm kiếm và lựa chọn những chuyến phiêu lưu tuyệt vời nhất cùng các chuyên gia hàng đầu.
+          </p>
+        </div>
+      </section>
+
+      <div className="relative z-20 -mt-16 sm:-mt-20">
         {/* Centered max-width container — aligns search bar and grid */}
         <div className="mx-auto max-w-[1400px] w-full px-4 sm:px-6 lg:px-8">
           <TourSearchBar
