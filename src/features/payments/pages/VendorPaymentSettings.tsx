@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
+import { VendorPayoutChannelCard } from '@/features/payments/components/VendorPayoutChannelCard';
 import { paymentService } from '@/features/payments/services/paymentService';
 import type { DepositType, TourPaymentPolicyPayload } from '@/features/payments/types';
 import { VendorCancellationPolicyCard } from '@/features/vendor-cancellation-policies';
@@ -189,7 +190,7 @@ export default function VendorPaymentSettings() {
             Cấu hình thanh toán
           </h1>
           <p className="mt-2 max-w-2xl text-sm font-medium leading-relaxed text-[#6F7E72]">
-            Kết nối kênh payOS, chọn cách khách thanh toán và thiết lập quyền lợi hoàn tiền cho từng
+            Cấu hình riêng Kênh Thu và Kênh Chi payOS, sau đó chọn cách khách thanh toán cho từng
             tour.
           </p>
         </div>
@@ -203,17 +204,17 @@ export default function VendorPaymentSettings() {
         </span>
       </header>
 
-      <div className="grid items-start gap-6 xl:grid-cols-[0.82fr_1.18fr]">
+      <div className="grid items-start gap-6 xl:grid-cols-2">
         <AppCard className="overflow-hidden rounded-[28px] border-[#DED9CA] bg-white p-0 shadow-[0_10px_35px_rgba(30,57,50,0.06)]">
           <div className="border-b border-[#EAE6DC] bg-[#FBF8F0] p-5 sm:p-6">
             <p className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#6F7E72]">
-              Bước 1
+              Bắt buộc
             </p>
             <h2 className="mt-0.5 text-lg font-extrabold text-[#1E3932]">
               Kết nối kênh nhận thanh toán
             </h2>
             <p className="mt-1 text-xs font-medium leading-relaxed text-[#6F7E72]">
-              Khách thanh toán qua payOS; tiền về tài khoản ngân hàng được liên kết với kênh này.
+              Khách thanh toán qua PayOS tiền thông báo tài khoản ngân hàng liên kết kênh này.
             </p>
           </div>
 
@@ -271,7 +272,7 @@ export default function VendorPaymentSettings() {
                 <div className="rounded-2xl border border-[#DDE8E1] bg-[#F5FAF7] p-4">
                   <p className="text-xs font-extrabold text-[#1E3932]">Chuẩn bị trong 3 bước</p>
                   <ol className="mt-3 space-y-2 text-[11px] font-medium leading-relaxed text-[#56655F]">
-                    <li>1. Đăng nhập payOS và tạo một kênh thanh toán cho doanh nghiệp.</li>
+                    <li>1. Đăng nhập payOS và tạo một kênh thanh toán</li>
                     <li>2. Chọn tài khoản ngân hàng sẽ nhận tiền từ khách.</li>
                     <li>3. Sao chép bộ ba khóa tích hợp bên dưới để TrekSphere kết nối.</li>
                   </ol>
@@ -283,7 +284,7 @@ export default function VendorPaymentSettings() {
 
                 <div className="grid gap-4">
                   <label className="block text-xs font-extrabold text-[#1E3932]">
-                    Client ID của kênh payOS
+                    Client ID
                     <input
                       {...accountForm.register('clientId')}
                       autoComplete="off"
@@ -298,7 +299,7 @@ export default function VendorPaymentSettings() {
                   </label>
 
                   <label className="block text-xs font-extrabold text-[#1E3932]">
-                    API Key của kênh payOS
+                    API Key
                     <input
                       type="password"
                       {...accountForm.register('apiKey')}
@@ -318,7 +319,7 @@ export default function VendorPaymentSettings() {
                   </label>
 
                   <label className="block text-xs font-extrabold text-[#1E3932]">
-                    Checksum Key của kênh payOS
+                    Checksum Key
                     <input
                       type="password"
                       {...accountForm.register('checksumKey')}
@@ -423,10 +424,12 @@ export default function VendorPaymentSettings() {
           </form>
         </AppCard>
 
-        <AppCard className="overflow-hidden rounded-[28px] border-[#DED9CA] bg-white p-0 shadow-[0_10px_35px_rgba(30,57,50,0.06)]">
+        <VendorPayoutChannelCard />
+
+        <AppCard className="overflow-hidden rounded-[28px] border-[#DED9CA] bg-white p-0 shadow-[0_10px_35px_rgba(30,57,50,0.06)] xl:col-span-2">
           <div className="border-b border-[#EAE6DC] bg-[#FBF8F0] p-5 sm:p-6">
             <p className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#6F7E72]">
-              Bước 2
+              Thiết lập theo tour
             </p>
             <h2 className="mt-0.5 text-lg font-extrabold text-[#1E3932]">
               Phương thức thanh toán theo tour
@@ -663,7 +666,7 @@ export default function VendorPaymentSettings() {
       <div className="space-y-3">
         <div>
           <p className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#6F7E72]">
-            Bước 3
+            Chính sách hủy
           </p>
           <h2 className="mt-1 text-xl font-extrabold text-[#1E3932]">
             Quyền lợi hủy tour &amp; hoàn tiền

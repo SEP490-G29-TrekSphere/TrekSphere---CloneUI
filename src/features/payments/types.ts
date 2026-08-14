@@ -20,8 +20,16 @@ export type PaymentTransactionStatus =
   | 'CANCELLED'
   | 'EXPIRED';
 
-export type RefundStatus = 'PENDING' | 'PROCESSING' | 'REFUNDED' | 'FAILED' | 'CANCELLED';
-export type RefundMethod = 'GATEWAY_REFUND' | 'MANUAL';
+export type RefundStatus =
+  | 'PENDING'
+  | 'AWAITING_VENDOR_ACTION'
+  | 'PROCESSING'
+  | 'MANUAL_REVIEW'
+  | 'OVERDUE'
+  | 'REFUNDED'
+  | 'FAILED'
+  | 'CANCELLED';
+export type RefundMethod = 'PAYOUT' | 'GATEWAY_REFUND' | 'MANUAL';
 export type RefundReason =
   | 'TREKKER_CANCEL'
   | 'VENDOR_CANCEL'
@@ -53,6 +61,15 @@ export interface VendorPaymentAccount {
   credentialsConfigured: boolean;
   status: 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'REJECTED';
   webhookUrl?: string | null;
+}
+
+export interface VendorPayoutAccount {
+  configured: boolean;
+  clientId?: string | null;
+  credentialsConfigured: boolean;
+  status?: 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'REJECTED' | null;
+  maskedAccountNumber?: string | null;
+  accountName?: string | null;
 }
 
 export interface PayOsAccountPayload {
@@ -102,14 +119,26 @@ export interface RefundTransaction {
   status: RefundStatus;
   refundMethod: RefundMethod;
   destinationBin?: string | null;
+  destinationAccountNumber?: string | null;
   maskedDestinationAccountNumber?: string | null;
   destinationAccountName?: string | null;
   gatewayRefundId?: string | null;
+  manualBankReference?: string | null;
   requestedAt: string;
   processingAt?: string | null;
   completedAt?: string | null;
+  dueAt?: string | null;
+  nextRetryAt?: string | null;
+  attemptCount?: number;
   failureCode?: string | null;
   failureMessage?: string | null;
+  bookingCode?: string | null;
+  vendorName?: string | null;
+  automaticPayoutAvailable: boolean;
+  manualReceiptUrl?: string | null;
+  manualSubmittedAt?: string | null;
+  adminReviewedAt?: string | null;
+  adminReviewNote?: string | null;
 }
 
 export interface CancellationQuote {

@@ -167,7 +167,7 @@ export function TourBookingRail({
         onClick={scrollToPolicy}
         className="text-center text-xs font-semibold text-primary underline-offset-4 hover:underline"
       >
-        Xem chính sách hủy &amp; hoàn tiền
+        Xem chính sách hủy và hoàn tiền
       </a>
     </div>
   );

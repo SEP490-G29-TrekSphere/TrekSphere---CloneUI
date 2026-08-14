@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { vendorScheduleCancellationService } from '../services/vendorScheduleCancellationService';
 import { vendorScheduleService } from '../services/vendorScheduleService';
-import type { CreateSchedulePayload, UpdateSchedulePayload } from '../types';
+import type { CreateSchedulePayload, TourSchedule, UpdateSchedulePayload } from '../types';
 import { vendorTourDetailKeys } from './useVendorTourDetail';
 
 /**
@@ -32,5 +33,16 @@ export function useVendorScheduleMutations(tourId: string) {
     onSuccess: invalidate,
   });
 
-  return { createSchedule, updateSchedule, deleteSchedule };
+  const cancelScheduleWithBookings = useMutation({
+    mutationFn: ({ schedule, reason }: { schedule: TourSchedule; reason: string }) =>
+      vendorScheduleCancellationService.cancel(schedule, reason),
+    onSettled: () => {
+      invalidate();
+      queryClient.invalidateQueries({ queryKey: ['vendor-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['vendor-booking-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-cancellation-preview'] });
+    },
+  });
+
+  return { createSchedule, updateSchedule, deleteSchedule, cancelScheduleWithBookings };
 }

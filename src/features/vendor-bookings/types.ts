@@ -56,6 +56,22 @@ export interface VendorBookingListResponse {
   last: boolean;
 }
 
+/** Booking rút gọn được nhóm từ manifest của đúng một lịch khởi hành. */
+export interface ScheduleBookingItem {
+  bookingId: string;
+  bookingCode: string;
+  numberOfParticipants: number;
+  bookingStatus: BookingStatus;
+  paymentStatus: PaymentStatus;
+}
+
+/** Dữ liệu đối chiếu dùng khi Vendor hủy toàn bộ một lịch khởi hành. */
+export interface ScheduleBookingManifest {
+  scheduleId: string;
+  bookedSlots: number;
+  bookings: ScheduleBookingItem[];
+}
+
 export interface ParticipantDto {
   participantId: string;
   fullName: string;

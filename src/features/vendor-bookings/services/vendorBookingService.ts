@@ -2,6 +2,10 @@ import { type ApiResponse, ApiService } from '@/config/apiClient';
 import type {
   BookingDetailResponse,
   BookingStats,
+  BookingStatus,
+  PaymentStatus,
+  ScheduleBookingItem,
+  ScheduleBookingManifest,
   VendorBookingFilter,
   VendorBookingItem,
   VendorBookingListResponse,
@@ -48,6 +52,19 @@ interface PaginationBookingDto {
   last: boolean;
 }
 
+interface ApiManifestParticipantDto {
+  bookingId?: string;
+  bookingCode?: string;
+  bookingStatus?: ApiBookingDto['bookingStatus'];
+  paymentStatus?: ApiBookingDto['paymentStatus'];
+}
+
+interface ApiScheduleManifestDto {
+  scheduleId?: string;
+  bookedSlots?: number;
+  participants?: ApiManifestParticipantDto[];
+}
+
 function unwrapResponse<T>(response: ApiResponse<T>): T {
   if (response.error) {
     throw new Error(response.error);
@@ -81,6 +98,18 @@ function mapBookingItem(dto: ApiBookingDto): VendorBookingItem {
     customerName: dto.customerName,
     proofImageUrl: dto.proofImageUrl ?? undefined,
   };
+}
+
+function normalizeBookingStatus(
+  status: ApiBookingDto['bookingStatus'],
+  paymentStatus: PaymentStatus
+): BookingStatus {
+  if (status !== 'PENDING') return status;
+  return paymentStatus === 'PAID' ? 'PENDING_CONFIRMATION' : 'PAYMENT_PENDING';
+}
+
+function normalizePaymentStatus(status: ApiBookingDto['paymentStatus']): PaymentStatus {
+  return status === 'PENDING' ? 'UNPAID' : status;
 }
 
 async function countBookings(params: Record<string, string>): Promise<number> {
@@ -153,6 +182,64 @@ export const vendorBookingService = {
       totalElements: data.totalElements,
       totalPages: data.totalPages,
       last: data.last,
+    };
+  },
+
+  /**
+   * Lấy booking theo chính xác `scheduleId` từ manifest, sau đó nhóm các dòng
+   * hành khách về một booking. Không dùng cặp ngày vì hai lịch có thể trùng ngày.
+   */
+  async getScheduleBookingManifest(scheduleId: string): Promise<ScheduleBookingManifest> {
+    const response = await ApiService<ApiScheduleManifestDto>(
+      `/vendor/dashboard/schedules/${scheduleId}/manifest`,
+      'GET'
+    );
+    const data = unwrapResponse(response);
+
+    if (data.scheduleId && data.scheduleId !== scheduleId) {
+      throw new Error('Dữ liệu manifest không khớp lịch khởi hành cần xử lý.');
+    }
+
+    const groupedBookings = new Map<string, ScheduleBookingItem>();
+    for (const participant of data.participants ?? []) {
+      if (
+        !participant.bookingId ||
+        !participant.bookingCode ||
+        !participant.bookingStatus ||
+        !participant.paymentStatus
+      ) {
+        throw new Error('Manifest thiếu thông tin booking cần thiết để hủy lịch an toàn.');
+      }
+
+      const paymentStatus = normalizePaymentStatus(participant.paymentStatus);
+      const bookingStatus = normalizeBookingStatus(participant.bookingStatus, paymentStatus);
+      const current = groupedBookings.get(participant.bookingId);
+
+      if (current) {
+        if (
+          current.bookingCode !== participant.bookingCode ||
+          current.bookingStatus !== bookingStatus ||
+          current.paymentStatus !== paymentStatus
+        ) {
+          throw new Error('Manifest có dữ liệu không đồng nhất trong cùng một booking.');
+        }
+        current.numberOfParticipants += 1;
+        continue;
+      }
+
+      groupedBookings.set(participant.bookingId, {
+        bookingId: participant.bookingId,
+        bookingCode: participant.bookingCode,
+        numberOfParticipants: 1,
+        bookingStatus,
+        paymentStatus,
+      });
+    }
+
+    return {
+      scheduleId: data.scheduleId ?? scheduleId,
+      bookedSlots: data.bookedSlots ?? 0,
+      bookings: [...groupedBookings.values()],
     };
   },
 

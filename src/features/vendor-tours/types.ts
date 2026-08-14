@@ -142,13 +142,13 @@ export interface CreateSchedulePayload {
   availableSlots: number;
 }
 
-/** `PUT /vendor/tours/schedules/{scheduleId}` — mọi field đều optional trên BE, nhưng FE luôn gửi đủ. */
+/** `PUT /vendor/tours/schedules/{scheduleId}` — mọi field đều optional trên BE. */
 export interface UpdateSchedulePayload {
-  departureDate: string;
-  returnDate: string;
-  price: number;
-  availableSlots: number;
-  status: ApiScheduleStatus;
+  departureDate?: string;
+  returnDate?: string;
+  price?: number;
+  availableSlots?: number;
+  status?: ApiScheduleStatus;
   /** Bắt buộc khi lịch đã có khách đặt (`bookedSlots > 0`) — BE gửi notification cho khách dựa vào đây. */
   reason?: string;
 }

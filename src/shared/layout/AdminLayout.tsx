@@ -7,6 +7,7 @@ import {
   LogOut,
   MessageSquare,
   Newspaper,
+  RotateCcw,
   Siren,
   Ticket,
   User,
@@ -22,6 +23,7 @@ const adminNavItems = [
   { name: 'Quản lý Nhà cung cấp', path: PATHS.ADMIN_VENDORS, icon: Building2 },
   { name: 'Duyệt Nhà Cung Cấp', path: PATHS.ADMIN_APPLICATIONS, icon: ClipboardCheck },
   { name: 'Báo cáo Vi phạm', path: PATHS.ADMIN_REPORTS, icon: AlertTriangle },
+  { name: 'Duyệt hoàn tiền', path: PATHS.ADMIN_REFUNDS, icon: RotateCcw },
   { name: 'Khẩn cấp (SOS)', path: PATHS.ADMIN_EMERGENCY, icon: Siren },
   { name: 'Quản lý Bài Viết', path: PATHS.ADMIN_BLOGS, icon: Newspaper },
   { name: 'Quản lý Dữ liệu', path: PATHS.ADMIN_DATA, icon: Database, disabled: true },
@@ -73,7 +75,9 @@ export default function AdminLayout() {
               (item.path === PATHS.ADMIN_ACCOUNTS &&
                 location.pathname.startsWith(PATHS.ADMIN_ACCOUNTS)) ||
               (item.path === PATHS.ADMIN_REPORTS &&
-                location.pathname.startsWith(PATHS.ADMIN_REPORTS));
+                location.pathname.startsWith(PATHS.ADMIN_REPORTS)) ||
+              (item.path === PATHS.ADMIN_REFUNDS &&
+                location.pathname.startsWith(PATHS.ADMIN_REFUNDS));
             return (
               <Link
                 key={item.name}

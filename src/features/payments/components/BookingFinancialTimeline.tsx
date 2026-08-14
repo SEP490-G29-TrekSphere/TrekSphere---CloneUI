@@ -9,6 +9,7 @@ import {
   ReceiptText,
   RefreshCw,
   RotateCcw,
+  ShieldCheck,
   XCircle,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -16,6 +17,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { paymentService } from '@/features/payments/services/paymentService';
 import type { RefundTransaction } from '@/features/payments/types';
+import { profileService } from '@/features/profile/services/profileService';
 import { AppCard } from '@/shared/ui';
 import { toast } from '@/store/useToastStore';
 
@@ -50,12 +52,32 @@ function money(value: number): string {
   return `${value.toLocaleString('vi-VN')}đ`;
 }
 
+function visibleRefundAccountNumber(
+  refund: RefundTransaction,
+  audience: BookingFinancialTimelineProps['audience']
+): string | null {
+  if (audience === 'vendor') return refund.destinationAccountNumber ?? null;
+  if (refund.maskedDestinationAccountNumber) return refund.maskedDestinationAccountNumber;
+  const account = refund.destinationAccountNumber;
+  if (!account) return null;
+  return account.length > 4 ? `${'*'.repeat(account.length - 4)}${account.slice(-4)}` : account;
+}
+
 function dateTime(value?: string | null): string {
   if (!value) return '—';
   return new Intl.DateTimeFormat('vi-VN', {
     dateStyle: 'short',
     timeStyle: 'short',
   }).format(new Date(value));
+}
+
+function deadlineText(value?: string | null): string | null {
+  if (!value) return null;
+  const difference = new Date(value).getTime() - Date.now();
+  const absoluteHours = Math.max(1, Math.ceil(Math.abs(difference) / 3_600_000));
+  const duration =
+    absoluteHours >= 24 ? `${Math.ceil(absoluteHours / 24)} ngày` : `${absoluteHours} giờ`;
+  return difference > 0 ? `Còn khoảng ${duration}` : `Đã quá hạn khoảng ${duration}`;
 }
 
 const paymentLabels: Record<string, string> = {
@@ -70,6 +92,9 @@ const paymentLabels: Record<string, string> = {
   CANCELLED: 'Đã hủy',
   EXPIRED: 'Hết hạn',
   REFUNDED: 'Đã hoàn tiền',
+  AWAITING_VENDOR_ACTION: 'Chờ vendor chuyển khoản',
+  MANUAL_REVIEW: 'Chờ admin xác minh',
+  OVERDUE: 'Quá hạn xử lý',
 };
 
 const refundReasonLabels: Record<string, string> = {
@@ -85,9 +110,10 @@ function statusTone(status: string): string {
   if (['PAID', 'REFUNDED'].includes(status)) {
     return 'border-emerald-200 bg-emerald-50 text-emerald-800';
   }
-  if (['FAILED', 'CANCELLED', 'EXPIRED'].includes(status)) {
+  if (['FAILED', 'CANCELLED', 'EXPIRED', 'OVERDUE'].includes(status)) {
     return 'border-red-200 bg-red-50 text-red-700';
   }
+  if (status === 'MANUAL_REVIEW') return 'border-sky-200 bg-sky-50 text-sky-800';
   return 'border-amber-200 bg-amber-50 text-amber-800';
 }
 
@@ -196,32 +222,44 @@ function VendorRefundActions({
   onSaved: () => void;
 }) {
   const [showManual, setShowManual] = useState(false);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const form = useForm<ManualValues>({
     resolver: zodResolver(manualSchema),
     defaultValues: { bankReference: '', note: '' },
   });
-  const canProcess = ['PENDING', 'FAILED'].includes(refund.status);
+  const canProcess = ['PENDING', 'FAILED', 'AWAITING_VENDOR_ACTION', 'OVERDUE'].includes(
+    refund.status
+  );
+  const manualFallbackAvailable =
+    !refund.automaticPayoutAvailable ||
+    ['FAILED', 'AWAITING_VENDOR_ACTION', 'OVERDUE'].includes(refund.status);
   const hasDestination = Boolean(
-    refund.destinationBin && refund.maskedDestinationAccountNumber && refund.destinationAccountName
+    refund.destinationBin && refund.destinationAccountNumber && refund.destinationAccountName
   );
   const gatewayMutation = useMutation({
     mutationFn: () => paymentService.processRefund(refund.refundTransactionId),
     onSuccess: () => {
-      toast.success('Đã gửi yêu cầu hoàn tiền qua PayOS.');
+      toast.success('Đã gửi lệnh chi tiền qua Kênh Chi payOS.');
       onSaved();
     },
     onError: (error: Error) => toast.error(error.message),
   });
   const manualMutation = useMutation({
-    mutationFn: (values: ManualValues) =>
-      paymentService.completeManualRefund(
+    mutationFn: async ({ values, file }: { values: ManualValues; file: File }) => {
+      const upload = await profileService.uploadFile(file, 'refund-receipts');
+      if (!upload.data) throw new Error(upload.error || 'Không thể tải ảnh biên nhận lên.');
+      return paymentService.completeManualRefund(
         refund.refundTransactionId,
         values.bankReference,
+        upload.data,
         values.note
-      ),
+      );
+    },
     onSuccess: () => {
-      toast.success('Đã ghi nhận hoàn tiền thủ công.');
+      toast.success('Đã gửi biên nhận. Refund đang chờ admin xác minh.');
       setShowManual(false);
+      setReceiptFile(null);
+      form.reset();
       onSaved();
     },
     onError: (error: Error) => toast.error(error.message),
@@ -236,29 +274,48 @@ function VendorRefundActions({
           <AlertTriangle className="h-4 w-4" /> Chờ khách cập nhật tài khoản nhận tiền.
         </p>
       ) : (
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            disabled={gatewayMutation.isPending}
-            onClick={() => gatewayMutation.mutate()}
-            className="inline-flex items-center gap-2 rounded-full bg-[#06261D] px-4 py-2 text-xs font-extrabold text-white disabled:opacity-60"
-          >
-            {gatewayMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            Hoàn qua PayOS
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowManual((value) => !value)}
-            className="rounded-full border border-[#D8D3C4] bg-white px-4 py-2 text-xs font-extrabold text-[#06261D]"
-          >
-            Xác nhận chuyển thủ công
-          </button>
-        </div>
+        <>
+          {manualFallbackAvailable && (
+            <div className="mb-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold leading-relaxed text-amber-900">
+              {refund.automaticPayoutAvailable
+                ? 'Lệnh hoàn tự động chưa thành công. Vendor có thể chuyển thủ công đúng '
+                : 'Chưa có Kênh Chi payOS hoạt động. Vendor cần chuyển đúng '}
+              <strong>{money(refund.amount)}</strong> tới tài khoản hiển thị ở trên, sau đó gửi mã
+              tham chiếu và ảnh biên nhận để admin xác minh.
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2">
+            {refund.automaticPayoutAvailable && (
+              <button
+                type="button"
+                disabled={gatewayMutation.isPending}
+                onClick={() => gatewayMutation.mutate()}
+                className="inline-flex items-center gap-2 rounded-full bg-[#06261D] px-4 py-2 text-xs font-extrabold text-white disabled:opacity-60"
+              >
+                {gatewayMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                Chi tự động qua payOS
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setShowManual((value) => !value)}
+              className="rounded-full border border-[#D8D3C4] bg-white px-4 py-2 text-xs font-extrabold text-[#06261D]"
+            >
+              Đã chuyển tiền, gửi biên nhận
+            </button>
+          </div>
+        </>
       )}
 
       {showManual && hasDestination && (
         <form
-          onSubmit={form.handleSubmit((values) => manualMutation.mutate(values))}
+          onSubmit={form.handleSubmit((values) => {
+            if (!receiptFile) {
+              toast.error('Vui lòng chọn ảnh biên nhận chuyển khoản.');
+              return;
+            }
+            manualMutation.mutate({ values, file: receiptFile });
+          })}
           className="mt-3 grid gap-3 rounded-2xl bg-[#F7F5EF] p-4 sm:grid-cols-2"
         >
           <label className="text-xs font-bold text-[#06261D]">
@@ -280,12 +337,24 @@ function VendorRefundActions({
               className="mt-1 w-full rounded-xl border border-[#DDD8C9] bg-white px-3 py-2 text-sm outline-none"
             />
           </label>
+          <label className="text-xs font-bold text-[#06261D] sm:col-span-2">
+            Ảnh biên nhận chuyển khoản
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              onChange={(event) => setReceiptFile(event.target.files?.[0] ?? null)}
+              className="mt-1 block w-full rounded-xl border border-[#DDD8C9] bg-white px-3 py-2 text-xs file:mr-3 file:rounded-full file:border-0 file:bg-[#E8F3EE] file:px-3 file:py-1 file:font-bold file:text-[#006241]"
+            />
+            <span className="mt-1 block text-[10px] font-medium text-[#6F7E72]">
+              Biên nhận chỉ là bằng chứng gửi duyệt; refund chỉ hoàn tất sau khi admin xác minh.
+            </span>
+          </label>
           <button
             type="submit"
             disabled={manualMutation.isPending}
             className="w-fit rounded-full bg-[#0F766E] px-4 py-2 text-xs font-extrabold text-white disabled:opacity-60 sm:col-span-2"
           >
-            Xác nhận đã chuyển tiền
+            Gửi biên nhận để admin duyệt
           </button>
         </form>
       )}
@@ -314,6 +383,10 @@ export function BookingFinancialTimeline({
     refetchInterval: (query) =>
       query.state.data?.some((item) => item.status === 'PROCESSING') ? 5_000 : false,
   });
+  const refundItems = refunds.data ?? [];
+  const hasVendorInitiatedRefund = refundItems.some((refund) =>
+    ['VENDOR_CANCEL', 'INSUFFICIENT_PAX'].includes(refund.reason)
+  );
 
   function refreshRefunds() {
     queryClient.invalidateQueries({ queryKey: ['booking-refunds', bookingId] });
@@ -335,7 +408,9 @@ export function BookingFinancialTimeline({
           <p className="mt-0.5 text-xs font-medium text-[#6F7E72]">
             {view === 'refunds'
               ? 'Theo dõi tài khoản nhận tiền và xử lý từng yêu cầu.'
-              : 'Gồm cả giao dịch payOS và dữ liệu chuyển khoản cũ.'}
+              : audience === 'trekker'
+                ? 'Theo dõi các khoản đã thanh toán và tiến độ hoàn tiền.'
+                : 'Gồm cả giao dịch payOS và dữ liệu chuyển khoản cũ.'}
           </p>
         </div>
         {((showPayments && payments.isFetching) || (showRefunds && refunds.isFetching)) && (
@@ -427,22 +502,38 @@ export function BookingFinancialTimeline({
             <div className="mb-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <RotateCcw className="h-4 w-4 text-[#006241]" />
-                <h3 className="text-sm font-extrabold text-[#1E3932]">Yêu cầu hoàn tiền</h3>
+                <h3 className="text-sm font-extrabold text-[#1E3932]">
+                  {audience === 'trekker' ? 'Khoản hoàn tiền' : 'Yêu cầu cần hoàn tiền'}
+                </h3>
               </div>
               <span className="rounded-full bg-[#E7F3EC] px-2.5 py-1 text-[11px] font-bold text-[#006241]">
-                {(refunds.data ?? []).length} yêu cầu
+                {refundItems.length} khoản
               </span>
             </div>
+            {audience === 'trekker' && hasVendorInitiatedRefund && (
+              <div className="mb-3 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-950">
+                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100">
+                  <ShieldCheck className="h-4 w-4 text-emerald-700" />
+                </span>
+                <div>
+                  <p className="text-xs font-extrabold">Khoản hoàn được tạo tự động</p>
+                  <p className="mt-0.5 text-[11px] font-medium leading-relaxed text-emerald-800">
+                    Nhà tổ chức đã hủy đơn sau khi bạn thanh toán. TrekSphere đã tự động tạo khoản
+                    hoàn này; bạn không cần gửi thêm yêu cầu.
+                  </p>
+                </div>
+              </div>
+            )}
             <div className="space-y-3">
-              {(refunds.data ?? []).length === 0 ? (
+              {refundItems.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-[#D9D4C6] bg-[#FBF8F0] p-6 text-center">
                   <RotateCcw className="mx-auto h-5 w-5 text-[#87918C]" />
                   <p className="mt-2 text-xs font-semibold text-[#6F7E72]">
-                    Đơn này chưa phát sinh yêu cầu hoàn tiền.
+                    Đơn này chưa phát sinh khoản hoàn tiền.
                   </p>
                 </div>
               ) : (
-                refunds.data?.map((refund) => (
+                refundItems.map((refund) => (
                   <div
                     key={refund.refundTransactionId}
                     className="rounded-2xl border border-[#D5E4DB] bg-[#F3F8F5] p-4"
@@ -456,7 +547,9 @@ export function BookingFinancialTimeline({
                           <span
                             className={`rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold ${statusTone(refund.status)}`}
                           >
-                            {paymentLabels[refund.status]}
+                            {audience === 'trekker' && refund.status === 'AWAITING_VENDOR_ACTION'
+                              ? 'Chờ nhà tổ chức chuyển khoản'
+                              : paymentLabels[refund.status]}
                           </span>
                         </div>
                         <p className="mt-1.5 text-xs font-medium text-[#6F7E72]">
@@ -465,7 +558,7 @@ export function BookingFinancialTimeline({
                             refund.reason}
                         </p>
                         <p className="mt-1 text-[11px] font-medium text-[#87918C]">
-                          Gửi yêu cầu lúc {dateTime(refund.requestedAt)}
+                          Khoản hoàn được tạo lúc {dateTime(refund.requestedAt)}
                         </p>
                         {refund.failureMessage && (
                           <p className="mt-1 text-xs font-semibold text-red-600">
@@ -474,22 +567,74 @@ export function BookingFinancialTimeline({
                         )}
                       </div>
                       <div className="rounded-2xl border border-[#E3E8E4] bg-white px-3.5 py-3 text-xs text-[#50645B]">
-                        <p className="flex items-center gap-1.5 font-bold">
-                          <Building2 className="h-3.5 w-3.5" />
-                          {refund.destinationBin || 'Chưa có ngân hàng'}
+                        <p className="text-[10px] font-extrabold uppercase tracking-wide text-[#87918C]">
+                          Tài khoản nhận hoàn
                         </p>
-                        {refund.maskedDestinationAccountNumber && (
+                        <p className="mt-1.5 flex items-center gap-1.5 font-bold">
+                          <Building2 className="h-3.5 w-3.5" />
+                          {refund.destinationBin
+                            ? `Ngân hàng · BIN ${refund.destinationBin}`
+                            : 'Chưa có ngân hàng'}
+                        </p>
+                        {visibleRefundAccountNumber(refund, audience) && (
                           <p className="mt-1 font-medium">
-                            {refund.maskedDestinationAccountNumber} ·{' '}
-                            {refund.destinationAccountName}
+                            {visibleRefundAccountNumber(refund, audience)}
+                            {refund.destinationAccountName && ` · ${refund.destinationAccountName}`}
                           </p>
                         )}
+                        {audience === 'trekker' &&
+                          ['VENDOR_CANCEL', 'INSUFFICIENT_PAX'].includes(refund.reason) && (
+                            <p className="mt-1 text-[10px] font-medium text-[#87918C]">
+                              Lấy từ tài khoản đã dùng để thanh toán đơn.
+                            </p>
+                          )}
                       </div>
                     </div>
 
+                    {refund.dueAt && !['REFUNDED', 'CANCELLED'].includes(refund.status) && (
+                      <div
+                        className={`mt-3 rounded-xl border px-3 py-2 text-[11px] font-semibold ${
+                          refund.status === 'OVERDUE'
+                            ? 'border-red-200 bg-red-50 text-red-700'
+                            : 'border-amber-200 bg-amber-50 text-amber-900'
+                        }`}
+                      >
+                        {audience === 'trekker' ? 'Hạn nhà tổ chức xử lý' : 'Hạn xử lý'}:{' '}
+                        {dateTime(refund.dueAt)} · {deadlineText(refund.dueAt)}. Đây là hạn chuyển
+                        tiền hoặc gửi biên nhận, không phải cam kết tiền đã về tài khoản ngân hàng.
+                      </div>
+                    )}
+
+                    {refund.status === 'MANUAL_REVIEW' && (
+                      <div className="mt-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-[11px] font-semibold text-sky-800">
+                        Vendor đã gửi biên nhận lúc {dateTime(refund.manualSubmittedAt)}. Admin đang
+                        đối soát trước khi xác nhận hoàn tiền.
+                        {refund.manualReceiptUrl && audience === 'vendor' && (
+                          <a
+                            href={refund.manualReceiptUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="ml-1 underline underline-offset-2"
+                          >
+                            Xem biên nhận
+                          </a>
+                        )}
+                      </div>
+                    )}
+
+                    {refund.adminReviewNote && (
+                      <p className="mt-2 text-[11px] font-semibold text-[#50645B]">
+                        Phản hồi đối soát: {refund.adminReviewNote}
+                      </p>
+                    )}
+
                     {audience === 'trekker' &&
-                      ['PENDING', 'FAILED'].includes(refund.status) &&
-                      (!refund.destinationBin || !refund.maskedDestinationAccountNumber) && (
+                      ['PENDING', 'FAILED', 'AWAITING_VENDOR_ACTION', 'OVERDUE'].includes(
+                        refund.status
+                      ) &&
+                      (!refund.destinationBin ||
+                        !refund.destinationAccountNumber ||
+                        !refund.destinationAccountName) && (
                         <RefundDestinationForm refund={refund} onSaved={refreshRefunds} />
                       )}
 

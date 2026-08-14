@@ -380,7 +380,7 @@ export default function BookingDetail({
           {booking.paymentStatus === 'REFUND_PENDING' && (
             <span className="inline-flex items-center gap-1.5 bg-orange-100 text-orange-900 border border-orange-300 px-3 py-1 rounded-full text-xs font-extrabold">
               <ShieldCheck className="w-3.5 h-3.5" />
-              Chờ hoàn tiền
+              Đang xử lý hoàn tiền
             </span>
           )}
           {booking.paymentStatus === 'REFUNDED' && (

@@ -12,7 +12,7 @@
     "ci": "biome ci . && pnpm typecheck",
     "preview": "vite preview",
     "prepare": "lefthook install || true",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc -b --pretty false",
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
