@@ -44,9 +44,6 @@ export default function VendorReports() {
           <h1 className="text-3xl font-extrabold tracking-tight" style={{ color: '#06261D' }}>
             Báo cáo &amp; Thống kê
           </h1>
-          <p className="mt-1 text-sm font-medium" style={{ color: '#6F7B75' }}>
-            Theo dõi doanh thu, tỷ lệ lấp đầy và những chuyến đi có nguy cơ phải hủy.
-          </p>
         </div>
         <ReportFilterBar filter={filter} onChange={handleFilterChange} />
       </header>

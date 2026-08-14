@@ -101,9 +101,6 @@ export default function StaffList() {
           <h2 className="text-2xl sm:text-3xl font-extrabold text-[#06261D] tracking-tight">
             Danh sách Nhân viên
           </h2>
-          <p className="text-sm font-medium mt-1" style={{ color: '#6F7B75' }}>
-            Hiện có {total} nhân viên đang trực thuộc hệ thống
-          </p>
         </div>
 
         <div className="flex items-center gap-3">

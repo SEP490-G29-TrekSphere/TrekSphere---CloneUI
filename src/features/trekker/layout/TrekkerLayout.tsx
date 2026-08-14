@@ -38,15 +38,15 @@ const navItems = [
     disabled: false,
   },
   {
-    name: 'Đổi mật khẩu',
-    path: PATHS.TREKKER_CHANGE_PASSWORD,
-    icon: Key,
-    disabled: false,
-  },
-  {
     name: 'Trò chuyện',
     path: PATHS.TREKKER_CHAT,
     icon: MessageSquare,
+    disabled: false,
+  },
+  {
+    name: 'Đổi mật khẩu',
+    path: PATHS.TREKKER_CHANGE_PASSWORD,
+    icon: Key,
     disabled: false,
   },
 ];
@@ -80,7 +80,7 @@ export default function TrekkerLayout() {
             TrekSphere
           </h1>
           <span className="text-xs font-medium tracking-wide" style={{ color: '#6F7B75' }}>
-            Tài khoản cá nhân
+            Khách Du Lịch
           </span>
         </Link>
       }
@@ -145,9 +145,6 @@ export default function TrekkerLayout() {
                   style={{ color: '#06261D' }}
                 >
                   {userName}
-                </span>
-                <span className="text-[11px] font-medium" style={{ color: '#6F7B75' }}>
-                  Trekker
                 </span>
               </div>
             </div>

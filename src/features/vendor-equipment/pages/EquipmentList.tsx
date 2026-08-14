@@ -91,9 +91,6 @@ export default function EquipmentList() {
           >
             Danh sách Dụng cụ
           </h2>
-          <p className="text-sm font-medium mt-1" style={{ color: '#6F7B75' }}>
-            Quản lý dụng cụ trekking và theo dõi số lượng tồn kho trong kho của bạn.
-          </p>
         </div>
 
         <button

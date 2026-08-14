@@ -101,11 +101,8 @@ export default function BookingList() {
             className="text-2xl sm:text-3xl font-extrabold tracking-tight"
             style={{ color: '#06261D' }}
           >
-            Đơn đặt tour
+            Đơn Đặt Tour
           </h2>
-          <p className="text-sm font-medium mt-1" style={{ color: '#6F7B75' }}>
-            Xác nhận đơn, theo dõi thanh toán và xử lý hoàn tiền tại một nơi.
-          </p>
         </div>
       </div>
 

@@ -196,9 +196,6 @@ export default function VendorVoucherList() {
           >
             Quản lý Voucher
           </h2>
-          <p className="text-sm font-medium mt-1" style={{ color: '#6F7B75' }}>
-            Xem, tìm kiếm và lọc danh sách các mã giảm giá của doanh nghiệp.
-          </p>
         </div>
 
         <button

@@ -64,12 +64,8 @@ export default function SessionList() {
           className="text-2xl sm:text-3xl font-extrabold tracking-tight"
           style={{ color: '#06261D' }}
         >
-          Trek Sessions
+          Lịch trình
         </h2>
-        <p className="text-sm font-medium mt-1" style={{ color: '#6F7B75' }}>
-          Danh sách các phiên tour — chọn 1 phiên để xem chi tiết phân công nhân sự & trang thiết
-          bị.
-        </p>
       </div>
 
       <div className="flex flex-wrap gap-2">

@@ -1,6 +1,5 @@
-import { Pencil, Share2 } from 'lucide-react';
+import { Pencil } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { toast } from '@/store/useToastStore';
 import type { VendorProfileDetail } from '../types';
 
 interface VendorProfileHeroCardProps {
@@ -16,15 +15,6 @@ export function VendorProfileHeroCard({
   editPath,
 }: VendorProfileHeroCardProps) {
   const initial = profile.companyName.charAt(0).toUpperCase();
-
-  const handleShare = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      toast.success('Đã sao chép liên kết trang.');
-    } catch {
-      toast.error('Không thể sao chép liên kết. Vui lòng thử lại.');
-    }
-  };
 
   return (
     <div
@@ -71,15 +61,6 @@ export function VendorProfileHeroCard({
               Chỉnh sửa hồ sơ
             </Link>
           )}
-          <button
-            type="button"
-            onClick={handleShare}
-            className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-colors"
-            style={{ backgroundColor: '#E6E2D1', color: '#06261D' }}
-          >
-            <Share2 className="h-4 w-4" />
-            Chia sẻ trang
-          </button>
         </div>
       </div>
     </div>
