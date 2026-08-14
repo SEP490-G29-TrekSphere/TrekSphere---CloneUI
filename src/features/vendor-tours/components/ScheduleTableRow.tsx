@@ -10,7 +10,7 @@ interface ScheduleTableRowProps {
   schedule: TourSchedule;
   /** Chỉ truyền (màn Manager) nếu muốn hiện nút Sửa — Staff không có quyền này. */
   onEditClick?: (schedule: TourSchedule) => void;
-  /** Chỉ truyền (màn Manager) nếu muốn hiện nút Hủy lịch — Staff không có quyền này. */
+  /** Chỉ truyền (màn Manager) nếu muốn hiện nút Xóa lịch — Staff không có quyền này. */
   onDeleteClick?: (schedule: TourSchedule) => void;
 }
 
@@ -78,10 +78,17 @@ export function ScheduleTableRow({ schedule, onEditClick, onDeleteClick }: Sched
             <button
               type="button"
               onClick={() => onDeleteClick(schedule)}
-              disabled={hasBookings}
+              disabled={hasBookings || !isEditable}
+              aria-label="Xóa lịch trình"
               className="transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-30"
               style={{ color: '#DC2626' }}
-              title={hasBookings ? 'Không thể hủy lịch đã có khách đặt' : 'Hủy lịch khởi hành'}
+              title={
+                hasBookings
+                  ? 'Không thể xóa lịch đã có khách đặt'
+                  : !isEditable
+                    ? 'Lịch đã hoàn thành hoặc đã hủy, không thể xóa'
+                    : 'Xóa lịch trình'
+              }
             >
               <Trash2 className="h-4 w-4" />
             </button>

@@ -70,10 +70,10 @@ export default function TourSchedules() {
     deleteSchedule.mutate(deleteTarget.scheduleId, {
       onSuccess: () => {
         setDeleteTarget(null);
-        toast.success('Đã hủy lịch khởi hành.');
+        toast.success('Đã xóa lịch trình.');
       },
       onError: (err) =>
-        toast.error(err instanceof Error ? err.message : 'Không thể hủy lịch khởi hành.'),
+        toast.error(err instanceof Error ? err.message : 'Không thể xóa lịch trình.'),
     });
   };
 
