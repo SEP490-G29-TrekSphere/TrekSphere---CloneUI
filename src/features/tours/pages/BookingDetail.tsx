@@ -14,12 +14,14 @@ import {
   Star,
   User,
   Users,
+  X,
   XCircle,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -51,6 +53,12 @@ const GENDER_MAP: Record<string, string> = {
   FEMALE: 'Nữ',
   OTHER: 'Khác',
 };
+
+/** Style dùng chung cho các ô nhập trong modal hủy tour. */
+const CANCEL_FIELD_BASE =
+  'w-full rounded-2xl border bg-[#FAFAF8] px-4 py-3 text-sm font-semibold text-zinc-800 placeholder:font-medium placeholder:text-zinc-400 transition-colors focus:bg-white focus:outline-none disabled:opacity-60';
+const CANCEL_FIELD_IDLE = 'border-[#E5E4DE] focus:border-[#0B3025]';
+const CANCEL_FIELD_ERROR = 'border-red-400 focus:border-red-500';
 
 export default function BookingDetail({
   backPath = '/my-tours',
@@ -103,6 +111,8 @@ export default function BookingDetail({
   const showRefundFields = (booking?.paidAmount ?? 0) > 0;
   /** Đã xác nhận thanh toán thì chắc chắn có hoàn tiền → bắt buộc nhập. */
   const isRefundInfoRequired = Boolean(cancellationQuote?.refundDestinationRequired);
+  /** Chỉ chia 2 cột khi cột trái thực sự có nội dung (đang tính hoặc đã có quote). */
+  const hasRefundQuotePanel = quoteLoading || Boolean(cancellationQuote);
 
   const openCancellationDialog = async () => {
     if (!booking) return;
@@ -848,194 +858,248 @@ export default function BookingDetail({
 
       {/* Cancel Booking Confirmation Dialog */}
       <Dialog open={isCancelModalOpen} onOpenChange={setIsCancelModalOpen}>
-        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto bg-white rounded-3xl p-6 border border-[#E5E4DE]">
-          <DialogHeader className="space-y-2">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600 border border-red-100 mb-1">
-              <XCircle className="h-6 w-6" />
+        <DialogContent
+          showCloseButton={false}
+          className="flex max-h-[92vh] flex-col gap-0 overflow-hidden rounded-3xl border border-[#E5E4DE] bg-white p-0 sm:max-w-3xl"
+        >
+          <DialogHeader className="relative gap-0 border-b border-[#F1F0EC] bg-gradient-to-b from-[#FBFBF9] to-white px-6 py-6 sm:px-8">
+            <div className="flex items-start gap-4 pr-10">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-red-100 bg-red-50 text-red-600">
+                <XCircle className="h-6 w-6" />
+              </div>
+              <div className="space-y-1.5">
+                <DialogTitle className="text-2xl font-extrabold tracking-tight text-[#0B3025]">
+                  Hủy đặt tour
+                </DialogTitle>
+                <DialogDescription className="text-sm font-medium leading-relaxed text-zinc-500">
+                  Số tiền hoàn lại sẽ được hệ thống tự động tính toán dựa trên thời điểm hủy và
+                  chính sách của tour. Vui lòng chọn hoặc nhập lý do hủy đặt tour bên dưới.
+                </DialogDescription>
+              </div>
             </div>
-            <DialogTitle className="text-xl font-extrabold text-[#0B3025]">
-              Hủy đặt tour
-            </DialogTitle>
-            <DialogDescription className="text-xs text-zinc-500 font-medium leading-relaxed">
-              Số tiền hoàn lại sẽ được hệ thống tự động tính toán dựa trên thời điểm hủy và chính
-              sách của tour. Vui lòng chọn hoặc nhập lý do hủy đặt tour bên dưới.
-            </DialogDescription>
+            <DialogClose
+              disabled={cancelling}
+              className="absolute top-5 right-5 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-50"
+            >
+              <X className="h-5 w-5" />
+              <span className="sr-only">Đóng</span>
+            </DialogClose>
           </DialogHeader>
 
-          <div className="space-y-4 my-2 text-xs">
-            {quoteLoading ? (
-              <div className="flex items-center justify-center gap-2 rounded-2xl bg-zinc-50 p-4 font-bold text-zinc-500">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#0B3025] border-t-transparent" />
-                Đang tính quyền lợi hoàn tiền...
-              </div>
-            ) : cancellationQuote ? (
-              <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
-                <p className="text-[11px] font-extrabold uppercase tracking-wide text-emerald-700">
-                  Số tiền dự kiến được hoàn
-                </p>
-                <p className="mt-1 text-2xl font-extrabold text-emerald-900">
-                  {formatPrice(cancellationQuote.refundAmount)}đ
-                </p>
-                <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] font-semibold text-emerald-800">
-                  <span>Tỷ lệ: {cancellationQuote.refundPercentage}%</span>
-                  <span>Phí hủy: {formatPrice(cancellationQuote.cancellationFee)}đ</span>
-                  <span>Đã trả: {formatPrice(cancellationQuote.paidAmount)}đ</span>
-                  <span>Còn {cancellationQuote.daysBeforeDeparture} ngày</span>
+          <div className="flex-1 overflow-y-auto px-6 py-6 sm:px-8">
+            <div
+              className={`grid gap-6 ${
+                hasRefundQuotePanel ? 'lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1fr)]' : ''
+              }`}
+            >
+              {hasRefundQuotePanel && (
+                <div className="lg:sticky lg:top-0 lg:self-start">
+                  {quoteLoading ? (
+                    <div className="flex min-h-[200px] flex-col items-center justify-center gap-3 rounded-3xl border border-[#E5E4DE] bg-[#FAFAF8] p-6 text-sm font-bold text-zinc-500">
+                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#0B3025] border-t-transparent" />
+                      Đang tính quyền lợi hoàn tiền...
+                    </div>
+                  ) : cancellationQuote ? (
+                    <div className="rounded-3xl border border-emerald-100 bg-gradient-to-b from-emerald-50 to-emerald-50/30 p-6">
+                      <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-emerald-700">
+                        Số tiền dự kiến được hoàn
+                      </p>
+                      <p className="mt-2 text-3xl font-extrabold tracking-tight text-emerald-900 sm:text-4xl">
+                        {formatPrice(cancellationQuote.refundAmount)}đ
+                      </p>
+
+                      <dl className="mt-5 space-y-3 text-sm">
+                        <div className="flex items-center justify-between gap-3 border-b border-emerald-100 pb-3">
+                          <dt className="font-medium text-emerald-700/80">Tỷ lệ hoàn</dt>
+                          <dd className="font-extrabold text-emerald-900">
+                            {cancellationQuote.refundPercentage}%
+                          </dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-3 border-b border-emerald-100 pb-3">
+                          <dt className="font-medium text-emerald-700/80">Phí hủy</dt>
+                          <dd className="font-extrabold text-emerald-900">
+                            {formatPrice(cancellationQuote.cancellationFee)}đ
+                          </dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-3 border-b border-emerald-100 pb-3">
+                          <dt className="font-medium text-emerald-700/80">Đã thanh toán</dt>
+                          <dd className="font-extrabold text-emerald-900">
+                            {formatPrice(cancellationQuote.paidAmount)}đ
+                          </dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <dt className="font-medium text-emerald-700/80">Còn lại đến khởi hành</dt>
+                          <dd className="font-extrabold text-emerald-900">
+                            {cancellationQuote.daysBeforeDeparture} ngày
+                          </dd>
+                        </div>
+                      </dl>
+
+                      {cancellationQuote.appliedPolicyDescription && (
+                        <p className="mt-5 rounded-2xl bg-white/70 p-4 text-xs font-medium leading-relaxed text-emerald-800 ring-1 ring-emerald-100">
+                          {cancellationQuote.appliedPolicyDescription}
+                        </p>
+                      )}
+                    </div>
+                  ) : null}
                 </div>
-                {cancellationQuote.appliedPolicyDescription && (
-                  <p className="mt-3 border-t border-emerald-200 pt-3 text-[11px] font-medium leading-relaxed text-emerald-800">
-                    {cancellationQuote.appliedPolicyDescription}
-                  </p>
+              )}
+
+              <div className="space-y-6">
+                <div>
+                  <label
+                    htmlFor="cancel-reason-input"
+                    className="mb-2 block text-sm font-bold text-zinc-700"
+                  >
+                    Lý do hủy đơn <span className="text-red-500">*</span>
+                  </label>
+
+                  <textarea
+                    id="cancel-reason-input"
+                    rows={4}
+                    disabled={cancelling}
+                    value={cancellationReason}
+                    onChange={(e) => {
+                      setCancellationReason(e.target.value);
+                      if (e.target.value.trim()) setReasonError('');
+                    }}
+                    placeholder="Nhập chi tiết lý do bạn muốn hủy đơn..."
+                    className={`${CANCEL_FIELD_BASE} resize-none ${
+                      reasonError ? CANCEL_FIELD_ERROR : CANCEL_FIELD_IDLE
+                    }`}
+                  />
+                  {reasonError && (
+                    <p className="mt-1.5 text-xs font-bold text-red-500">{reasonError}</p>
+                  )}
+                </div>
+
+                {showRefundFields && (
+                  <div className="rounded-3xl border border-[#E5E4DE] bg-[#FCFCFB] p-5">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#E5E4DE] bg-white text-[#0B3025]">
+                        <CreditCard className="h-4.5 w-4.5" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-extrabold text-zinc-800">
+                          Thông tin nhận hoàn tiền{' '}
+                          {isRefundInfoRequired && <span className="text-red-500">*</span>}
+                        </h4>
+                        <p className="mt-1 text-xs font-medium leading-relaxed text-zinc-500">
+                          {isRefundInfoRequired
+                            ? 'Vui lòng nhập đúng tài khoản của bạn để nhận tiền hoàn từ nhà cung cấp tour.'
+                            : 'Nếu đơn của bạn phát sinh hoàn tiền, hãy cung cấp tài khoản nhận tiền.'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label
+                          htmlFor="refund-bank-name"
+                          className="mb-2 block text-sm font-bold text-zinc-700"
+                        >
+                          Mã BIN ngân hàng{' '}
+                          {isRefundInfoRequired && <span className="text-red-500">*</span>}
+                        </label>
+                        <input
+                          id="refund-bank-name"
+                          type="text"
+                          disabled={cancelling}
+                          value={refundBankName}
+                          onChange={(e) => {
+                            setRefundBankName(e.target.value);
+                            if (e.target.value.trim()) {
+                              setRefundErrors((prev) => ({ ...prev, bankName: undefined }));
+                            }
+                          }}
+                          inputMode="numeric"
+                          placeholder="Ví dụ: 970436"
+                          className={`${CANCEL_FIELD_BASE} ${
+                            refundErrors.bankName ? CANCEL_FIELD_ERROR : CANCEL_FIELD_IDLE
+                          }`}
+                        />
+                        {refundErrors.bankName && (
+                          <p className="mt-1.5 text-xs font-bold text-red-500">
+                            {refundErrors.bankName}
+                          </p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="refund-account-number"
+                          className="mb-2 block text-sm font-bold text-zinc-700"
+                        >
+                          Số tài khoản{' '}
+                          {isRefundInfoRequired && <span className="text-red-500">*</span>}
+                        </label>
+                        <input
+                          id="refund-account-number"
+                          type="text"
+                          inputMode="numeric"
+                          disabled={cancelling}
+                          value={refundAccountNumber}
+                          onChange={(e) => {
+                            setRefundAccountNumber(e.target.value);
+                            if (e.target.value.trim()) {
+                              setRefundErrors((prev) => ({ ...prev, accountNumber: undefined }));
+                            }
+                          }}
+                          placeholder="Ví dụ: 1234567890"
+                          className={`${CANCEL_FIELD_BASE} ${
+                            refundErrors.accountNumber ? CANCEL_FIELD_ERROR : CANCEL_FIELD_IDLE
+                          }`}
+                        />
+                        {refundErrors.accountNumber && (
+                          <p className="mt-1.5 text-xs font-bold text-red-500">
+                            {refundErrors.accountNumber}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label
+                          htmlFor="refund-account-holder"
+                          className="mb-2 block text-sm font-bold text-zinc-700"
+                        >
+                          Tên chủ tài khoản{' '}
+                          {isRefundInfoRequired && <span className="text-red-500">*</span>}
+                        </label>
+                        <input
+                          id="refund-account-holder"
+                          type="text"
+                          disabled={cancelling}
+                          value={refundAccountHolder}
+                          onChange={(e) => {
+                            setRefundAccountHolder(e.target.value.toUpperCase());
+                            if (e.target.value.trim()) {
+                              setRefundErrors((prev) => ({ ...prev, accountHolder: undefined }));
+                            }
+                          }}
+                          placeholder="Ví dụ: NGUYEN VAN A"
+                          className={`${CANCEL_FIELD_BASE} uppercase ${
+                            refundErrors.accountHolder ? CANCEL_FIELD_ERROR : CANCEL_FIELD_IDLE
+                          }`}
+                        />
+                        {refundErrors.accountHolder && (
+                          <p className="mt-1.5 text-xs font-bold text-red-500">
+                            {refundErrors.accountHolder}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
-            ) : null}
-
-            <div>
-              <label htmlFor="cancel-reason-input" className="block text-zinc-700 font-bold mb-2">
-                Lý do hủy đơn <span className="text-red-500">*</span>
-              </label>
-
-              <textarea
-                id="cancel-reason-input"
-                rows={3}
-                disabled={cancelling}
-                value={cancellationReason}
-                onChange={(e) => {
-                  setCancellationReason(e.target.value);
-                  if (e.target.value.trim()) setReasonError('');
-                }}
-                placeholder="Nhập chi tiết lý do bạn muốn hủy đơn..."
-                className={`w-full p-3 rounded-2xl border bg-zinc-50/50 text-xs font-semibold text-zinc-800 focus:outline-none focus:bg-white transition-colors ${
-                  reasonError
-                    ? 'border-red-500 focus:border-red-600'
-                    : 'border-[#E5E4DE] focus:border-[#0B3025]'
-                }`}
-              />
-              {reasonError && (
-                <p className="text-[11px] text-red-500 font-bold mt-1">{reasonError}</p>
-              )}
             </div>
-
-            {showRefundFields && (
-              <div className="space-y-3 border-t border-[#F4F4F2] pt-4">
-                <div>
-                  <h4 className="font-extrabold text-zinc-800 text-sm">
-                    Thông tin nhận hoàn tiền{' '}
-                    {isRefundInfoRequired && <span className="text-red-500">*</span>}
-                  </h4>
-                  <p className="text-[11px] text-zinc-500 font-medium mt-1 leading-relaxed">
-                    {isRefundInfoRequired
-                      ? 'Vui lòng nhập đúng tài khoản của bạn để nhận tiền hoàn từ nhà cung cấp tour.'
-                      : 'Nếu đơn của bạn phát sinh hoàn tiền, hãy cung cấp tài khoản nhận tiền.'}
-                  </p>
-                </div>
-
-                <div>
-                  <label htmlFor="refund-bank-name" className="block text-zinc-700 font-bold mb-2">
-                    Mã BIN ngân hàng{' '}
-                    {isRefundInfoRequired && <span className="text-red-500">*</span>}
-                  </label>
-                  <input
-                    id="refund-bank-name"
-                    type="text"
-                    disabled={cancelling}
-                    value={refundBankName}
-                    onChange={(e) => {
-                      setRefundBankName(e.target.value);
-                      if (e.target.value.trim()) {
-                        setRefundErrors((prev) => ({ ...prev, bankName: undefined }));
-                      }
-                    }}
-                    inputMode="numeric"
-                    placeholder="Ví dụ: 970436"
-                    className={`w-full p-3 rounded-2xl border bg-zinc-50/50 text-xs font-semibold text-zinc-800 focus:outline-none focus:bg-white transition-colors ${
-                      refundErrors.bankName
-                        ? 'border-red-500 focus:border-red-600'
-                        : 'border-[#E5E4DE] focus:border-[#0B3025]'
-                    }`}
-                  />
-                  {refundErrors.bankName && (
-                    <p className="text-[11px] text-red-500 font-bold mt-1">
-                      {refundErrors.bankName}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="refund-account-number"
-                    className="block text-zinc-700 font-bold mb-2"
-                  >
-                    Số tài khoản {isRefundInfoRequired && <span className="text-red-500">*</span>}
-                  </label>
-                  <input
-                    id="refund-account-number"
-                    type="text"
-                    inputMode="numeric"
-                    disabled={cancelling}
-                    value={refundAccountNumber}
-                    onChange={(e) => {
-                      setRefundAccountNumber(e.target.value);
-                      if (e.target.value.trim()) {
-                        setRefundErrors((prev) => ({ ...prev, accountNumber: undefined }));
-                      }
-                    }}
-                    placeholder="Ví dụ: 1234567890"
-                    className={`w-full p-3 rounded-2xl border bg-zinc-50/50 text-xs font-semibold text-zinc-800 focus:outline-none focus:bg-white transition-colors ${
-                      refundErrors.accountNumber
-                        ? 'border-red-500 focus:border-red-600'
-                        : 'border-[#E5E4DE] focus:border-[#0B3025]'
-                    }`}
-                  />
-                  {refundErrors.accountNumber && (
-                    <p className="text-[11px] text-red-500 font-bold mt-1">
-                      {refundErrors.accountNumber}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="refund-account-holder"
-                    className="block text-zinc-700 font-bold mb-2"
-                  >
-                    Tên chủ tài khoản{' '}
-                    {isRefundInfoRequired && <span className="text-red-500">*</span>}
-                  </label>
-                  <input
-                    id="refund-account-holder"
-                    type="text"
-                    disabled={cancelling}
-                    value={refundAccountHolder}
-                    onChange={(e) => {
-                      setRefundAccountHolder(e.target.value.toUpperCase());
-                      if (e.target.value.trim()) {
-                        setRefundErrors((prev) => ({ ...prev, accountHolder: undefined }));
-                      }
-                    }}
-                    placeholder="Ví dụ: NGUYEN VAN A"
-                    className={`w-full p-3 rounded-2xl border bg-zinc-50/50 text-xs font-semibold text-zinc-800 uppercase focus:outline-none focus:bg-white transition-colors ${
-                      refundErrors.accountHolder
-                        ? 'border-red-500 focus:border-red-600'
-                        : 'border-[#E5E4DE] focus:border-[#0B3025]'
-                    }`}
-                  />
-                  {refundErrors.accountHolder && (
-                    <p className="text-[11px] text-red-500 font-bold mt-1">
-                      {refundErrors.accountHolder}
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
 
-          <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-4">
+          <DialogFooter className="mx-0 mb-0 flex flex-col-reverse gap-3 rounded-b-3xl border-t border-[#F1F0EC] bg-[#FBFBF9] px-6 py-5 sm:flex-row sm:justify-end sm:px-8">
             <button
               type="button"
               onClick={() => setIsCancelModalOpen(false)}
               disabled={cancelling}
-              className="flex-1 py-3 px-4 rounded-2xl border border-[#E5E4DE] text-zinc-700 font-bold text-xs hover:bg-zinc-50 transition-colors cursor-pointer disabled:opacity-50"
+              className="w-full cursor-pointer rounded-2xl border border-[#E5E4DE] bg-white px-6 py-3 text-sm font-bold text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-50 sm:w-auto"
             >
               Quay lại
             </button>
@@ -1043,11 +1107,11 @@ export default function BookingDetail({
               type="button"
               onClick={handleConfirmCancel}
               disabled={cancelling}
-              className="flex-1 py-3 px-4 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-red-600 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-red-700 disabled:opacity-50 sm:w-auto sm:min-w-[200px]"
             >
               {cancelling ? (
                 <>
-                  <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                   <span>Đang xử lý...</span>
                 </>
               ) : (
