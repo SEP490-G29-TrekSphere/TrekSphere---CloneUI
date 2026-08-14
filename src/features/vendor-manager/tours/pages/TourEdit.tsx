@@ -26,22 +26,6 @@ function toFormDifficulty(value: ApiDifficulty): FormDifficulty {
     : 'EASY';
 }
 
-/**
- * `location` được lưu dạng 1 chuỗi "Điểm đầu → Điểm cuối" (do form Tạo nối lại khi submit).
- * Tách ngược lại để đổ vào 2 ô riêng; nếu chuỗi cũ không có dấu "→" (vd nhập tay qua
- * Swagger) thì đổ nguyên vào "Điểm bắt đầu", để trống "Điểm kết thúc".
- */
-function splitLocation(location: string): { startingPoint: string; endingPoint: string } {
-  const arrowIndex = location.indexOf('→');
-  if (arrowIndex === -1) {
-    return { startingPoint: location.trim(), endingPoint: '' };
-  }
-  return {
-    startingPoint: location.slice(0, arrowIndex).trim(),
-    endingPoint: location.slice(arrowIndex + 1).trim(),
-  };
-}
-
 /** Checkpoint từ server → draft cho form, giữ lại `checkpointId` để PUT/DELETE đúng chỗ. */
 function toCheckpointDraft(checkpoint: VendorTourCheckpoint): CheckpointDraft {
   return {
@@ -122,8 +106,6 @@ export default function TourEdit() {
     );
   }
 
-  const { startingPoint, endingPoint } = splitLocation(tour.location);
-
   return (
     <div className="space-y-4">
       {tour.status === 'APPROVED' && (
@@ -141,8 +123,7 @@ export default function TourEdit() {
           tourName: tour.tourName,
           difficulty: toFormDifficulty(tour.difficulty),
           basePrice: tour.basePrice,
-          startingPoint,
-          endingPoint,
+          location: tour.location,
           minCapacity: tour.minCapacity ?? 1,
           maxCapacity: tour.maxCapacity,
           durationDays: tour.durationDays,

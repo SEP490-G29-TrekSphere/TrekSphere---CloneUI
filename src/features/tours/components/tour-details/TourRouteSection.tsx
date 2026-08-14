@@ -1,5 +1,8 @@
 import { Flag, MapPin, Mountain } from 'lucide-react';
-import { handleImageFallback } from '@/features/tours/components/tour-details/shared';
+import {
+  getCheckpointImageUrls,
+  handleImageFallback,
+} from '@/features/tours/components/tour-details/shared';
 import type { TourCheckpoint } from '@/features/tours/types';
 
 interface TourRouteSectionProps {
@@ -58,6 +61,7 @@ export function TourRouteSection({ checkpoints, isLoading }: TourRouteSectionPro
 
       {sorted.map((checkpoint, index) => {
         const isLast = index === sorted.length - 1;
+        const imageUrls = getCheckpointImageUrls(checkpoint);
         return (
           <li key={checkpoint.checkpointId} className="relative">
             {/* Mốc số thứ tự; trạm cuối tô đặc để thấy rõ điểm kết thúc */}
@@ -90,14 +94,25 @@ export function TourRouteSection({ checkpoints, isLoading }: TourRouteSectionPro
                 </p>
               )}
 
-              {checkpoint.checkpointImageUrl && (
-                <img
-                  src={checkpoint.checkpointImageUrl}
-                  alt={checkpoint.checkpointName}
-                  onError={handleImageFallback}
-                  loading="lazy"
-                  className="mt-1 h-48 w-full rounded-xl object-cover sm:max-w-md"
-                />
+              {imageUrls.length > 0 && (
+                <div
+                  className={`mt-1 grid gap-2 ${
+                    imageUrls.length === 1 ? 'grid-cols-1 sm:max-w-md' : 'grid-cols-2'
+                  }`}
+                >
+                  {imageUrls.map((imageUrl, imageIndex) => (
+                    <img
+                      key={imageUrl}
+                      src={imageUrl}
+                      alt={`${checkpoint.checkpointName} - ảnh ${imageIndex + 1}`}
+                      onError={handleImageFallback}
+                      loading="lazy"
+                      className={`w-full rounded-xl object-cover ${
+                        imageUrls.length === 1 ? 'h-48' : 'aspect-[4/3] min-h-28 sm:max-h-52'
+                      }`}
+                    />
+                  ))}
+                </div>
               )}
 
               <CheckpointCoordinates checkpoint={checkpoint} />
