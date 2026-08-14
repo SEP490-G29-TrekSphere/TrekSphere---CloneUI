@@ -5,7 +5,6 @@ import {
   Check,
   Copy,
   CreditCard,
-  ImageIcon,
   Landmark,
   Loader2,
   Mail,
@@ -499,15 +498,7 @@ function ParticipantsPanel({ booking }: { booking: BookingDetailResponse }) {
   );
 }
 
-function PaymentPanel({
-  booking,
-  onZoom,
-}: {
-  booking: BookingDetailResponse;
-  onZoom: (src: string, title: string) => void;
-}) {
-  const hasProof = Boolean(booking.proofImageUrl);
-
+function PaymentPanel({ booking }: { booking: BookingDetailResponse }) {
   return (
     <div className="space-y-4">
       <div>
@@ -554,29 +545,9 @@ function PaymentPanel({
           </div>
         </SectionCard>
       </div>
-
-      {hasProof ? (
-        <div>
-          {booking.proofImageUrl && (
-            <ProofCard
-              title="Ảnh minh chứng thanh toán"
-              icon={ImageIcon}
-              src={booking.proofImageUrl}
-              onZoom={onZoom}
-            />
-          )}
-        </div>
-      ) : (
-        <EmptyHint icon={ImageIcon} message="Chưa có ảnh minh chứng nào được tải lên." />
-      )}
     </div>
   );
 }
-
-/* ------------------------------------------------------------------ */
-/* Modal                                                               */
-/* ------------------------------------------------------------------ */
-
 export function BookingDetailModal({
   bookingId,
   isOpen,
@@ -832,7 +803,7 @@ export function BookingDetailModal({
               {activeTab === 'participants' && <ParticipantsPanel booking={booking} />}
               {activeTab === 'payment' && (
                 <div className="space-y-5">
-                  <PaymentPanel booking={booking} onZoom={handleZoom} />
+                  <PaymentPanel booking={booking} />
                   <BookingFinancialTimeline
                     bookingId={booking.bookingId}
                     audience="vendor"
