@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react';
+import { ClipboardList } from 'lucide-react';
 import { formatDate } from '@/lib';
 import { formatShortId } from '../services/vendorSessionService';
 import type { VendorSessionSummary } from '../types';
@@ -23,7 +23,7 @@ export function SessionTableRow({ session, onClick }: SessionTableRowProps) {
             {session.tourName}
           </span>
           <span className="text-xs" style={{ color: '#6F7B75' }}>
-            Mã phiên: {formatShortId(session.sessionId)}
+            Mã vận hành: {formatShortId(session.sessionId)}
           </span>
         </div>
       </td>
@@ -38,12 +38,13 @@ export function SessionTableRow({ session, onClick }: SessionTableRowProps) {
         <SessionStatusBadge status={session.status} />
       </td>
 
-      <td className="px-6 py-4 text-right" style={{ verticalAlign: 'middle' }}>
+      <td className="px-6 py-4" style={{ verticalAlign: 'middle' }}>
         <span
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full"
+          className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold"
           style={{ backgroundColor: '#F0EEE6', color: '#06261D' }}
         >
-          <ChevronRight className="h-4 w-4" />
+          <ClipboardList className="h-4 w-4" />
+          Phân công
         </span>
       </td>
     </tr>

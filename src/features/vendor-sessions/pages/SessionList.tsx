@@ -23,7 +23,7 @@ const STATUS_TABS: Array<{ value: SessionStatus | 'ALL'; label: string }> = [
   { value: 'CANCELLED', label: 'Đã hủy' },
 ];
 
-const TABLE_COLUMNS = ['Tour', 'Ngày khởi hành → Ngày về', 'Trạng thái', ''];
+const TABLE_COLUMNS = ['Phiên vận hành', 'Thời gian thực hiện', 'Trạng thái vận hành', 'Phân công'];
 
 /** Danh sách phiên Trekking — dùng chung cho Vendor Manager và Vendor Staff, điểm vào của trang Chi tiết phân công. */
 export default function SessionList() {
@@ -64,7 +64,7 @@ export default function SessionList() {
           className="text-2xl sm:text-3xl font-extrabold tracking-tight"
           style={{ color: '#06261D' }}
         >
-          Lịch trình
+          Vận hành Tour
         </h2>
       </div>
 
@@ -116,7 +116,7 @@ export default function SessionList() {
                     className="px-6 py-16 text-center text-sm"
                     style={{ color: '#6F7B75' }}
                   >
-                    Đang tải danh sách phiên tour...
+                    Đang tải danh sách phiên vận hành...
                   </td>
                 </tr>
               ) : isError ? (
@@ -126,7 +126,7 @@ export default function SessionList() {
                     className="px-6 py-16 text-center text-sm"
                     style={{ color: '#DC2626' }}
                   >
-                    Không thể tải danh sách phiên tour:{' '}
+                    Không thể tải danh sách phiên vận hành:{' '}
                     {error instanceof Error ? error.message : 'Lỗi không xác định'}
                   </td>
                 </tr>
@@ -136,7 +136,7 @@ export default function SessionList() {
                     <div className="flex flex-col items-center gap-2">
                       <CalendarClock className="h-8 w-8" style={{ color: '#C7C1AD' }} />
                       <span className="text-sm" style={{ color: '#6F7B75' }}>
-                        Không có phiên tour nào phù hợp.
+                        Không có phiên vận hành nào phù hợp.
                       </span>
                     </div>
                   </td>

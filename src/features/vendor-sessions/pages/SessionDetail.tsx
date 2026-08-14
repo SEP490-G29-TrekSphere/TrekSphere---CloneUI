@@ -1,4 +1,4 @@
-import { ArrowLeft, Printer } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getPrimaryRole, PATHS, ROLES } from '@/constants';
@@ -133,7 +133,7 @@ export default function SessionDetail() {
         style={{ border: '1px solid #E6E2D1' }}
       >
         <p className="text-sm" style={{ color: '#DC2626' }}>
-          Không thể tải thông tin phiên tour:{' '}
+          Không thể tải thông tin phiên vận hành:{' '}
           {error instanceof Error ? error.message : 'Lỗi không xác định'}
         </p>
         <button
@@ -149,7 +149,7 @@ export default function SessionDetail() {
   }
 
   const subtitleParts = [
-    `Mã phiên: ${formatShortId(session.sessionId)}`,
+    `Mã vận hành: ${formatShortId(session.sessionId)}`,
     `Khởi hành: ${formatDate(session.departureDate)}`,
     `Về: ${formatDate(session.returnDate)}`,
   ];
@@ -174,14 +174,14 @@ export default function SessionDetail() {
             style={{ color: '#6F7B75' }}
           >
             <ArrowLeft className="h-4 w-4" />
-            Quay lại danh sách phiên
+            Quay lại danh sách vận hành
           </button>
           <div className="flex flex-wrap items-center gap-3">
             <h1
               className="text-2xl sm:text-3xl font-extrabold tracking-tight"
               style={{ color: '#06261D' }}
             >
-              {session.tourName}
+              Vận hành — {session.tourName}
             </h1>
             <SessionStatusBadge status={session.status} />
           </div>
@@ -189,16 +189,6 @@ export default function SessionDetail() {
             {subtitleParts.join(' • ')}
           </p>
         </div>
-
-        <button
-          type="button"
-          onClick={() => window.print()}
-          className="inline-flex h-fit items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold"
-          style={{ backgroundColor: '#F0EEE6', color: '#06261D' }}
-        >
-          <Printer className="h-4 w-4" />
-          In lịch trình
-        </button>
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
@@ -236,11 +226,11 @@ export default function SessionDetail() {
           mutations.assignCoordinator.mutate(payload, {
             onSuccess: () => {
               setAssignCoordinatorOpen(false);
-              toast.success('Đã chỉ định điều phối viên.');
+              toast.success('Đã phân công hướng dẫn viên.');
             },
             onError: (err) =>
               toast.error(
-                err instanceof Error ? err.message : 'Không thể chỉ định điều phối viên.'
+                err instanceof Error ? err.message : 'Không thể phân công hướng dẫn viên.'
               ),
           })
         }
@@ -285,14 +275,14 @@ export default function SessionDetail() {
         <ConfirmActionDialog
           title={
             removeTarget.kind === 'coordinator'
-              ? 'Gỡ điều phối viên'
+              ? 'Gỡ hướng dẫn viên'
               : removeTarget.kind === 'porter'
                 ? 'Gỡ porter'
                 : 'Hủy phân bổ thiết bị'
           }
           description={`Bạn có chắc chắn muốn ${
             removeTarget.kind === 'equipment' ? 'thu hồi' : 'gỡ'
-          } "${removeTarget.label}" khỏi phiên tour này không?`}
+          } "${removeTarget.label}" khỏi phiên vận hành này không?`}
           confirmLabel="Xác nhận"
           variant="destructive"
           isPending={isRemovePending}

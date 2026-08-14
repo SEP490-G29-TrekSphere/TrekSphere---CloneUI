@@ -151,6 +151,15 @@ export const vendorSessionService = {
     };
   },
 
+  /** Tìm phiên vận hành 1-1 tương ứng với một lịch khởi hành. */
+  async getSessionBySchedule(scheduleId: string): Promise<VendorSessionSummary> {
+    const response = await ApiService<TourSessionSummaryDto>(
+      `/vendor/sessions/by-schedule/${scheduleId}`,
+      'GET'
+    );
+    return mapSessionSummary(unwrapResponse(response));
+  },
+
   /** Chi tiết phân bổ nhân sự + thiết bị của 1 phiên tour. */
   async getAllocations(sessionId: string): Promise<SessionAllocation> {
     const response = await ApiService<TourSessionAllocationDto>(
