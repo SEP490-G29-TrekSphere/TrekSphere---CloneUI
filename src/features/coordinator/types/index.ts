@@ -109,6 +109,7 @@ export interface SessionCheckpointStatus {
   longitude?: number;
   altitude?: number;
   status: CheckpointProgressStatus;
+  note?: string;
 }
 
 export interface CheckpointLogResult {
@@ -117,6 +118,7 @@ export interface CheckpointLogResult {
   checkpointOrder: number;
   status: CheckpointProgressStatus;
   reachedAt?: string;
+  note?: string;
 }
 
 export type SosStatus = 'PENDING' | 'RESOLVED';
@@ -152,4 +154,183 @@ export interface SessionSosStatus {
   resolved: boolean;
   status?: SosStatus;
   sosAlert?: SessionSosAlert;
+}
+
+// ---------------------------------------------------------------------------
+// Tracking Offline — offline pack, event queue, GPS backlog và reconcile
+// ---------------------------------------------------------------------------
+
+export type TrackingEventType =
+  | 'EQUIPMENT_CHECKED'
+  | 'ATTENDANCE_START_RECORDED'
+  | 'ATTENDANCE_END_RECORDED'
+  | 'SESSION_STARTED'
+  | 'CHECKPOINT_REACHED'
+  | 'CHECKPOINT_SKIPPED'
+  | 'SOS_CREATED'
+  | 'SOS_RESOLVED'
+  | 'SESSION_ENDED';
+
+export type TrackingEventResultStatus =
+  | 'ACCEPTED'
+  | 'DUPLICATE'
+  | 'CONFLICT'
+  | 'REJECTED'
+  | 'RETRYABLE';
+
+export interface TrackingSnapshotParticipant {
+  participantId: string;
+  fullName: string;
+  isPresentStart?: boolean;
+  startAttendedAt?: string;
+  isPresentEnd?: boolean;
+  endAttendedAt?: string;
+}
+
+export interface TrackingSnapshotEquipment {
+  sessionEquipmentId: string;
+  equipmentId: string;
+  equipmentName: string;
+  quantity: number;
+  isChecked: boolean;
+  note?: string;
+}
+
+export interface TrackingSnapshotCheckpoint {
+  checkpointId: string;
+  checkpointName: string;
+  checkpointOrder: number;
+  latitude?: number;
+  longitude?: number;
+  status: CheckpointProgressStatus;
+  reachedAt?: string;
+}
+
+export interface TrackingSnapshotSos {
+  sosAlertId: string;
+  status: SosStatus;
+  latitude: number;
+  longitude: number;
+  message?: string;
+  createdAt: string;
+}
+
+export interface TrackingSnapshot {
+  sessionId: string;
+  status: TourSessionStatus;
+  startedAt?: string;
+  endedAt?: string;
+  revision: number;
+  participants: TrackingSnapshotParticipant[];
+  equipments: TrackingSnapshotEquipment[];
+  checkpoints: TrackingSnapshotCheckpoint[];
+  latestSos?: TrackingSnapshotSos;
+}
+
+export interface TrackingOfflinePack {
+  deviceSessionId: string;
+  deviceId: string;
+  actorId: string;
+  leadCoordinator: boolean;
+  issuedAt: string;
+  expiresAt: string;
+  serverTime: string;
+  maxEventBatchSize: number;
+  maxLocationBatchSize: number;
+  gpsIntervalSeconds: number;
+  snapshot: TrackingSnapshot;
+}
+
+export interface TrackingSyncEvent {
+  clientEventId: string;
+  sequenceNumber: number;
+  type: TrackingEventType;
+  occurredAt: string;
+  baseRevision: number;
+  payload: Record<string, unknown>;
+}
+
+export interface TrackingEventResult {
+  clientEventId: string;
+  sequenceNumber: number;
+  status: TrackingEventResultStatus;
+  code?: string;
+  message?: string;
+  resourceType?: string;
+  resourceId?: string;
+  resultRevision?: number;
+}
+
+export interface TrackingSyncResponse {
+  sessionId: string;
+  revision: number;
+  serverTime: string;
+  results: TrackingEventResult[];
+  snapshot: TrackingSnapshot;
+}
+
+export interface TrackingSyncStateResponse {
+  revision: number;
+  fullSnapshot: boolean;
+  changes: TrackingEventResult[];
+  snapshot: TrackingSnapshot;
+}
+
+export interface TrackingLocationSample {
+  sampleId: string;
+  recordedAt: string;
+  latitude: number;
+  longitude: number;
+  accuracyMeters?: number;
+  speedMetersPerSecond?: number;
+  headingDegrees?: number;
+}
+
+export interface TrackingLocationRejectedSample {
+  sampleId: string;
+  code: string;
+  message: string;
+}
+
+export interface TrackingLocationBatchResponse {
+  acceptedSampleIds: string[];
+  duplicateSampleIds: string[];
+  rejectedSamples: TrackingLocationRejectedSample[];
+}
+
+export interface TrackingLocation {
+  sampleId: string;
+  sessionId: string;
+  actorId: string;
+  deviceId: string;
+  recordedAt: string;
+  receivedAt: string;
+  latitude: number;
+  longitude: number;
+  accuracyMeters?: number;
+  speedMetersPerSecond?: number;
+  headingDegrees?: number;
+  validationStatus: 'VALID' | 'LOW_ACCURACY' | 'OUTLIER';
+  late: boolean;
+  stale: boolean;
+}
+
+export interface TrackingFailedItem {
+  id: string;
+  kind: 'EVENT' | 'LOCATION';
+  code: string;
+  message: string;
+  failedAt: string;
+}
+
+export interface TrackingOfflineRecord {
+  sessionId: string;
+  pack: TrackingOfflinePack;
+  sessionMeta?: CoordinatorSessionDetail;
+  pendingEvents: TrackingSyncEvent[];
+  pendingLocations: TrackingLocationSample[];
+  failedItems: TrackingFailedItem[];
+  nextSequenceNumber: number;
+  lastSyncedAt?: string;
+  updatedAt: string;
 }

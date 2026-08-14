@@ -10,6 +10,8 @@ interface EmergencySosPanelProps {
   isSending: boolean;
   onResolve: (sosAlertId: string) => void;
   isResolving: boolean;
+  /** SOS mới chỉ nằm trong IndexedDB, chưa được backend ACK. */
+  isLocallyQueued?: boolean;
 }
 
 function formatTime(value?: string): string {
@@ -29,6 +31,7 @@ export function EmergencySosPanel({
   isSending,
   onResolve,
   isResolving,
+  isLocallyQueued = false,
 }: EmergencySosPanelProps) {
   const [message, setMessage] = useState('');
 
@@ -66,25 +69,34 @@ export function EmergencySosPanel({
         </p>
       ) : hasActiveAlert ? (
         <>
-          <p className="mt-1 text-xs font-medium" style={{ color: '#8A4747' }}>
-            Đã gửi tín hiệu SOS{formatTime(alert?.createdAt)}. Đội cứu hộ đã nhận được toạ độ GPS,
-            tình huống đang chờ xử lý.
-          </p>
+          {isLocallyQueued ? (
+            <div className="mt-3 rounded-2xl bg-amber-100 px-3 py-2 text-left text-xs font-bold text-amber-900">
+              SOS đã lưu an toàn trên thiết bị nhưng chưa được máy chủ xác nhận. Hãy di chuyển tới
+              nơi có sóng và gọi số cứu hộ dự phòng nếu tình huống nguy cấp.
+            </div>
+          ) : (
+            <p className="mt-1 text-xs font-medium" style={{ color: '#8A4747' }}>
+              Đã gửi tín hiệu SOS{formatTime(alert?.createdAt)}. Đội cứu hộ đã nhận được toạ độ GPS,
+              tình huống đang chờ xử lý.
+            </p>
+          )}
           {alert?.message && (
             <p className="mt-1 text-xs font-semibold italic" style={{ color: '#8A4747' }}>
               “{alert.message}”
             </p>
           )}
-          <button
-            type="button"
-            onClick={() => alert && onResolve(alert.sosAlertId)}
-            disabled={isResolving || !alert}
-            className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold text-white transition-all disabled:opacity-60"
-            style={{ backgroundColor: '#06261D' }}
-          >
-            {isResolving && <Loader2 className="h-4 w-4 animate-spin" />}
-            Hoàn thành cứu hộ
-          </button>
+          {!isLocallyQueued && (
+            <button
+              type="button"
+              onClick={() => alert && onResolve(alert.sosAlertId)}
+              disabled={isResolving || !alert}
+              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold text-white transition-all disabled:opacity-60"
+              style={{ backgroundColor: '#06261D' }}
+            >
+              {isResolving && <Loader2 className="h-4 w-4 animate-spin" />}
+              Hoàn thành cứu hộ
+            </button>
+          )}
         </>
       ) : (
         <>
