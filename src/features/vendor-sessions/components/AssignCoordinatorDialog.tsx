@@ -82,7 +82,7 @@ export function AssignCoordinatorDialog({
           </p>
         ) : candidates.length === 0 ? (
           <p className="text-sm" style={{ color: '#6F7B75' }}>
-            Công ty chưa có nhân viên nào giữ vai trò Điều phối viên (COORDINATOR) đang hoạt động.
+            Công ty chưa có nhân viên nào giữ vai trò Hướng Dẫn Viên (COORDINATOR) đang hoạt động.
           </p>
         ) : available.length === 0 ? (
           <p className="text-sm" style={{ color: '#6F7B75' }}>

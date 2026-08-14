@@ -67,7 +67,7 @@ export default function VendorManagerLayout() {
     <PortalShell
       rootStyle={{ backgroundColor: '#FAF8F1' }}
       sidebarStyle={{ backgroundColor: '#EFECE6', borderRight: '1px solid #E0DCD1' }}
-      mobileTitle="TrekManager"
+      mobileTitle="TrekSphere"
       fullBleed={isChatPage}
       brand={
         <Link to={PATHS.HOME} className="hover:opacity-85 transition-opacity block">
@@ -75,10 +75,10 @@ export default function VendorManagerLayout() {
             className="text-3xl font-extrabold tracking-tight leading-none mb-1"
             style={{ color: '#06261D' }}
           >
-            TrekManager
+            TrekSphere
           </h1>
           <span className="text-xs font-medium tracking-wide" style={{ color: '#6F7B75' }}>
-            Quản lý đoàn leo núi
+            QUẢN LÝ NHÀ CUNG CẤP
           </span>
         </Link>
       }
@@ -133,9 +133,6 @@ export default function VendorManagerLayout() {
                   style={{ color: '#06261D' }}
                 >
                   {vendorName}
-                </span>
-                <span className="text-[11px] font-medium" style={{ color: '#6F7B75' }}>
-                  Quản lý
                 </span>
               </div>
             </div>

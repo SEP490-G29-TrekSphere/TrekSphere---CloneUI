@@ -248,9 +248,6 @@ export function CreateBlogPost({ editMode = false }: { editMode?: boolean }) {
           <h2 className="text-3xl font-bold" style={{ color: '#06261D' }}>
             {editMode ? 'Chỉnh sửa bài viết' : 'Soạn thảo bài viết mới'}
           </h2>
-          <p className="mt-2 max-w-lg text-sm" style={{ color: '#6F7B75' }}>
-            Lưu giữ những khoảnh khắc và kinh nghiệm trên cung đường bạn đi.
-          </p>
         </div>
 
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start">

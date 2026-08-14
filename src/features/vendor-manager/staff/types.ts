@@ -14,7 +14,7 @@ export const VENDOR_STAFF_ROLES: VendorStaffRole[] = ['VENDOR_STAFF', 'COORDINAT
 
 export const VENDOR_STAFF_ROLE_LABELS: Record<VendorStaffRole, string> = {
   VENDOR_STAFF: 'Nhân viên',
-  COORDINATOR: 'Điều phối viên',
+  COORDINATOR: 'Hướng Dẫn Viên',
 };
 
 export interface VendorStaffMember {
@@ -32,7 +32,7 @@ export interface VendorStaffMember {
    * mảng gốc; muốn biết vai trò nghiệp vụ hiện tại thì dùng `role`.
    */
   roles: string[];
-  /** Vai trò nghiệp vụ suy ra từ `roles` — có `COORDINATOR` thì là điều phối viên, còn lại là nhân viên. */
+  /** Vai trò nghiệp vụ suy ra từ `roles` — có `COORDINATOR` thì là hướng dẫn viên, còn lại là nhân viên. */
   role: VendorStaffRole;
   isActive: boolean;
   deactivatedAt?: string;

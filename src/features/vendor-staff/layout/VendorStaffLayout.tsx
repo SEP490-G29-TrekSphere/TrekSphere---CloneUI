@@ -26,7 +26,7 @@ const navItems = [
   { name: 'Báo cáo', path: '', icon: BarChart3, disabled: true },
   { name: 'Lịch trình', path: PATHS.PARTNER_SESSIONS, icon: CalendarClock, disabled: false },
   { name: 'Tour', path: PATHS.PARTNER_TOURS, icon: MapIcon, disabled: false },
-  { name: 'Đặt tour', path: PATHS.PARTNER_BOOKINGS, icon: Ticket, disabled: false },
+  { name: 'Đơn Đặt Tour', path: PATHS.PARTNER_BOOKINGS, icon: Ticket, disabled: false },
   { name: 'Voucher', path: PATHS.PARTNER_VOUCHERS, icon: Tag, disabled: false },
   { name: 'Thiết bị', path: PATHS.PARTNER_EQUIPMENT, icon: Backpack, disabled: false },
   { name: 'Porter', path: PATHS.PARTNER_PORTERS, icon: Footprints, disabled: false },
@@ -47,7 +47,7 @@ export default function VendorStaffLayout() {
     <PortalShell
       rootStyle={{ backgroundColor: '#FAF8F1' }}
       sidebarStyle={{ backgroundColor: '#EFECE6', borderRight: '1px solid #E0DCD1' }}
-      mobileTitle="TrekPartner"
+      mobileTitle="TrekSphere"
       fullBleed={isChatPage}
       brand={
         <Link to={PATHS.HOME} className="hover:opacity-85 transition-opacity block">
@@ -55,10 +55,10 @@ export default function VendorStaffLayout() {
             className="text-3xl font-extrabold tracking-tight leading-none mb-1"
             style={{ color: '#06261D' }}
           >
-            TrekPartner
+            TrekSphere
           </h1>
           <span className="text-xs font-medium tracking-wide" style={{ color: '#6F7B75' }}>
-            Quản lý tour của bạn
+            NHÂN VIÊN NHÀ CUNG CẤP
           </span>
         </Link>
       }
@@ -113,9 +113,6 @@ export default function VendorStaffLayout() {
                   style={{ color: '#06261D' }}
                 >
                   {staffName}
-                </span>
-                <span className="text-[11px] font-medium" style={{ color: '#6F7B75' }}>
-                  Nhân viên
                 </span>
               </div>
             </div>

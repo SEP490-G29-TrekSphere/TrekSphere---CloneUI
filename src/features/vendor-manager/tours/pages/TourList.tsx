@@ -151,9 +151,6 @@ export default function TourList() {
           >
             Danh sách Tour
           </h2>
-          <p className="text-sm font-medium mt-1" style={{ color: '#6F7B75' }}>
-            Quản lý các chương trình tour và hành trình của bạn.
-          </p>
         </div>
 
         <button

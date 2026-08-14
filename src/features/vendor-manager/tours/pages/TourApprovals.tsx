@@ -71,9 +71,6 @@ export default function TourApprovals() {
         >
           Duyệt tour
         </h2>
-        <p className="text-sm font-medium mt-1" style={{ color: '#6F7B75' }}>
-          Xét duyệt tour do nhân viên gửi lên.
-        </p>
       </div>
 
       <div

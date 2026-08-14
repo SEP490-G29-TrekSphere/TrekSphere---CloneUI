@@ -68,9 +68,6 @@ export default function PorterList() {
           >
             Quản lý Porter
           </h2>
-          <p className="text-sm font-medium mt-1" style={{ color: '#6F7B75' }}>
-            Theo dõi và quản lý nhân sự dẫn đường tại các điểm tour.
-          </p>
         </div>
 
         <button

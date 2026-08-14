@@ -105,7 +105,7 @@ export function AddStaffDialog({
               ))}
             </select>
             <p className="text-xs" style={{ color: '#6F7B75' }}>
-              Điều phối viên mới được phân công dẫn đoàn cho phiên tour.
+              Hướng Dẫn Viên mới được phân công dẫn đoàn cho phiên tour.
             </p>
           </div>
         </div>
