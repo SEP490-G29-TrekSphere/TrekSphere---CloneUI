@@ -31,7 +31,7 @@ describe('useAccountMutations — khóa/mở khóa tài khoản', () => {
     mockUpdateStatus.mockResolvedValueOnce(undefined);
 
     const { result } = renderHook(() => useAccountMutations('u1'), { wrapper: createWrapper() });
-    await result.current.lock.mutateAsync();
+    await result.current.lock.mutateAsync('u1');
 
     expect(mockUpdateStatus).toHaveBeenCalledWith('u1', 'DEACTIVATED');
   });
@@ -40,7 +40,7 @@ describe('useAccountMutations — khóa/mở khóa tài khoản', () => {
     mockUpdateStatus.mockResolvedValueOnce(undefined);
 
     const { result } = renderHook(() => useAccountMutations('u1'), { wrapper: createWrapper() });
-    await result.current.unlock.mutateAsync();
+    await result.current.unlock.mutateAsync('u1');
 
     expect(mockUpdateStatus).toHaveBeenCalledWith('u1', 'ACTIVE');
   });
@@ -50,6 +50,6 @@ describe('useAccountMutations — khóa/mở khóa tài khoản', () => {
 
     const { result } = renderHook(() => useAccountMutations('u1'), { wrapper: createWrapper() });
 
-    await expect(result.current.lock.mutateAsync()).rejects.toThrow('Không có quyền');
+    await expect(result.current.lock.mutateAsync('u1')).rejects.toThrow('Không có quyền');
   });
 });
