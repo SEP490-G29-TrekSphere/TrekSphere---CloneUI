@@ -210,6 +210,7 @@ export default function TourSchedules() {
         }
         bookedSlots={isEditingExisting ? formTarget.bookedSlots : 0}
         maxCapacity={tour.maxCapacity}
+        durationDays={tour.durationDays}
         isPending={createSchedule.isPending || updateSchedule.isPending}
         onSubmit={handleFormSubmit}
       />

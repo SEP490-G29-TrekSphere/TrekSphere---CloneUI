@@ -161,6 +161,7 @@ export default function TourSchedules() {
         mode="create"
         defaultValues={{ price: tour.basePrice }}
         maxCapacity={tour.maxCapacity}
+        durationDays={tour.durationDays}
         isPending={createSchedule.isPending}
         onSubmit={handleFormSubmit}
       />
