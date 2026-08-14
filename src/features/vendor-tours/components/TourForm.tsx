@@ -666,17 +666,6 @@ export function TourForm({
               className="mt-1.5 w-full resize-none rounded-xl bg-[#F8F6EF] px-4 py-3 text-sm font-medium outline-none focus:ring-1"
             />
           </label>
-
-          <div className="flex flex-wrap gap-x-6 gap-y-3 rounded-2xl bg-[#F8F6EF] px-4 py-3">
-            <label className="flex items-center gap-2 text-sm font-semibold text-[#06261D]">
-              <input type="checkbox" {...register('requiresHealthDeclaration')} />
-              Yêu cầu khách xác nhận tình trạng sức khỏe
-            </label>
-            <label className="flex items-center gap-2 text-sm font-semibold text-[#06261D]">
-              <input type="checkbox" {...register('requiresMedicalCertificate')} />
-              Yêu cầu giấy xác nhận y tế
-            </label>
-          </div>
         </section>
 
         {/* Lịch trình chi tiết — full width */}

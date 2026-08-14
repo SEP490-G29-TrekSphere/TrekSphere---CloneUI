@@ -9,6 +9,7 @@ import type {
   TourPaymentPolicy,
   TourPaymentPolicyPayload,
   VendorPaymentAccount,
+  VendorPayoutAccount,
 } from '../types';
 
 function unwrap<T>(response: ApiResponse<T>): T {
@@ -67,6 +68,22 @@ export const paymentService = {
     );
   },
 
+  async getPayoutAccount(): Promise<VendorPayoutAccount> {
+    return unwrap(
+      await ApiService<VendorPayoutAccount>('/vendor/payment-settings/payout-account', 'GET')
+    );
+  },
+
+  async configurePayoutAccount(payload: PayOsAccountPayload): Promise<VendorPayoutAccount> {
+    return unwrap(
+      await ApiService<VendorPayoutAccount>(
+        '/vendor/payment-settings/payout-account',
+        'PUT',
+        payload
+      )
+    );
+  },
+
   async getTourPaymentPolicy(tourId: string): Promise<TourPaymentPolicy> {
     return unwrap(
       await ApiService<TourPaymentPolicy>(`/vendor/payment-settings/tours/${tourId}/policy`, 'GET')
@@ -95,13 +112,14 @@ export const paymentService = {
   async completeManualRefund(
     refundId: string,
     bankReference: string,
+    receiptImageUrl: string,
     note?: string
   ): Promise<RefundTransaction> {
     return unwrap(
       await ApiService<RefundTransaction>(
         `/vendor/bookings/refunds/${refundId}/complete-manual`,
         'POST',
-        { bankReference, note: note?.trim() || undefined }
+        { bankReference, receiptImageUrl, note: note?.trim() || undefined }
       )
     );
   },

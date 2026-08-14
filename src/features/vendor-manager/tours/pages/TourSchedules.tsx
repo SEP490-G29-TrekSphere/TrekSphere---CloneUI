@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getVendorManagerSessionDetailPath, PATHS } from '@/constants';
 import { vendorSessionService } from '@/features/vendor-sessions/services/vendorSessionService';
+import { CancelBookedScheduleDialog } from '@/features/vendor-tours/components/CancelBookedScheduleDialog';
 import { DeleteScheduleConfirmDialog } from '@/features/vendor-tours/components/DeleteScheduleConfirmDialog';
 import { ScheduleFormDialog } from '@/features/vendor-tours/components/ScheduleFormDialog';
 import { ScheduleTableRow } from '@/features/vendor-tours/components/ScheduleTableRow';
@@ -12,6 +13,7 @@ import {
 } from '@/features/vendor-tours/components/TourTableRow';
 import { useVendorScheduleMutations } from '@/features/vendor-tours/hooks/useVendorScheduleMutations';
 import { useVendorTourDetail } from '@/features/vendor-tours/hooks/useVendorTourDetail';
+import { vendorScheduleCancellationService } from '@/features/vendor-tours/services/vendorScheduleCancellationService';
 import type {
   CreateSchedulePayload,
   TourSchedule,
@@ -30,17 +32,20 @@ export default function TourSchedules() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: tour, isLoading, isError, error } = useVendorTourDetail(id);
-  const { createSchedule, updateSchedule, deleteSchedule } = useVendorScheduleMutations(id ?? '');
+  const { createSchedule, updateSchedule, deleteSchedule, cancelScheduleWithBookings } =
+    useVendorScheduleMutations(id ?? '');
 
   const [formTarget, setFormTarget] = useState<TourSchedule | 'create' | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<TourSchedule | null>(null);
   const [openingSessionScheduleId, setOpeningSessionScheduleId] = useState<string | null>(null);
+  const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
 
   const handleBack = () => navigate(PATHS.VENDOR_MANAGER_TOURS);
 
   const schedules = [...(tour?.schedules ?? [])].sort((a, b) =>
     a.departureDate.localeCompare(b.departureDate)
   );
+  const cancelTarget = schedules.find((schedule) => schedule.scheduleId === cancelTargetId) ?? null;
 
   const handleFormSubmit = (payload: CreateSchedulePayload | UpdateSchedulePayload) => {
     if (formTarget === 'create') {
@@ -89,6 +94,51 @@ export default function TourSchedules() {
     } finally {
       setOpeningSessionScheduleId(null);
     }
+  };
+
+  const openBookedScheduleCancellation = (schedule: TourSchedule) => {
+    cancelScheduleWithBookings.reset();
+    setCancelTargetId(schedule.scheduleId);
+  };
+
+  const handleCancelClick = async (schedule: TourSchedule) => {
+    if (schedule.bookedSlots > 0) {
+      openBookedScheduleCancellation(schedule);
+      return;
+    }
+
+    try {
+      // `bookedSlots` không bao gồm booking đang giữ chỗ chờ thanh toán. Kiểm tra
+      // manifest trước khi xóa để các booking PAYMENT_PENDING cũng được xử lý.
+      const preview = await vendorScheduleCancellationService.preview(schedule);
+      if (preview.cancellableBookings.length > 0 || preview.blockingBookings.length > 0) {
+        openBookedScheduleCancellation(schedule);
+        return;
+      }
+      setDeleteTarget(schedule);
+    } catch {
+      // Mở dialog an toàn (read-only) để hiển thị lỗi tải manifest; không gọi DELETE
+      // khi chưa chắc lịch thực sự không có booking.
+      openBookedScheduleCancellation(schedule);
+    }
+  };
+
+  const handleBookedScheduleCancel = (reason: string) => {
+    if (!cancelTarget) return;
+    cancelScheduleWithBookings.mutate(
+      { schedule: cancelTarget, reason },
+      {
+        onSuccess: (result) => {
+          setCancelTargetId(null);
+          toast.success(
+            `Đã hủy lịch và ${result.cancelledBookingCount} booking. ${result.refundBookingCount} booking đã chuyển sang chờ hoàn tiền.`
+          );
+        },
+        onError: (err) => {
+          toast.error(err instanceof Error ? err.message : 'Không thể hủy lịch khởi hành.');
+        },
+      }
+    );
   };
 
   if (isLoading) {
@@ -200,7 +250,7 @@ export default function TourSchedules() {
                     onOperationsClick={handleOpenOperations}
                     isOpeningOperations={openingSessionScheduleId === schedule.scheduleId}
                     onEditClick={setFormTarget}
-                    onDeleteClick={setDeleteTarget}
+                    onDeleteClick={handleCancelClick}
                   />
                 ))
               )}
@@ -237,6 +287,21 @@ export default function TourSchedules() {
         departureDate={deleteTarget?.departureDate ?? ''}
         onConfirm={handleDeleteConfirm}
         isPending={deleteSchedule.isPending}
+      />
+
+      <CancelBookedScheduleDialog
+        open={cancelTarget !== null}
+        onOpenChange={(open) => {
+          if (!open && !cancelScheduleWithBookings.isPending) setCancelTargetId(null);
+        }}
+        schedule={cancelTarget}
+        isPending={cancelScheduleWithBookings.isPending}
+        errorMessage={
+          cancelScheduleWithBookings.error instanceof Error
+            ? cancelScheduleWithBookings.error.message
+            : undefined
+        }
+        onConfirm={handleBookedScheduleCancel}
       />
     </div>
   );

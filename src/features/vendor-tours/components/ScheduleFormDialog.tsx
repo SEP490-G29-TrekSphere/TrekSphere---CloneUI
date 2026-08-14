@@ -18,7 +18,6 @@ import type { ApiScheduleStatus, CreateSchedulePayload, UpdateSchedulePayload } 
 const STATUS_OPTIONS: Array<{ value: ApiScheduleStatus; label: string }> = [
   { value: 'OPEN', label: 'Đang mở' },
   { value: 'CLOSED', label: 'Đã đóng' },
-  { value: 'CANCELLED', label: 'Đã hủy' },
   { value: 'COMPLETED', label: 'Đã hoàn thành' },
 ];
 

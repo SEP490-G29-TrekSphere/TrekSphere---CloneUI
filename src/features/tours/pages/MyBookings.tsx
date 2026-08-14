@@ -259,7 +259,7 @@ export default function MyBookings({ useTrekkerPaths = false }: { useTrekkerPath
                       )}
                       {booking.paymentStatus === 'REFUND_PENDING' && (
                         <span className="inline-flex items-center gap-1 bg-orange-50 text-orange-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
-                          Chờ hoàn tiền
+                          Đang xử lý hoàn tiền
                         </span>
                       )}
                       {booking.paymentStatus === 'REFUNDED' && (
