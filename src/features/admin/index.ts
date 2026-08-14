@@ -17,5 +17,4 @@ export { default as Applications } from './pages/Applications';
 export { default as BlogManagement } from './pages/BlogManagement';
 export { default as ReportDetail } from './pages/ReportDetail';
 export { default as Reports } from './pages/Reports';
-export { default as SystemSettings } from './pages/SystemSettings';
 export { default as VendorList } from './vendors/pages/VendorList';

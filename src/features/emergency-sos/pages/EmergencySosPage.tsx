@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Radio, Search, Siren, XCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Siren, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from '@/store/useToastStore';
 import { IncidentLogPanel } from '../components/IncidentLogPanel';
@@ -55,19 +55,9 @@ export default function EmergencySosPage() {
     <div className="mx-auto max-w-7xl space-y-6" style={{ backgroundColor: '#FAF8F1' }}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <span
-            className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide"
-            style={{ color: '#D32F2F' }}
-          >
-            <Radio className="h-3.5 w-3.5 animate-pulse" />
-            Đang giám sát trực tiếp
-          </span>
-          <h1 className="mt-1 text-3xl font-extrabold tracking-tight" style={{ color: '#06261D' }}>
+          <h1 className="text-3xl font-extrabold tracking-tight" style={{ color: '#06261D' }}>
             Quản Lý Khẩn Cấp & Cứu Hộ
           </h1>
-          <p className="mt-1 text-sm font-medium" style={{ color: '#6F7B75' }}>
-            Tiếp nhận tín hiệu SOS, định vị GPS thời gian thực và xử lý cứu hộ.
-          </p>
         </div>
 
         <div className="inline-flex rounded-full p-1" style={{ backgroundColor: '#EFECE6' }}>

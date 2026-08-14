@@ -1,4 +1,3 @@
-import { ShieldAlert } from 'lucide-react';
 import { useState } from 'react';
 import { ReportTable } from '../components/reports/ReportTable';
 import { useAdminReports } from '../hooks/useAdminReports';
@@ -41,10 +40,6 @@ export default function Reports() {
               Danh sách Báo cáo Vi phạm
             </h1>
           </div>
-          <p className="text-sm text-zinc-500 font-medium mt-1">
-            Quản lý các nội dung cộng đồng bị gắn cờ để duy trì sự an toàn và minh bạch cho nền tảng
-            TrekGuard.
-          </p>
         </div>
 
         {/* Filter Tabs (All / Pending / Resolved) */}
@@ -71,21 +66,6 @@ export default function Reports() {
           isFetching={isFetching}
         />
       )}
-
-      {/* Bottom Information Grid */}
-      <div className="w-full">
-        {/* Mẹo điều phối */}
-        <div className="bg-[#E2ECE9] border border-[#C5DACF] rounded-2xl p-6 shadow-sm">
-          <h3 className="font-bold text-sm text-[#0B3025] mb-2 flex items-center gap-2">
-            <ShieldAlert className="h-4 w-4 text-[#0B3025]" />
-            Mẹo điều phối
-          </h3>
-          <p className="text-xs text-zinc-700 leading-relaxed font-medium">
-            Ưu tiên xử lý các báo cáo có nhãn &ldquo;Ngôn ngữ thù ghét&rdquo; để đảm bảo tiêu chuẩn
-            cộng đồng được thực thi nghiêm ngặt nhất.
-          </p>
-        </div>
-      </div>
     </div>
   );
 }

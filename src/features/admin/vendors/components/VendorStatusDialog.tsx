@@ -61,7 +61,7 @@ export function VendorStatusDialog({
           <SelectTrigger className="w-full">
             <span>{VENDOR_STATUS_LABELS[selectedStatus]}</span>
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent side="bottom" sideOffset={8} alignItemWithTrigger={false}>
             {STATUS_OPTIONS.map((status) => (
               <SelectItem key={status} value={status}>
                 {VENDOR_STATUS_LABELS[status]}

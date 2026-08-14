@@ -7,7 +7,7 @@ import { adminAccountKeys } from './useAdminAccounts';
  * Hook mutation cho thao tác khóa/mở khóa tài khoản (`PUT /users/{id}/status`).
  * Dùng chung cho AccountDetail.
  */
-export function useAccountMutations(accountId: string) {
+export function useAccountMutations(accountId = '') {
   const queryClient = useQueryClient();
 
   const invalidate = () => {
@@ -19,12 +19,14 @@ export function useAccountMutations(accountId: string) {
   // (trả code 9001 "Chức năng khoá vĩnh viễn chưa được hỗ trợ") dù swagger có
   // khai báo giá trị này.
   const lock = useMutation({
-    mutationFn: () => adminAccountService.updateStatus(accountId, 'DEACTIVATED'),
+    mutationFn: (targetAccountId?: string) =>
+      adminAccountService.updateStatus(targetAccountId ?? accountId, 'DEACTIVATED'),
     onSuccess: invalidate,
   });
 
   const unlock = useMutation({
-    mutationFn: () => adminAccountService.updateStatus(accountId, 'ACTIVE'),
+    mutationFn: (targetAccountId?: string) =>
+      adminAccountService.updateStatus(targetAccountId ?? accountId, 'ACTIVE'),
     onSuccess: invalidate,
   });
 

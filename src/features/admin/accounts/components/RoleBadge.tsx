@@ -7,7 +7,7 @@ interface RoleBadgeProps {
 /**
  * Badge hiển thị loại tài khoản.
  * - Trekker: nền xanh ngọc nhạt, chữ xanh rêu.
- * - Vendor Manager / Vendor Staff: nền xanh rêu tối, chữ sáng màu.
+ * - Vendor Manager / Vendor Staff / Coordinator: nền xanh rêu tối, chữ sáng màu.
  * - Admin: nền đậm nhất.
  */
 export function RoleBadge({ role }: RoleBadgeProps) {
@@ -30,6 +30,7 @@ function getRoleBadgeStyles(role: AccountRole): React.CSSProperties {
         color: '#06261D',
       };
     case 'vendor_staff':
+    case 'coordinator':
     case 'vendor_manager':
       return {
         backgroundColor: 'rgba(6, 38, 29, 0.85)',
