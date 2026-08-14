@@ -26,7 +26,10 @@ const applicationSchema = z.object({
   contactPhone: z
     .string()
     .min(1, 'Vui lòng nhập số điện thoại')
-    .regex(/^[0-9+\-\s()]*$/, 'Số điện thoại không hợp lệ'),
+    .regex(
+      /^0[35789][0-9]{8}$/,
+      'Số điện thoại không hợp lệ (gồm 10 chữ số, bắt đầu bằng 03, 05, 07, 08, 09)'
+    ),
   businessDescription: z.string().optional(),
   taxCode: z.string().min(1, 'Vui lòng nhập mã số thuế'),
 });

@@ -90,7 +90,10 @@ export const updateProfileSchema = z.object({
   name: z.string().min(2, 'Họ tên phải có ít nhất 2 ký tự').max(100, 'Họ tên quá dài'),
   phone: z
     .string()
-    .regex(/^[0-9+\-\s()]*$/, 'Số điện thoại không hợp lệ')
+    .regex(
+      /^0[35789][0-9]{8}$/,
+      'Số điện thoại không hợp lệ (gồm 10 chữ số, bắt đầu bằng 03, 05, 07, 08, 09)'
+    )
     .optional()
     .or(z.literal('')),
   gender: z.enum(['male', 'female', 'other']).optional(),

@@ -43,11 +43,17 @@ const participantSchema = z.object({
   gender: z.enum(['MALE', 'FEMALE', 'OTHER'] as const, {
     message: 'Giới tính không hợp lệ',
   }),
-  idNumber: z.string().min(1, 'Vui lòng nhập số CCCD hoặc hộ chiếu'),
+  idNumber: z
+    .string()
+    .min(1, 'Vui lòng nhập số CCCD')
+    .regex(/^\d{12}$/, 'Số CCCD không hợp lệ (yêu cầu đúng 12 chữ số)'),
   phone: z
     .string()
     .min(1, 'Vui lòng nhập số điện thoại')
-    .regex(/^[0-9]{10}$/, 'Số điện thoại không hợp lệ (yêu cầu 10 chữ số)'),
+    .regex(
+      /^0[35789][0-9]{8}$/,
+      'Số điện thoại không hợp lệ (gồm 10 chữ số, bắt đầu bằng 03, 05, 07, 08, 09)'
+    ),
   email: z
     .string()
     .optional()
@@ -731,7 +737,7 @@ export default function BookTour() {
                           <AppFormInput
                             control={control}
                             name={`participants.${index}.idNumber`}
-                            label="Số CCCD / Hộ chiếu *"
+                            label="Số CCCD *"
                             placeholder="001202001234"
                           />
                         </div>

@@ -16,7 +16,7 @@ import {
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCoordinatorSessionOperationsPath } from '@/constants';
-import { parseIsoDate, toIsoDate } from '@/lib';
+import { formatDate, parseIsoDate, toIsoDate } from '@/lib';
 import { AppDatePicker } from '@/shared/ui';
 import { coordinatorKeys, useCoordinatorSchedules } from '../hooks/useCoordinatorSchedules';
 import type { CoordinatorScheduleStatus } from '../types';
@@ -327,14 +327,14 @@ export default function CoordinatorSchedulesPage() {
                       <td className="px-6 py-4 font-medium" style={{ color: '#06261D' }}>
                         <div className="flex items-center gap-1.5">
                           <Calendar className="h-4 w-4" style={{ color: '#6F7B75' }} />
-                          <span>{item.departureDate}</span>
+                          <span>{formatDate(item.departureDate)}</span>
                         </div>
                       </td>
 
                       <td className="px-6 py-4 font-medium" style={{ color: '#06261D' }}>
                         <div className="flex items-center gap-1.5">
                           <Calendar className="h-4 w-4" style={{ color: '#6F7B75' }} />
-                          <span>{item.returnDate}</span>
+                          <span>{formatDate(item.returnDate)}</span>
                         </div>
                       </td>
 
