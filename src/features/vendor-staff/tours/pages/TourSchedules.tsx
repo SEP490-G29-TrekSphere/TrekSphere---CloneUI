@@ -1,7 +1,8 @@
 import { ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { PATHS } from '@/constants';
+import { getPartnerSessionDetailPath, PATHS } from '@/constants';
+import { vendorSessionService } from '@/features/vendor-sessions/services/vendorSessionService';
 import { ScheduleFormDialog } from '@/features/vendor-tours/components/ScheduleFormDialog';
 import { ScheduleTableRow } from '@/features/vendor-tours/components/ScheduleTableRow';
 import {
@@ -27,6 +28,7 @@ export default function TourSchedules() {
   const { createSchedule } = useVendorScheduleMutations(id ?? '');
 
   const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
+  const [openingSessionScheduleId, setOpeningSessionScheduleId] = useState<string | null>(null);
 
   const handleBack = () => navigate(PATHS.PARTNER_TOURS);
 
@@ -43,6 +45,18 @@ export default function TourSchedules() {
       onError: (err) =>
         toast.error(err instanceof Error ? err.message : 'Không thể tạo lịch khởi hành.'),
     });
+  };
+
+  const handleOpenOperations = async (schedule: (typeof schedules)[number]) => {
+    setOpeningSessionScheduleId(schedule.scheduleId);
+    try {
+      const session = await vendorSessionService.getSessionBySchedule(schedule.scheduleId);
+      navigate(getPartnerSessionDetailPath(session.sessionId));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Không thể mở phiên vận hành.');
+    } finally {
+      setOpeningSessionScheduleId(null);
+    }
   };
 
   if (isLoading) {
@@ -147,7 +161,12 @@ export default function TourSchedules() {
                 </tr>
               ) : (
                 schedules.map((schedule) => (
-                  <ScheduleTableRow key={schedule.scheduleId} schedule={schedule} />
+                  <ScheduleTableRow
+                    key={schedule.scheduleId}
+                    schedule={schedule}
+                    onOperationsClick={handleOpenOperations}
+                    isOpeningOperations={openingSessionScheduleId === schedule.scheduleId}
+                  />
                 ))
               )}
             </tbody>
@@ -161,6 +180,7 @@ export default function TourSchedules() {
         mode="create"
         defaultValues={{ price: tour.basePrice }}
         maxCapacity={tour.maxCapacity}
+        durationDays={tour.durationDays}
         isPending={createSchedule.isPending}
         onSubmit={handleFormSubmit}
       />

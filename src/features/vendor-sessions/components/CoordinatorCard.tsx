@@ -32,7 +32,7 @@ export function CoordinatorCard({ coordinators, onAddClick, onRemoveClick }: Coo
 
       {sorted.length === 0 ? (
         <p className="py-6 text-center text-sm" style={{ color: '#6F7B75' }}>
-          Chưa có điều phối viên nào được phân công.
+          Chưa có hướng dẫn viên nào được phân công.
         </p>
       ) : (
         <div className="space-y-3">

@@ -1,4 +1,4 @@
-import { CalendarClock, LogOut, MessageSquare, MountainSnow } from 'lucide-react';
+import { CalendarClock, LogOut, MessageSquare } from 'lucide-react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { PATHS } from '@/constants';
 import { useLogout } from '@/features/auth/hooks/useLogout';
@@ -7,7 +7,7 @@ import { useAppStore } from '@/store/useAppStore';
 
 /**
  * Layout riêng cho khu vực Coordinator — sidebar cố định kiểu `VendorStaffLayout`
- * (TrekPartner) thay cho `MainLayout` chung, thương hiệu "SummitGuard" đồng bộ
+ * (TrekPartner) thay cho `MainLayout` chung, thương hiệu "TrekSphere" đồng bộ
  * với trang Vận hành tour thực địa. Chỉ có đúng 1 mục điều hướng thật:
  * "Xem lịch & phân công" — Coordinator hiện chưa có tính năng nào khác.
  */
@@ -22,27 +22,16 @@ export default function CoordinatorLayout() {
 
   return (
     <PortalShell
-      rootStyle={{ backgroundColor: '#FAF8F1' }}
-      sidebarStyle={{ backgroundColor: '#EFECE6', borderRight: '1px solid #E0DCD1' }}
-      mobileTitle="SummitGuard"
+      rootClassName="bg-[#F4F4F2]"
+      sidebarClassName="bg-[#FAF9F5] border-r border-[#E5E4DE]"
+      mobileTitle="TrekSphere"
       fullBleed={isChatPage}
       brand={
-        <Link
-          to={PATHS.HOME}
-          className="flex items-center gap-2 hover:opacity-85 transition-opacity"
-        >
-          <MountainSnow className="h-7 w-7 shrink-0" style={{ color: '#06261D' }} />
-          <div className="flex min-w-0 flex-col">
-            <h1
-              className="text-2xl font-extrabold tracking-tight leading-none"
-              style={{ color: '#06261D' }}
-            >
-              SummitGuard
-            </h1>
-            <span className="text-xs font-medium tracking-wide" style={{ color: '#6F7B75' }}>
-              Điều phối viên hiện trường
-            </span>
-          </div>
+        <Link to={PATHS.HOME} className="hover:opacity-85 transition-opacity block">
+          <h1 className="text-3xl font-extrabold tracking-tight text-[#0B3025] leading-none mb-1">
+            TrekSphere
+          </h1>
+          <span className="text-xs text-zinc-500 font-medium tracking-wide">HƯỚNG DẪN VIÊN</span>
         </Link>
       }
       nav={
@@ -52,12 +41,11 @@ export default function CoordinatorLayout() {
             return (
               <Link
                 to={PATHS.COORDINATOR_SCHEDULES}
-                className="flex items-center gap-3 px-4 py-3 rounded-full text-sm font-semibold transition-all"
-                style={
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${
                   isActive
-                    ? { backgroundColor: 'rgba(162, 235, 210, 0.35)', color: '#06261D' }
-                    : { color: '#6F7B75' }
-                }
+                    ? 'bg-[#0B3025] text-white shadow-md'
+                    : 'text-zinc-600 hover:bg-[#EAE8E2] hover:text-[#0B3025]'
+                }`}
               >
                 <CalendarClock className="h-5 w-5" />
                 Xem lịch & phân công
@@ -69,12 +57,11 @@ export default function CoordinatorLayout() {
             return (
               <Link
                 to={PATHS.COORDINATOR_CHAT}
-                className="flex items-center gap-3 px-4 py-3 rounded-full text-sm font-semibold transition-all"
-                style={
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${
                   isActive
-                    ? { backgroundColor: 'rgba(162, 235, 210, 0.35)', color: '#06261D' }
-                    : { color: '#6F7B75' }
-                }
+                    ? 'bg-[#0B3025] text-white shadow-md'
+                    : 'text-zinc-600 hover:bg-[#EAE8E2] hover:text-[#0B3025]'
+                }`}
               >
                 <MessageSquare className="h-5 w-5" />
                 Trò chuyện
@@ -84,13 +71,10 @@ export default function CoordinatorLayout() {
         </nav>
       }
       userCard={
-        <div className="p-4" style={{ borderTop: '1px solid #E0DCD1' }}>
-          <div className="flex items-center justify-between p-2 rounded-xl">
+        <div className="p-4 border-t border-[#E5E4DE] bg-[#FAF9F5]">
+          <div className="flex items-center justify-between p-2 rounded-xl bg-[#FAF9F5]">
             <div className="flex items-center gap-3">
-              <div
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-base font-bold shadow-sm"
-                style={{ backgroundColor: '#06261D', color: '#FFFFFF' }}
-              >
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#0B3025] text-white text-base font-bold shadow-sm">
                 {user?.avatarUrl ? (
                   <img
                     src={user.avatarUrl}
@@ -102,14 +86,8 @@ export default function CoordinatorLayout() {
                 )}
               </div>
               <div className="flex min-w-0 flex-col">
-                <span
-                  className="truncate text-sm font-bold leading-tight"
-                  style={{ color: '#06261D' }}
-                >
+                <span className="truncate text-sm font-bold text-zinc-800 leading-tight">
                   {coordinatorName}
-                </span>
-                <span className="text-[11px] font-medium" style={{ color: '#6F7B75' }}>
-                  Điều phối viên
                 </span>
               </div>
             </div>

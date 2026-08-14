@@ -136,9 +136,6 @@ export default function CoordinatorSchedulesPage() {
         >
           Lịch Dẫn Đoàn Được Phân Công
         </h1>
-        <p className="mt-1 text-sm font-medium" style={{ color: '#6F7B75' }}>
-          Danh sách các phiên tour bạn được phân công làm Trưởng đoàn hoặc Điều phối viên
-        </p>
       </div>
 
       {/* Filters Card */}

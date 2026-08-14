@@ -24,7 +24,7 @@ import { useAppStore } from '@/store/useAppStore';
 const navItems = [
   { name: 'Tổng quan', path: PATHS.PARTNER_PROFILE, icon: LayoutGrid, disabled: false },
   { name: 'Báo cáo', path: '', icon: BarChart3, disabled: true },
-  { name: 'Lịch trình', path: PATHS.PARTNER_SESSIONS, icon: CalendarClock, disabled: false },
+  { name: 'Vận hành Tour', path: PATHS.PARTNER_SESSIONS, icon: CalendarClock, disabled: false },
   { name: 'Tour', path: PATHS.PARTNER_TOURS, icon: MapIcon, disabled: false },
   { name: 'Đơn Đặt Tour', path: PATHS.PARTNER_BOOKINGS, icon: Ticket, disabled: false },
   { name: 'Voucher', path: PATHS.PARTNER_VOUCHERS, icon: Tag, disabled: false },

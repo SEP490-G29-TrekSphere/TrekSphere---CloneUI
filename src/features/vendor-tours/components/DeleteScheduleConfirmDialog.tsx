@@ -18,7 +18,7 @@ interface DeleteScheduleConfirmDialogProps {
   isPending?: boolean;
 }
 
-/** Xác nhận trước khi hủy lịch khởi hành — mirror `DeleteTourConfirmDialog`, chỉ dùng ở màn Manager. */
+/** Xác nhận trước khi xóa lịch trình — chỉ dùng ở màn Manager. */
 export function DeleteScheduleConfirmDialog({
   open,
   onOpenChange,
@@ -36,9 +36,9 @@ export function DeleteScheduleConfirmDialog({
           >
             <Trash2 className="h-5 w-5" style={{ color: '#DC2626' }} />
           </div>
-          <DialogTitle className="text-xl font-bold">Hủy lịch khởi hành</DialogTitle>
+          <DialogTitle className="text-xl font-bold">Xóa lịch trình</DialogTitle>
           <DialogDescription className="text-center leading-relaxed">
-            Bạn có chắc chắn muốn hủy lịch khởi hành ngày{' '}
+            Bạn có chắc chắn muốn xóa lịch trình khởi hành ngày{' '}
             {departureDate ? formatDate(departureDate) : ''} không? Hành động này không thể hoàn
             tác.
           </DialogDescription>
@@ -58,7 +58,7 @@ export function DeleteScheduleConfirmDialog({
             onClick={onConfirm}
             disabled={isPending}
           >
-            {isPending ? 'Đang hủy...' : 'Hủy lịch'}
+            {isPending ? 'Đang xóa...' : 'Xóa lịch trình'}
           </Button>
         </DialogFooter>
       </DialogContent>

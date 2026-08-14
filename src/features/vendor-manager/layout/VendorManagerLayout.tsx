@@ -24,7 +24,12 @@ import { useAppStore } from '@/store/useAppStore';
 const navItems = [
   { name: 'Tổng quan', path: PATHS.VENDOR_MANAGER_PROFILE, icon: LayoutGrid, disabled: false },
   { name: 'Báo cáo', path: PATHS.VENDOR_MANAGER_REPORTS, icon: BarChart3, disabled: false },
-  { name: 'Lịch trình', path: PATHS.VENDOR_MANAGER_SESSIONS, icon: CalendarClock, disabled: false },
+  {
+    name: 'Vận hành Tour',
+    path: PATHS.VENDOR_MANAGER_SESSIONS,
+    icon: CalendarClock,
+    disabled: false,
+  },
   { name: 'Nhân viên', path: PATHS.VENDOR_MANAGER_STAFF, icon: Users, disabled: false },
   { name: 'Tour', path: PATHS.VENDOR_MANAGER_TOURS, icon: MapIcon, disabled: false },
   {

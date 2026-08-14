@@ -65,19 +65,19 @@ export function AssignCoordinatorDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[420px]">
         <DialogHeader>
-          <DialogTitle>Chỉ định điều phối viên</DialogTitle>
+          <DialogTitle>Phân công hướng dẫn viên</DialogTitle>
           <DialogDescription>
-            Chọn nhân viên trong công ty để phân công dẫn đoàn cho phiên tour này.
+            Chọn nhân viên trong công ty để dẫn đoàn cho phiên vận hành này.
           </DialogDescription>
         </DialogHeader>
 
         {isLoadingCandidates ? (
           <p className="text-sm" style={{ color: '#6F7B75' }}>
-            Đang tải danh sách điều phối viên...
+            Đang tải danh sách hướng dẫn viên...
           </p>
         ) : candidatesError ? (
           <p className="text-sm" style={{ color: '#DC2626' }}>
-            Không tải được danh sách điều phối viên:{' '}
+            Không tải được danh sách hướng dẫn viên:{' '}
             {candidatesError instanceof Error ? candidatesError.message : 'Lỗi không xác định'}
           </p>
         ) : candidates.length === 0 ? (
@@ -86,7 +86,7 @@ export function AssignCoordinatorDialog({
           </p>
         ) : available.length === 0 ? (
           <p className="text-sm" style={{ color: '#6F7B75' }}>
-            Tất cả điều phối viên đều đã được phân công cho phiên này.
+            Tất cả hướng dẫn viên đều đã được phân công cho phiên này.
           </p>
         ) : (
           <div className="flex flex-col gap-4">
@@ -123,7 +123,7 @@ export function AssignCoordinatorDialog({
                 onChange={(e) => setIsLead(e.target.checked)}
                 className="h-4 w-4 rounded"
               />
-              Là điều phối viên trưởng (Lead)
+              Là hướng dẫn viên trưởng
             </label>
           </div>
         )}
