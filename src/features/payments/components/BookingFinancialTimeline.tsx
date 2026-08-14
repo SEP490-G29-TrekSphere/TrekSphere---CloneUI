@@ -12,7 +12,7 @@ import {
   ShieldCheck,
   XCircle,
 } from 'lucide-react';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { paymentService } from '@/features/payments/services/paymentService';
@@ -106,15 +106,71 @@ const refundReasonLabels: Record<string, string> = {
   OTHER: 'Lý do khác',
 };
 
-function statusTone(status: string): string {
-  if (['PAID', 'REFUNDED'].includes(status)) {
-    return 'border-emerald-200 bg-emerald-50 text-emerald-800';
-  }
-  if (['FAILED', 'CANCELLED', 'EXPIRED', 'OVERDUE'].includes(status)) {
-    return 'border-red-200 bg-red-50 text-red-700';
-  }
-  if (status === 'MANUAL_REVIEW') return 'border-sky-200 bg-sky-50 text-sky-800';
-  return 'border-amber-200 bg-amber-50 text-amber-800';
+/** Token style dùng chung cho form trong khối tài chính. */
+const FIELD_LABEL = 'block text-[11px] font-bold text-[#5A6B62]';
+const FIELD_INPUT =
+  'mt-1.5 w-full rounded-xl border border-[#E7E5DE] bg-[#FAF9F6] px-3 py-2 text-sm font-semibold text-[#1E3932] outline-none transition-colors placeholder:font-medium placeholder:text-[#A6AFA9] focus:border-[#1E3932] focus:bg-white';
+const FIELD_ERROR = 'mt-1 block text-[11px] font-semibold text-red-600';
+const PRIMARY_BUTTON =
+  'inline-flex items-center gap-2 rounded-full bg-[#0B3025] px-4 py-2 text-xs font-extrabold text-white transition-colors hover:bg-[#06261D] disabled:opacity-60';
+const SECONDARY_BUTTON =
+  'inline-flex items-center gap-2 rounded-full border border-[#E7E5DE] bg-white px-4 py-2 text-xs font-extrabold text-[#1E3932] transition-colors hover:bg-[#F7F6F2]';
+
+const DANGER_STATUSES = ['FAILED', 'CANCELLED', 'EXPIRED', 'OVERDUE'];
+const DONE_STATUSES = ['PAID', 'REFUNDED'];
+
+/**
+ * Bảng màu tối giản: mọi khối đều nền trung tính, màu chỉ xuất hiện ở chấm
+ * trạng thái hoặc chữ cảnh báo — tránh tình trạng mỗi trạng thái một nền màu.
+ */
+function statusDotTone(status: string): string {
+  if (DONE_STATUSES.includes(status)) return 'bg-emerald-500';
+  if (DANGER_STATUSES.includes(status)) return 'bg-red-500';
+  if (status === 'MANUAL_REVIEW') return 'bg-[#1E3932]';
+  return 'bg-amber-400';
+}
+
+function statusTextTone(status: string): string {
+  return DANGER_STATUSES.includes(status) ? 'text-red-600' : 'text-[#3F4E46]';
+}
+
+function iconTone(status: string): string {
+  if (DONE_STATUSES.includes(status)) return 'text-emerald-600';
+  if (DANGER_STATUSES.includes(status)) return 'text-red-500';
+  return 'text-[#8E9A93]';
+}
+
+function StatusChip({ status, label }: { status: string; label: string }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border border-[#E7E5DE] bg-white px-2.5 py-1 text-[11px] font-bold ${statusTextTone(status)}`}
+    >
+      <span className={`h-1.5 w-1.5 rounded-full ${statusDotTone(status)}`} />
+      {label}
+    </span>
+  );
+}
+
+/** Dòng chú thích phụ dưới thẻ giao dịch — thay cho các banner nền vàng/xanh. */
+function NoteRow({
+  icon: Icon,
+  tone = 'muted',
+  children,
+}: {
+  icon: typeof Clock3;
+  tone?: 'muted' | 'danger';
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={`mt-4 flex items-start gap-2.5 border-t border-[#EFEDE7] pt-3 text-[11px] font-medium leading-relaxed ${
+        tone === 'danger' ? 'text-red-600' : 'text-[#6F7E72]'
+      }`}
+    >
+      <Icon className="mt-px h-3.5 w-3.5 shrink-0" />
+      <p>{children}</p>
+    </div>
+  );
 }
 
 function transactionTimeLabel(
@@ -159,53 +215,39 @@ function RefundDestinationForm({
   return (
     <form
       onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
-      className="mt-4 grid gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:grid-cols-3"
+      className="mt-4 border-t border-[#EFEDE7] pt-4"
     >
-      <label className="text-xs font-bold text-amber-950">
-        Mã BIN ngân hàng
-        <input
-          {...form.register('bankBin')}
-          inputMode="numeric"
-          placeholder="970436"
-          className="mt-1 w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-500"
-        />
-        {form.formState.errors.bankBin && (
-          <span className="mt-1 block text-[11px] text-red-600">
-            {form.formState.errors.bankBin.message}
-          </span>
-        )}
-      </label>
-      <label className="text-xs font-bold text-amber-950">
-        Số tài khoản
-        <input
-          {...form.register('accountNumber')}
-          inputMode="numeric"
-          className="mt-1 w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-500"
-        />
-        {form.formState.errors.accountNumber && (
-          <span className="mt-1 block text-[11px] text-red-600">
-            {form.formState.errors.accountNumber.message}
-          </span>
-        )}
-      </label>
-      <label className="text-xs font-bold text-amber-950">
-        Tên chủ tài khoản
-        <input
-          {...form.register('accountName')}
-          className="mt-1 w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm uppercase outline-none focus:border-amber-500"
-        />
-        {form.formState.errors.accountName && (
-          <span className="mt-1 block text-[11px] text-red-600">
-            {form.formState.errors.accountName.message}
-          </span>
-        )}
-      </label>
-      <div className="sm:col-span-3 flex justify-end">
-        <button
-          type="submit"
-          disabled={mutation.isPending}
-          className="inline-flex items-center gap-2 rounded-full bg-amber-900 px-4 py-2 text-xs font-extrabold text-white disabled:opacity-60"
-        >
+      <p className="text-xs font-extrabold text-[#1E3932]">Cập nhật tài khoản nhận hoàn tiền</p>
+      <div className="mt-3 grid gap-3 sm:grid-cols-3">
+        <label className={FIELD_LABEL}>
+          Mã BIN ngân hàng
+          <input
+            {...form.register('bankBin')}
+            inputMode="numeric"
+            placeholder="970436"
+            className={FIELD_INPUT}
+          />
+          {form.formState.errors.bankBin && (
+            <span className={FIELD_ERROR}>{form.formState.errors.bankBin.message}</span>
+          )}
+        </label>
+        <label className={FIELD_LABEL}>
+          Số tài khoản
+          <input {...form.register('accountNumber')} inputMode="numeric" className={FIELD_INPUT} />
+          {form.formState.errors.accountNumber && (
+            <span className={FIELD_ERROR}>{form.formState.errors.accountNumber.message}</span>
+          )}
+        </label>
+        <label className={FIELD_LABEL}>
+          Tên chủ tài khoản
+          <input {...form.register('accountName')} className={`${FIELD_INPUT} uppercase`} />
+          {form.formState.errors.accountName && (
+            <span className={FIELD_ERROR}>{form.formState.errors.accountName.message}</span>
+          )}
+        </label>
+      </div>
+      <div className="mt-3 flex justify-end">
+        <button type="submit" disabled={mutation.isPending} className={PRIMARY_BUTTON}>
           {mutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
           Lưu tài khoản nhận tiền
         </button>
@@ -268,21 +310,26 @@ function VendorRefundActions({
   if (!canProcess) return null;
 
   return (
-    <div className="mt-4 border-t border-[#EEEADF] pt-4">
+    <div className="mt-4 border-t border-[#EFEDE7] pt-4">
       {!hasDestination ? (
-        <p className="flex items-center gap-2 text-xs font-bold text-amber-700">
-          <AlertTriangle className="h-4 w-4" /> Chờ khách cập nhật tài khoản nhận tiền.
+        <p className="flex items-center gap-2 text-xs font-semibold text-[#6F7E72]">
+          <AlertTriangle className="h-4 w-4 text-amber-500" /> Chờ khách cập nhật tài khoản nhận
+          tiền.
         </p>
       ) : (
         <>
           {manualFallbackAvailable && (
-            <div className="mb-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold leading-relaxed text-amber-900">
-              {refund.automaticPayoutAvailable
-                ? 'Lệnh hoàn tự động chưa thành công. Vendor có thể chuyển thủ công đúng '
-                : 'Chưa có Kênh Chi payOS hoạt động. Vendor cần chuyển đúng '}
-              <strong>{money(refund.amount)}</strong> tới tài khoản hiển thị ở trên, sau đó gửi mã
-              tham chiếu và ảnh biên nhận để admin xác minh.
-            </div>
+            <p className="mb-3 flex items-start gap-2.5 text-[11px] font-medium leading-relaxed text-[#6F7E72]">
+              <AlertTriangle className="mt-px h-3.5 w-3.5 shrink-0 text-amber-500" />
+              <span>
+                {refund.automaticPayoutAvailable
+                  ? 'Lệnh hoàn tự động chưa thành công. Vendor có thể chuyển thủ công đúng '
+                  : 'Chưa có Kênh Chi payOS hoạt động. Vendor cần chuyển đúng '}
+                <strong className="font-extrabold text-[#1E3932]">{money(refund.amount)}</strong>{' '}
+                tới tài khoản hiển thị ở trên, sau đó gửi mã tham chiếu và ảnh biên nhận để admin
+                xác minh.
+              </span>
+            </p>
           )}
           <div className="flex flex-wrap gap-2">
             {refund.automaticPayoutAvailable && (
@@ -290,7 +337,7 @@ function VendorRefundActions({
                 type="button"
                 disabled={gatewayMutation.isPending}
                 onClick={() => gatewayMutation.mutate()}
-                className="inline-flex items-center gap-2 rounded-full bg-[#06261D] px-4 py-2 text-xs font-extrabold text-white disabled:opacity-60"
+                className={PRIMARY_BUTTON}
               >
                 {gatewayMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 Chi tự động qua payOS
@@ -299,7 +346,7 @@ function VendorRefundActions({
             <button
               type="button"
               onClick={() => setShowManual((value) => !value)}
-              className="rounded-full border border-[#D8D3C4] bg-white px-4 py-2 text-xs font-extrabold text-[#06261D]"
+              className={SECONDARY_BUTTON}
             >
               Đã chuyển tiền, gửi biên nhận
             </button>
@@ -316,46 +363,39 @@ function VendorRefundActions({
             }
             manualMutation.mutate({ values, file: receiptFile });
           })}
-          className="mt-3 grid gap-3 rounded-2xl bg-[#F7F5EF] p-4 sm:grid-cols-2"
+          className="mt-4 rounded-2xl border border-[#E7E5DE] bg-[#FAF9F6] p-4"
         >
-          <label className="text-xs font-bold text-[#06261D]">
-            Mã tham chiếu ngân hàng
-            <input
-              {...form.register('bankReference')}
-              className="mt-1 w-full rounded-xl border border-[#DDD8C9] bg-white px-3 py-2 text-sm outline-none"
-            />
-            {form.formState.errors.bankReference && (
-              <span className="mt-1 block text-[11px] text-red-600">
-                {form.formState.errors.bankReference.message}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className={FIELD_LABEL}>
+              Mã tham chiếu ngân hàng
+              <input {...form.register('bankReference')} className={FIELD_INPUT} />
+              {form.formState.errors.bankReference && (
+                <span className={FIELD_ERROR}>{form.formState.errors.bankReference.message}</span>
+              )}
+            </label>
+            <label className={FIELD_LABEL}>
+              Ghi chú
+              <input {...form.register('note')} className={FIELD_INPUT} />
+            </label>
+            <label className={`${FIELD_LABEL} sm:col-span-2`}>
+              Ảnh biên nhận chuyển khoản
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(event) => setReceiptFile(event.target.files?.[0] ?? null)}
+                className="mt-1.5 block w-full rounded-xl border border-[#E7E5DE] bg-white px-3 py-2 text-xs text-[#5A6B62] file:mr-3 file:rounded-full file:border-0 file:bg-[#F2F0EB] file:px-3 file:py-1 file:font-bold file:text-[#1E3932]"
+              />
+              <span className="mt-1.5 block text-[10px] font-medium text-[#8E9A93]">
+                Biên nhận chỉ là bằng chứng gửi duyệt; refund chỉ hoàn tất sau khi admin xác minh.
               </span>
-            )}
-          </label>
-          <label className="text-xs font-bold text-[#06261D]">
-            Ghi chú
-            <input
-              {...form.register('note')}
-              className="mt-1 w-full rounded-xl border border-[#DDD8C9] bg-white px-3 py-2 text-sm outline-none"
-            />
-          </label>
-          <label className="text-xs font-bold text-[#06261D] sm:col-span-2">
-            Ảnh biên nhận chuyển khoản
-            <input
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              onChange={(event) => setReceiptFile(event.target.files?.[0] ?? null)}
-              className="mt-1 block w-full rounded-xl border border-[#DDD8C9] bg-white px-3 py-2 text-xs file:mr-3 file:rounded-full file:border-0 file:bg-[#E8F3EE] file:px-3 file:py-1 file:font-bold file:text-[#006241]"
-            />
-            <span className="mt-1 block text-[10px] font-medium text-[#6F7E72]">
-              Biên nhận chỉ là bằng chứng gửi duyệt; refund chỉ hoàn tất sau khi admin xác minh.
-            </span>
-          </label>
-          <button
-            type="submit"
-            disabled={manualMutation.isPending}
-            className="w-fit rounded-full bg-[#0F766E] px-4 py-2 text-xs font-extrabold text-white disabled:opacity-60 sm:col-span-2"
-          >
-            Gửi biên nhận để admin duyệt
-          </button>
+            </label>
+          </div>
+          <div className="mt-3 flex justify-end">
+            <button type="submit" disabled={manualMutation.isPending} className={PRIMARY_BUTTON}>
+              {manualMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              Gửi biên nhận để admin duyệt
+            </button>
+          </div>
         </form>
       )}
     </div>
@@ -395,17 +435,17 @@ export function BookingFinancialTimeline({
   }
 
   return (
-    <AppCard className="rounded-2xl border-[#DED9CA] bg-white p-4 shadow-none sm:p-5">
-      <div className="flex items-center justify-between">
+    <AppCard className="rounded-3xl border-[#E7E5DE] bg-white p-5 shadow-none sm:p-6">
+      <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="font-extrabold text-[#1E3932]">
+          <h2 className="text-base font-extrabold tracking-tight text-[#0B3025]">
             {view === 'payments'
               ? 'Lịch sử thanh toán'
               : view === 'refunds'
                 ? 'Xử lý hoàn tiền'
                 : 'Thanh toán & hoàn tiền'}
           </h2>
-          <p className="mt-0.5 text-xs font-medium text-[#6F7E72]">
+          <p className="mt-1 text-xs font-medium text-[#6F7E72]">
             {view === 'refunds'
               ? 'Theo dõi tài khoản nhận tiền và xử lý từng yêu cầu.'
               : audience === 'trekker'
@@ -414,25 +454,27 @@ export function BookingFinancialTimeline({
           </p>
         </div>
         {((showPayments && payments.isFetching) || (showRefunds && refunds.isFetching)) && (
-          <RefreshCw className="h-4 w-4 animate-spin text-[#6F7B75]" />
+          <RefreshCw className="h-4 w-4 shrink-0 animate-spin text-[#A6AFA9]" />
         )}
       </div>
 
-      <div className="mt-4">
+      <div className="mt-5">
         {showPayments && (
           <div>
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <h3 className="text-sm font-extrabold text-[#1E3932]">Lịch sử thanh toán</h3>
-              <span className="rounded-full bg-[#F2F0EB] px-2.5 py-1 text-[11px] font-bold text-[#6F7E72]">
+            <div className="mb-1 flex items-center justify-between gap-3">
+              <h3 className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#8E9A93]">
+                Lịch sử thanh toán
+              </h3>
+              <span className="text-[11px] font-bold text-[#A6AFA9]">
                 {(payments.data ?? []).length} giao dịch
               </span>
             </div>
 
-            <div className="space-y-3">
+            <div>
               {(payments.data ?? []).length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-[#D9D4C6] bg-[#FBF8F0] p-5 text-center">
-                  <ReceiptText className="mx-auto h-5 w-5 text-[#87918C]" />
-                  <p className="mt-2 text-xs font-semibold text-[#6F7E72]">
+                <div className="mt-3 rounded-2xl border border-dashed border-[#E0DDD4] bg-[#FAF9F6] p-6 text-center">
+                  <ReceiptText className="mx-auto h-5 w-5 text-[#A6AFA9]" />
+                  <p className="mt-2 text-xs font-semibold text-[#8E9A93]">
                     Chưa phát sinh giao dịch thanh toán
                   </p>
                 </div>
@@ -442,18 +484,16 @@ export function BookingFinancialTimeline({
                   return (
                     <div
                       key={payment.paymentTransactionId}
-                      className="flex flex-col gap-3 border-t border-[#E8E4DA] py-3 first:border-t-0 sm:flex-row sm:items-center sm:justify-between"
+                      className="flex flex-col gap-3 border-b border-[#F2F0EB] py-4 last:border-b-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div className="flex items-start gap-3">
-                        <span
-                          className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border ${statusTone(payment.status)}`}
-                        >
+                        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#E7E5DE] bg-[#FAF9F6]">
                           {payment.status === 'PAID' ? (
-                            <CheckCircle2 className="h-4 w-4" />
+                            <CheckCircle2 className={`h-4 w-4 ${iconTone(payment.status)}`} />
                           ) : ['FAILED', 'CANCELLED', 'EXPIRED'].includes(payment.status) ? (
-                            <XCircle className="h-4 w-4" />
+                            <XCircle className={`h-4 w-4 ${iconTone(payment.status)}`} />
                           ) : (
-                            <Clock3 className="h-4 w-4" />
+                            <Clock3 className={`h-4 w-4 ${iconTone(payment.status)}`} />
                           )}
                         </span>
                         <div>
@@ -463,13 +503,12 @@ export function BookingFinancialTimeline({
                                 ? 'Chuyển khoản ngân hàng (đơn cũ)'
                                 : paymentLabels[payment.paymentStage]}
                             </p>
-                            <span
-                              className={`rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold ${statusTone(payment.status)}`}
-                            >
-                              {paymentLabels[payment.status]}
-                            </span>
+                            <StatusChip
+                              status={payment.status}
+                              label={paymentLabels[payment.status]}
+                            />
                           </div>
-                          <p className="mt-1 text-xs font-medium text-[#6F7E72]">
+                          <p className="mt-1.5 text-xs font-medium text-[#8E9A93]">
                             {isLegacy
                               ? `Dữ liệu trước khi tích hợp payOS · ${dateTime(payment.createdAt)}`
                               : `Mã giao dịch ${payment.orderCode ?? '—'} · Lần thử ${payment.attemptNumber}`}
@@ -481,11 +520,11 @@ export function BookingFinancialTimeline({
                           )}
                         </div>
                       </div>
-                      <div className="text-left sm:text-right">
-                        <p className="text-base font-extrabold text-[#1E3932]">
+                      <div className="pl-12 text-left sm:pl-0 sm:text-right">
+                        <p className="text-base font-extrabold tabular-nums text-[#1E3932]">
                           {money(payment.amount)}
                         </p>
-                        <p className="mt-1 text-[11px] font-medium text-[#6F7E72]">
+                        <p className="mt-1 text-[11px] font-medium text-[#A6AFA9]">
                           {transactionTimeLabel(payment.status, payment.paidAt, payment.expiredAt)}
                         </p>
                       </div>
@@ -498,37 +537,32 @@ export function BookingFinancialTimeline({
         )}
 
         {showRefunds && (view === 'refunds' || (refunds.data ?? []).length > 0) && (
-          <div className={showPayments ? 'mt-7 border-t border-[#EAE6DC] pt-6' : ''}>
+          <div className={showPayments ? 'mt-8 border-t border-[#F2F0EB] pt-6' : ''}>
             <div className="mb-3 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <RotateCcw className="h-4 w-4 text-[#006241]" />
-                <h3 className="text-sm font-extrabold text-[#1E3932]">
-                  {audience === 'trekker' ? 'Khoản hoàn tiền' : 'Yêu cầu cần hoàn tiền'}
-                </h3>
-              </div>
-              <span className="rounded-full bg-[#E7F3EC] px-2.5 py-1 text-[11px] font-bold text-[#006241]">
+              <h3 className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#8E9A93]">
+                {audience === 'trekker' ? 'Khoản hoàn tiền' : 'Yêu cầu cần hoàn tiền'}
+              </h3>
+              <span className="text-[11px] font-bold text-[#A6AFA9]">
                 {refundItems.length} khoản
               </span>
             </div>
             {audience === 'trekker' && hasVendorInitiatedRefund && (
-              <div className="mb-3 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-950">
-                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100">
-                  <ShieldCheck className="h-4 w-4 text-emerald-700" />
+              <p className="mb-4 flex items-start gap-2.5 text-[11px] font-medium leading-relaxed text-[#6F7E72]">
+                <ShieldCheck className="mt-px h-3.5 w-3.5 shrink-0 text-[#1E3932]" />
+                <span>
+                  <strong className="font-extrabold text-[#1E3932]">
+                    Khoản hoàn được tạo tự động.
+                  </strong>{' '}
+                  Nhà tổ chức đã hủy đơn sau khi bạn thanh toán. TrekSphere đã tự động tạo khoản
+                  hoàn này; bạn không cần gửi thêm yêu cầu.
                 </span>
-                <div>
-                  <p className="text-xs font-extrabold">Khoản hoàn được tạo tự động</p>
-                  <p className="mt-0.5 text-[11px] font-medium leading-relaxed text-emerald-800">
-                    Nhà tổ chức đã hủy đơn sau khi bạn thanh toán. TrekSphere đã tự động tạo khoản
-                    hoàn này; bạn không cần gửi thêm yêu cầu.
-                  </p>
-                </div>
-              </div>
+              </p>
             )}
             <div className="space-y-3">
               {refundItems.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-[#D9D4C6] bg-[#FBF8F0] p-6 text-center">
-                  <RotateCcw className="mx-auto h-5 w-5 text-[#87918C]" />
-                  <p className="mt-2 text-xs font-semibold text-[#6F7E72]">
+                <div className="rounded-2xl border border-dashed border-[#E0DDD4] bg-[#FAF9F6] p-6 text-center">
+                  <RotateCcw className="mx-auto h-5 w-5 text-[#A6AFA9]" />
+                  <p className="mt-2 text-xs font-semibold text-[#8E9A93]">
                     Đơn này chưa phát sinh khoản hoàn tiền.
                   </p>
                 </div>
@@ -536,55 +570,62 @@ export function BookingFinancialTimeline({
                 refundItems.map((refund) => (
                   <div
                     key={refund.refundTransactionId}
-                    className="rounded-2xl border border-[#D5E4DB] bg-[#F3F8F5] p-4"
+                    className="rounded-2xl border border-[#E7E5DE] bg-white p-5"
                   >
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-base font-extrabold text-[#1E3932]">
+                    <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2.5">
+                          <p className="text-xl font-extrabold tracking-tight tabular-nums text-[#0B3025]">
                             {money(refund.amount)}
                           </p>
-                          <span
-                            className={`rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold ${statusTone(refund.status)}`}
-                          >
-                            {audience === 'trekker' && refund.status === 'AWAITING_VENDOR_ACTION'
-                              ? 'Chờ nhà tổ chức chuyển khoản'
-                              : paymentLabels[refund.status]}
-                          </span>
+                          <StatusChip
+                            status={refund.status}
+                            label={
+                              audience === 'trekker' && refund.status === 'AWAITING_VENDOR_ACTION'
+                                ? 'Chờ nhà tổ chức chuyển khoản'
+                                : paymentLabels[refund.status]
+                            }
+                          />
                         </div>
-                        <p className="mt-1.5 text-xs font-medium text-[#6F7E72]">
+                        <p className="mt-2 text-xs font-semibold text-[#5A6B62]">
                           {refund.reasonDetail ||
                             refundReasonLabels[refund.reason] ||
                             refund.reason}
                         </p>
-                        <p className="mt-1 text-[11px] font-medium text-[#87918C]">
-                          Khoản hoàn được tạo lúc {dateTime(refund.requestedAt)}
+                        <p className="mt-1 text-[11px] font-medium text-[#A6AFA9]">
+                          Tạo lúc {dateTime(refund.requestedAt)}
                         </p>
                         {refund.failureMessage && (
-                          <p className="mt-1 text-xs font-semibold text-red-600">
+                          <p className="mt-1.5 text-xs font-semibold text-red-600">
                             {refund.failureMessage}
                           </p>
                         )}
                       </div>
-                      <div className="rounded-2xl border border-[#E3E8E4] bg-white px-3.5 py-3 text-xs text-[#50645B]">
-                        <p className="text-[10px] font-extrabold uppercase tracking-wide text-[#87918C]">
+
+                      <div className="shrink-0 rounded-2xl bg-[#FAF9F6] px-4 py-3 sm:min-w-[224px]">
+                        <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#A6AFA9]">
                           Tài khoản nhận hoàn
                         </p>
-                        <p className="mt-1.5 flex items-center gap-1.5 font-bold">
-                          <Building2 className="h-3.5 w-3.5" />
+                        <p className="mt-2 flex items-center gap-2 text-xs font-bold text-[#1E3932]">
+                          <Building2 className="h-3.5 w-3.5 shrink-0 text-[#A6AFA9]" />
                           {refund.destinationBin
                             ? `Ngân hàng · BIN ${refund.destinationBin}`
                             : 'Chưa có ngân hàng'}
                         </p>
                         {visibleRefundAccountNumber(refund, audience) && (
-                          <p className="mt-1 font-medium">
+                          <p className="mt-1.5 text-xs font-semibold tabular-nums text-[#5A6B62]">
                             {visibleRefundAccountNumber(refund, audience)}
-                            {refund.destinationAccountName && ` · ${refund.destinationAccountName}`}
+                            {refund.destinationAccountName && (
+                              <span className="text-[#8E9A93]">
+                                {' · '}
+                                {refund.destinationAccountName}
+                              </span>
+                            )}
                           </p>
                         )}
                         {audience === 'trekker' &&
                           ['VENDOR_CANCEL', 'INSUFFICIENT_PAX'].includes(refund.reason) && (
-                            <p className="mt-1 text-[10px] font-medium text-[#87918C]">
+                            <p className="mt-2 text-[10px] font-medium text-[#A6AFA9]">
                               Lấy từ tài khoản đã dùng để thanh toán đơn.
                             </p>
                           )}
@@ -592,21 +633,21 @@ export function BookingFinancialTimeline({
                     </div>
 
                     {refund.dueAt && !['REFUNDED', 'CANCELLED'].includes(refund.status) && (
-                      <div
-                        className={`mt-3 rounded-xl border px-3 py-2 text-[11px] font-semibold ${
-                          refund.status === 'OVERDUE'
-                            ? 'border-red-200 bg-red-50 text-red-700'
-                            : 'border-amber-200 bg-amber-50 text-amber-900'
-                        }`}
+                      <NoteRow
+                        icon={refund.status === 'OVERDUE' ? AlertTriangle : Clock3}
+                        tone={refund.status === 'OVERDUE' ? 'danger' : 'muted'}
                       >
-                        {audience === 'trekker' ? 'Hạn nhà tổ chức xử lý' : 'Hạn xử lý'}:{' '}
-                        {dateTime(refund.dueAt)} · {deadlineText(refund.dueAt)}. Đây là hạn chuyển
-                        tiền hoặc gửi biên nhận, không phải cam kết tiền đã về tài khoản ngân hàng.
-                      </div>
+                        <span className="font-bold">
+                          {audience === 'trekker' ? 'Hạn nhà tổ chức xử lý' : 'Hạn xử lý'}:{' '}
+                          {dateTime(refund.dueAt)}
+                        </span>{' '}
+                        · {deadlineText(refund.dueAt)}. Đây là hạn chuyển tiền hoặc gửi biên nhận,
+                        không phải cam kết tiền đã về tài khoản ngân hàng.
+                      </NoteRow>
                     )}
 
                     {refund.status === 'MANUAL_REVIEW' && (
-                      <div className="mt-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-[11px] font-semibold text-sky-800">
+                      <NoteRow icon={ShieldCheck}>
                         Vendor đã gửi biên nhận lúc {dateTime(refund.manualSubmittedAt)}. Admin đang
                         đối soát trước khi xác nhận hoàn tiền.
                         {refund.manualReceiptUrl && audience === 'vendor' && (
@@ -614,18 +655,19 @@ export function BookingFinancialTimeline({
                             href={refund.manualReceiptUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="ml-1 underline underline-offset-2"
+                            className="ml-1 font-bold text-[#1E3932] underline underline-offset-2"
                           >
                             Xem biên nhận
                           </a>
                         )}
-                      </div>
+                      </NoteRow>
                     )}
 
                     {refund.adminReviewNote && (
-                      <p className="mt-2 text-[11px] font-semibold text-[#50645B]">
-                        Phản hồi đối soát: {refund.adminReviewNote}
-                      </p>
+                      <NoteRow icon={ReceiptText}>
+                        <span className="font-bold">Phản hồi đối soát:</span>{' '}
+                        {refund.adminReviewNote}
+                      </NoteRow>
                     )}
 
                     {audience === 'trekker' &&
