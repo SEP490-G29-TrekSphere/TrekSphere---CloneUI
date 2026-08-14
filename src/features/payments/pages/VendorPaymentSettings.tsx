@@ -4,12 +4,11 @@ import {
   BadgeCheck,
   Check,
   CheckCircle2,
+  ChevronRight,
   ChevronsUpDown,
   Clock3,
-  CreditCard,
   ExternalLink,
   Info,
-  Landmark,
   Loader2,
   Save,
   ShieldCheck,
@@ -30,7 +29,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/u
 import { VendorPayoutChannelCard } from '@/features/payments/components/VendorPayoutChannelCard';
 import { paymentService } from '@/features/payments/services/paymentService';
 import type { DepositType, TourPaymentPolicyPayload } from '@/features/payments/types';
-import { VendorCancellationPolicyCard } from '@/features/vendor-cancellation-policies';
 import { useVendorTourList } from '@/features/vendor-tours/hooks/useVendorTourList';
 import { AppCard } from '@/shared/ui';
 import { toast } from '@/store/useToastStore';
@@ -206,222 +204,181 @@ export default function VendorPaymentSettings() {
 
       <div className="grid items-start gap-6 xl:grid-cols-2">
         <AppCard className="overflow-hidden rounded-[28px] border-[#DED9CA] bg-white p-0 shadow-[0_10px_35px_rgba(30,57,50,0.06)]">
-          <div className="border-b border-[#EAE6DC] bg-[#FBF8F0] p-5 sm:p-6">
-            <p className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#6F7E72]">
-              Bắt buộc
-            </p>
-            <h2 className="mt-0.5 text-lg font-extrabold text-[#1E3932]">
-              Kết nối kênh nhận thanh toán
-            </h2>
-            <p className="mt-1 text-xs font-medium leading-relaxed text-[#6F7E72]">
-              Khách thanh toán qua PayOS tiền thông báo tài khoản ngân hàng liên kết kênh này.
-            </p>
-          </div>
-
-          <form
-            onSubmit={accountForm.handleSubmit((values) => accountMutation.mutate(values))}
-            className="space-y-5 p-5 sm:p-6"
-          >
-            {accountActive && !editingPayOs ? (
-              <div className="space-y-4">
-                <div className="rounded-2xl border border-[#BBD8C7] bg-[#F1F8F4] p-4">
-                  <p className="flex items-center gap-2 text-sm font-extrabold text-[#006241]">
-                    <BadgeCheck className="h-5 w-5" /> Kênh payOS đang hoạt động
-                  </p>
-                  <dl className="mt-4 space-y-3 text-xs">
-                    <div>
-                      <dt className="font-bold text-[#6F7E72]">Client ID</dt>
-                      <dd className="mt-1 break-all font-semibold text-[#1E3932]">
-                        {accountQuery.data?.clientId}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="font-bold text-[#6F7E72]">API Key và Checksum Key</dt>
-                      <dd className="mt-1 font-semibold text-[#1E3932]">
-                        Đã lưu mã hóa · Không thể xem lại trên TrekSphere
-                      </dd>
-                    </div>
-                  </dl>
-                </div>
-
-                <div className="rounded-2xl border border-[#E1DDCF] bg-[#FBF8F0] p-4">
-                  <p className="flex items-start gap-2 text-[11px] font-medium leading-relaxed text-[#56655F]">
-                    <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#006241]" />
-                    Tiền thanh toán đi thẳng vào tài khoản ngân hàng liên kết với kênh payOS của
-                    doanh nghiệp. TrekSphere không nhận hoặc giữ tiền của bạn.
-                  </p>
-                </div>
-
-                {accountQuery.data?.webhookUrl && (
-                  <details className="rounded-2xl border border-[#DDE8E1] bg-[#F1F7F3] p-4 text-[10px] text-[#547065]">
-                    <summary className="cursor-pointer font-bold">Xem địa chỉ webhook</summary>
-                    <p className="mt-2 break-all font-medium">{accountQuery.data.webhookUrl}</p>
-                  </details>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => setEditingPayOs(true)}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#006241] px-5 py-3 text-sm font-extrabold text-[#006241] transition-colors hover:bg-[#F0F7F3]"
-                >
-                  Cập nhật kết nối payOS
-                </button>
+          <details className="group">
+            <summary className="flex cursor-pointer list-none items-center gap-3 bg-[#FBF8F0] p-5 transition-colors hover:bg-[#F6F2E8] sm:p-6 [&::-webkit-details-marker]:hidden">
+              <ChevronRight className="h-5 w-5 shrink-0 text-[#006241] transition-transform group-open:rotate-90" />
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#6F7E72]">
+                  Bắt buộc
+                </p>
+                <h2 className="mt-0.5 text-lg font-extrabold text-[#1E3932]">
+                  Kết nối kênh nhận thanh toán
+                </h2>
+                <p className="mt-1 text-xs font-medium leading-relaxed text-[#6F7E72]">
+                  Khách thanh toán qua payOS vào tài khoản ngân hàng liên kết.
+                </p>
               </div>
-            ) : (
-              <>
-                <div className="rounded-2xl border border-[#DDE8E1] bg-[#F5FAF7] p-4">
-                  <p className="text-xs font-extrabold text-[#1E3932]">Chuẩn bị trong 3 bước</p>
-                  <ol className="mt-3 space-y-2 text-[11px] font-medium leading-relaxed text-[#56655F]">
-                    <li>1. Đăng nhập payOS và tạo một kênh thanh toán</li>
-                    <li>2. Chọn tài khoản ngân hàng sẽ nhận tiền từ khách.</li>
-                    <li>3. Sao chép bộ ba khóa tích hợp bên dưới để TrekSphere kết nối.</li>
-                  </ol>
-                  <p className="mt-3 flex items-start gap-2 text-[10px] font-semibold leading-relaxed text-[#006241]">
-                    <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    API Key và Checksum Key được mã hóa trước khi lưu và không được hiển thị lại.
-                  </p>
-                </div>
+              <span
+                className={`hidden shrink-0 rounded-full px-3 py-1 text-[10px] font-extrabold sm:inline-flex ${
+                  accountActive ? 'bg-emerald-100 text-emerald-800' : 'bg-[#EAE6DC] text-[#6F7E72]'
+                }`}
+              >
+                {accountActive ? 'Đang hoạt động' : 'Chưa kết nối'}
+              </span>
+            </summary>
 
-                <div className="grid gap-4">
-                  <label className="block text-xs font-extrabold text-[#1E3932]">
-                    Client ID
-                    <input
-                      {...accountForm.register('clientId')}
-                      autoComplete="off"
-                      placeholder="Dán Client ID từ kênh thanh toán payOS"
-                      className={INPUT_CLASS}
-                    />
-                    {accountForm.formState.errors.clientId && (
-                      <span className="mt-1 block text-[11px] text-red-600">
-                        {accountForm.formState.errors.clientId.message}
-                      </span>
-                    )}
-                  </label>
-
-                  <label className="block text-xs font-extrabold text-[#1E3932]">
-                    API Key
-                    <input
-                      type="password"
-                      {...accountForm.register('apiKey')}
-                      autoComplete="new-password"
-                      placeholder={
-                        accountQuery.data?.credentialsConfigured
-                          ? 'Nhập lại API Key để thay đổi kết nối'
-                          : 'Dán API Key từ kênh thanh toán payOS'
-                      }
-                      className={INPUT_CLASS}
-                    />
-                    {accountForm.formState.errors.apiKey && (
-                      <span className="mt-1 block text-[11px] text-red-600">
-                        {accountForm.formState.errors.apiKey.message}
-                      </span>
-                    )}
-                  </label>
-
-                  <label className="block text-xs font-extrabold text-[#1E3932]">
-                    Checksum Key
-                    <input
-                      type="password"
-                      {...accountForm.register('checksumKey')}
-                      autoComplete="new-password"
-                      placeholder={
-                        accountQuery.data?.credentialsConfigured
-                          ? 'Nhập lại Checksum Key để thay đổi kết nối'
-                          : 'Dán Checksum Key từ kênh thanh toán payOS'
-                      }
-                      className={INPUT_CLASS}
-                    />
-                    {accountForm.formState.errors.checksumKey && (
-                      <span className="mt-1 block text-[11px] text-red-600">
-                        {accountForm.formState.errors.checksumKey.message}
-                      </span>
-                    )}
-                  </label>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-bold">
-                  <a
-                    href="https://my.payos.vn"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 text-[#006241] underline decoration-[#9CBFAD] underline-offset-4 hover:decoration-[#006241]"
-                  >
-                    Mở trang quản trị payOS <ExternalLink className="h-3.5 w-3.5" />
-                  </a>
-                  <a
-                    href="https://payos.vn/docs/huong-dan-su-dung/tao-kenh-thanh-toan/"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 text-[#50645B] underline decoration-[#C8C3B6] underline-offset-4 hover:text-[#1E3932]"
-                  >
-                    Xem hướng dẫn tạo kênh và lấy bộ khóa tích hợp
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </a>
-                </div>
-
-                <div className="rounded-2xl border border-[#E1DDCF] bg-[#FBF8F0] p-4">
-                  <div className="flex items-start gap-3">
-                    <Landmark className="mt-0.5 h-4 w-4 shrink-0 text-[#1E3932]" />
-                    <div>
-                      <p className="text-xs font-extrabold text-[#1E3932]">
-                        Tài khoản ngân hàng nào sẽ nhận tiền?
-                      </p>
-                      <p className="mt-1 text-[11px] font-medium leading-relaxed text-[#6F7E72]">
-                        Là tài khoản đã xác minh mà bạn chọn khi tạo kênh trên payOS. TrekSphere
-                        không lưu số tài khoản hoặc mã QR riêng trong hồ sơ Vendor.
-                      </p>
-                    </div>
+            <form
+              onSubmit={accountForm.handleSubmit((values) => accountMutation.mutate(values))}
+              className="space-y-5 border-t border-[#EAE6DC] p-5 sm:p-6"
+            >
+              {accountActive && !editingPayOs ? (
+                <div className="space-y-4">
+                  <div className="rounded-2xl border border-[#BBD8C7] bg-[#F1F8F4] p-4">
+                    <p className="flex items-center gap-2 text-sm font-extrabold text-[#006241]">
+                      <BadgeCheck className="h-5 w-5" /> Client ID
+                    </p>
+                    <p className="mt-2 break-all text-xs font-semibold text-[#1E3932]">
+                      {accountQuery.data?.clientId || 'Chưa có Client ID'}
+                    </p>
                   </div>
-                </div>
-
-                {accountQuery.data?.webhookUrl && (
-                  <div className="rounded-2xl border border-[#DDE8E1] bg-[#F1F7F3] p-4">
-                    <p className="flex items-center gap-2 text-xs font-extrabold text-[#006241]">
-                      <ShieldCheck className="h-4 w-4" /> Kênh xác nhận tự động đã sẵn sàng
-                    </p>
-                    <p className="mt-1.5 text-[11px] font-medium leading-relaxed text-[#547065]">
-                      Khi khách thanh toán thành công, trạng thái booking sẽ được cập nhật tự động.
-                    </p>
-                    <details className="mt-2 text-[10px] text-[#547065]">
-                      <summary className="w-fit cursor-pointer font-bold underline underline-offset-2">
-                        Xem địa chỉ kết nối kỹ thuật
-                      </summary>
-                      <p className="mt-1.5 break-all font-medium">{accountQuery.data.webhookUrl}</p>
+                  {accountQuery.data?.webhookUrl && (
+                    <details className="rounded-2xl border border-[#DDE8E1] bg-[#F1F7F3] p-4 text-[10px] text-[#547065]">
+                      <summary className="cursor-pointer font-bold">Xem địa chỉ webhook</summary>
+                      <p className="mt-2 break-all font-medium">{accountQuery.data.webhookUrl}</p>
                     </details>
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={accountMutation.isPending}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#006241] px-5 py-3 text-sm font-extrabold text-white transition-colors hover:bg-[#004F35] disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {accountMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <BadgeCheck className="h-4 w-4" />
                   )}
-                  Lưu và kiểm tra kết nối
-                </button>
-                {accountActive && (
+
                   <button
                     type="button"
-                    onClick={() => {
-                      accountForm.reset({
-                        clientId: accountQuery.data?.clientId ?? '',
-                        apiKey: '',
-                        checksumKey: '',
-                      });
-                      setEditingPayOs(false);
-                    }}
-                    className="w-full text-center text-xs font-bold text-[#6F7E72] hover:text-[#1E3932]"
+                    onClick={() => setEditingPayOs(true)}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#006241] px-5 py-3 text-sm font-extrabold text-[#006241] transition-colors hover:bg-[#F0F7F3]"
                   >
-                    Hủy cập nhật
+                    Cập nhật kết nối payOS
                   </button>
-                )}
-              </>
-            )}
-          </form>
+                </div>
+              ) : (
+                <>
+                  <div className="rounded-2xl border border-[#DDE8E1] bg-[#F5FAF7] p-4">
+                    <p className="text-xs font-extrabold text-[#1E3932]">Chuẩn bị trong 3 bước</p>
+                    <ol className="mt-3 space-y-2 text-[11px] font-medium leading-relaxed text-[#56655F]">
+                      <li>1. Đăng nhập payOS và tạo một kênh thanh toán</li>
+                      <li>2. Chọn tài khoản ngân hàng sẽ nhận tiền từ khách.</li>
+                      <li>3. Sao chép bộ ba khóa tích hợp bên dưới để TrekSphere kết nối.</li>
+                    </ol>
+                    <p className="mt-3 flex items-start gap-2 text-[10px] font-semibold leading-relaxed text-[#006241]">
+                      <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                      API Key và Checksum Key được mã hóa trước khi lưu và không được hiển thị lại.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-4">
+                    <label className="block text-xs font-extrabold text-[#1E3932]">
+                      Client ID
+                      <input
+                        {...accountForm.register('clientId')}
+                        autoComplete="off"
+                        placeholder="Dán Client ID từ kênh thanh toán payOS"
+                        className={INPUT_CLASS}
+                      />
+                      {accountForm.formState.errors.clientId && (
+                        <span className="mt-1 block text-[11px] text-red-600">
+                          {accountForm.formState.errors.clientId.message}
+                        </span>
+                      )}
+                    </label>
+
+                    <label className="block text-xs font-extrabold text-[#1E3932]">
+                      API Key
+                      <input
+                        type="password"
+                        {...accountForm.register('apiKey')}
+                        autoComplete="new-password"
+                        placeholder={
+                          accountQuery.data?.credentialsConfigured
+                            ? 'Nhập lại API Key để thay đổi kết nối'
+                            : 'Dán API Key từ kênh thanh toán payOS'
+                        }
+                        className={INPUT_CLASS}
+                      />
+                      {accountForm.formState.errors.apiKey && (
+                        <span className="mt-1 block text-[11px] text-red-600">
+                          {accountForm.formState.errors.apiKey.message}
+                        </span>
+                      )}
+                    </label>
+
+                    <label className="block text-xs font-extrabold text-[#1E3932]">
+                      Checksum Key
+                      <input
+                        type="password"
+                        {...accountForm.register('checksumKey')}
+                        autoComplete="new-password"
+                        placeholder={
+                          accountQuery.data?.credentialsConfigured
+                            ? 'Nhập lại Checksum Key để thay đổi kết nối'
+                            : 'Dán Checksum Key từ kênh thanh toán payOS'
+                        }
+                        className={INPUT_CLASS}
+                      />
+                      {accountForm.formState.errors.checksumKey && (
+                        <span className="mt-1 block text-[11px] text-red-600">
+                          {accountForm.formState.errors.checksumKey.message}
+                        </span>
+                      )}
+                    </label>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-bold">
+                    <a
+                      href="https://my.payos.vn"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 text-[#006241] underline decoration-[#9CBFAD] underline-offset-4 hover:decoration-[#006241]"
+                    >
+                      Mở trang quản trị payOS <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                    <a
+                      href="https://payos.vn/docs/huong-dan-su-dung/tao-kenh-thanh-toan/"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 text-[#50645B] underline decoration-[#C8C3B6] underline-offset-4 hover:text-[#1E3932]"
+                    >
+                      Xem hướng dẫn tạo kênh và lấy bộ khóa tích hợp
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={accountMutation.isPending}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#006241] px-5 py-3 text-sm font-extrabold text-white transition-colors hover:bg-[#004F35] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {accountMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <BadgeCheck className="h-4 w-4" />
+                    )}
+                    Lưu và kiểm tra kết nối
+                  </button>
+                  {accountActive && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        accountForm.reset({
+                          clientId: accountQuery.data?.clientId ?? '',
+                          apiKey: '',
+                          checksumKey: '',
+                        });
+                        setEditingPayOs(false);
+                      }}
+                      className="w-full text-center text-xs font-bold text-[#6F7E72] hover:text-[#1E3932]"
+                    >
+                      Hủy cập nhật
+                    </button>
+                  )}
+                </>
+              )}
+            </form>
+          </details>
         </AppCard>
 
         <VendorPayoutChannelCard />
@@ -661,38 +618,6 @@ export default function VendorPaymentSettings() {
             </div>
           </form>
         </AppCard>
-      </div>
-
-      <div className="space-y-3">
-        <div>
-          <p className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#6F7E72]">
-            Chính sách hủy
-          </p>
-          <h2 className="mt-1 text-xl font-extrabold text-[#1E3932]">
-            Quyền lợi hủy tour &amp; hoàn tiền
-          </h2>
-          <p className="mt-1 text-xs font-medium text-[#6F7E72]">
-            Thiết lập các mốc càng hủy sớm, khách càng được hoàn nhiều hơn.
-          </p>
-        </div>
-        <VendorCancellationPolicyCard canManage />
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        {[
-          [CreditCard, 'Nhận tiền trực tiếp', 'Tiền vào tài khoản payOS của doanh nghiệp.'],
-          [ShieldCheck, 'Xác nhận tự động', 'Chỉ kết nối hợp lệ mới cập nhật trạng thái đơn.'],
-          [Clock3, 'Giữ nguyên điều khoản', 'Đơn đã tạo không bị ảnh hưởng bởi thay đổi mới.'],
-        ].map(([Icon, title, description]) => {
-          const FeatureIcon = Icon as typeof CreditCard;
-          return (
-            <div key={String(title)} className="rounded-2xl border border-[#E6E2D1] bg-white p-4">
-              <FeatureIcon className="h-5 w-5 text-[#006241]" />
-              <p className="mt-3 text-sm font-extrabold text-[#1E3932]">{String(title)}</p>
-              <p className="mt-1 text-xs font-medium text-[#6F7E72]">{String(description)}</p>
-            </div>
-          );
-        })}
       </div>
     </div>
   );
