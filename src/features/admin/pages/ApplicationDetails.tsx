@@ -14,11 +14,27 @@ import { PATHS, ROLES } from '@/constants';
 import { AppBadge, AppButton, AppCard, AppSpinner, ConfirmActionDialog } from '@/shared/ui';
 import { useAppStore } from '@/store/useAppStore';
 import { toast } from '@/store/useToastStore';
+import { ACCOUNT_ROLE_LABELS, type AccountRole } from '../accounts/types';
 import {
   useReviewVendorApplication,
   useVendorApplicationDetail,
 } from '../hooks/useVendorApplications';
 import type { ApplicationStatus } from '../services/vendorApplicationService';
+
+const APPLICATION_STATUS_LABELS: Record<ApplicationStatus, string> = {
+  DRAFT: 'Bản nháp',
+  PENDING: 'Chờ duyệt',
+  APPROVED: 'Đã duyệt',
+  REJECTED: 'Đã từ chối',
+};
+
+function getAccountRoleLabel(role: string): string {
+  const normalizedRole = role
+    .trim()
+    .toLowerCase()
+    .replace(/^role_/, '') as AccountRole;
+  return ACCOUNT_ROLE_LABELS[normalizedRole] ?? role;
+}
 
 export default function ApplicationDetails() {
   const { id } = useParams<{ id: string }>();
@@ -82,8 +98,6 @@ export default function ApplicationDetails() {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
       });
     } catch {
       return dateStr;
@@ -208,9 +222,6 @@ export default function ApplicationDetails() {
             <h2 className="text-xl font-extrabold text-zinc-900">{application.companyName}</h2>
             <div className="flex items-center gap-3 mt-1">
               {getStatusBadge(application.applicationStatus)}
-              <span className="text-xs text-zinc-400 font-medium">
-                Mã đơn: {application.vendorApplicationId}
-              </span>
             </div>
           </div>
 
@@ -251,8 +262,7 @@ export default function ApplicationDetails() {
         <div className="lg:col-span-2 space-y-6">
           {/* Card 1: Applicant Info */}
           <AppCard className="border-[#E5E4DE] shadow-sm rounded-3xl bg-white p-6 md:p-8">
-            <div className="flex items-center gap-2 border-b border-[#F4F4F2] pb-4 mb-6">
-              <span className="text-[#0B3025] font-bold text-lg">👤</span>
+            <div className="border-b border-[#F4F4F2] pb-4 mb-6">
               <h3 className="font-extrabold text-base text-zinc-800 tracking-tight">
                 THÔNG TIN NGƯỜI NỘP ĐƠN
               </h3>
@@ -291,21 +301,12 @@ export default function ApplicationDetails() {
 
                 <div className="space-y-1">
                   <span className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider">
-                    ID TÀI KHOẢN
-                  </span>
-                  <p className="font-mono text-xs font-semibold text-zinc-600">
-                    {application.applicant.id}
-                  </p>
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider">
                     VAI TRÒ TÀI KHOẢN
                   </span>
                   <div className="flex flex-wrap gap-1 mt-0.5">
                     {application.applicant.roles?.map((role) => (
                       <AppBadge key={role} variant="outline" className="text-[10px]">
-                        {role}
+                        {getAccountRoleLabel(role)}
                       </AppBadge>
                     ))}
                   </div>
@@ -316,8 +317,7 @@ export default function ApplicationDetails() {
 
           {/* Card 2: Company Details */}
           <AppCard className="border-[#E5E4DE] shadow-sm rounded-3xl bg-white p-6 md:p-8">
-            <div className="flex items-center gap-2 border-b border-[#F4F4F2] pb-4 mb-6">
-              <span className="text-[#0B3025] font-bold text-lg">💼</span>
+            <div className="border-b border-[#F4F4F2] pb-4 mb-6">
               <h3 className="font-extrabold text-base text-zinc-800 tracking-tight">
                 THÔNG TIN DOANH NGHIỆP / TỔ CHỨC
               </h3>
@@ -326,7 +326,7 @@ export default function ApplicationDetails() {
             <div className="grid gap-6 md:grid-cols-2">
               <div className="space-y-1">
                 <span className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider">
-                  TÊN CÔNG TY / THƯƠNG HIỆU
+                  TÊN CÔNG TY
                 </span>
                 <p className="font-bold text-sm text-zinc-800">{application.companyName}</p>
               </div>
@@ -372,7 +372,6 @@ export default function ApplicationDetails() {
           <AppCard className="border-[#E5E4DE] shadow-sm rounded-3xl bg-white p-6 flex flex-col">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#F4F4F2] pb-4 mb-4">
               <div className="flex items-center gap-2">
-                <span className="text-[#0B3025] font-bold text-lg">📄</span>
                 <h3 className="font-extrabold text-base text-zinc-800 tracking-tight">
                   GIẤY PHÉP KINH DOANH
                 </h3>
@@ -426,7 +425,9 @@ export default function ApplicationDetails() {
               </div>
               <div className="flex justify-between items-center">
                 <span>Trạng thái:</span>
-                <span className="font-bold text-zinc-800">{application.applicationStatus}</span>
+                <span className="font-bold text-zinc-800">
+                  {APPLICATION_STATUS_LABELS[application.applicationStatus]}
+                </span>
               </div>
             </div>
           </AppCard>

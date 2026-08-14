@@ -90,7 +90,6 @@ export const PATHS = {
   ADMIN_REPORTS: '/admin/reports',
   ADMIN_REPORT_DETAIL: '/admin/reports/:id',
   ADMIN_VOUCHERS: '/admin/vouchers',
-  ADMIN_SETTINGS: '/admin/settings',
   ADMIN_EMERGENCY: '/admin/emergency',
   ADMIN_CHAT: '/admin/chat',
 

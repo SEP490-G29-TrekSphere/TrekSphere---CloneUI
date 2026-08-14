@@ -34,7 +34,8 @@ export function VendorFilterToolbar({
   }, []);
 
   const statusLabel =
-    VENDOR_STATUS_FILTER_OPTIONS.find((option) => option.value === status)?.label ?? 'All Statuses';
+    VENDOR_STATUS_FILTER_OPTIONS.find((option) => option.value === status)?.label ??
+    'Tất cả trạng thái';
 
   return (
     <div className="flex flex-col gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
@@ -51,8 +52,8 @@ export function VendorFilterToolbar({
             type="text"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search by name, email or company..."
-            aria-label="Search by name, email or company"
+            placeholder="Tìm theo tên, email hoặc công ty..."
+            aria-label="Tìm theo tên, email hoặc công ty"
             className="h-11 w-full rounded-full pl-11 pr-4 text-sm font-medium outline-none transition-colors"
             style={{ backgroundColor: '#F0EEE6', color: '#06261D' }}
           />

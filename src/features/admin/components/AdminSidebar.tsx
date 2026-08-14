@@ -1,12 +1,4 @@
-import {
-  BarChart3,
-  Database,
-  LayoutDashboard,
-  LogOut,
-  MapPin,
-  Settings,
-  Users,
-} from 'lucide-react';
+import { BarChart3, Database, LayoutDashboard, LogOut, MapPin, Users } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { PATHS } from '@/constants';
@@ -24,7 +16,6 @@ const menuItems: MenuItem[] = [
   { name: 'Accounts', path: PATHS.ADMIN_ACCOUNTS, icon: Users },
   { name: 'Tours', path: PATHS.ADMIN_TOURS, icon: MapPin },
   { name: 'Data Management', path: PATHS.ADMIN_DATA, icon: Database },
-  { name: 'Settings', path: PATHS.ADMIN_SETTINGS, icon: Settings },
 ];
 
 const ADMIN_AVATAR =
@@ -64,8 +55,6 @@ export default function AdminSidebar() {
 
   const handleProfileClick = () => {
     setDropdownOpen(false);
-    // Admin chưa có trang hồ sơ riêng → tạm đưa về login-style profile chung.
-    // Sau khi có route admin profile thì đổi sang PATHS.ADMIN_SETTINGS hoặc tạo mới.
     navigate(PATHS.PROFILE);
   };
 

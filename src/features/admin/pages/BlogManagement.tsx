@@ -87,10 +87,6 @@ export default function BlogManagement() {
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0B3025] tracking-tight">
             Quản lý Blog
           </h1>
-          <p className="text-zinc-500 text-sm font-medium mt-1">
-            Kiểm duyệt bài viết blog trong toàn hệ thống TrekSphere.
-            {total > 0 && ` Tổng cộng ${total} bài viết.`}
-          </p>
         </div>
 
         {/* Ô tìm kiếm nằm trong trang, không đặt ở header */}

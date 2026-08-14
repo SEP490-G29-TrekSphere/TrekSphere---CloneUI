@@ -51,7 +51,13 @@ function unwrapResponse<T>(response: ApiResponse<T>): T {
 }
 
 /** Thứ tự ưu tiên khi 1 user có nhiều role — hiển thị role "cao" nhất. */
-const ROLE_PRIORITY: AccountRole[] = ['admin', 'vendor_manager', 'vendor_staff', 'trekker'];
+const ROLE_PRIORITY: AccountRole[] = [
+  'admin',
+  'vendor_manager',
+  'vendor_staff',
+  'coordinator',
+  'trekker',
+];
 
 function pickPrimaryRole(roles: string[]): AccountRole {
   const owned = new Set(roles.map((r) => r.toLowerCase()));

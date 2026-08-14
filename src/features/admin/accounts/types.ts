@@ -6,7 +6,7 @@
 export type AccountStatus = 'ACTIVE' | 'LOCKED' | 'DEACTIVATED';
 
 /** Loại tài khoản (mirror các role trong `@/constants/roles`). */
-export type AccountRole = 'trekker' | 'vendor_staff' | 'vendor_manager' | 'admin';
+export type AccountRole = 'trekker' | 'vendor_staff' | 'coordinator' | 'vendor_manager' | 'admin';
 
 /** Thông tin 1 tài khoản hiển thị trong bảng quản lý. */
 export interface AdminAccount {
@@ -35,17 +35,19 @@ export interface AdminAccountFilter {
 
 /** Labels tiếng Việt cho các role, dùng để hiển thị badge. */
 export const ACCOUNT_ROLE_LABELS: Record<AccountRole, string> = {
-  trekker: 'Trekker',
-  vendor_staff: 'Vendor Staff',
-  vendor_manager: 'Vendor Manager',
-  admin: 'Admin',
+  trekker: 'Khách du lịch',
+  vendor_staff: 'Nhân viên nhà cung cấp',
+  coordinator: 'Hướng dẫn viên',
+  vendor_manager: 'Quản lý nhà cung cấp',
+  admin: 'Quản trị viên',
 };
 
 /** Labels cho filter "Lọc theo loại tài khoản". */
 export const ACCOUNT_FILTER_OPTIONS = [
   { value: 'ALL', label: 'Tất cả' },
-  { value: 'trekker', label: 'Trekker' },
-  { value: 'vendor_staff', label: 'Vendor Staff' },
-  { value: 'vendor_manager', label: 'Vendor Manager' },
-  { value: 'admin', label: 'Admin' },
+  { value: 'trekker', label: 'Khách du lịch' },
+  { value: 'vendor_staff', label: 'Nhân viên nhà cung cấp' },
+  { value: 'coordinator', label: 'Hướng dẫn viên' },
+  { value: 'vendor_manager', label: 'Quản lý nhà cung cấp' },
+  { value: 'admin', label: 'Quản trị viên' },
 ] as const;

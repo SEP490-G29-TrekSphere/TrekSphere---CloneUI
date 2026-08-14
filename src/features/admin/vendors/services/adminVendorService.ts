@@ -14,11 +14,7 @@ import type {
  *   GET /vendors               — danh sách Vendor (lọc theo keyword, phân trang)
  *   PUT /vendors/{vendorId}/status — đổi trạng thái ACTIVE/INACTIVE/REVOKED
  *
- * Lưu ý: `GET /vendors` theo OpenAPI hiện tại chỉ nhận `BaseFilterRequest`
- * (keyword/page/size/sortBy/sortDir) — KHÔNG có tham số lọc theo status.
- * FE vẫn gửi kèm `status` vào query (best-effort) để sẵn sàng khi BE bổ
- * sung hỗ trợ; nếu BE chưa nhận diện param này, filter/thống kê theo
- * status có thể chưa chính xác.
+ * `GET /vendors` hỗ trợ tìm kiếm, lọc theo trạng thái và phân trang.
  */
 
 /** Shape thô mà BE trả về trong `data` cho mỗi vendor (VendorResponse). */
@@ -132,39 +128,34 @@ export const adminVendorService = {
     };
   },
 
-  /**
-   * Tính số liệu thống kê tổng quan (Total/Active/Inactive/Revoked) bằng
-   * cách gọi song song `GET /vendors?size=1` với từng bộ lọc status, đọc
-   * `totalElements` — cùng pattern với `vendorBookingService.getStats()`.
-   */
+  /** Tính thống kê bằng tổng số bản ghi của từng trạng thái do backend lọc. */
   async getStats(): Promise<VendorStatsResponse> {
-    const [totalRes, activeRes, inactiveRes, revokedRes] = await Promise.all([
-      ApiService<PaginationResponseDto<VendorResponseDto>>('/vendors', 'GET', undefined, {
-        page: '0',
-        size: '1',
-      }),
-      ApiService<PaginationResponseDto<VendorResponseDto>>('/vendors', 'GET', undefined, {
-        page: '0',
-        size: '1',
-        status: 'ACTIVE',
-      }),
-      ApiService<PaginationResponseDto<VendorResponseDto>>('/vendors', 'GET', undefined, {
-        page: '0',
-        size: '1',
-        status: 'INACTIVE',
-      }),
-      ApiService<PaginationResponseDto<VendorResponseDto>>('/vendors', 'GET', undefined, {
-        page: '0',
-        size: '1',
-        status: 'REVOKED',
-      }),
+    const fetchTotal = async (status?: VendorStatus) => {
+      const response = await ApiService<PaginationResponseDto<VendorResponseDto>>(
+        '/vendors',
+        'GET',
+        undefined,
+        {
+          page: '0',
+          size: '1',
+          ...(status ? { status } : {}),
+        }
+      );
+      return unwrapResponse(response).totalElements ?? 0;
+    };
+
+    const [total, active, inactive, revoked] = await Promise.all([
+      fetchTotal(),
+      fetchTotal('ACTIVE'),
+      fetchTotal('INACTIVE'),
+      fetchTotal('REVOKED'),
     ]);
 
     return {
-      total: unwrapResponse(totalRes).totalElements ?? 0,
-      active: unwrapResponse(activeRes).totalElements ?? 0,
-      inactive: unwrapResponse(inactiveRes).totalElements ?? 0,
-      revoked: unwrapResponse(revokedRes).totalElements ?? 0,
+      total,
+      active,
+      inactive,
+      revoked,
     };
   },
 

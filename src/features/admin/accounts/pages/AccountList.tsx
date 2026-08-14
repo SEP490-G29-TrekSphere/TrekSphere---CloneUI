@@ -2,11 +2,14 @@ import { Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDebounce } from '@/shared/hooks';
+import { toast } from '@/store/useToastStore';
 import { AccountFilterDropdown } from '../components/AccountFilterDropdown';
 import { AccountPagination } from '../components/AccountPagination';
 import { AccountTableRow } from '../components/AccountTableRow';
+import { ConfirmDialog } from '../components/ConfirmDialog';
+import { useAccountMutations } from '../hooks/useAccountMutations';
 import { useAdminAccounts } from '../hooks/useAdminAccounts';
-import type { AccountRole } from '../types';
+import type { AccountRole, AdminAccount } from '../types';
 
 const PAGE_SIZE = 10;
 
@@ -25,6 +28,7 @@ export default function AccountList() {
   const [filterRole, setFilterRole] = useState<AccountRole | 'ALL'>('ALL');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [pendingLockAccount, setPendingLockAccount] = useState<AdminAccount | null>(null);
 
   const debouncedSearch = useDebounce(search, 400);
 
@@ -40,12 +44,43 @@ export default function AccountList() {
   );
 
   const { data, isLoading, isError, error } = useAdminAccounts(filter, page, PAGE_SIZE);
+  const { lock, unlock } = useAccountMutations();
 
   const navigate = useNavigate();
 
   const accounts = data?.accounts ?? [];
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  const handleStatusAction = (account: AdminAccount) => {
+    if (account.status === 'ACTIVE') {
+      setPendingLockAccount(account);
+      return;
+    }
+
+    void unlock
+      .mutateAsync(account.id)
+      .then(() => {
+        toast.success(`Đã mở khóa tài khoản "${account.fullName}"`);
+      })
+      .catch((err) => {
+        toast.error(err instanceof Error ? err.message : 'Mở khóa thất bại');
+      });
+  };
+
+  const handleConfirmLock = () => {
+    if (!pendingLockAccount) return;
+
+    void lock
+      .mutateAsync(pendingLockAccount.id)
+      .then(() => {
+        toast.success(`Đã khóa tài khoản "${pendingLockAccount.fullName}"`);
+        setPendingLockAccount(null);
+      })
+      .catch((err) => {
+        toast.error(err instanceof Error ? err.message : 'Khóa tài khoản thất bại');
+      });
+  };
 
   return (
     <div className="space-y-6">
@@ -55,9 +90,6 @@ export default function AccountList() {
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0B3025] tracking-tight">
             Quản lý tài khoản
           </h1>
-          <p className="text-zinc-500 text-sm font-medium mt-1">
-            Xem và quản lý tất cả người dùng trong hệ thống TrekSphere.
-          </p>
         </div>
 
         {/* Toolbar: ô tìm kiếm nằm cùng hàng với dropdown lọc loại tài khoản */}
@@ -170,6 +202,11 @@ export default function AccountList() {
                     key={account.id}
                     account={account}
                     onViewDetail={(acc) => navigate(`/admin/accounts/${acc.id}`)}
+                    onToggleLock={handleStatusAction}
+                    isStatusPending={
+                      (lock.isPending && lock.variables === account.id) ||
+                      (unlock.isPending && unlock.variables === account.id)
+                    }
                   />
                 ))
               )}
@@ -186,6 +223,17 @@ export default function AccountList() {
           pageSize={PAGE_SIZE}
         />
       </div>
+
+      <ConfirmDialog
+        open={Boolean(pendingLockAccount)}
+        onOpenChange={(open) => {
+          if (!open) setPendingLockAccount(null);
+        }}
+        variant="lock"
+        accountName={pendingLockAccount?.fullName ?? ''}
+        onConfirm={handleConfirmLock}
+        isPending={lock.isPending}
+      />
     </div>
   );
 }

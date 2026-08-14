@@ -1,4 +1,4 @@
-import { Download, RefreshCw, Search } from 'lucide-react';
+import { RefreshCw, Search } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PATHS } from '@/constants';
@@ -105,8 +105,6 @@ export default function Applications() {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
       });
     } catch {
       return dateStr;
@@ -120,19 +118,12 @@ export default function Applications() {
   return (
     <div className="space-y-6">
       {/* Top Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div>
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0B3025] tracking-tight">
-            Hồ sơ Đăng ký Đối tác
+            Duyệt Nhà Cung Cấp
           </h1>
-          <p className="text-zinc-500 text-sm font-medium mt-1">
-            Quản lý, tìm kiếm và phân trang các đơn đăng ký trở thành nhà cung cấp Tour di sản.
-          </p>
         </div>
-        <AppButton className="bg-[#0B3025] hover:bg-[#072019] text-white flex items-center gap-2 self-start sm:self-center font-bold px-5 py-2.5 rounded-xl shadow-sm transition-colors border-none">
-          <Download className="h-4 w-4" />
-          Xuất báo cáo
-        </AppButton>
       </div>
 
       {/* Tabs and Search / Filter */}
@@ -182,17 +173,6 @@ export default function Applications() {
               }`}
             >
               Từ chối {statsData ? `(${statsData.rejected})` : ''}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleTabChange('DRAFT')}
-              className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${
-                activeTab === 'DRAFT'
-                  ? 'bg-[#0B3025] text-white shadow-sm'
-                  : 'bg-white border border-[#E5E4DE] text-zinc-600 hover:bg-[#FAF9F5]'
-              }`}
-            >
-              Bản nháp {statsData ? `(${statsData.draft})` : ''}
             </button>
           </div>
 
@@ -372,54 +352,6 @@ export default function Applications() {
           )}
         </div>
       )}
-
-      {/* Stats Cards Section */}
-      <div className="grid gap-6 md:grid-cols-3 pt-4">
-        {/* Total Applications Card */}
-        <div className="bg-[#0B3025] shadow-md text-white rounded-2xl p-6 flex flex-col justify-between h-44">
-          <span className="text-zinc-300 text-xs font-bold tracking-wide">Tổng số đơn đăng ký</span>
-          <div className="my-2">
-            <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight">
-              {statsData?.all ?? 0}
-            </h2>
-          </div>
-          <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-bold">
-            <span>Đã cập nhật hệ thống</span>
-          </div>
-        </div>
-
-        {/* Pending Card */}
-        <AppCard className="bg-white border border-[#E5E4DE] shadow-sm rounded-2xl p-6 flex flex-col justify-between h-44">
-          <span className="text-zinc-400 text-xs font-bold tracking-wide">Đơn chờ xét duyệt</span>
-          <div className="my-2">
-            <h2 className="text-4xl sm:text-5xl font-extrabold text-[#D97706] tracking-tight">
-              {statsData?.pending ?? 0}
-            </h2>
-          </div>
-          <div className="w-full bg-zinc-100 h-2.5 rounded-full overflow-hidden">
-            <div
-              className="bg-[#D97706] h-full rounded-full transition-all"
-              style={{
-                width: `${statsData?.all ? Math.round((statsData.pending / statsData.all) * 100) : 0}%`,
-              }}
-            />
-          </div>
-        </AppCard>
-
-        {/* Approved Card */}
-        <AppCard className="bg-[#FAF9F5] border border-[#E5E4DE] shadow-sm rounded-2xl p-6 flex flex-col justify-between h-44">
-          <span className="text-zinc-400 text-xs font-bold tracking-wide">Đơn đã duyệt</span>
-          <div className="my-2">
-            <h2 className="text-4xl sm:text-5xl font-extrabold text-[#059669] tracking-tight">
-              {statsData?.approved ?? 0}
-            </h2>
-          </div>
-          <span className="text-[11px] text-zinc-500 font-semibold">
-            Tỷ lệ duyệt:{' '}
-            {statsData?.all ? `${Math.round((statsData.approved / statsData.all) * 100)}%` : '0%'}
-          </span>
-        </AppCard>
-      </div>
     </div>
   );
 }

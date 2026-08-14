@@ -72,9 +72,6 @@ export default function VendorList() {
         >
           Quản lý Nhà cung cấp
         </h1>
-        <p className="text-sm font-medium mt-1" style={{ color: '#6F7B75' }}>
-          Xem và quản lý toàn bộ các Vendor/đối tác trên hệ thống TrekSphere.
-        </p>
       </div>
 
       {/* Overview stats */}
