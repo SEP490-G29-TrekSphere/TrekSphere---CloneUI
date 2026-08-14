@@ -569,6 +569,8 @@ export interface TourCheckpoint {
   altitude: number | null;
   checkpointOrder: number;
   checkpointImageUrl: string | null;
+  /** Danh sách URL ảnh checkpoint đã được backend tách từ trường lưu trữ. */
+  checkpointImageUrls?: string[];
 }
 
 export interface ReviewItem {

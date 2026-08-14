@@ -38,8 +38,7 @@ const tourFormSchema = z
     tourName: z.string().trim().min(1, 'Vui lòng nhập tên tour'),
     difficulty: z.enum(['EASY', 'MODERATE', 'HARD']),
     basePrice: z.coerce.number().min(0, 'Giá tiền không hợp lệ'),
-    startingPoint: z.string().trim().min(1, 'Vui lòng nhập điểm bắt đầu'),
-    endingPoint: z.string().trim().min(1, 'Vui lòng nhập điểm kết thúc'),
+    location: z.string().trim().min(1, 'Vui lòng nhập địa điểm'),
     minCapacity: z.coerce.number().int().min(1, 'Tối thiểu 1 khách'),
     maxCapacity: z.coerce.number().int().min(1, 'Tối thiểu 1 khách'),
     durationDays: z.coerce.number().int().min(1, 'Tối thiểu 1 ngày'),
@@ -125,8 +124,7 @@ const EMPTY_DEFAULTS: TourFormInput = {
   tourName: '',
   difficulty: 'EASY',
   basePrice: 0,
-  startingPoint: '',
-  endingPoint: '',
+  location: '',
   minCapacity: 1,
   maxCapacity: 1,
   durationDays: 1,
@@ -240,7 +238,7 @@ export function TourForm({
       tourName: values.tourName,
       description: values.description,
       difficulty: values.difficulty,
-      location: `${values.startingPoint} → ${values.endingPoint}`,
+      location: values.location,
       durationDays: values.durationDays,
       basePrice: values.basePrice,
       minCapacity: values.minCapacity,
@@ -427,47 +425,25 @@ export function TourForm({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label
-                  htmlFor="startingPoint"
-                  className="mb-1.5 block text-sm font-semibold"
-                  style={{ color: '#06261D' }}
-                >
-                  Điểm bắt đầu <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="startingPoint"
-                  type="text"
-                  {...register('startingPoint')}
-                  placeholder="Ví dụ: Hà Nội"
-                  className="w-full rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-1"
-                  style={{ backgroundColor: '#F8F6EF', color: '#06261D' }}
-                />
-                {errors.startingPoint && (
-                  <p className="mt-1 text-xs text-red-500">{errors.startingPoint.message}</p>
-                )}
-              </div>
-              <div>
-                <label
-                  htmlFor="endingPoint"
-                  className="mb-1.5 block text-sm font-semibold"
-                  style={{ color: '#06261D' }}
-                >
-                  Điểm kết thúc <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="endingPoint"
-                  type="text"
-                  {...register('endingPoint')}
-                  placeholder="Ví dụ: Đỉnh Fansipan"
-                  className="w-full rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-1"
-                  style={{ backgroundColor: '#F8F6EF', color: '#06261D' }}
-                />
-                {errors.endingPoint && (
-                  <p className="mt-1 text-xs text-red-500">{errors.endingPoint.message}</p>
-                )}
-              </div>
+            <div>
+              <label
+                htmlFor="location"
+                className="mb-1.5 block text-sm font-semibold"
+                style={{ color: '#06261D' }}
+              >
+                Địa điểm <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="location"
+                type="text"
+                {...register('location')}
+                placeholder="Ví dụ: Sa Pa, Lào Cai"
+                className="w-full rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-1"
+                style={{ backgroundColor: '#F8F6EF', color: '#06261D' }}
+              />
+              {errors.location && (
+                <p className="mt-1 text-xs text-red-500">{errors.location.message}</p>
+              )}
             </div>
 
             {/* BE bắt buộc minCapacity/maxCapacity — không có trong thiết kế gốc nhưng

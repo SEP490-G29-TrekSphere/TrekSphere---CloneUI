@@ -6,7 +6,7 @@
  */
 
 import type { SyntheticEvent } from 'react';
-import type { ApiDifficulty, TourDetailScheduleApi } from '@/features/tours/types';
+import type { ApiDifficulty, TourCheckpoint, TourDetailScheduleApi } from '@/features/tours/types';
 
 export const FALLBACK_IMAGE =
   'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&q=80';
@@ -51,6 +51,24 @@ export function splitField(value: string | null | undefined): string[] {
     .split(',')
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+/**
+ * Chuẩn hóa ảnh checkpoint từ API.
+ *
+ * API mới trả `checkpointImageUrls`; dữ liệu/response cũ chỉ có một chuỗi URL phân tách bằng
+ * dấu phẩy trong `checkpointImageUrl`. Ưu tiên mảng đã tách để không đưa cả chuỗi nhiều URL
+ * vào thuộc tính `src` của một thẻ ảnh.
+ */
+export function getCheckpointImageUrls(
+  checkpoint: Pick<TourCheckpoint, 'checkpointImageUrl' | 'checkpointImageUrls'>
+): string[] {
+  const urls =
+    checkpoint.checkpointImageUrls && checkpoint.checkpointImageUrls.length > 0
+      ? checkpoint.checkpointImageUrls
+      : splitField(checkpoint.checkpointImageUrl);
+
+  return [...new Set(urls.map((url) => url.trim()).filter(Boolean))];
 }
 
 /** Gắn vào `onError` của `<img>` để rơi về ảnh mặc định đúng một lần. */
