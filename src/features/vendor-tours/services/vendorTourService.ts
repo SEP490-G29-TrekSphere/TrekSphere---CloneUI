@@ -111,10 +111,6 @@ function participationPolicyFields(
   return {
     'participationPolicy.minAge': policy.minAge,
     'participationPolicy.maxAge': policy.maxAge,
-    'participationPolicy.minHeightCm': policy.minHeightCm,
-    'participationPolicy.maxHeightCm': policy.maxHeightCm,
-    'participationPolicy.minWeightKg': policy.minWeightKg,
-    'participationPolicy.maxWeightKg': policy.maxWeightKg,
     'participationPolicy.fitnessLevel': policy.fitnessLevel,
     'participationPolicy.healthRequirements': policy.healthRequirements,
     'participationPolicy.restrictedMedicalConditions': policy.restrictedMedicalConditions,
