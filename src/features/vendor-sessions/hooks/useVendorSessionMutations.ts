@@ -59,6 +59,17 @@ export function useVendorSessionMutations(sessionId: string) {
     onSuccess: invalidate,
   });
 
+  const confirmEquipmentReturn = useMutation({
+    mutationFn: (sessionEquipmentId: string) =>
+      vendorSessionService.confirmEquipmentReturn(sessionEquipmentId),
+    onSuccess: invalidate,
+  });
+
+  const bulkConfirmEquipmentReturn = useMutation({
+    mutationFn: () => vendorSessionService.bulkConfirmEquipmentReturn(sessionId),
+    onSuccess: invalidate,
+  });
+
   return {
     assignCoordinator,
     removeCoordinator,
@@ -67,5 +78,7 @@ export function useVendorSessionMutations(sessionId: string) {
     assignEquipment,
     removeEquipment,
     checkEquipment,
+    confirmEquipmentReturn,
+    bulkConfirmEquipmentReturn,
   };
 }

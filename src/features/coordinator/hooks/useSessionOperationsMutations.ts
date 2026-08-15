@@ -74,6 +74,33 @@ export function useSessionOperationsMutations(sessionId: string) {
     onSuccess: invalidateSosStatus,
   });
 
+  const returnEquipment = useMutation({
+    mutationFn: (payload: {
+      sessionEquipmentId: string;
+      returnedQuantity: number;
+      missingQuantity: number;
+      note?: string;
+    }) =>
+      trackingService.returnEquipment(payload.sessionEquipmentId, {
+        returnedQuantity: payload.returnedQuantity,
+        missingQuantity: payload.missingQuantity,
+        note: payload.note,
+      }),
+    onSuccess: invalidateDetail,
+  });
+
+  const bulkReturnEquipment = useMutation({
+    mutationFn: (payload: {
+      items: {
+        sessionEquipmentId: string;
+        returnedQuantity: number;
+        missingQuantity: number;
+        note?: string;
+      }[];
+    }) => trackingService.bulkReturnEquipment(sessionId, payload),
+    onSuccess: invalidateDetail,
+  });
+
   return {
     startSession,
     endSession,
@@ -83,5 +110,7 @@ export function useSessionOperationsMutations(sessionId: string) {
     checkEquipment,
     sendSos,
     resolveSos,
+    returnEquipment,
+    bulkReturnEquipment,
   };
 }

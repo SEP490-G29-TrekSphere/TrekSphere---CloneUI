@@ -53,12 +53,26 @@ export interface SessionPorter {
   note?: string;
 }
 
+export type EquipmentReturnStatus =
+  | 'NOT_RETURNED'
+  | 'PENDING_CONFIRMATION'
+  | 'CONFIRMED'
+  | 'REJECTED';
+
 export interface SessionEquipment {
   sessionEquipmentId: string;
   equipmentId: string;
   equipmentName: string;
   quantity: number;
   note?: string;
+  isChecked?: boolean;
+  returnedQuantity?: number;
+  missingQuantity?: number;
+  returnStatus?: EquipmentReturnStatus;
+  submittedByName?: string;
+  submittedAt?: string;
+  confirmedByName?: string;
+  confirmedAt?: string;
 }
 
 export interface SessionAllocation extends VendorSessionSummary {

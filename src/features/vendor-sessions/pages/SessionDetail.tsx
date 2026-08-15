@@ -79,6 +79,28 @@ export default function SessionDetail() {
     );
   };
 
+  const handleConfirmReturn = (equipment: SessionEquipment) => {
+    mutations.confirmEquipmentReturn.mutate(equipment.sessionEquipmentId, {
+      onSuccess: () => {
+        toast.success(`Đã xác nhận nhập kho cho ${equipment.equipmentName}.`);
+      },
+      onError: (err) => {
+        toast.error(err instanceof Error ? err.message : 'Không thể xác nhận nhập kho.');
+      },
+    });
+  };
+
+  const handleBulkConfirmReturn = () => {
+    mutations.bulkConfirmEquipmentReturn.mutate(undefined, {
+      onSuccess: () => {
+        toast.success('Đã xác nhận nhập kho toàn bộ trang bị.');
+      },
+      onError: (err) => {
+        toast.error(err instanceof Error ? err.message : 'Không thể xác nhận nhập kho hàng loạt.');
+      },
+    });
+  };
+
   const handleRemoveCoordinatorClick = (coordinator: SessionCoordinator) =>
     setRemoveTarget({
       kind: 'coordinator',
@@ -212,6 +234,12 @@ export default function SessionDetail() {
         checkedMap={equipmentChecked}
         pendingCheckId={pendingCheckId}
         onToggleCheck={handleToggleEquipmentCheck}
+        onConfirmReturn={handleConfirmReturn}
+        onBulkConfirmReturn={handleBulkConfirmReturn}
+        isConfirming={
+          mutations.confirmEquipmentReturn.isPending ||
+          mutations.bulkConfirmEquipmentReturn.isPending
+        }
       />
 
       <AssignCoordinatorDialog

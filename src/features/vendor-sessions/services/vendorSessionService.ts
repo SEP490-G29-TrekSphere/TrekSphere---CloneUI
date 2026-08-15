@@ -61,6 +61,14 @@ interface EquipmentAllocationDto {
   equipmentName: string;
   quantity: number;
   note?: string;
+  isChecked?: boolean;
+  returnedQuantity?: number;
+  missingQuantity?: number;
+  returnStatus?: import('../types').EquipmentReturnStatus;
+  submittedByName?: string;
+  submittedAt?: string;
+  confirmedByName?: string;
+  confirmedAt?: string;
 }
 
 interface TourSessionAllocationDto extends TourSessionSummaryDto {
@@ -242,5 +250,23 @@ export const vendorSessionService = {
       { isChecked }
     );
     return unwrapResponse(response);
+  },
+
+  /** Vendor xác nhận nhập kho hoàn bổ 1 trang bị sau tour. */
+  async confirmEquipmentReturn(sessionEquipmentId: string): Promise<void> {
+    const response = await ApiService<void>(
+      `/vendor/sessions/equipments/allocations/${sessionEquipmentId}/confirm-return`,
+      'POST'
+    );
+    throwIfError(response);
+  },
+
+  /** Vendor xác nhận nhập kho hoàn bổ toàn bộ trang bị chờ xử lý của phiên. */
+  async bulkConfirmEquipmentReturn(sessionId: string): Promise<void> {
+    const response = await ApiService<void>(
+      `/vendor/sessions/${sessionId}/equipments/confirm-return`,
+      'POST'
+    );
+    throwIfError(response);
   },
 };

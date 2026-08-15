@@ -300,4 +300,37 @@ export const trackingService = {
     );
     return unwrapResponse(response);
   },
+
+  /** `PUT /vendor/sessions/equipments/allocations/{sessionEquipmentId}/return` */
+  async returnEquipment(
+    sessionEquipmentId: string,
+    payload: { returnedQuantity: number; missingQuantity: number; note?: string }
+  ): Promise<void> {
+    const response = await ApiService<void>(
+      `/vendor/sessions/equipments/allocations/${sessionEquipmentId}/return`,
+      'PUT',
+      payload
+    );
+    unwrapResponse(response);
+  },
+
+  /** `PUT /vendor/sessions/{sessionId}/equipments/bulk-return` */
+  async bulkReturnEquipment(
+    sessionId: string,
+    payload: {
+      items: {
+        sessionEquipmentId: string;
+        returnedQuantity: number;
+        missingQuantity: number;
+        note?: string;
+      }[];
+    }
+  ): Promise<void> {
+    const response = await ApiService<void>(
+      `/vendor/sessions/${sessionId}/equipments/bulk-return`,
+      'PUT',
+      payload
+    );
+    unwrapResponse(response);
+  },
 };
