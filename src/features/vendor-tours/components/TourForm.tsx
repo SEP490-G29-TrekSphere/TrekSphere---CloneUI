@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Bold, ImagePlus, Info, Italic, Link2, List } from 'lucide-react';
+import { Bold, ImagePlus, Info, Italic, Link2, List, Loader2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -304,10 +304,26 @@ export function TourForm({
   };
 
   const isSaving = isSubmitting || isUploadingImages || isParentSubmitting;
-  const submitLabelSaving = isEdit ? 'Đang cập nhật...' : 'Đang lưu...';
+  const submitLabelSaving = isEdit ? 'Đang cập nhật tour...' : 'Đang tạo tour...';
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" aria-busy={isSaving} noValidate>
+      {isSaving && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 px-4 backdrop-blur-sm"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="flex min-w-64 flex-col items-center rounded-3xl bg-white px-8 py-7 text-center shadow-2xl">
+            <Loader2 className="h-12 w-12 animate-spin text-[#0B6B4F]" aria-hidden="true" />
+            <p className="mt-4 text-base font-bold text-[#06261D]">
+              {isUploadingImages ? 'Đang tải hình ảnh...' : submitLabelSaving}
+            </p>
+            <p className="mt-1 text-sm text-[#6F7B75]">Vui lòng không đóng hoặc tải lại trang.</p>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-3xl font-extrabold tracking-tight" style={{ color: '#06261D' }}>
@@ -708,7 +724,8 @@ export function TourForm({
         <button
           type="submit"
           disabled={isSaving}
-          className="rounded-full px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+          aria-busy={isSaving}
+          className="inline-flex min-w-40 items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-60"
           style={{ backgroundColor: '#06261D' }}
         >
           {isSaving ? submitLabelSaving : isEdit ? 'Lưu thay đổi' : 'Xác nhận và Lưu'}
