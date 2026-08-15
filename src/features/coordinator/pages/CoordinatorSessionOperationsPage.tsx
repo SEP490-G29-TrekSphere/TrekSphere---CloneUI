@@ -6,6 +6,7 @@ import { ConfirmActionDialog } from '@/shared/ui';
 import { toast } from '@/store/useToastStore';
 import { AltitudeTrackerWidget } from '../components/AltitudeTrackerWidget';
 import { CheckpointTimeline } from '../components/CheckpointTimeline';
+import { CoordinatorTrackingMap } from '../components/CoordinatorTrackingMap';
 import { EmergencySosPanel } from '../components/EmergencySosPanel';
 import { GearChecklistPanel } from '../components/GearChecklistPanel';
 import { OfflineSyncPanel } from '../components/OfflineSyncPanel';
@@ -126,6 +127,17 @@ export default function CoordinatorSessionOperationsPage() {
         ])
       ),
     [offline.snapshot?.equipments]
+  );
+
+  const pendingCheckpointIds = useMemo(
+    () =>
+      (offline.record?.pendingEvents ?? [])
+        .filter(
+          (event) => event.type === 'CHECKPOINT_REACHED' || event.type === 'CHECKPOINT_SKIPPED'
+        )
+        .map((event) => event.payload.checkpointId)
+        .filter((checkpointId): checkpointId is string => typeof checkpointId === 'string'),
+    [offline.record?.pendingEvents]
   );
 
   const handleBack = () => navigate(PATHS.COORDINATOR_SCHEDULES);
@@ -332,7 +344,14 @@ export default function CoordinatorSessionOperationsPage() {
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+        <div className="space-y-6 lg:col-span-2">
+          <CoordinatorTrackingMap
+            checkpoints={checkpoints}
+            currentLocation={offline.currentLocation}
+            pendingCheckpointIds={pendingCheckpointIds}
+            isGpsTracking={offline.isGpsTracking}
+            gpsError={offline.gpsError}
+          />
           <CheckpointTimeline
             checkpoints={checkpoints}
             canCheckin={effectiveSession.status === 'IN_PROGRESS'}

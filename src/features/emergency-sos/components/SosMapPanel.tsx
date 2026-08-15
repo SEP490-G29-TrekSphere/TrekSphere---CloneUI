@@ -1,21 +1,8 @@
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import { MapPin } from 'lucide-react';
 import { useEffect } from 'react';
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
+import '@/shared/map/leafletSetup';
 import type { SosAlert } from '../types';
-
-/** Fix icon marker mặc định của Leaflet không tự resolve được path qua bundler Vite. */
-type IconDefaultPrototype = typeof L.Icon.Default.prototype & { _getIconUrl?: () => string };
-delete (L.Icon.Default.prototype as IconDefaultPrototype)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: markerIcon2x,
-  iconUrl: markerIcon,
-  shadowUrl: markerShadow,
-});
 
 interface SosMapPanelProps {
   alert?: SosAlert;
