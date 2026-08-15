@@ -1,11 +1,7 @@
-import { Mountain, Route, Users } from 'lucide-react';
+import { Clock, Mountain, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
-import {
-  DIFFICULTY_LABELS,
-  DIFFICULTY_LEVEL,
-} from '@/features/tours/components/tour-details/shared';
+import { DIFFICULTY_LABELS } from '@/features/tours/components/tour-details/shared';
 import type { TourDetailFromApi } from '@/features/tours/types';
-import { cn } from '@/lib/utils';
 
 interface TourStatsGridProps {
   tour: TourDetailFromApi;
@@ -39,53 +35,20 @@ function StatTile({
 }
 
 /**
- * Meter độ khó: 5 vạch trên cùng một hue, đậm dần theo bậc.
- *
- * Đây là thang thứ tự nên phần chưa đạt dùng chính hue đó ở sắc nhạt (không phải
- * màu khác) — trạng thái đọc được xuyên suốt cả thanh.
- */
-function DifficultyMeter({ level }: { level: number }) {
-  return (
-    <div className="flex gap-1" aria-hidden="true">
-      {[1, 2, 3, 4, 5].map((step) => (
-        <span
-          key={step}
-          className={cn(
-            'h-1.5 flex-1 rounded-full',
-            step <= level ? 'bg-primary' : 'bg-primary/15'
-          )}
-        />
-      ))}
-    </div>
-  );
-}
-
-/**
- * Dải thông số tour — độ khó, quãng đường, quy mô đoàn.
- *
- * `totalDistanceKm` và `minCapacity`/`maxCapacity` đã có sẵn trong `GET /tours/{id}`
- * nhưng trước đây không được hiển thị ở đâu trên trang chi tiết.
+ * Dải thông số tour — độ khó, thời gian chuyến đi, quy mô đoàn.
  */
 export function TourStatsGrid({ tour }: TourStatsGridProps) {
-  const difficultyLevel = DIFFICULTY_LEVEL[tour.difficulty] ?? 3;
   const difficultyLabel = DIFFICULTY_LABELS[tour.difficulty] ?? tour.difficulty;
+  const durationText = `${tour.durationDays} ngày`;
 
   return (
     <div className="grid gap-3 sm:grid-cols-3">
-      <StatTile
-        icon={<Mountain className="h-4 w-4" />}
-        label="Độ khó"
-        value={difficultyLabel}
-        hint={`Bậc ${difficultyLevel}/5`}
-      >
-        <DifficultyMeter level={difficultyLevel} />
-      </StatTile>
+      <StatTile icon={<Mountain className="h-4 w-4" />} label="Độ khó" value={difficultyLabel} />
 
       <StatTile
-        icon={<Route className="h-4 w-4" />}
-        label="Quãng đường"
-        value={tour.totalDistanceKm > 0 ? `${tour.totalDistanceKm} km` : 'Đang cập nhật'}
-        hint={`Trong ${tour.durationDays} ngày`}
+        icon={<Clock className="h-4 w-4" />}
+        label="Thời gian chuyến đi"
+        value={durationText}
       />
 
       <StatTile

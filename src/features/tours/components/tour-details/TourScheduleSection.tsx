@@ -1,4 +1,4 @@
-import { CalendarDays, Check, Users } from 'lucide-react';
+import { CalendarDays, Users } from 'lucide-react';
 import {
   isBookableSchedule,
   remainingSlots,
@@ -70,7 +70,7 @@ export function TourScheduleSection({
             className={cn(
               'flex cursor-pointer flex-wrap items-center justify-between gap-3 rounded-2xl border p-4 transition-colors',
               isSelected
-                ? 'border-primary bg-primary/5'
+                ? 'border-primary bg-primary/5 shadow-xs'
                 : 'border-border bg-card hover:border-primary/40'
             )}
           >
@@ -83,23 +83,11 @@ export function TourScheduleSection({
               className="sr-only"
             />
 
-            <div className="flex items-center gap-3">
-              <span
-                className={cn(
-                  'flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
-                  isSelected ? 'border-primary bg-primary' : 'border-border'
-                )}
-                aria-hidden="true"
-              >
-                {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
+            <div className="flex flex-col gap-1.5">
+              <span className="text-sm font-bold text-foreground">
+                {formatDate(schedule.departureDate)} → {formatDate(schedule.returnDate)}
               </span>
-
-              <span className="flex flex-col gap-1.5">
-                <span className="text-sm font-bold text-foreground">
-                  {formatDate(schedule.departureDate)} → {formatDate(schedule.returnDate)}
-                </span>
-                <AvailabilityBadge schedule={schedule} />
-              </span>
+              <AvailabilityBadge schedule={schedule} />
             </div>
 
             <span className="flex flex-col items-end">
