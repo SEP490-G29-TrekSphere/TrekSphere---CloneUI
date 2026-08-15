@@ -41,6 +41,10 @@ export const AppDatePicker = forwardRef<DatePicker, AppDatePickerProps>(
           dateFormat={actualDateFormat}
           placeholderText={placeholderText}
           disabled={disabled}
+          showMonthDropdown
+          showYearDropdown
+          dropdownMode="select"
+          scrollableYearDropdown
           className={combinedClassName}
           popperClassName={`z-[9999] ${props.popperClassName || ''}`}
           portalId="react-datepicker-portal"
