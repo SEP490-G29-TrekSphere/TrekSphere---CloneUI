@@ -42,13 +42,20 @@ export const useAppStore = create<AppState>()(
       name: 'treksphere-app-storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ user: state.user }),
-      onRehydrateStorage: () => (state) => {
-        if (!state) return;
-        // localStorage của phiên cũ có thể đang giữ roles UPPERCASE (do bug
-        // ghi thẳng roles từ response `PUT /users/me`). Đẩy lại qua `setUser`
-        // để normalize, nếu không user vẫn bị khoá khỏi portal sau khi F5.
-        if (state.user) state.setUser(state.user);
-        state.setHasHydrated(true);
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.error('[Store] Rehydration failed:', error);
+        }
+        if (state) {
+          if (state.user) {
+            state.setUser(state.user);
+          }
+          state.setHasHydrated(true);
+        } else {
+          setTimeout(() => {
+            useAppStore.getState().setHasHydrated?.(true);
+          }, 0);
+        }
       },
     }
   )

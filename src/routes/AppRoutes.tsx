@@ -14,6 +14,7 @@ import RequireRole from '@/routes/RequireRole';
 import MainLayout from '@/shared/layout/MainLayout';
 import PublicLayout from '@/shared/layout/PublicLayout';
 import { ScrollManager } from '@/shared/ui/ScrollManager';
+
 import { useAppStore } from '@/store/useAppStore';
 
 // Lazy loading features (code-splitting theo route)
@@ -106,6 +107,7 @@ const CoordinatorSessionOperationsPage = lazy(
 );
 const EmergencySosPage = lazy(() => import('@/features/emergency-sos/pages/EmergencySosPage'));
 const VendorVoucherList = lazy(() => import('@/features/vendor-vouchers/pages/VendorVoucherList'));
+const NotFoundPage = lazy(() => import('@/shared/pages/NotFoundPage'));
 
 /**
  * Redirect `/blog/edit/:blogId` (path cũ, nằm ngoài portal) sang path trekker
@@ -387,6 +389,9 @@ export default function AppRoutes() {
           />
           <Route path={PATHS.COORDINATOR_CHAT} element={<ChatList hideSidebar />} />
         </Route>
+
+        {/* Standalone 404 Catch-All Route */}
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>
   );
