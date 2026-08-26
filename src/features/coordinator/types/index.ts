@@ -44,6 +44,8 @@ export interface TourCheckpoint {
   checkpointId: string;
   checkpointName: string;
   description?: string;
+  latitude?: number;
+  longitude?: number;
   altitude?: number;
   checkpointOrder: number;
 }

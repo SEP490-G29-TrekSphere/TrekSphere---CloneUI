@@ -66,10 +66,6 @@ export interface CreateTourPayload {
   participationPolicy: {
     minAge: number;
     maxAge?: number;
-    minHeightCm?: number;
-    maxHeightCm?: number;
-    minWeightKg?: number;
-    maxWeightKg?: number;
     fitnessLevel: 'ANY' | 'BASIC' | 'MODERATE' | 'HIGH' | 'EXTREME';
     healthRequirements?: string;
     restrictedMedicalConditions?: string;

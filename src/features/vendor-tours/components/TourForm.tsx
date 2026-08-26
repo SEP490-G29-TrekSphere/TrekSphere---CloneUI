@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Bold, ImagePlus, Info, Italic, Link2, List } from 'lucide-react';
+import { Bold, ImagePlus, Info, Italic, Link2, List, Loader2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -19,19 +19,26 @@ const DIFFICULTY_OPTIONS: Array<{ value: FormDifficulty; label: string }> = [
 
 const MAX_COVER_SIZE_MB = 5;
 
-const optionalNumberText = z
-  .string()
-  .trim()
-  .refine((value) => value === '' || Number.isFinite(Number(value)), 'Giá trị không hợp lệ');
-
 const requiredAgeText = z
   .string()
   .trim()
   .min(1, 'Vui lòng nhập tuổi tối thiểu')
   .refine(
-    (value) => Number.isInteger(Number(value)) && Number(value) >= 0 && Number(value) <= 120,
-    'Tuổi phải là số nguyên từ 0 đến 120'
+    (value) => Number.isInteger(Number(value)) && Number(value) >= 1 && Number(value) <= 100,
+    'Tuổi phải là số nguyên từ 1 đến 100'
   );
+
+function optionalAgeText(label: string, minimum: number, maximum: number) {
+  return z
+    .string()
+    .trim()
+    .refine(
+      (value) =>
+        value === '' ||
+        (Number.isInteger(Number(value)) && Number(value) >= minimum && Number(value) <= maximum),
+      `${label} phải là số nguyên từ ${minimum} đến ${maximum}`
+    );
+}
 
 const tourFormSchema = z
   .object({
@@ -44,11 +51,7 @@ const tourFormSchema = z
     durationDays: z.coerce.number().int().min(1, 'Tối thiểu 1 ngày'),
     description: z.string().trim().min(1, 'Vui lòng nhập lịch trình chi tiết'),
     minAge: requiredAgeText,
-    maxAge: optionalNumberText,
-    minHeightCm: optionalNumberText,
-    maxHeightCm: optionalNumberText,
-    minWeightKg: optionalNumberText,
-    maxWeightKg: optionalNumberText,
+    maxAge: optionalAgeText('Tuổi tối đa', 1, 100),
     fitnessLevel: z.enum(['ANY', 'BASIC', 'MODERATE', 'HIGH', 'EXTREME']),
     healthRequirements: z.string().trim(),
     restrictedMedicalConditions: z.string().trim(),
@@ -58,7 +61,7 @@ const tourFormSchema = z
     requiredDocuments: z.string().trim(),
     requiresHealthDeclaration: z.boolean(),
     requiresMedicalCertificate: z.boolean(),
-    guardianRequiredUnderAge: optionalNumberText,
+    guardianRequiredUnderAge: optionalAgeText('Tuổi cần người giám hộ', 1, 18),
     additionalRequirements: z.string().trim(),
   })
   .refine((data) => data.maxCapacity >= data.minCapacity, {
@@ -66,19 +69,12 @@ const tourFormSchema = z
     path: ['maxCapacity'],
   })
   .superRefine((data, context) => {
-    const ranges: Array<[string, string, keyof typeof data]> = [
-      [data.minAge, data.maxAge, 'maxAge'],
-      [data.minHeightCm, data.maxHeightCm, 'maxHeightCm'],
-      [data.minWeightKg, data.maxWeightKg, 'maxWeightKg'],
-    ];
-    for (const [minimum, maximum, path] of ranges) {
-      if (minimum && maximum && Number(minimum) > Number(maximum)) {
-        context.addIssue({
-          code: 'custom',
-          message: 'Giá trị tối đa phải lớn hơn hoặc bằng tối thiểu',
-          path: [path],
-        });
-      }
+    if (data.maxAge !== '' && Number(data.maxAge) < Number(data.minAge)) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Tuổi tối đa phải lớn hơn hoặc bằng tuổi tối thiểu',
+        path: ['maxAge'],
+      });
     }
   });
 
@@ -131,10 +127,6 @@ const EMPTY_DEFAULTS: TourFormInput = {
   description: '',
   minAge: '18',
   maxAge: '',
-  minHeightCm: '',
-  maxHeightCm: '',
-  minWeightKg: '',
-  maxWeightKg: '',
   fitnessLevel: 'ANY',
   healthRequirements: '',
   restrictedMedicalConditions: '',
@@ -249,10 +241,6 @@ export function TourForm({
       participationPolicy: {
         minAge: Number(values.minAge),
         maxAge: optionalNumber(values.maxAge),
-        minHeightCm: optionalNumber(values.minHeightCm),
-        maxHeightCm: optionalNumber(values.maxHeightCm),
-        minWeightKg: optionalNumber(values.minWeightKg),
-        maxWeightKg: optionalNumber(values.maxWeightKg),
         fitnessLevel: values.fitnessLevel,
         healthRequirements: values.healthRequirements || undefined,
         restrictedMedicalConditions: values.restrictedMedicalConditions || undefined,
@@ -316,10 +304,26 @@ export function TourForm({
   };
 
   const isSaving = isSubmitting || isUploadingImages || isParentSubmitting;
-  const submitLabelSaving = isEdit ? 'Đang cập nhật...' : 'Đang lưu...';
+  const submitLabelSaving = isEdit ? 'Đang cập nhật tour...' : 'Đang tạo tour...';
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" aria-busy={isSaving} noValidate>
+      {isSaving && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 px-4 backdrop-blur-sm"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="flex min-w-64 flex-col items-center rounded-3xl bg-white px-8 py-7 text-center shadow-2xl">
+            <Loader2 className="h-12 w-12 animate-spin text-[#0B6B4F]" aria-hidden="true" />
+            <p className="mt-4 text-base font-bold text-[#06261D]">
+              {isUploadingImages ? 'Đang tải hình ảnh...' : submitLabelSaving}
+            </p>
+            <p className="mt-1 text-sm text-[#6F7B75]">Vui lòng không đóng hoặc tải lại trang.</p>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-3xl font-extrabold tracking-tight" style={{ color: '#06261D' }}>
@@ -592,35 +596,44 @@ export function TourForm({
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              ['minAge', 'Tuổi tối thiểu *', 'tuổi', '0', '1'],
-              ['maxAge', 'Tuổi tối đa', 'tuổi', '0', '1'],
-              ['minHeightCm', 'Chiều cao tối thiểu', 'cm', '50', '0.1'],
-              ['maxHeightCm', 'Chiều cao tối đa', 'cm', '50', '0.1'],
-              ['minWeightKg', 'Cân nặng tối thiểu', 'kg', '10', '0.1'],
-              ['maxWeightKg', 'Cân nặng tối đa', 'kg', '10', '0.1'],
-              ['guardianRequiredUnderAge', 'Cần người giám hộ nếu dưới', 'tuổi', '1', '1'],
-            ].map(([name, label, unit, minimum, step]) => (
-              <label key={name} className="text-sm font-semibold text-[#06261D]">
-                {label}
-                <span className="relative mt-1.5 block">
-                  <input
-                    type="number"
-                    min={minimum}
-                    step={step}
-                    {...register(name as keyof TourFormInput)}
-                    className="w-full rounded-xl bg-[#F8F6EF] px-4 py-2.5 pr-12 text-sm font-medium outline-none focus:ring-1"
-                  />
-                  <span className="absolute inset-y-0 right-3 flex items-center text-xs text-[#6F7B75]">
-                    {unit}
+              ['minAge', 'Tuổi tối thiểu *', 'tuổi', '0', '120'],
+              ['maxAge', 'Tuổi tối đa', 'tuổi', '0', '120'],
+              ['guardianRequiredUnderAge', 'Cần người giám hộ nếu dưới', 'tuổi', '1', '18'],
+            ].map(([name, label, unit, minimum, maximum]) => {
+              const fieldError = errors[name as keyof typeof errors];
+              return (
+                <label key={name} className="text-sm font-semibold text-[#06261D]">
+                  {label}
+                  <span className="relative mt-1.5 block">
+                    <input
+                      type="number"
+                      min={minimum}
+                      max={maximum}
+                      step="1"
+                      aria-invalid={Boolean(fieldError)}
+                      {...register(name as keyof TourFormInput)}
+                      className={`w-full rounded-xl border px-4 py-2.5 pr-12 text-sm font-medium outline-none focus:ring-1 ${
+                        fieldError
+                          ? 'border-red-500 bg-red-50 text-red-700 focus:ring-red-500'
+                          : 'border-transparent bg-[#F8F6EF] focus:ring-[#06261D]'
+                      }`}
+                    />
+                    <span
+                      className={`absolute inset-y-0 right-3 flex items-center text-xs ${
+                        fieldError ? 'text-red-500' : 'text-[#6F7B75]'
+                      }`}
+                    >
+                      {unit}
+                    </span>
                   </span>
-                </span>
-                {errors[name as keyof typeof errors]?.message && (
-                  <span className="mt-1 block text-xs text-red-500">
-                    {String(errors[name as keyof typeof errors]?.message)}
-                  </span>
-                )}
-              </label>
-            ))}
+                  {fieldError?.message && (
+                    <span className="mt-1 block text-xs font-medium text-red-500" role="alert">
+                      {String(fieldError.message)}
+                    </span>
+                  )}
+                </label>
+              );
+            })}
 
             <label className="text-sm font-semibold text-[#06261D]">
               Thể lực yêu cầu
@@ -711,7 +724,8 @@ export function TourForm({
         <button
           type="submit"
           disabled={isSaving}
-          className="rounded-full px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+          aria-busy={isSaving}
+          className="inline-flex min-w-40 items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-60"
           style={{ backgroundColor: '#06261D' }}
         >
           {isSaving ? submitLabelSaving : isEdit ? 'Lưu thay đổi' : 'Xác nhận và Lưu'}

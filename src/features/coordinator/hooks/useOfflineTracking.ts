@@ -173,11 +173,13 @@ function terminalEvent(result: TrackingEventResult): boolean {
 
 export function useOfflineTracking(sessionId: string, sessionMeta?: CoordinatorSessionDetail) {
   const [record, setRecord] = useState<TrackingOfflineRecord>();
+  const [currentLocation, setCurrentLocation] = useState<TrackingLocationSample>();
   const [isLoading, setIsLoading] = useState(true);
   const [isPreparing, setIsPreparing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isOnline, setIsOnline] = useState(() => navigator.onLine);
   const [syncError, setSyncError] = useState<string>();
+  const [gpsError, setGpsError] = useState<string>();
   const [isGpsTracking, setIsGpsTracking] = useState(false);
   const syncInProgressRef = useRef(false);
   const watchIdRef = useRef<number | undefined>(undefined);
@@ -193,7 +195,10 @@ export function useOfflineTracking(sessionId: string, sessionMeta?: CoordinatorS
     setIsLoading(true);
     getOfflineRecord(sessionId)
       .then((stored) => {
-        if (active) setRecord(stored);
+        if (active) {
+          setRecord(stored);
+          setCurrentLocation(stored?.pendingLocations.at(-1));
+        }
       })
       .catch((error: unknown) => {
         if (active)
@@ -433,6 +438,7 @@ export function useOfflineTracking(sessionId: string, sessionMeta?: CoordinatorS
         recordedAt: new Date().toISOString(),
         ...position,
       };
+      setCurrentLocation(sample);
       const next = await updateOfflineRecord(sessionId, (stored) => ({
         ...stored,
         pendingLocations: [...stored.pendingLocations, sample],
@@ -451,6 +457,7 @@ export function useOfflineTracking(sessionId: string, sessionMeta?: CoordinatorS
     const intervalMs = Math.max(record.pack.gpsIntervalSeconds || 30, 10) * 1000;
     watchIdRef.current = navigator.geolocation.watchPosition(
       (position) => {
+        setGpsError(undefined);
         const now = Date.now();
         if (now - lastGpsCapturedAtRef.current < intervalMs) return;
         lastGpsCapturedAtRef.current = now;
@@ -462,7 +469,7 @@ export function useOfflineTracking(sessionId: string, sessionMeta?: CoordinatorS
           headingDegrees: position.coords.heading ?? undefined,
         }).catch(() => undefined);
       },
-      () => setSyncError('Không thể theo dõi GPS. Hãy kiểm tra quyền vị trí của trình duyệt.'),
+      () => setGpsError('Không thể theo dõi GPS. Hãy kiểm tra quyền vị trí của trình duyệt.'),
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
     );
     setIsGpsTracking(true);
@@ -486,6 +493,11 @@ export function useOfflineTracking(sessionId: string, sessionMeta?: CoordinatorS
           .sort((a, b) => a.checkpointOrder - b.checkpointOrder)[0];
         if (!nextCheckpoint) throw new Error('Không còn checkpoint nào đang chờ check-in.');
         const position = await getCurrentGpsPosition();
+        setCurrentLocation({
+          sampleId: crypto.randomUUID(),
+          recordedAt: new Date().toISOString(),
+          ...position,
+        });
         return enqueueEvent('CHECKPOINT_REACHED', {
           checkpointId: nextCheckpoint.checkpointId,
           ...position,
@@ -512,6 +524,11 @@ export function useOfflineTracking(sessionId: string, sessionMeta?: CoordinatorS
         enqueueEvent('EQUIPMENT_CHECKED', { sessionEquipmentId, isChecked }),
       sendSos: async (message?: string) => {
         const position = await getCurrentGpsPosition();
+        setCurrentLocation({
+          sampleId: crypto.randomUUID(),
+          recordedAt: new Date().toISOString(),
+          ...position,
+        });
         return enqueueEvent('SOS_CREATED', { ...position, message });
       },
       resolveSos: (sosAlertId: string) => enqueueEvent('SOS_RESOLVED', { sosAlertId }),
@@ -537,6 +554,8 @@ export function useOfflineTracking(sessionId: string, sessionMeta?: CoordinatorS
     isSyncing,
     isOnline,
     isGpsTracking,
+    currentLocation,
+    gpsError,
     syncError,
     pendingEventCount: record?.pendingEvents.length ?? 0,
     pendingLocationCount: record?.pendingLocations.length ?? 0,

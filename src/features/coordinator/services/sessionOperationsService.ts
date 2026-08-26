@@ -51,6 +51,8 @@ interface TourCheckpointDto {
   checkpointId: string;
   checkpointName: string;
   description?: string;
+  latitude?: number;
+  longitude?: number;
   altitude?: number;
   checkpointOrder: number;
 }
@@ -98,6 +100,8 @@ export const sessionOperationsService = {
         checkpointId: cp.checkpointId,
         checkpointName: cp.checkpointName,
         description: cp.description,
+        latitude: cp.latitude,
+        longitude: cp.longitude,
         altitude: cp.altitude,
         checkpointOrder: cp.checkpointOrder,
       }));

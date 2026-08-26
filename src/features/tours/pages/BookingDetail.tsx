@@ -346,7 +346,7 @@ export default function BookingDetail({
           {booking.bookingStatus === 'PENDING_CONFIRMATION' && (
             <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1 rounded-full text-xs font-extrabold">
               <Clock className="w-3.5 h-3.5" />
-              Chờ Vendor xác nhận
+              Chờ nhà cung cấp xác nhận
             </span>
           )}
           {booking.bookingStatus === 'CONFIRMED' && (
