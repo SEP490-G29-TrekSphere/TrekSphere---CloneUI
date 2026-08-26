@@ -169,7 +169,7 @@ export default function MyCompanionGroupsPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen pt-16 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
       {/* ── Page Header ── */}
       <div className="pb-8">
         <h1 className="text-3xl font-black text-[#06261D] tracking-tight">Nhóm Của Tôi</h1>

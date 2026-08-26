@@ -36,9 +36,12 @@ export const PATHS = {
   MY_TOURS: '/my-tours',
   MY_VENDOR_APPLICATIONS: '/my-vendor-applications',
   GROUPS: '/groups',
+  GROUPS_OVERVIEW: '/groups/overview',
+  GROUPS_OVERVIEW_IN_GROUP: '/groups/overview/inGroup',
   GROUPS_CREATE: '/groups/create',
   GROUPS_JOIN: '/groups/:groupId/join',
   GROUPS_DETAIL: '/groups/:groupId',
+  GROUPS_IN_GROUP: '/groups/:groupId/inGroup',
   COMMUNITY: '/groups',
   NEWS: '/news',
   NEWS_DETAIL: '/news/:blogId',
@@ -154,6 +157,8 @@ export const getBookingPaymentPath = (bookingId: string) =>
   PATHS.BOOKING_PAYMENT.replace(':bookingId', bookingId);
 export const getGroupDetailPath = (groupId: string) =>
   PATHS.GROUPS_DETAIL.replace(':groupId', groupId);
+export const getGroupInGroupPath = (groupId: string) =>
+  PATHS.GROUPS_IN_GROUP.replace(':groupId', groupId);
 export const getGroupJoinPath = (groupId: string) => PATHS.GROUPS_JOIN.replace(':groupId', groupId);
 export const getVendorManagerTourEditPath = (id: string) =>
   PATHS.VENDOR_MANAGER_TOUR_EDIT.replace(':id', id);

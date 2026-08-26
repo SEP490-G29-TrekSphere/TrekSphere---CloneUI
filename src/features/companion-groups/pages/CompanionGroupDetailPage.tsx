@@ -218,7 +218,7 @@ export default function CompanionGroupDetailPage({
       },
       {
         onSuccess: (res) => {
-          if (res && res.conversationId) {
+          if (res?.conversationId) {
             addMemberToConversationMutation.mutate(
               { conversationId: res.conversationId, memberId: selectedAddBackMember.id },
               {

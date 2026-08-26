@@ -43,6 +43,9 @@ const MyBlogList = lazy(() => import('@/features/trekker-community/pages/MyBlogL
 const CreateBlogPost = lazy(() => import('@/features/trekker-community/pages/CreateBlogPost'));
 const ChatList = lazy(() => import('@/features/chat/pages/ChatList'));
 const CompanionGroups = lazy(() => import('@/features/companion-groups/pages/CompanionGroupsPage'));
+const GroupMatchingOverview = lazy(
+  () => import('@/features/companion-groups/pages/GroupMatchingOverviewPage')
+);
 const MyCompanionGroupsPage = lazy(
   () => import('@/features/companion-groups/pages/MyCompanionGroupsPage')
 );
@@ -188,9 +191,18 @@ export default function AppRoutes() {
         <Route element={<PublicLayout />}>
           <Route path={PATHS.HOME} element={<Home />} />
           <Route path={PATHS.GROUPS} element={<CompanionGroups />} />
+          <Route path={PATHS.GROUPS_OVERVIEW} element={<GroupMatchingOverview />} />
+          <Route
+            path={PATHS.GROUPS_OVERVIEW_IN_GROUP}
+            element={<GroupMatchingOverview initialMode="/inGroup" />}
+          />
           <Route path={PATHS.GROUPS_CREATE} element={<CreateCompanionGroup />} />
           <Route path={PATHS.GROUPS_JOIN} element={<JoinGroupRequestPage />} />
           <Route path={PATHS.GROUPS_DETAIL} element={<CompanionGroupDetail />} />
+          <Route
+            path={PATHS.GROUPS_IN_GROUP}
+            element={<GroupMatchingOverview initialMode="/inGroup" />}
+          />
           <Route path={PATHS.TOURS} element={<ListTours />} />
           <Route path={PATHS.TOUR_DETAIL} element={<TourDetails />} />
           <Route path={PATHS.NEWS} element={<BlogList />} />

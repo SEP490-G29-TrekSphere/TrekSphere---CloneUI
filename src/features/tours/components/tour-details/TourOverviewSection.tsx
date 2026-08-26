@@ -1,4 +1,4 @@
-import { Sparkles } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 import { splitField } from '@/features/tours/components/tour-details/shared';
 import type { TourDetailFromApi } from '@/features/tours/types';
 
@@ -24,7 +24,10 @@ export function TourOverviewSection({ tour }: TourOverviewSectionProps) {
               key={highlight}
               className="inline-flex items-center gap-1.5 rounded-full border border-accent bg-accent/30 px-3 py-1.5 text-xs font-semibold text-accent-foreground"
             >
-              <Sparkles className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <CheckCircle2
+                className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400"
+                aria-hidden="true"
+              />
               {highlight}
             </li>
           ))}
