@@ -17,16 +17,25 @@ import {
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { groupRecommendations } from '../../data/groupMatchingMocks';
-import type { GroupRecommendation } from '../../types/groupMatchingTypes';
+import type {
+  GroupMatchingReviewScenario,
+  GroupRecommendation,
+  PreviewView,
+} from '../../types/groupMatchingTypes';
 
 interface GroupDetailOutsiderViewProps {
+  scenario?: GroupMatchingReviewScenario;
   onOpenJoinWizard: () => void;
   onOpenMatchDetails: (group: GroupRecommendation) => void;
   onOpenSos: () => void;
+  onNavigateView?: (view: PreviewView) => void;
 }
 
 export function GroupDetailOutsiderView({
+  scenario,
+  onOpenJoinWizard,
   onOpenMatchDetails,
+  onNavigateView,
   onOpenSos,
 }: GroupDetailOutsiderViewProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'itinerary' | 'budget' | 'rules'>(
@@ -37,10 +46,68 @@ export function GroupDetailOutsiderView({
   const [isBookmarked, setIsBookmarked] = useState<boolean>(false);
 
   const sampleGroup = groupRecommendations[0];
+  const groupState = scenario?.groupState || 'RECRUITING';
+  const actor = scenario?.actor || 'GUEST';
+  const isOutsiderActor = actor === 'GUEST';
+
+  // Dynamic Group Status Badge rendering based on scenario.groupState
+  const getStatusBadge = () => {
+    switch (groupState) {
+      case 'DRAFT':
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-500/90 backdrop-blur-xs px-3 py-1 text-xs font-extrabold text-white">
+            📝 DỰ THẢO (Chưa công khai)
+          </span>
+        );
+      case 'RECRUITING':
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/90 backdrop-blur-xs px-3 py-1 text-xs font-extrabold text-white">
+            <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
+            ĐANG TUYỂN (4/8 Thành viên)
+          </span>
+        );
+      case 'FULL':
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/90 backdrop-blur-xs px-3 py-1 text-xs font-extrabold text-white">
+            🔴 ĐÃ ĐỦ THÀNH VIÊN (8/8 - Mở Waitlist)
+          </span>
+        );
+      case 'READY':
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/90 backdrop-blur-xs px-3 py-1 text-xs font-extrabold text-white">
+            🔵 SẴN SÀNG KHỞI HÀNH (Đã chốt)
+          </span>
+        );
+      case 'IN_PROGRESS':
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-500/90 backdrop-blur-xs px-3 py-1 text-xs font-extrabold text-white">
+            🏔️ ĐANG TRONG CHUYẾN ĐI (Thực địa)
+          </span>
+        );
+      case 'SETTLING':
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500/90 backdrop-blur-xs px-3 py-1 text-xs font-extrabold text-white">
+            📊 ĐANG QUYẾT TOÁN QUỸ
+          </span>
+        );
+      case 'COMPLETED':
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-700/90 backdrop-blur-xs px-3 py-1 text-xs font-extrabold text-white">
+            🏁 ĐÃ HOÀN THÀNH CHUYẾN ĐI
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/90 backdrop-blur-xs px-3 py-1 text-xs font-extrabold text-white">
+            ĐANG TUYỂN (4/8 Thành viên)
+          </span>
+        );
+    }
+  };
 
   return (
     <div className="space-y-6">
-      {/* 1. Hero Cover Header (Figma 451:1189) */}
+      {/* 1. Hero Cover Header */}
       <div className="relative overflow-hidden rounded-3xl border border-border bg-card shadow-lg">
         <div className="relative h-64 sm:h-80 lg:h-96 w-full overflow-hidden bg-slate-900">
           <img
@@ -54,7 +121,9 @@ export function GroupDetailOutsiderView({
           <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
             <div className="inline-flex items-center gap-2 rounded-full bg-slate-950/70 backdrop-blur-md px-3.5 py-1.5 text-xs font-bold text-white border border-white/20">
               <Mountain className="h-3.5 w-3.5 text-amber-400" />
-              <span>Góc nhìn người ngoài (Outsider View) · Figma 451:1188</span>
+              <span>
+                Góc nhìn: {actor} · Vòng đời: {groupState}
+              </span>
             </div>
 
             <div className="flex items-center gap-2">
@@ -84,10 +153,7 @@ export function GroupDetailOutsiderView({
           {/* Bottom Hero Info */}
           <div className="absolute bottom-6 left-6 right-6 z-10 text-white space-y-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/90 backdrop-blur-xs px-3 py-1 text-xs font-extrabold text-white">
-                <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
-                ĐANG TUYỂN (4/8 Thành viên)
-              </span>
+              {getStatusBadge()}
               <button
                 type="button"
                 onClick={() => onOpenMatchDetails(sampleGroup)}
@@ -107,8 +173,7 @@ export function GroupDetailOutsiderView({
                 <MapPinned className="h-4 w-4 text-emerald-400" /> Tà Xùa, Bắc Yên, Sơn La
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <CalendarDays className="h-4 w-4 text-amber-400" /> 12/10 – 14/10/2026 (3 ngày 2
-                đêm)
+                <CalendarDays className="h-4 w-4 text-amber-400" /> 12/10 – 14/10/2026 (3N2Đ)
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <HeartPulse className="h-4 w-4 text-rose-400" /> Độ khó: 3/5 (Trung bình)
@@ -122,16 +187,16 @@ export function GroupDetailOutsiderView({
         </div>
       </div>
 
-      {/* 2. Main Content Grid (Left 68% + Right Sticky Sidebar 32%) */}
+      {/* 2. Main Content Grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 items-start">
         {/* LEFT COLUMN */}
         <div className="space-y-6 lg:col-span-8">
-          {/* Internal Sub-Tab Bar */}
+          {/* Sub-Tab Bar */}
           <div className="flex overflow-x-auto rounded-2xl border border-border bg-card p-1.5 shadow-xs scrollbar-none">
             {[
               { id: 'overview', label: 'Tổng quan & Highlight', icon: Compass },
               { id: 'itinerary', label: 'Lộ trình 3N2Đ', icon: Route },
-              { id: 'budget', label: 'Dự toán C2C (Ước tính)', icon: WalletCards },
+              { id: 'budget', label: 'Dự toán C2C (Ưóc tính)', icon: WalletCards },
               { id: 'rules', label: 'Cam kết & An toàn', icon: ShieldCheck },
             ].map((tab) => {
               const Icon = tab.icon;
@@ -139,7 +204,9 @@ export function GroupDetailOutsiderView({
                 <button
                   key={tab.id}
                   type="button"
-                  onClick={() => setActiveTab(tab.id as any)}
+                  onClick={() =>
+                    setActiveTab(tab.id as 'overview' | 'itinerary' | 'budget' | 'rules')
+                  }
                   className={cn(
                     'flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition whitespace-nowrap',
                     activeTab === tab.id
@@ -154,11 +221,10 @@ export function GroupDetailOutsiderView({
             })}
           </div>
 
-          {/* TAB 1: OVERVIEW & HIGHLIGHT */}
+          {/* TAB 1: OVERVIEW */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
-              {/* Leader Profile Box */}
-              <div className="rounded-2xl border border-border bg-card p-6 shadow-xs space-y-4">
+              <div className="rounded-3xl border border-border bg-card p-6 shadow-xs space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
                   <div className="flex items-center gap-3.5">
                     <img
@@ -171,7 +237,7 @@ export function GroupDetailOutsiderView({
                         <h3 className="text-base font-extrabold text-foreground">
                           {sampleGroup.leader.name}
                         </h3>
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
                           <ShieldCheck className="h-3 w-3" /> Đã xác minh KYC
                         </span>
                       </div>
@@ -207,8 +273,8 @@ export function GroupDetailOutsiderView({
                 </p>
               </div>
 
-              {/* Compatibility Breakdown Banner */}
-              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-5 space-y-3">
+              {/* Match Breakdown */}
+              <div className="rounded-3xl border border-emerald-500/30 bg-emerald-500/5 p-5 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-400">
                     <Compass className="h-5 w-5 shrink-0" />
@@ -224,297 +290,148 @@ export function GroupDetailOutsiderView({
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div className="rounded-xl border border-emerald-500/20 bg-background/80 p-3 space-y-1">
-                    <span className="font-bold text-emerald-700">✓ Khung ngày tự do</span>
+                  <div className="rounded-2xl border border-emerald-500/20 bg-background/80 p-3 space-y-1">
+                    <span className="font-bold text-emerald-700 dark:text-emerald-400">
+                      ✓ Khung ngày tự do
+                    </span>
                     <p className="text-muted-foreground">
                       Khớp 100% khoảng ngày rảnh của bạn (12-14/10)
                     </p>
                   </div>
-                  <div className="rounded-xl border border-emerald-500/20 bg-background/80 p-3 space-y-1">
-                    <span className="font-bold text-emerald-700">✓ Thể lực phù hợp</span>
+                  <div className="rounded-2xl border border-emerald-500/20 bg-background/80 p-3 space-y-1">
+                    <span className="font-bold text-emerald-700 dark:text-emerald-400">
+                      ✓ Thể lực phù hợp
+                    </span>
+                    <p className="text-muted-foreground">Yêu cầu Thể lực Khá tốt (Đã xác minh)</p>
+                  </div>
+                  <div className="rounded-2xl border border-emerald-500/20 bg-background/80 p-3 space-y-1">
+                    <span className="font-bold text-emerald-700 dark:text-emerald-400">
+                      ✓ Ngân sách tương đồng
+                    </span>
                     <p className="text-muted-foreground">
-                      Yêu cầu Thể lực Khá tốt (Đã xác minh qua hồ sơ)
+                      Chi phí dự kiến ~2.18M nằm trong khoảng chọn
                     </p>
                   </div>
-                  <div className="rounded-xl border border-emerald-500/20 bg-background/80 p-3 space-y-1">
-                    <span className="font-bold text-emerald-700">✓ Ngân sách tương đồng</span>
+                  <div className="rounded-2xl border border-emerald-500/20 bg-background/80 p-3 space-y-1">
+                    <span className="font-bold text-emerald-700 dark:text-emerald-400">
+                      ★ Kỹ năng nhóm cần
+                    </span>
                     <p className="text-muted-foreground">
-                      Chi phí dự kiến ~2.18M nằm trong khoảng 2.0M - 2.5M
-                    </p>
-                  </div>
-                  <div className="rounded-xl border border-emerald-500/20 bg-background/80 p-3 space-y-1">
-                    <span className="font-bold text-emerald-700">★ Kỹ năng nhóm cần</span>
-                    <p className="text-muted-foreground">
-                      Nhóm đang tìm người biết Sơ cứu/Sử dụng bản đồ (Khớp với bạn!)
+                      Nhóm cần người biết Sơ cứu/Bản đồ (Khớp!)
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Trip Highlight Description */}
-              <div className="rounded-2xl border border-border bg-card p-6 shadow-xs space-y-4">
+              {/* Description */}
+              <div className="rounded-3xl border border-border bg-card p-6 shadow-xs space-y-4">
                 <h3 className="text-base font-extrabold text-foreground">
                   Giới thiệu chi tiết hành trình
                 </h3>
                 <div className="space-y-3 text-xs leading-6 text-muted-foreground">
                   <p>
                     Tà Xùa nằm ở ranh giới tự nhiên giữa hai tỉnh Sơn La và Yên Bái, được ví như
-                    thiên đường biển mây của vùng Tây Bắc. Cung đường trekking này không quá dài
-                    nhưng có những đoạn dốc núi đá thử thách, đặc biệt là mỏm đá "Sống lưng khủng
-                    long" hùng vĩ.
+                    thiên đường biển mây của vùng Tây Bắc. Cung đường trekking này có mỏm đá "Sống
+                    lưng khủng long" hùng vĩ.
                   </p>
                   <p>
                     Chuyến đi kéo dài 3 ngày 2 đêm được thiết kế theo hình thức{' '}
-                    <strong>C2C tự túc ghép nhóm</strong>. Mọi người cùng đóng góp chuẩn bị trang
-                    thiết bị, phân công nhiệm vụ (dẫn đường, nấu ăn, y tế, chụp ảnh) và chi trả theo
-                    hóa đơn thực tế phát sinh.
+                    <strong>C2C ghép nhóm tự túc</strong>. Thành viên cùng phân công nhiệm vụ chuẩn
+                    bị đồ dùng (Checklist) và chia sẻ chi phí minh bạch.
                   </p>
-                </div>
-
-                <div className="border-t border-border pt-4">
-                  <h4 className="text-xs font-extrabold text-foreground mb-3 uppercase tracking-wider">
-                    Tiêu chí thành viên cần tuyển:
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className="rounded-xl border border-border bg-background p-3 text-center">
-                      <span className="block text-[11px] font-medium text-muted-foreground">
-                        Thể lực tối thiểu
-                      </span>
-                      <strong className="text-xs font-bold text-foreground">
-                        Khá tốt (Chạy bộ / Đạp xe)
-                      </strong>
-                    </div>
-                    <div className="rounded-xl border border-border bg-background p-3 text-center">
-                      <span className="block text-[11px] font-medium text-muted-foreground">
-                        Thái độ đồng hành
-                      </span>
-                      <strong className="text-xs font-bold text-foreground">
-                        Tôn trọng & Đúng giờ
-                      </strong>
-                    </div>
-                    <div className="rounded-xl border border-border bg-background p-3 text-center">
-                      <span className="block text-[11px] font-medium text-muted-foreground">
-                        Kỹ năng ưu tiên
-                      </span>
-                      <strong className="text-xs font-bold text-emerald-700">
-                        Sơ cứu / Chụp ảnh
-                      </strong>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* TAB 2: ITINERARY TIMELINE */}
+          {/* TAB 2: ITINERARY */}
           {activeTab === 'itinerary' && (
-            <div className="rounded-2xl border border-border bg-card p-6 shadow-xs space-y-6">
-              <div className="flex items-center justify-between border-b border-border pb-4">
+            <div className="rounded-3xl border border-border bg-card p-6 shadow-xs space-y-6">
+              <h3 className="text-base font-extrabold text-foreground border-b border-border pb-3">
+                Lộ trình Trekking 3 Ngày 2 Đêm
+              </h3>
+              <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-border text-xs text-muted-foreground">
                 <div>
-                  <h3 className="text-base font-extrabold text-foreground">
-                    Lộ trình Trekking 3 Ngày 2 Đêm
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    Lịch trình dự kiến đã được Leader lập kế hoạch chi tiết
+                  <strong className="block font-bold text-foreground">
+                    Ngày 1: Hà Nội ➔ Bắc Yên ➔ Chân núi Tà Xùa (Nghỉ lán 2.200m)
+                  </strong>
+                  <p className="mt-1">
+                    Tập trung đêm tại Mỹ Đình, di chuyển xe giường nằm, xuất phát trek lúc 7h30
+                    sáng.
                   </p>
                 </div>
-                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
-                  3 Checkpoints chính
-                </span>
-              </div>
-
-              <div className="relative pl-6 space-y-8 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-border">
-                {/* Day 1 */}
-                <div className="relative">
-                  <span className="absolute -left-6 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white text-[10px] font-bold ring-4 ring-background">
-                    1
-                  </span>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-extrabold text-foreground">
-                        Ngày 1: Hà Nội ➔ Bắc Yên ➔ Chân núi Tà Xùa (Nghỉ lán 2.200m)
-                      </h4>
-                      <span className="text-[11px] font-bold text-muted-foreground">
-                        Trek ~7 km
-                      </span>
-                    </div>
-                    <p className="text-xs leading-relaxed text-muted-foreground">
-                      • 22:00 (Đêm trước): Tập trung tại Bến xe Mỹ Đình, lên xe giường nằm di chuyển
-                      đi Bắc Yên.
-                      <br />• 05:00: Đến trạm dừng chân, ăn sáng, nhận gậy và phân chia vật dụng
-                      chung của nhóm.
-                      <br />• 07:30: Bắt đầu trekking xuyên qua rừng trúc xanh mát.
-                      <br />• 12:00: Dừng chân dùng bữa trưa nhẹ giữa rừng.
-                      <br />• 16:30: Đến lán nghỉ gỗ ở độ cao 2.200m, chuẩn bị bữa tối nướng BBQ
-                      cùng nhóm.
-                    </p>
-                  </div>
+                <div>
+                  <strong className="block font-bold text-foreground">
+                    Ngày 2: Lán 2.200m ➔ Sống lưng khủng long ➔ Săn mây hoàng hôn
+                  </strong>
+                  <p className="mt-1">
+                    Đón bình minh rực rỡ, vượt mỏm đá Sống lưng khủng long, chụp ảnh lưu niệm nhóm.
+                  </p>
                 </div>
-
-                {/* Day 2 */}
-                <div className="relative">
-                  <span className="absolute -left-6 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white text-[10px] font-bold ring-4 ring-background">
-                    2
-                  </span>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-extrabold text-foreground">
-                        Ngày 2: Lán 2.200m ➔ Sống lưng khủng long ➔ Săn mây hoàng hôn
-                      </h4>
-                      <span className="text-[11px] font-bold text-muted-foreground">
-                        Trek ~9 km
-                      </span>
-                    </div>
-                    <p className="text-xs leading-relaxed text-muted-foreground">
-                      • 06:00: Dậy sớm đón bình minh nhẹ, thưởng thức cà phê và ăn sáng nóng.
-                      <br />• 07:30: Thử thách chinh phục mỏm đá "Sống lưng khủng long" nổi tiếng.
-                      <br />• 12:00: Ăn trưa tại mỏm đá ngắm toàn cảnh thung lũng mây.
-                      <br />• 15:30: Chụp ảnh lưu niệm cùng lá cờ nhóm TrekSphere.
-                      <br />• 18:00: Trở về lán, sinh hoạt vòng tròn và họp nhóm rà soát thể lực.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Day 3 */}
-                <div className="relative">
-                  <span className="absolute -left-6 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white text-[10px] font-bold ring-4 ring-background">
-                    3
-                  </span>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-extrabold text-foreground">
-                        Ngày 3: Đón bình minh đỉnh núi ➔ Downhill ➔ Xe về Hà Nội
-                      </h4>
-                      <span className="text-[11px] font-bold text-muted-foreground">Hoàn tất</span>
-                    </div>
-                    <p className="text-xs leading-relaxed text-muted-foreground">
-                      • 05:00: Bắt trọn khoảnh khắc biển mây bàng bạc lúc rạng đông.
-                      <br />• 08:00: Thu dọn hành lý, dọn sạch rác bảo vệ môi trường (Leave No
-                      Trace).
-                      <br />• 12:00: Xuống chân núi, ăn trưa lẩu cá tầm mừng chuyến đi thành công.
-                      <br />• 14:00: Xe lên đường về Hà Nội. 19:30 có mặt tại Mỹ Đình.
-                    </p>
-                  </div>
+                <div>
+                  <strong className="block font-bold text-foreground">
+                    Ngày 3: Đỉnh mây ➔ Downhill chân núi ➔ Xe về Hà Nội
+                  </strong>
+                  <p className="mt-1">
+                    Thu dọn hành lý theo nguyên tắc Leave No Trace, ăn trưa lẩu mừng hoàn thành và
+                    lên xe về.
+                  </p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* TAB 4: ESTIMATED BUDGET */}
+          {/* TAB 3: BUDGET */}
           {activeTab === 'budget' && (
-            <div className="rounded-2xl border border-border bg-card p-6 shadow-xs space-y-6">
-              <div className="flex items-center justify-between border-b border-border pb-4">
-                <div>
-                  <h3 className="text-base font-extrabold text-foreground">
-                    Bảng Dự Toán Chi Phí C2C
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    Không lợi nhuận thương mại — Chia sẻ chi phí thực tế
-                  </p>
-                </div>
-                <div className="text-right">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase">
-                    Dự tính / Người
-                  </span>
-                  <p className="text-lg font-black text-emerald-600">2.180.000 đ</p>
-                </div>
+            <div className="rounded-3xl border border-border bg-card p-6 shadow-xs space-y-5">
+              <div className="flex items-center justify-between border-b border-border pb-3">
+                <h3 className="text-base font-extrabold text-foreground">
+                  Dự toán Chi phí C2C Chia đều
+                </h3>
+                <span className="text-lg font-black text-emerald-600">~2.180.000 đ / người</span>
               </div>
-
-              <div className="space-y-3">
-                {[
-                  {
-                    title: 'Xe giường nằm 2 chiều Hà Nội - Bắc Yên',
-                    cost: '550.000 đ',
-                    note: 'Đặt vé chung nhóm',
-                  },
-                  {
-                    title: 'Thuê lán nghỉ 2 đêm + Phí môi trường',
-                    cost: '380.000 đ',
-                    note: 'Chi trả tại trạm',
-                  },
-                  {
-                    title: 'Thực phẩm, BBQ nướng & Nước uống 3 ngày',
-                    cost: '650.000 đ',
-                    note: 'Thủ quỹ mua chung',
-                  },
-                  {
-                    title: 'Thuê Porter dẫn đường địa phương',
-                    cost: '400.000 đ',
-                    note: 'Chia đều cho 8 người',
-                  },
-                  {
-                    title: 'Quỹ y tế & Dự phòng rủi ro',
-                    cost: '200.000 đ',
-                    note: 'Hoàn lại nếu không dùng',
-                  },
-                ].map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between rounded-xl border border-border bg-background p-3.5 text-xs"
-                  >
-                    <div>
-                      <span className="font-bold text-foreground">{item.title}</span>
-                      <p className="text-[11px] text-muted-foreground">{item.note}</p>
-                    </div>
-                    <strong className="font-black text-foreground">{item.cost}</strong>
-                  </div>
-                ))}
-              </div>
-
-              <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-4 text-xs text-amber-800 dark:text-amber-300">
-                ⚠️ <strong>Lưu ý tài chính:</strong> TrekSphere cung cấp công cụ tính toán và đối
-                soát quỹ. Nền tảng <strong>KHÔNG thu quỹ hay giữ tiền</strong>. Mọi khoản tiền được
-                thành viên trực tiếp thanh toán P2P hoặc giao cho Thủ quỹ nhóm.
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between p-3 rounded-xl bg-background border border-border">
+                  <span>Xe giường nằm 2 chiều</span>
+                  <strong>550.000 đ</strong>
+                </div>
+                <div className="flex justify-between p-3 rounded-xl bg-background border border-border">
+                  <span>Thuê lán nghỉ 2 đêm + Phí bảo tồn</span>
+                  <strong>380.000 đ</strong>
+                </div>
+                <div className="flex justify-between p-3 rounded-xl bg-background border border-border">
+                  <span>Thực phẩm & BBQ nướng</span>
+                  <strong>650.000 đ</strong>
+                </div>
+                <div className="flex justify-between p-3 rounded-xl bg-background border border-border">
+                  <span>Chi phí hướng dẫn địa hình chia 8 người</span>
+                  <strong>400.000 đ</strong>
+                </div>
               </div>
             </div>
           )}
 
-          {/* TAB 5: RULES & SAFETY */}
+          {/* TAB 4: RULES */}
           {activeTab === 'rules' && (
-            <div className="rounded-2xl border border-border bg-card p-6 shadow-xs space-y-6">
-              <div className="flex items-center gap-3 border-b border-border pb-4">
-                <ShieldCheck className="h-6 w-6 text-emerald-600 shrink-0" />
-                <div>
-                  <h3 className="text-base font-extrabold text-foreground">
-                    Cam kết An toàn & Quy tắc C2C
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    Đảm bảo chuyến đi văn minh, an toàn và gắn kết
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                <div className="rounded-xl border border-border bg-background p-4 space-y-2">
-                  <strong className="font-extrabold text-foreground">
-                    1. Tuân thủ sự điều phối
+            <div className="rounded-3xl border border-border bg-card p-6 shadow-xs space-y-4 text-xs">
+              <h3 className="text-base font-extrabold text-foreground border-b border-border pb-3">
+                Cam kết An toàn & Nguyên tắc Đồng hành C2C
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-4 rounded-2xl bg-background border border-border space-y-1">
+                  <strong className="font-bold text-foreground block">
+                    1. Tuân thủ kỷ luật nhóm
                   </strong>
-                  <p className="text-muted-foreground leading-relaxed">
-                    Mọi thành viên có trách nhiệm nghe theo sự hướng dẫn của Leader/Co-Leader tại
-                    các đoạn đường hiểm trở. Không tự ý tách đoàn.
+                  <p className="text-muted-foreground">
+                    Luôn giữ khoảng cách an toàn, nghe hướng dẫn Leader & không tự tách đoàn.
                   </p>
                 </div>
-                <div className="rounded-xl border border-border bg-background p-4 space-y-2">
-                  <strong className="font-extrabold text-foreground">
-                    2. Bảo vệ môi trường (LNT)
+                <div className="p-4 rounded-2xl bg-background border border-border space-y-1">
+                  <strong className="font-bold text-foreground block">
+                    2. Nguyên tắc Leave No Trace
                   </strong>
-                  <p className="text-muted-foreground leading-relaxed">
-                    Áp dụng nguyên tắc "Leave No Trace" - Không để lại gì ngoài những dấu chân,
-                    không lấy đi gì ngoài những bức ảnh đẹp.
-                  </p>
-                </div>
-                <div className="rounded-xl border border-border bg-background p-4 space-y-2">
-                  <strong className="font-extrabold text-foreground">3. Tín hiệu SOS & Y tế</strong>
-                  <p className="text-muted-foreground leading-relaxed">
-                    Sử dụng tính năng SOS khẩn cấp trong ứng dụng nếu xảy ra chấn thương hoặc sự cố
-                    bất ngờ trên hành trình.
-                  </p>
-                </div>
-                <div className="rounded-xl border border-border bg-background p-4 space-y-2">
-                  <strong className="font-extrabold text-foreground">4. Minh bạch chi phí</strong>
-                  <p className="text-muted-foreground leading-relaxed">
-                    Thủ quỹ có trách nhiệm lưu trữ toàn bộ hóa đơn chi tiêu và cập nhật lên tab Ngân
-                    sách nhóm sau chuyến đi.
+                  <p className="text-muted-foreground">
+                    Mang toàn bộ rác cá nhân xuống núi, giữ gìn cảnh quan thiên nhiên nguyên sơ.
                   </p>
                 </div>
               </div>
@@ -522,122 +439,167 @@ export function GroupDetailOutsiderView({
           )}
         </div>
 
-        {/* RIGHT COLUMN - STICKY JOIN BOX */}
+        {/* RIGHT COLUMN - STICKY ACTION CARD */}
         <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-36">
-          {/* Main Join Card */}
           <div className="rounded-3xl border border-primary/30 bg-card p-6 shadow-xl space-y-5">
             <div className="border-b border-border pb-4">
-              <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
-                Đăng ký ứng tuyển vào nhóm
+              <span className="text-[11px] font-extrabold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
+                Ứng tuyển tham gia chuyến đi
               </span>
               <div className="mt-1 flex items-baseline justify-between">
                 <h3 className="text-2xl font-black text-foreground">2.180.000 đ</h3>
-                <span className="text-xs font-bold text-muted-foreground">/ người (Ước tính)</span>
+                <span className="text-xs font-bold text-muted-foreground">
+                  / người (Ước tính C2C)
+                </span>
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Hạn chốt danh sách: Trước 05/10/2026
-              </p>
             </div>
 
-            {/* Quick Match Indicator */}
-            <div className="rounded-2xl bg-primary/10 p-3.5 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
-                <Compass className="h-4 w-4 text-primary shrink-0" />
-                <span className="font-bold text-primary">Độ hợp cạ của bạn</span>
-              </div>
-              <strong className="text-base font-black text-primary">92%</strong>
-            </div>
-
-            {/* Form Section */}
-            {!hasApplied ? (
-              <div className="space-y-4 pt-1">
-                <div className="space-y-2">
-                  <label className="block text-xs font-bold text-foreground">
-                    Câu hỏi duyệt từ Trưởng nhóm:
-                  </label>
-                  <p className="text-xs text-muted-foreground italic rounded-xl bg-muted/50 p-3 border border-border">
-                    "Chào bạn! Bạn đã từng đi trekking cung đường nào trên 1.500m chưa? Hãy chia sẻ
-                    ngắn gọn về thể lực & đồ dùng bạn đã có nhé!"
+            {/* CTA Section — rẽ nhánh theo actor trước, groupState chỉ áp dụng cho outsider chưa nộp đơn */}
+            {actor === 'APPLICANT' || actor === 'WAITLISTED_APPLICANT' ? (
+              <div className="space-y-3 pt-1">
+                <div className="rounded-2xl bg-amber-500/10 border border-amber-500/30 p-4 text-center space-y-2">
+                  <span className="text-xs font-bold text-amber-800 dark:text-amber-300 block">
+                    {actor === 'WAITLISTED_APPLICANT'
+                      ? '⏳ Bạn đang trong Danh sách chờ (Waitlist)'
+                      : '📨 Đơn của bạn đang chờ Trưởng nhóm duyệt'}
+                  </span>
+                  <p className="text-[11px] text-muted-foreground">
+                    Bạn không thể nộp thêm đơn mới. Theo dõi trạng thái hoặc rút đơn tại màn Đơn ứng
+                    tuyển.
                   </p>
                 </div>
-
-                <div className="space-y-2">
-                  <label className="block text-xs font-bold text-foreground">
-                    Lời nhắn xin vào nhóm của bạn:
-                  </label>
-                  <textarea
-                    rows={4}
-                    value={applicantMsg}
-                    onChange={(e) => setApplicantMsg(e.target.value)}
-                    placeholder="Ví dụ: Mình đã đi Lảo Thẩn năm ngoái, tập thể lực chạy bộ 5km định kỳ, có lều 2 người & túi y tế cá nhân..."
-                    className="w-full rounded-2xl border border-input bg-background p-3.5 text-xs outline-none focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-
                 <button
                   type="button"
-                  onClick={() => setHasApplied(true)}
-                  className="w-full inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-extrabold text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90 transition active:scale-[0.98]"
+                  onClick={() => onNavigateView?.('applications')}
+                  className="w-full inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-primary px-5 text-xs font-extrabold text-primary-foreground hover:bg-primary/90 transition"
                 >
-                  <UserPlus className="h-4 w-4" />
-                  Gửi Đơn Xin Vào Nhóm Ngay
+                  Xem trạng thái đơn của tôi
                 </button>
-
-                <p className="text-[11px] text-center text-muted-foreground leading-tight">
-                  Đơn của bạn sẽ được gửi trực tiếp tới Leader <strong>Hoàng Nam</strong> duyệt
-                  trong 24h.
-                </p>
+              </div>
+            ) : actor === 'MEMBER' ||
+              actor === 'TREASURER' ||
+              actor === 'CO_LEADER' ||
+              actor === 'LEADER' ? (
+              <div className="space-y-3 pt-1">
+                <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/30 p-4 text-center space-y-2">
+                  <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500 text-white">
+                    <CheckCircle2 className="h-5 w-5" />
+                  </div>
+                  <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 block">
+                    Bạn đã là thành viên chính thức của nhóm này
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onNavigateView?.('workspace')}
+                  className="w-full inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-primary px-5 text-xs font-extrabold text-primary-foreground hover:bg-primary/90 transition"
+                >
+                  Vào Workspace nhóm
+                </button>
               </div>
             ) : (
-              <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/30 p-5 text-center space-y-3">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 text-white">
-                  <CheckCircle2 className="h-6 w-6" />
+              groupState === 'RECRUITING' &&
+              (!hasApplied ? (
+                <div className="space-y-4 pt-1">
+                  <div className="space-y-2 text-xs">
+                    <label className="block font-bold text-foreground">
+                      Lời nhắn gửi Trưởng nhóm:
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={applicantMsg}
+                      onChange={(e) => setApplicantMsg(e.target.value)}
+                      placeholder="Chia sẻ về thể lực, kinh nghiệm leo núi & đồ dùng cá nhân..."
+                      className="w-full rounded-2xl border border-input bg-background p-3.5 text-xs outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHasApplied(true);
+                      onOpenJoinWizard();
+                    }}
+                    className="w-full inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-extrabold text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90 transition active:scale-[0.98]"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    Ứng tuyển vào nhóm ngay
+                  </button>
                 </div>
-                <h4 className="text-sm font-extrabold text-emerald-800 dark:text-emerald-300">
-                  Đã gửi đơn xin vào nhóm!
-                </h4>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Leader Hoàng Nam đã nhận được lời nhắn của bạn. Bạn sẽ nhận được thông báo ngay
-                  khi đơn được xem xét.
-                </p>
+              ) : (
+                <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/30 p-4 text-center space-y-2">
+                  <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500 text-white">
+                    <CheckCircle2 className="h-5 w-5" />
+                  </div>
+                  <h4 className="text-xs font-extrabold text-emerald-800 dark:text-emerald-300">
+                    Đã gửi đơn xin gia nhập!
+                  </h4>
+                </div>
+              ))
+            )}
+
+            {isOutsiderActor && groupState === 'FULL' && (
+              <div className="space-y-3 pt-1">
+                <div className="rounded-2xl bg-amber-500/10 border border-amber-500/30 p-4 text-center space-y-2">
+                  <span className="text-xs font-bold text-amber-800 dark:text-amber-300 block">
+                    🔴 Nhóm đã đủ 8/8 thành viên chính thức
+                  </span>
+                  <p className="text-[11px] text-muted-foreground">
+                    Bạn có thể nộp đơn vào Danh sách chờ (Waitlist) để nhận ngay thông báo khi có
+                    thành viên rút đơn.
+                  </p>
+                </div>
                 <button
                   type="button"
-                  onClick={() => setHasApplied(false)}
-                  className="text-xs font-bold text-muted-foreground hover:underline"
+                  onClick={onOpenJoinWizard}
+                  className="w-full inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-amber-400 bg-amber-500/10 px-5 text-xs font-extrabold text-amber-800 dark:text-amber-300 hover:bg-amber-500/20 transition"
                 >
-                  Chỉnh sửa lời nhắn đơn
+                  <UserPlus className="h-4 w-4" />
+                  Đăng ký vào Danh sách chờ (Waitlist)
                 </button>
               </div>
             )}
 
-            {/* Quick action buttons */}
+            {isOutsiderActor &&
+              ['READY', 'IN_PROGRESS', 'SETTLING', 'COMPLETED'].includes(groupState) && (
+                <div className="rounded-2xl bg-muted/60 p-4 text-center space-y-2 border border-border">
+                  <span className="text-xs font-bold text-muted-foreground block">
+                    🔒 Nhóm đã khóa ứng tuyển (Trạng thái: {groupState})
+                  </span>
+                  <p className="text-[11px] text-muted-foreground">
+                    Chuyến đi này hiện đang diễn ra hoặc đã hoàn thành. Vui lòng khám phá các nhóm
+                    đang tuyển khác.
+                  </p>
+                </div>
+              )}
+
+            {/* Quick Action Controls */}
             <div className="border-t border-border pt-4 flex flex-col gap-2">
               <button
                 type="button"
                 onClick={() => onOpenMatchDetails(sampleGroup)}
                 className="w-full min-h-10 rounded-full border border-border text-xs font-bold text-foreground hover:bg-muted transition"
               >
-                Xem chi tiết bảng điểm Tương thích
+                Xem chi tiết Bảng điểm Tương thích
               </button>
               <button
                 type="button"
                 onClick={onOpenSos}
                 className="w-full min-h-10 rounded-full border border-rose-200 bg-rose-50 dark:bg-rose-950/30 text-xs font-bold text-rose-700 dark:text-rose-400 hover:bg-rose-100 transition"
               >
-                Giả lập Tín hiệu SOS Chuyến đi
+                Mô phỏng Trung tâm SOS Khẩn cấp
               </button>
             </div>
           </div>
 
-          {/* Safety Disclaimer Card */}
-          <div className="rounded-3xl border border-border bg-card p-5 space-y-3">
-            <div className="flex items-center gap-2 text-foreground font-bold text-xs">
+          <div className="rounded-3xl border border-border bg-card p-5 space-y-2 text-xs">
+            <div className="flex items-center gap-2 font-bold text-foreground">
               <ShieldCheck className="h-4 w-4 text-emerald-600" />
-              <span>Bảo vệ C2C Community</span>
+              <span>Bảo vệ Cộng đồng C2C</span>
             </div>
-            <p className="text-[11px] leading-relaxed text-muted-foreground">
-              TrekSphere là nền tảng kết nối tự do C2C phi thương mại. Bạn nên kiểm tra kỹ thông tin
-              KYC và đánh giá Trust Score của Trưởng nhóm trước khi thống nhất tham gia.
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              TrekSphere kết nối thành viên C2C minh bạch. Đánh giá uy tín Trust Score giúp bạn an
+              tâm trước khi khởi hành.
             </p>
           </div>
         </div>

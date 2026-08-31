@@ -94,6 +94,13 @@ export class ErrorBoundary extends Component<Props, State> {
         const names = await caches.keys();
         await Promise.all(names.map((n) => caches.delete(n)));
       }
+
+      // Unregister mọi Service Worker (kể cả mockServiceWorker.js của MSW) —
+      // chỉ xoá cache không đủ nếu chính SW đang ở trạng thái lỗi/kẹt.
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map((r) => r.unregister()));
+      }
     } catch (e) {
       console.error('Failed to clear caches:', e);
     }

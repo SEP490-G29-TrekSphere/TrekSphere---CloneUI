@@ -64,20 +64,25 @@ export default function JoinGroupRequestPage({
 
   const existingMember = groupData?.members?.find((m) => String(m.userId) === String(user?.id));
 
-  const onSubmit = () => {
+  const onSubmit = (values: JoinRequestFormValues) => {
     if (!groupId) return;
 
-    joinMutation.mutate(groupId, {
-      onSuccess: () => {
-        toast.success(
-          'Đã gửi yêu cầu tham gia thành công! Trưởng nhóm sẽ xét duyệt yêu cầu của bạn.'
-        );
-        navigate(detailPath);
-      },
-      onError: (err) => {
-        toast.error(err instanceof Error ? err.message : 'Có lỗi xảy ra khi gửi yêu cầu tham gia.');
-      },
-    });
+    joinMutation.mutate(
+      { matchingGroupId: groupId, message: values.message },
+      {
+        onSuccess: () => {
+          toast.success(
+            'Đã gửi yêu cầu tham gia thành công! Trưởng nhóm sẽ xét duyệt yêu cầu của bạn.'
+          );
+          navigate(detailPath);
+        },
+        onError: (err) => {
+          toast.error(
+            err instanceof Error ? err.message : 'Có lỗi xảy ra khi gửi yêu cầu tham gia.'
+          );
+        },
+      }
+    );
   };
 
   const handleCancel = () => {

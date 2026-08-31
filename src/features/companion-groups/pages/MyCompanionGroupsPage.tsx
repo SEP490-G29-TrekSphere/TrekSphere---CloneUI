@@ -1,16 +1,21 @@
-import { LayoutGrid, List, RotateCcw, Users } from 'lucide-react';
+import { Copy, LayoutGrid, List, RotateCcw, Users } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { getTrekkerGroupDetailPath, getTrekkerGroupJoinPath, PATHS } from '@/constants';
-import { TourPagination } from '@/features/tours';
+import TourPagination from '@/features/tours/components/TourPagination';
 import { useTours } from '@/features/tours/hooks/useTours';
 import { cn } from '@/lib/utils';
 import { useDebounce } from '@/shared/hooks/useDebounce';
 import { AppButton, AppDatePicker } from '@/shared/ui';
 import { useAppStore } from '@/store/useAppStore';
+import { toast } from '@/store/useToastStore';
 import { CompanionGroupCard, type GroupCardData } from '../components/CompanionGroupCard';
 import { CreateCompanionGroupModal } from '../components/CreateCompanionGroupModal';
+import {
+  CreateGroupFromVendorTourModal,
+  type VendorTourTemplate,
+} from '../components/modals/GroupMatchingModals';
 import { useMyMatchingGroups } from '../hooks/useMyMatchingGroups';
 
 const PAGE_SIZE = 9;
@@ -24,9 +29,10 @@ const sortOptions = [
 
 const statusFilterOptions = [
   { value: 'ALL', label: 'Tất cả trạng thái' },
-  { value: 'OPEN', label: 'Đang mở' },
-  { value: 'FULL', label: 'Đã đủ' },
-  { value: 'CLOSED', label: 'Đã đóng' },
+  { value: 'RECRUITING', label: 'Đang tuyển' },
+  { value: 'FULL', label: 'Đã đủ người' },
+  { value: 'COMPLETED', label: 'Đã kết thúc' },
+  { value: 'CANCELLED', label: 'Đã hủy' },
 ];
 
 const roleTabs = [
@@ -49,6 +55,7 @@ function getGroupProperties(group: GroupCardData) {
 
 export default function MyCompanionGroupsPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const user = useAppStore((s) => s.user);
   const isGuest = !user;
 
@@ -70,6 +77,19 @@ export default function MyCompanionGroupsPage() {
   const [page, setPage] = useState(0);
   const [layout, setLayout] = useState<'list' | 'grid'>('grid');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isVendorCloneModalOpen, setIsVendorCloneModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('openVendorClone') === 'true') {
+      setIsVendorCloneModalOpen(true);
+    }
+  }, [searchParams]);
+
+  const handleConfirmClone = (template: VendorTourTemplate, customTitle: string) => {
+    setIsVendorCloneModalOpen(false);
+    toast.success(`Đã khởi tạo nhóm "${customTitle}" từ Tour Vendor "${template.title}"!`);
+    navigate(PATHS.GROUPS_OVERVIEW);
+  };
 
   // Reset page on filter change
   // biome-ignore lint/correctness/useExhaustiveDependencies: setPage is stable
@@ -204,13 +224,23 @@ export default function MyCompanionGroupsPage() {
               />
             </div>
           </div>
-          <button
-            type="button"
-            onClick={handleCreateClick}
-            className="flex items-center gap-1.5 rounded-full bg-[#06261D] hover:bg-[#0B3025] px-5 py-2.5 text-xs font-bold text-white transition-all shrink-0 shadow-sm cursor-pointer"
-          >
-            + Tạo nhóm mới
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsVendorCloneModalOpen(true)}
+              className="flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 px-4 py-2.5 text-xs font-extrabold text-amber-800 dark:text-amber-300 transition-all shrink-0 shadow-xs cursor-pointer"
+            >
+              <Copy className="h-4 w-4 text-amber-600" />
+              Tạo từ Tour Vendor (Clone)
+            </button>
+            <button
+              type="button"
+              onClick={handleCreateClick}
+              className="flex items-center gap-1.5 rounded-full bg-[#06261D] hover:bg-[#0B3025] px-5 py-2.5 text-xs font-bold text-white transition-all shrink-0 shadow-sm cursor-pointer"
+            >
+              + Tạo nhóm mới
+            </button>
+          </div>
         </div>
       </div>
 
@@ -445,6 +475,14 @@ export default function MyCompanionGroupsPage() {
       <CreateCompanionGroupModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
+        onOpenVendorClone={() => setIsVendorCloneModalOpen(true)}
+      />
+
+      {/* Vendor Tour Clone Modal */}
+      <CreateGroupFromVendorTourModal
+        isOpen={isVendorCloneModalOpen}
+        onClose={() => setIsVendorCloneModalOpen(false)}
+        onConfirmClone={handleConfirmClone}
       />
     </div>
   );

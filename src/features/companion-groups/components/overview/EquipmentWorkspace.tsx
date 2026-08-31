@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import type { ReviewActor } from '../../types/groupMatchingTypes';
 
 export interface EquipmentItem {
   id: string;
@@ -163,7 +164,13 @@ const MEMBER_OPTIONS = [
   },
 ];
 
-export function EquipmentWorkspace() {
+interface EquipmentWorkspaceProps {
+  actor?: ReviewActor;
+}
+
+export function EquipmentWorkspace({ actor = 'MEMBER' }: EquipmentWorkspaceProps) {
+  // Chỉ Leader/Co-Leader phân công checklist chung; thành viên chỉ tick trạng thái của chính mình.
+  const canAssignSharedItems = actor === 'LEADER' || actor === 'CO_LEADER';
   const [items, setItems] = useState<EquipmentItem[]>(INITIAL_EQUIPMENT);
   const [activeCategory, setActiveCategory] = useState<'all' | 'personal' | 'shared'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -227,7 +234,7 @@ export function EquipmentWorkspace() {
             </div>
             <div>
               <h3 className="text-lg font-extrabold text-foreground flex items-center gap-2">
-                Phân Công Đồ Dùng & Logistics Chuyến Đi
+                Checklist & Phân Công Đồ Dùng Chuyến Đi
                 <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-300">
                   v2.2
                 </span>
@@ -238,14 +245,23 @@ export function EquipmentWorkspace() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-emerald-700 transition shrink-0 cursor-pointer"
-          >
-            <Plus className="h-4 w-4" />
-            Phân Công Đồ Dùng Mới
-          </button>
+          {canAssignSharedItems ? (
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-emerald-700 transition shrink-0 cursor-pointer"
+            >
+              <Plus className="h-4 w-4" />
+              Phân Công Đồ Dùng Mới
+            </button>
+          ) : (
+            <span
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-border px-3 py-2.5 text-[11px] font-bold text-muted-foreground shrink-0"
+              title="Chỉ Leader/Co-Leader được thêm hoặc phân công lại đồ dùng chung"
+            >
+              Chỉ Leader/Co-Leader phân công
+            </span>
+          )}
         </div>
 
         {/* PROGRESS BAR */}

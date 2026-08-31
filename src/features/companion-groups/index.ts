@@ -13,7 +13,6 @@ export { MembersCard } from './components/detail/MembersCard';
 export { useApproveMember } from './hooks/useApproveMember';
 export { useCancelJoinRequest } from './hooks/useCancelJoinRequest';
 export { useCreateMatchingGroup } from './hooks/useCreateMatchingGroup';
-export { useDeleteMatchingGroup } from './hooks/useDeleteMatchingGroup';
 export { useJoinMatchingGroup } from './hooks/useJoinMatchingGroup';
 export { useLeaveMatchingGroup } from './hooks/useLeaveMatchingGroup';
 export { useMatchingGroupDetail } from './hooks/useMatchingGroupDetail';

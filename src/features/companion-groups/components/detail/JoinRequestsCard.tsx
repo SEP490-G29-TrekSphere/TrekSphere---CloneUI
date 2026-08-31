@@ -128,6 +128,12 @@ export function JoinRequestsCard({
                 </button>
               </div>
             </div>
+
+            {req.message && (
+              <p className="rounded-lg bg-muted/60 p-3 text-xs italic leading-relaxed text-muted-foreground">
+                "{req.message}"
+              </p>
+            )}
           </div>
         ))}
 

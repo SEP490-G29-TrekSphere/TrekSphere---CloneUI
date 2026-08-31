@@ -11,6 +11,8 @@ import type { UserProfile } from '@/features/auth';
 export const profileService = {
   /** Lấy thông tin cá nhân. */
   getProfile: () => ApiService<UserProfile>('/users/me', 'GET'),
+  /** Lấy thông tin công khai của người dùng bất kỳ theo ID */
+  getPublicUser: (userId: string) => ApiService<UserProfile>(`/users/${userId}`, 'GET'),
   /**
    * Cập nhật thông tin cá nhân bằng multipart/form-data.
    * API PUT /users/me yêu cầu Content-Type: multipart/form-data với các fields:

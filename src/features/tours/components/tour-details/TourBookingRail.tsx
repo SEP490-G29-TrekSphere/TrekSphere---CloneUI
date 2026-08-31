@@ -1,4 +1,4 @@
-import { CalendarDays, ChevronDown, Lock, ShieldCheck, Users } from 'lucide-react';
+import { CalendarDays, ChevronDown, Copy, Lock, ShieldCheck, Sparkles, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getBookTourPath, PATHS } from '@/constants';
 import {
@@ -48,75 +48,49 @@ export function TourBookingRail({
     event.preventDefault();
     const target = document.getElementById(SECTION_IDS.policy);
     if (!target) return;
-    window.scrollTo({
-      top: target.getBoundingClientRect().top + window.scrollY - SECTION_SCROLL_OFFSET,
-      behavior: 'smooth',
-    });
+    const top = target.getBoundingClientRect().top + window.scrollY - SECTION_SCROLL_OFFSET;
+    window.scrollTo({ top, behavior: 'smooth' });
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
+    <div className="rounded-3xl border border-border bg-card p-6 shadow-sm space-y-4">
+      {/* Price Header */}
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {selectedSchedule ? 'Giá lịch đã chọn' : 'Giá từ'}
-        </p>
-        <p className="mt-1 flex items-baseline gap-1.5">
-          <span className="text-3xl font-extrabold leading-none text-primary">
-            {formatPrice(price)}đ
-          </span>
-          <span className="text-sm text-muted-foreground">/ người</span>
-        </p>
+        <span className="text-xs text-muted-foreground">Giá từ</span>
+        <div className="flex items-baseline gap-1">
+          <span className="text-2xl font-black text-primary">{formatPrice(price)}</span>
+          <span className="text-xs text-muted-foreground">/ người</span>
+        </div>
       </div>
 
-      {/* Nút chọn lịch: cuộn xuống danh sách lịch thay vì mở dropdown, để người dùng
-          thấy đủ số chỗ còn trống và giá từng đợt trước khi quyết định. */}
-      <button
-        type="button"
-        onClick={onPickSchedule}
-        disabled={!hasSchedules}
-        className="flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-background px-4 py-3 text-left transition-colors hover:border-primary/40 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        <span className="flex items-center gap-2.5 min-w-0">
-          <CalendarDays className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-          <span className="min-w-0">
-            <span className="block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Ngày khởi hành
-            </span>
-            <span className="block truncate text-sm font-bold text-foreground">
-              {selectedSchedule
-                ? formatDate(selectedSchedule.departureDate)
-                : hasSchedules
-                  ? 'Chọn lịch khởi hành'
-                  : 'Chưa mở lịch'}
-            </span>
-          </span>
-        </span>
-        <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-      </button>
-
-      {selectedSchedule && (
-        <dl className="flex flex-col gap-2 rounded-xl bg-muted/60 px-4 py-3 text-sm">
-          <div className="flex items-center justify-between gap-2">
-            <dt className="text-muted-foreground">Ngày về</dt>
-            <dd className="font-semibold text-foreground">
-              {formatDate(selectedSchedule.returnDate)}
-            </dd>
+      {/* Selected Schedule Selector */}
+      <div>
+        <button
+          type="button"
+          onClick={onPickSchedule}
+          className="flex w-full items-center justify-between rounded-xl border border-border bg-muted/30 p-3 text-left transition-colors hover:bg-muted/60"
+        >
+          <div className="space-y-0.5">
+            <span className="text-[11px] font-bold text-muted-foreground">Lịch khởi hành:</span>
+            <div className="flex items-center gap-1.5 font-bold text-foreground text-xs">
+              <CalendarDays className="h-3.5 w-3.5 text-primary" />
+              {selectedSchedule ? formatDate(selectedSchedule.departureDate) : 'Chọn ngày đi'}
+            </div>
           </div>
-          <div className="flex items-center justify-between gap-2">
-            <dt className="flex items-center gap-1.5 text-muted-foreground">
-              <Users className="h-3.5 w-3.5" aria-hidden="true" />
-              Chỗ còn lại
-            </dt>
-            <dd className="font-semibold text-foreground">
-              {remainingSlots(selectedSchedule)}/{selectedSchedule.availableSlots}
-            </dd>
-          </div>
-        </dl>
-      )}
+          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+        </button>
 
-      {/* CTA — hành động chính duy nhất của cả trang */}
+        {selectedSchedule && (
+          <div className="mt-1.5 flex items-center gap-1 text-[11px] font-bold text-emerald-700">
+            <Users className="h-3 w-3" />
+            <span>Còn {remainingSlots(selectedSchedule)} chỗ nhận đặt</span>
+          </div>
+        )}
+      </div>
+
+      {/* Primary Action Button */}
       {tour.onlineBookingEnabled !== true ? (
-        <div className="rounded-xl bg-amber-50 px-4 py-3 text-center">
+        <div className="rounded-2xl bg-amber-500/10 p-4 text-center">
           <p className="text-sm font-bold text-amber-950">Chưa nhận đặt online</p>
           <p className="mt-1 text-xs leading-relaxed text-amber-800">
             {tour.onlineBookingDisabledReason ?? 'Tour chưa đủ điều kiện nhận đặt online.'}
@@ -162,10 +136,28 @@ export function TourBookingRail({
         </p>
       )}
 
+      {/* Quick Clone & Custom Banner for C2C Companion Group Creation */}
+      <div className="rounded-2xl border border-primary/20 bg-primary/5 p-3.5 space-y-2 text-xs">
+        <div className="flex items-center gap-1.5 font-bold text-primary">
+          <Sparkles className="h-4 w-4 shrink-0" />
+          <span>Tự đi theo nhóm C2C?</span>
+        </div>
+        <p className="text-[11px] text-muted-foreground leading-relaxed">
+          Tạo nhóm ghép tự túc dựa trên tour mẫu này để kế thừa 100% lịch trình & mốc an toàn.
+        </p>
+        <Link
+          to={`${PATHS.GROUPS}?openVendorClone=true&tourId=${tour.tourId}`}
+          className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-primary/40 bg-background px-3 py-2 text-xs font-extrabold text-primary hover:bg-primary hover:text-primary-foreground transition-all shadow-xs"
+        >
+          <Copy className="h-3.5 w-3.5" />
+          <span>Nhân bản làm nhóm C2C</span>
+        </Link>
+      </div>
+
       <a
         href={`#${SECTION_IDS.policy}`}
         onClick={scrollToPolicy}
-        className="text-center text-xs font-semibold text-primary underline-offset-4 hover:underline"
+        className="block text-center text-xs font-semibold text-primary underline-offset-4 hover:underline"
       >
         Xem chính sách hủy và hoàn tiền
       </a>

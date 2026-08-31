@@ -1,7 +1,7 @@
 import { Camera } from 'lucide-react';
 import { useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { PATHS } from '@/constants';
+import { PATHS, getPublicProfilePath } from '@/constants/paths';
 import type { UserProfile } from '@/features/auth';
 
 interface ProfileSidebarProps {
@@ -103,15 +103,23 @@ export default function ProfileSidebar({
       {/* Divider */}
       <div className="my-6 h-px w-full bg-border" />
 
-      {/* Action button */}
-      <div className="w-full">
+      {/* Action buttons */}
+      <div className="w-full space-y-2">
         {mode === 'view' ? (
-          <Link
-            to={editPath ?? PATHS.EDIT_PROFILE}
-            className="block w-full rounded-xl bg-primary px-4 py-2.5 text-center text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary-hover"
-          >
-            Chỉnh sửa hồ sơ
-          </Link>
+          <>
+            <Link
+              to={editPath ?? PATHS.EDIT_PROFILE}
+              className="block w-full rounded-xl bg-primary px-4 py-2.5 text-center text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary-hover"
+            >
+              Chỉnh sửa hồ sơ
+            </Link>
+            <Link
+              to={getPublicProfilePath(profile.id || 'user-trekker-1')}
+              className="block w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-center text-xs font-mono font-bold uppercase tracking-wider text-gray-800 shadow-sm transition-colors hover:bg-gray-100"
+            >
+              [XEM TRANG CÁ NHÂN CÔNG KHẢI]
+            </Link>
+          </>
         ) : (
           <p className="text-center text-xs text-muted-foreground">
             Đang chỉnh sửa hồ sơ. Thay đổi sẽ chỉ được lưu khi bạn bấm{' '}
@@ -122,3 +130,4 @@ export default function ProfileSidebar({
     </aside>
   );
 }
+

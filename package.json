@@ -72,6 +72,7 @@
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
     "lefthook": "^2.1.9",
+    "msw": "^2.15.0",
     "postcss": "^8.5.16",
     "shadcn": "^4.12.0",
     "tailwindcss": "^4.3.1",
@@ -97,6 +98,11 @@
     },
     "transformIgnorePatterns": [
       "node_modules/(?!(react-router|@remix-run|react-quill-new|lodash-es)/)"
+    ]
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
     ]
   }
 }

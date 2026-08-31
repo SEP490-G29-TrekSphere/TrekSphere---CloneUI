@@ -7,6 +7,7 @@ import {
   FileText,
   Footprints,
   Image,
+  type LucideIcon,
   MapPin,
   Megaphone,
   MessageSquare,
@@ -23,12 +24,11 @@ import {
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { workspaceNav } from '../../data/groupMatchingMocks';
-import type { WorkspaceSubTab } from '../../types/groupMatchingTypes';
+import type { GroupMatchingReviewScenario, WorkspaceSubTab } from '../../types/groupMatchingTypes';
 import { BudgetWorkspace } from './BudgetWorkspace';
 import { EquipmentWorkspace } from './EquipmentWorkspace';
 import { ItineraryWorkspace } from './ItineraryWorkspace';
 import { MembersWorkspace } from './MembersWorkspace';
-import { TripAlbumWorkspace } from './TripAlbumWorkspace';
 
 export type GroupLifecyclePhase = 1 | 2 | 3 | 4 | 5;
 
@@ -67,7 +67,7 @@ const initialFeedPosts: FeedPost[] = [
     isAnnouncement: true,
     badge: 'Cập nhật từ Trưởng đoàn',
     content:
-      'CẢNH BÁO CHẶNG LÈO LAO: Đoạn dốc tiếp theo sương mù bắt đầu xuống dày. Mọi người chú ý bám sát Porter A Sìn, bật đèn pin trán và đi theo hàng một!',
+      'CẢNH BÁO CHẶNG LÈO LAO: Đoạn dốc tiếp theo sương mù bắt đầu xuống dày. Mọi người chú ý đi sát nhau, bật đèn pin trán và đi theo hàng một!',
     likes: 4,
     commentsCount: 2,
   },
@@ -148,7 +148,7 @@ const initialCheckpoints: TrailCheckpoint[] = [
 
 const phaseDetails: Record<
   GroupLifecyclePhase,
-  { label: string; sub: string; badgeBg: string; textClr: string; icon: any }
+  { label: string; sub: string; badgeBg: string; textClr: string; icon: LucideIcon }
 > = {
   1: {
     label: 'Giai đoạn 1: Bản nháp',
@@ -187,7 +187,12 @@ const phaseDetails: Record<
   },
 };
 
-export function WorkspacePreview() {
+interface WorkspacePreviewProps {
+  scenario?: GroupMatchingReviewScenario;
+}
+
+export function WorkspacePreview({ scenario }: WorkspacePreviewProps) {
+  const activeActor = scenario?.actor || 'MEMBER';
   const [currentPhase, setCurrentPhase] = useState<GroupLifecyclePhase>(4); // Default to Phase 4 for showcase
   const [activeTab, setActiveTab] = useState<WorkspaceSubTab>('overview');
   const [successionReason, setSuccessionReason] = useState<string>('');
@@ -263,88 +268,22 @@ export function WorkspacePreview() {
 
   return (
     <div className="space-y-6">
-      {/* 1. INTERACTIVE LIFECYCLE PHASE SWITCHER BAR */}
-      <div className="rounded-2xl border border-border bg-card p-5 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block">
-              Trình điều khiển Vòng đời Nhóm (5 Giai đoạn C2C)
-            </span>
-            <h3 className="text-base font-extrabold text-foreground mt-0.5">
-              Chuyển đổi trạng thái trải nghiệm nhóm
-            </h3>
-          </div>
-          <span className="text-xs font-semibold text-muted-foreground bg-muted px-3 py-1 rounded-full border border-border self-start sm:self-auto">
-            Nhóm: Săn mây Lảo Thẩn (4/7 thành viên)
-          </span>
-        </div>
-
-        {/* Phase selector buttons */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1">
-          {([1, 2, 3, 4, 5] as GroupLifecyclePhase[]).map((phaseNum) => {
-            const p = phaseDetails[phaseNum];
-            const Icon = p.icon;
-            const isActive = currentPhase === phaseNum;
-            return (
-              <button
-                key={phaseNum}
-                type="button"
-                onClick={() => setCurrentPhase(phaseNum)}
-                className={cn(
-                  'flex flex-col items-start p-3 rounded-xl border text-left transition cursor-pointer relative overflow-hidden',
-                  isActive
-                    ? 'border-primary bg-primary/10 shadow-xs ring-1 ring-primary'
-                    : 'border-border bg-background hover:bg-muted/50 text-muted-foreground'
-                )}
-              >
-                <div className="flex items-center justify-between w-full">
-                  <span
-                    className={cn(
-                      'flex h-6 w-6 items-center justify-center rounded-lg text-xs font-bold',
-                      isActive
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-muted-foreground'
-                    )}
-                  >
-                    {phaseNum}
-                  </span>
-                  <Icon
-                    className={cn(
-                      'h-4 w-4',
-                      isActive ? 'text-primary' : 'text-muted-foreground/60'
-                    )}
-                  />
-                </div>
-                <span
-                  className={cn(
-                    'text-xs font-extrabold mt-2 block',
-                    isActive ? 'text-foreground' : 'text-muted-foreground'
-                  )}
-                >
-                  {p.label.split(':')[1] || p.label}
-                </span>
-                <span className="text-[10px] text-muted-foreground line-clamp-1 mt-0.5">
-                  {p.sub}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 2. PHASE STATUS BANNER DISPLAY */}
-      <div className="rounded-2xl border border-border bg-card p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* PHASE STATUS BANNER DISPLAY WITH COMPACT PHASE SELECTOR */}
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div
             className={cn(
-              'p-3 rounded-xl border flex items-center justify-center',
+              'p-2.5 rounded-xl border flex items-center justify-center shrink-0',
               currentPhaseInfo.badgeBg
             )}
           >
-            <currentPhaseInfo.icon className="h-6 w-6 text-primary" />
+            <currentPhaseInfo.icon className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-primary/10 text-primary border border-primary/20">
+                Góc nhìn: {activeActor}
+              </span>
               <span
                 className={cn(
                   'px-2.5 py-0.5 text-xs font-extrabold rounded-full border',
@@ -360,13 +299,36 @@ export function WorkspacePreview() {
                 </span>
               )}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">{currentPhaseInfo.sub}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{currentPhaseInfo.sub}</p>
           </div>
         </div>
 
-        {/* Phase 4 Quick Action SOS button */}
-        {currentPhase === 4 && (
-          <div className="flex items-center gap-2">
+        {/* Compact Lifecycle Phase Switcher Pills & SOS */}
+        <div className="flex flex-wrap items-center gap-2 pt-2 md:pt-0 border-t md:border-t-0 border-border">
+          <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border border-border">
+            {([1, 2, 3, 4, 5] as GroupLifecyclePhase[]).map((phaseNum) => {
+              const isActive = currentPhase === phaseNum;
+              const p = phaseDetails[phaseNum];
+              return (
+                <button
+                  key={phaseNum}
+                  type="button"
+                  onClick={() => setCurrentPhase(phaseNum)}
+                  className={cn(
+                    'px-2.5 py-1 text-[11px] font-extrabold rounded-lg transition cursor-pointer',
+                    isActive
+                      ? 'bg-background text-primary shadow-xs border border-border'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                  title={p.label}
+                >
+                  P{phaseNum}
+                </button>
+              );
+            })}
+          </div>
+
+          {currentPhase === 4 && (
             <button
               type="button"
               onClick={() =>
@@ -374,13 +336,13 @@ export function WorkspacePreview() {
                   'Đã kích hoạt tín hiệu SOS khẩn cấp! Thông báo vị trí GPS đã gửi tới toàn bộ thành viên và Đội kiểm lâm Y Tý.'
                 )
               }
-              className="rounded-xl bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-xs font-extrabold flex items-center gap-1.5 shadow-md transition cursor-pointer"
+              className="rounded-xl bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 text-xs font-extrabold flex items-center gap-1.5 shadow-md transition cursor-pointer"
             >
-              <ShieldAlert className="h-4 w-4" />
-              <span>Phát Tín Hiệu SOS Khẩn Cấp</span>
+              <ShieldAlert className="h-3.5 w-3.5" />
+              <span>SOS Khẩn Cấp</span>
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Internal Sub-navigation Bar */}
@@ -555,7 +517,7 @@ export function WorkspacePreview() {
                       type="text"
                       value={trailExpenseTitle}
                       onChange={(e) => setTrailExpenseTitle(e.target.value)}
-                      placeholder="Tên khoản chi (ví dụ: Nước uống dọc đường, Thuê Porter...)"
+                      placeholder="Tên khoản chi (ví dụ: Nước uống dọc đường, Vé gửi xe...)"
                       className="w-full rounded-xl border border-input bg-background p-2.5 text-xs text-foreground placeholder:text-muted-foreground"
                     />
                   </div>
@@ -746,10 +708,10 @@ export function WorkspacePreview() {
                       <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-3 space-y-1">
                         <span className="font-bold text-blue-700 flex items-center gap-1.5">
                           <Radio className="h-3.5 w-3.5 shrink-0 text-blue-600" />
-                          Liên lạc kiểm lâm
+                          Checkpoint gần nhất
                         </span>
                         <p className="text-muted-foreground text-[11px]">
-                          Porter A Sìn đã báo vị trí đoàn
+                          Group Leader vừa check-in tại checkpoint 2
                         </p>
                       </div>
                     </>
@@ -822,18 +784,16 @@ export function WorkspacePreview() {
 
       {/* SUB-TAB 2: ITINERARY & CHECKPOINTS */}
       {activeTab === 'itinerary' && <ItineraryWorkspace />}
+      {/* Members/Budget/Equipment nhận actor để gate action theo role (BR-GRP: chỉ Leader/Treasurer thao tác cấu hình chung) */}
 
       {/* SUB-TAB 3: BUDGET & C2C SPLIT BILL */}
-      {activeTab === 'budget' && <BudgetWorkspace />}
+      {activeTab === 'budget' && <BudgetWorkspace actor={activeActor} />}
 
       {/* SUB-TAB 4: MEMBERS */}
-      {activeTab === 'members' && <MembersWorkspace />}
+      {activeTab === 'members' && <MembersWorkspace actor={activeActor} />}
 
       {/* SUB-TAB 5: SHARED EQUIPMENT CHECKLIST */}
-      {activeTab === 'equipment' && <EquipmentWorkspace />}
-
-      {/* SUB-TAB 6: TRIP ALBUM & CONQUEST BADGES */}
-      {activeTab === 'album' && <TripAlbumWorkspace />}
+      {activeTab === 'equipment' && <EquipmentWorkspace actor={activeActor} />}
 
       {/* SUB-TAB 7: LEADER SUCCESSION PROTOCOL */}
       {activeTab === 'succession' && (

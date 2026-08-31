@@ -37,6 +37,7 @@ const MyBookings = lazy(() => import('@/features/tours/pages/MyBookings'));
 const BlogList = lazy(() => import('@/features/news/pages/BlogList'));
 const BlogDetails = lazy(() => import('@/features/news/pages/BlogDetails'));
 const ViewProfile = lazy(() => import('@/features/profile/pages/ViewProfile'));
+const PublicProfilePage = lazy(() => import('@/features/profile/pages/PublicProfilePage'));
 const EditProfile = lazy(() => import('@/features/profile/pages/EditProfile'));
 const MyApplications = lazy(() => import('@/features/profile/pages/MyApplications'));
 const MyBlogList = lazy(() => import('@/features/trekker-community/pages/MyBlogList'));
@@ -45,6 +46,9 @@ const ChatList = lazy(() => import('@/features/chat/pages/ChatList'));
 const CompanionGroups = lazy(() => import('@/features/companion-groups/pages/CompanionGroupsPage'));
 const GroupMatchingOverview = lazy(
   () => import('@/features/companion-groups/pages/GroupMatchingOverviewPage')
+);
+const GroupMatchingStory = lazy(
+  () => import('@/features/companion-groups/pages/GroupMatchingStoryPage')
 );
 const MyCompanionGroupsPage = lazy(
   () => import('@/features/companion-groups/pages/MyCompanionGroupsPage')
@@ -196,6 +200,7 @@ export default function AppRoutes() {
             path={PATHS.GROUPS_OVERVIEW_IN_GROUP}
             element={<GroupMatchingOverview initialMode="/inGroup" />}
           />
+          <Route path={PATHS.GROUPS_STORY} element={<GroupMatchingStory />} />
           <Route path={PATHS.GROUPS_CREATE} element={<CreateCompanionGroup />} />
           <Route path={PATHS.GROUPS_JOIN} element={<JoinGroupRequestPage />} />
           <Route path={PATHS.GROUPS_DETAIL} element={<CompanionGroupDetail />} />
@@ -207,6 +212,7 @@ export default function AppRoutes() {
           <Route path={PATHS.TOUR_DETAIL} element={<TourDetails />} />
           <Route path={PATHS.NEWS} element={<BlogList />} />
           <Route path={PATHS.NEWS_DETAIL} element={<BlogDetails />} />
+          <Route path={PATHS.PUBLIC_PROFILE} element={<PublicProfilePage />} />
         </Route>
 
         {/* Protected routes — yêu cầu đăng nhập, dùng MainLayout có Header/Sidebar */}

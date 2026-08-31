@@ -3,6 +3,7 @@ import {
   AlignLeft,
   Calendar,
   Clock,
+  Copy,
   Info,
   Loader2,
   MapPin,
@@ -58,9 +59,14 @@ type CreateGroupFormValues = z.infer<typeof createGroupSchema>;
 interface CreateCompanionGroupModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenVendorClone?: () => void;
 }
 
-export function CreateCompanionGroupModal({ isOpen, onClose }: CreateCompanionGroupModalProps) {
+export function CreateCompanionGroupModal({
+  isOpen,
+  onClose,
+  onOpenVendorClone,
+}: CreateCompanionGroupModalProps) {
   const navigate = useNavigate();
   const createMutation = useCreateMatchingGroup();
 
@@ -141,6 +147,29 @@ export function CreateCompanionGroupModal({ isOpen, onClose }: CreateCompanionGr
         {/* Scrollable Content */}
         <div className="overflow-y-auto flex-1 hide-scrollbar">
           <form onSubmit={form.handleSubmit(onSubmit)} className="px-6 py-6 space-y-6">
+            {/* Vendor Tour Clone Shortcut Banner */}
+            {onOpenVendorClone && (
+              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <Copy className="h-4 w-4 text-amber-600 shrink-0" />
+                  <div className="text-xs text-amber-900 dark:text-amber-200">
+                    <span className="font-bold">Muốn tạo nhanh từ Lịch trình có sẵn?</span> Kế thừa
+                    Checkpoints & vật dụng từ Tour mẫu Vendor.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onOpenVendorClone();
+                  }}
+                  className="rounded-full bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 text-[11px] font-bold shrink-0 transition"
+                >
+                  Dùng Tour Vendor (Clone)
+                </button>
+              </div>
+            )}
+
             {/* Tour Selection */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-sm font-semibold text-foreground">

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { PATHS } from '@/constants';
-import { TourPagination } from '@/features/tours';
+import TourPagination from '@/features/tours/components/TourPagination';
 import { useTours } from '@/features/tours/hooks/useTours';
 import { cn } from '@/lib/utils';
 import { useDebounce } from '@/shared/hooks/useDebounce';

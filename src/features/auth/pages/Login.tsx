@@ -8,6 +8,7 @@ import { PATHS } from '@/constants';
 import { extractRoles, getPostLoginRoute } from '@/constants/roles';
 import { authService, toAppStoreUser } from '@/features/auth';
 import { parseAuthSessionPayload } from '@/features/auth/utils/authSession';
+import { mockUsers } from '@/mocks/data/users';
 import { useAuthCheck } from '@/shared/hooks/useAuthCheck';
 import {
   AppButton,
@@ -23,6 +24,22 @@ import AuthLayout from '../components/AuthLayout';
 import { type LoginFormValues, loginSchema } from '../validations/auth.schema';
 
 const LOGIN_IMAGE = 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80';
+
+/** Nhãn hiển thị cho từng role — dùng cho panel "Tài khoản demo" bên dưới. */
+const DEMO_ROLE_LABELS: Record<string, string> = {
+  ADMIN: 'Admin',
+  TREKKER: 'Trekker',
+  VENDOR_MANAGER: 'Vendor Manager',
+  VENDOR_STAFF: 'Vendor Staff',
+  COORDINATOR: 'Coordinator',
+};
+
+/**
+ * Bản build demo (mock-only, xem `src/mocks/`) — hiện danh sách tài khoản mẫu cho từng
+ * role để bấm đăng nhập nhanh mà không cần nhớ email/mật khẩu. Tự ẩn nếu tắt mock qua
+ * `VITE_ENABLE_MOCKS=false`.
+ */
+const SHOW_DEMO_ACCOUNTS = import.meta.env.VITE_ENABLE_MOCKS !== 'false';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -152,6 +169,10 @@ export default function Login() {
 
   const handleGoogleError = () => {
     toast.error('Đăng nhập Google bị hủy hoặc thất bại.');
+  };
+
+  const handleDemoLogin = (email: string, password: string) => {
+    void onSubmit({ email, password });
   };
 
   // Forward click từ AppButton custom sang nút thật của Google (đang bị ẩn).
@@ -370,6 +391,28 @@ export default function Login() {
             </AppButton>
           </form>
         </FormProvider>
+
+        {SHOW_DEMO_ACCOUNTS && (
+          <div className="mt-6 space-y-2.5 rounded-2xl border border-dashed border-[#E6E2D1] bg-[#FAF8F1] p-4">
+            <p className="text-xs font-semibold text-[#6F7B75]">
+              Bản demo — đăng nhập nhanh theo role (mật khẩu chung: password123):
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {mockUsers.map((demoUser) => (
+                <button
+                  key={demoUser.id}
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={() => handleDemoLogin(demoUser.email, demoUser.password)}
+                  className="rounded-full border border-[#E6E2D1] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#1F3933] transition-colors hover:bg-[#1F3933] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  title={demoUser.email}
+                >
+                  {DEMO_ROLE_LABELS[demoUser.roles[0]] ?? demoUser.roles[0]}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </AuthLayout>
     </>
   );

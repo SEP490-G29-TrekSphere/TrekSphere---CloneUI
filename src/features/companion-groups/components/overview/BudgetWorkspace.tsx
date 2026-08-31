@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   Clock,
   Coins,
-  Compass,
   Pencil,
   Plus,
   Receipt,
@@ -19,6 +18,7 @@ import {
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/store/useToastStore';
+import type { ReviewActor } from '../../types/groupMatchingTypes';
 
 export interface DebtSettlement {
   id: number;
@@ -31,7 +31,7 @@ export interface DebtSettlement {
 
 export interface BudgetItem {
   id: number;
-  category: 'trans' | 'porter' | 'food' | 'gear' | 'other';
+  category: 'trans' | 'food' | 'gear' | 'other';
   title: string;
   amount: number;
   note: string;
@@ -53,11 +53,6 @@ const CATEGORY_CONFIG: Record<
     icon: Bus,
     colorClass: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
   },
-  porter: {
-    label: 'Porter / Dẫn Đường',
-    icon: Compass,
-    colorClass: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
-  },
   food: {
     label: 'Ăn Uống BBQ',
     icon: Utensils,
@@ -75,7 +70,13 @@ const CATEGORY_CONFIG: Record<
   },
 };
 
-export function BudgetWorkspace() {
+interface BudgetWorkspaceProps {
+  actor?: ReviewActor;
+}
+
+export function BudgetWorkspace({ actor = 'MEMBER' }: BudgetWorkspaceProps) {
+  // Chỉ Leader/Treasurer được sửa dự toán chung và xác nhận settlement (UC-GMD09: [Treasurer/Member permission]).
+  const canManageBudgetPlan = actor === 'LEADER' || actor === 'TREASURER';
   const [memberCount] = useState<number>(5);
 
   // Budget Items State
@@ -89,10 +90,10 @@ export function BudgetWorkspace() {
     },
     {
       id: 2,
-      category: 'porter',
-      title: 'Thuê Porter dẫn đường (2 Ngày 1 Đêm)',
+      category: 'other',
+      title: 'Chi phí thuê hướng dẫn địa hình (2 Ngày 1 Đêm)',
       amount: 1200000,
-      note: 'Vác đồ + dẫn đường Tà Xùa',
+      note: 'Hỗ trợ dẫn tuyến Tà Xùa',
     },
     {
       id: 3,
@@ -293,14 +294,23 @@ export function BudgetWorkspace() {
               Định mức chi phí chuyến đi được tính tự động dựa trên số lượng thành viên ghép thực tế
             </p>
           </div>
-          <button
-            type="button"
-            onClick={openAddBudgetModal}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 transition shadow-xs"
-          >
-            <Plus className="h-4 w-4" />
-            Thêm Khoản Chi Mới
-          </button>
+          {canManageBudgetPlan ? (
+            <button
+              type="button"
+              onClick={openAddBudgetModal}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 transition shadow-xs"
+            >
+              <Plus className="h-4 w-4" />
+              Thêm Khoản Chi Mới
+            </button>
+          ) : (
+            <span
+              className="inline-flex items-center gap-1.5 rounded-xl border border-dashed border-border px-3 py-2 text-[11px] font-bold text-muted-foreground"
+              title="Chỉ Leader hoặc Treasurer được sửa dự toán chung của nhóm"
+            >
+              Chỉ Leader/Treasurer chỉnh dự toán
+            </span>
+          )}
         </div>
 
         {/* METRIC CARDS */}
@@ -386,24 +396,28 @@ export function BudgetWorkspace() {
                         {item.note || '-'}
                       </td>
                       <td className="p-3 text-right whitespace-nowrap">
-                        <div className="inline-flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => openEditBudgetModal(item)}
-                            className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition"
-                            title="Sửa"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteBudget(item.id)}
-                            className="p-1.5 text-rose-500 hover:text-rose-600 rounded-lg hover:bg-rose-500/10 transition"
-                            title="Xóa"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
+                        {canManageBudgetPlan ? (
+                          <div className="inline-flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => openEditBudgetModal(item)}
+                              className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition"
+                              title="Sửa"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteBudget(item.id)}
+                              className="p-1.5 text-rose-500 hover:text-rose-600 rounded-lg hover:bg-rose-500/10 transition"
+                              title="Xóa"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground italic">Chỉ xem</span>
+                        )}
                       </td>
                     </tr>
                   );
@@ -559,15 +573,19 @@ export function BudgetWorkspace() {
                       <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20">
                         <CheckCircle2 className="h-4 w-4" /> Đã hoàn tất
                       </span>
-                    ) : (
+                    ) : canManageBudgetPlan ? (
                       <button
                         type="button"
                         onClick={() => handleConfirmSettlement(item.id)}
                         className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] transition shadow-xs"
-                        title="Chỉ người nhận tiền xác nhận"
+                        title="Chỉ người nhận tiền (Leader/Treasurer) xác nhận"
                       >
                         <CheckCircle2 className="h-3.5 w-3.5" /> Xác Nhận Đã Nhận
                       </button>
+                    ) : (
+                      <span className="text-[11px] font-bold text-muted-foreground italic px-2">
+                        Chờ payee xác nhận
+                      </span>
                     )}
                   </div>
                 </div>
@@ -604,7 +622,6 @@ export function BudgetWorkspace() {
                   className="w-full rounded-xl border border-border bg-background p-2.5 outline-none focus:ring-2 focus:ring-emerald-500"
                 >
                   <option value="trans">Di Chuyển (Xe, Tàu, Taxi)</option>
-                  <option value="porter">Porter / Dẫn Đường</option>
                   <option value="food">Ăn Uống BBQ / Thực Phẩm</option>
                   <option value="gear">Dụng Cụ Lều Trại</option>
                   <option value="other">Chi Phí Khác</option>

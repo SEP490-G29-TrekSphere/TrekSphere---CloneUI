@@ -15,6 +15,10 @@ export interface MatchingGroupItem {
   matchingGroupId: string;
   tourId: string;
   tourName: string;
+  /** Ảnh đại diện của tour gắn với nhóm — dùng làm ảnh bìa card. Optional vì BE có thể chưa trả. */
+  tourImageUrl?: string;
+  /** Địa điểm trek — optional vì BE có thể chưa trả. */
+  location?: string;
   ownerId: string;
   ownerName: string;
   ownerAvatarUrl?: string;
@@ -51,6 +55,7 @@ export interface MyMatchingJoinRequestItem {
   groupStatus: MatchingGroupStatus;
   tourId: string;
   tourName: string;
+  tourImageUrl?: string;
   ownerId: string;
   ownerName: string;
   ownerAvatarUrl?: string;
@@ -103,12 +108,32 @@ export interface MatchingMemberItem {
   status: MatchingMemberStatus;
   createdAt: string; // ISO string
   isInConversation?: boolean;
+  /** Lời nhắn gửi trưởng nhóm khi xin gia nhập — optional vì BE có thể chưa hỗ trợ. */
+  message?: string;
+}
+
+export interface MatchingGroupItineraryDay {
+  day: number;
+  title: string;
+  description: string;
+}
+
+export interface MatchingGroupMatchReason {
+  label: string;
+  detail: string;
+}
+
+export interface MatchingGroupBudgetItem {
+  label: string;
+  amount: number;
 }
 
 export interface MatchingGroupDetailResponse {
   matchingGroupId: string;
   tourId: string;
   tourName: string;
+  tourImageUrl?: string;
+  location?: string;
   ownerId: string;
   ownerName: string;
   ownerAvatarUrl?: string;
@@ -123,6 +148,16 @@ export interface MatchingGroupDetailResponse {
   members: MatchingMemberItem[];
   hasConversation?: boolean;
   isInConversation?: boolean;
+  /** Lịch trình dự kiến — optional vì BE có thể chưa trả (nhóm mới tạo). */
+  itinerary?: MatchingGroupItineraryDay[];
+  /** Dự toán chi phí chia đều — optional vì BE có thể chưa trả (nhóm mới tạo). */
+  budgetItems?: MatchingGroupBudgetItem[];
+  /** Giới thiệu chi tiết hành trình (nhiều đoạn) — optional vì BE có thể chưa trả. */
+  journeyIntro?: string[];
+  /** % độ phù hợp ước tính với người xem — optional, chỉ mang tính minh hoạ (demo). */
+  matchPercent?: number;
+  /** Lý do phù hợp — optional, chỉ mang tính minh hoạ (demo). */
+  matchReasons?: MatchingGroupMatchReason[];
 }
 
 function unwrapResponse<T>(response: ApiResponse<T>): T {
@@ -201,10 +236,11 @@ export const companionGroupService = {
     unwrapResponse(response);
   },
 
-  async joinMatchingGroup(matchingGroupId: string): Promise<MatchingMemberItem> {
+  async joinMatchingGroup(matchingGroupId: string, message?: string): Promise<MatchingMemberItem> {
     const response = await ApiService<MatchingMemberItem>(
       `/matching-groups/${matchingGroupId}/join`,
-      'POST'
+      'POST',
+      message ? { message } : undefined
     );
 
     return unwrapResponse(response);

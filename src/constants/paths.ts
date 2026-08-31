@@ -38,6 +38,7 @@ export const PATHS = {
   GROUPS: '/groups',
   GROUPS_OVERVIEW: '/groups/overview',
   GROUPS_OVERVIEW_IN_GROUP: '/groups/overview/inGroup',
+  GROUPS_STORY: '/groups/overview/story-flow',
   GROUPS_CREATE: '/groups/create',
   GROUPS_JOIN: '/groups/:groupId/join',
   GROUPS_DETAIL: '/groups/:groupId',
@@ -54,6 +55,7 @@ export const PATHS = {
 
   // Profile
   PROFILE: '/profile',
+  PUBLIC_PROFILE: '/profile/user/:userId',
   EDIT_PROFILE: '/profile/edit',
 
   // Trekker Community / Blog
@@ -184,3 +186,6 @@ export const getTrekkerGroupDetailPath = (groupId: string) =>
   PATHS.TREKKER_GROUP_DETAIL.replace(':groupId', groupId);
 export const getTrekkerGroupJoinPath = (groupId: string) =>
   PATHS.TREKKER_GROUPS_JOIN.replace(':groupId', groupId);
+export const getPublicProfilePath = (userId: string) =>
+  PATHS.PUBLIC_PROFILE.replace(':userId', userId);
+

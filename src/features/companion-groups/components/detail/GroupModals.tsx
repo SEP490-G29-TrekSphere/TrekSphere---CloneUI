@@ -1,12 +1,12 @@
-import { AlertTriangle, Loader2, LogOut, ShieldAlert, UserCheck, X } from 'lucide-react';
+import { AlertTriangle, Loader2, LogOut, UserCheck, UserPlus, X } from 'lucide-react';
 import type { UserRoleInGroup } from '../../types';
 import type { JoinRequestAction } from './JoinRequestsCard';
 
+type GroupModalId = 'leave' | 'reject' | 'approve' | 'addBackToChat' | 'join';
+
 interface GroupModalsProps {
-  activeModal: 'dissolve' | 'leave' | 'reject' | 'approve' | 'addBackToChat' | null;
-  setActiveModal: (
-    modal: 'dissolve' | 'leave' | 'reject' | 'approve' | 'addBackToChat' | null
-  ) => void;
+  activeModal: GroupModalId | null;
+  setActiveModal: (modal: GroupModalId | null) => void;
   selectedRequest: JoinRequestAction | null;
   selectedAddBackMember?: { id: string; name: string } | null;
   currentUserRole: UserRoleInGroup;
@@ -14,17 +14,21 @@ interface GroupModalsProps {
   // Pending states
   isApprovePending: boolean;
   isRejectPending: boolean;
-  isDissolvePending: boolean;
   isLeaveModalPending: boolean;
   isAddBackPending?: boolean;
+  isJoinPending?: boolean;
+
+  // Modal "join" — lời nhắn gửi trưởng nhóm
+  joinMessage?: string;
+  onJoinMessageChange?: (message: string) => void;
 
   // Action Handlers
   onConfirmApprove: () => void;
   onConfirmReject: () => void;
-  onConfirmDissolveGroup: () => void;
   onConfirmLeaveGroup: () => void;
   onConfirmCancelJoinRequest: () => void;
   onConfirmAddBackToChat?: () => void;
+  onConfirmJoinGroup?: () => void;
 }
 
 export function GroupModals({
@@ -35,15 +39,17 @@ export function GroupModals({
   currentUserRole,
   isApprovePending,
   isRejectPending,
-  isDissolvePending,
   isLeaveModalPending,
   isAddBackPending = false,
+  isJoinPending = false,
+  joinMessage = '',
+  onJoinMessageChange,
   onConfirmApprove,
   onConfirmReject,
-  onConfirmDissolveGroup,
   onConfirmLeaveGroup,
   onConfirmCancelJoinRequest,
   onConfirmAddBackToChat,
+  onConfirmJoinGroup,
 }: GroupModalsProps) {
   return (
     <>
@@ -133,52 +139,6 @@ export function GroupModals({
               >
                 {isRejectPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 {isRejectPending ? 'Đang từ chối...' : 'Xác nhận từ chối'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 3. Modal Giải tán nhóm */}
-      {activeModal === 'dissolve' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
-                <ShieldAlert className="h-5 w-5" />
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveModal(null)}
-                className="text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-foreground">Xác nhận giải tán nhóm</h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                Hành động này sẽ giải tán toàn bộ nhóm ghép và thông báo tới tất cả thành viên. Hành
-                động này không thể hoàn tác.
-              </p>
-            </div>
-            <div className="flex gap-2 pt-2">
-              <button
-                type="button"
-                disabled={isDissolvePending}
-                onClick={() => setActiveModal(null)}
-                className="flex-1 rounded-full border border-border py-2.5 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-50 cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                disabled={isDissolvePending}
-                onClick={onConfirmDissolveGroup}
-                className="flex-1 rounded-full bg-destructive py-2.5 text-xs font-bold text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                {isDissolvePending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                {isDissolvePending ? 'Đang giải tán...' : 'Giải tán ngay'}
               </button>
             </div>
           </div>
@@ -282,6 +242,60 @@ export function GroupModals({
               >
                 {isAddBackPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 {isAddBackPending ? 'Đang thêm...' : 'Xác nhận'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 6. Modal Gửi yêu cầu tham gia */}
+      {activeModal === 'join' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-primary">
+                <UserPlus className="h-5 w-5" />
+              </div>
+              <button
+                type="button"
+                disabled={isJoinPending}
+                onClick={() => setActiveModal(null)}
+                className="text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-50"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-foreground">Gửi yêu cầu tham gia</h2>
+              <p className="text-xs text-muted-foreground mt-1">
+                Giới thiệu ngắn gọn về bản thân để trưởng nhóm dễ xét duyệt (không bắt buộc).
+              </p>
+            </div>
+            <textarea
+              rows={4}
+              value={joinMessage}
+              onChange={(e) => onJoinMessageChange?.(e.target.value)}
+              disabled={isJoinPending}
+              placeholder="Chia sẻ về thể lực, kinh nghiệm leo núi & đồ dùng cá nhân..."
+              className="w-full rounded-xl border border-input bg-background p-3 text-xs outline-none focus:ring-2 focus:ring-primary disabled:opacity-60"
+            />
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                disabled={isJoinPending}
+                onClick={() => setActiveModal(null)}
+                className="flex-1 rounded-full border border-border py-2.5 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-50 cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                disabled={isJoinPending}
+                onClick={onConfirmJoinGroup}
+                className="flex-1 rounded-full bg-primary py-2.5 text-xs font-bold text-white hover:bg-primary-hover disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                {isJoinPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {isJoinPending ? 'Đang gửi...' : 'Gửi yêu cầu'}
               </button>
             </div>
           </div>

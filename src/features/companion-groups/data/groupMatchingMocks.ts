@@ -1,6 +1,5 @@
 import {
   Compass,
-  Images,
   Mountain,
   Package,
   RefreshCw,
@@ -11,6 +10,7 @@ import {
 } from 'lucide-react';
 import type {
   ApplicationRow,
+  GroupMatchingReviewScenario,
   GroupRecommendation,
   LifecycleStep,
   PreviewNavItem,
@@ -20,8 +20,8 @@ import type {
 export const previewNavItems: PreviewNavItem[] = [
   {
     id: 'outsider-detail',
-    label: 'Chi tiết nhóm (Figma 451:1188)',
-    shortLabel: 'Chi tiết nhóm',
+    label: 'Chi tiết nhóm',
+    shortLabel: 'Chi tiết',
     icon: Mountain,
   },
   { id: 'discovery', label: 'Khám phá nhóm', shortLabel: 'Khám phá', icon: Compass },
@@ -31,21 +31,104 @@ export const previewNavItems: PreviewNavItem[] = [
 ];
 
 export const lifecycleSteps: LifecycleStep[] = [
-  { label: 'Bản nháp', desc: 'Khai báo nhu cầu', state: 'done', defaultView: 'discovery' },
+  {
+    label: 'Bản nháp',
+    desc: 'Khai báo nhu cầu',
+    state: 'done',
+    lifecycleKey: 'DRAFT',
+    defaultView: 'discovery',
+  },
   {
     label: 'Đang tuyển',
     desc: 'Ghép nhóm & nhận đơn',
     state: 'active',
+    lifecycleKey: 'RECRUITING',
     defaultView: 'outsider-detail',
   },
   {
     label: 'Sẵn sàng',
     desc: 'Khóa danh sách & chốt kế hoạch',
     state: 'upcoming',
+    lifecycleKey: 'READY',
     defaultView: 'workspace',
   },
-  { label: 'Đang đi', desc: 'Theo dõi & điểm danh', state: 'upcoming', defaultView: 'trip' },
-  { label: 'Hoàn tất', desc: 'Đánh giá & quyết toán', state: 'upcoming', defaultView: 'trip' },
+  {
+    label: 'Đang đi',
+    desc: 'Theo dõi & điểm danh',
+    state: 'upcoming',
+    lifecycleKey: 'IN_PROGRESS',
+    defaultView: 'trip',
+  },
+  {
+    label: 'Quyết toán',
+    desc: 'Chi phí & Đánh giá',
+    state: 'upcoming',
+    lifecycleKey: 'SETTLING',
+    defaultView: 'workspace',
+  },
+  {
+    label: 'Hoàn tất',
+    desc: 'Lưu trữ kỷ niệm',
+    state: 'upcoming',
+    lifecycleKey: 'COMPLETED',
+    defaultView: 'workspace',
+  },
+];
+
+export const reviewPresets: GroupMatchingReviewScenario[] = [
+  {
+    id: 'preset-outsider',
+    name: 'Góc nhìn Người ngoài (Outsider / Guest)',
+    description: 'Người dùng chưa gia nhập nhóm, khám phá gợi ý & xem thông tin chi tiết',
+    actor: 'GUEST',
+    groupState: 'RECRUITING',
+    network: 'ONLINE',
+    locationPermission: 'PROMPT',
+    activeView: 'outsider-detail',
+  },
+  {
+    id: 'preset-waiting',
+    name: 'Ứng viên Chờ duyệt (Waitlisted Applicant)',
+    description: 'Đã gửi đơn tham gia, đang nằm trong danh sách chờ hoặc có Slot Offer',
+    actor: 'WAITLISTED_APPLICANT',
+    groupState: 'RECRUITING',
+    applicationState: 'SLOT_OFFERED',
+    network: 'ONLINE',
+    locationPermission: 'PROMPT',
+    activeView: 'applications',
+  },
+  {
+    id: 'preset-leader',
+    name: 'Trưởng nhóm Duyệt đơn (Leader Reviewing)',
+    description: 'Leader xem hồ sơ ứng viên, chấp nhận/từ chối hoặc gửi offer',
+    actor: 'LEADER',
+    groupState: 'RECRUITING',
+    applicationState: 'APPLIED',
+    network: 'ONLINE',
+    locationPermission: 'PROMPT',
+    activeView: 'applications',
+  },
+  {
+    id: 'preset-trip',
+    name: 'Chuyến đi Thực địa & SOS (Trip & Emergency)',
+    description: 'Thành viên trong hành trình, thực hiện điểm danh check-in và gửi SOS',
+    actor: 'MEMBER',
+    groupState: 'IN_PROGRESS',
+    network: 'ONLINE',
+    locationPermission: 'GRANTED',
+    activeView: 'trip',
+  },
+  {
+    id: 'preset-post-trip',
+    name: 'Hậu chuyến đi (Settlement & Memories)',
+    description: 'Quyết toán quỹ C2C, đánh giá thành viên và đăng album kỷ niệm',
+    actor: 'MEMBER',
+    groupState: 'SETTLING',
+    network: 'ONLINE',
+    locationPermission: 'PROMPT',
+    activeView: 'workspace',
+    activeWorkspaceTab: 'budget',
+  },
 ];
 
 export const groupRecommendations: GroupRecommendation[] = [
@@ -141,6 +224,7 @@ export const applicationRows: ApplicationRow[] = [
     avatar:
       'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&q=80',
     status: 'Có chỗ cho bạn (Offer)',
+    appState: 'SLOT_OFFERED',
     tone: 'offer',
     meta: 'Phản hồi trước 21:30 ngày 28/08',
     action: 'Nhận chỗ ngay',
@@ -149,6 +233,7 @@ export const applicationRows: ApplicationRow[] = [
     tripsCount: 14,
     answer:
       'Tôi đã chuẩn bị đầy đủ giày trek cổ cao, gậy leo núi và lều 2 người. Rất mong được đồng hành cùng nhóm!',
+    isSelf: true,
   },
   {
     id: 'app-2',
@@ -157,6 +242,7 @@ export const applicationRows: ApplicationRow[] = [
     avatar:
       'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=120&q=80',
     status: 'Đang chờ duyệt',
+    appState: 'APPLIED',
     tone: 'pending',
     meta: 'Đã gửi 2 ngày trước · Leader đang xem xét',
     action: 'Xem đơn & Duyệt',
@@ -173,6 +259,7 @@ export const applicationRows: ApplicationRow[] = [
     avatar:
       'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=120&q=80',
     status: 'Danh sách chờ (Waitlist)',
+    appState: 'WAITLISTED',
     tone: 'waitlist',
     meta: 'Nhóm đang đủ 6/6 thành viên · Chờ slot hủy',
     action: 'Chi tiết vị trí chờ',
@@ -189,6 +276,5 @@ export const workspaceNav = [
   { id: 'budget' as WorkspaceSubTab, label: 'Chi phí & Quỹ (C2C)', icon: WalletCards },
   { id: 'members' as WorkspaceSubTab, label: 'Thành viên nhóm', icon: Users },
   { id: 'equipment' as WorkspaceSubTab, label: 'Đồ dùng chuyến đi', icon: Package },
-  { id: 'album' as WorkspaceSubTab, label: 'Album & Huy chương', icon: Images },
   { id: 'succession' as WorkspaceSubTab, label: 'Chuyển giao Leader', icon: RefreshCw },
 ];

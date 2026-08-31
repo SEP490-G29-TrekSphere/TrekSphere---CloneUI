@@ -10,15 +10,17 @@ import { useCreateConversation } from '@/features/chat/hooks/useCreateConversati
 import { AppButton } from '@/shared/ui';
 import { useAppStore } from '@/store/useAppStore';
 import { GroupActionPanel } from '../components/detail/GroupActionPanel';
-import { GroupDetailHero } from '../components/detail/GroupDetailHero';
 import { GroupDetailSkeleton } from '../components/detail/GroupDetailSkeleton';
 import { GroupModals } from '../components/detail/GroupModals';
+import { GroupOverviewHero } from '../components/detail/GroupOverviewHero';
+import { GroupOverviewTabs } from '../components/detail/GroupOverviewTabs';
 import { type JoinRequestAction, JoinRequestsCard } from '../components/detail/JoinRequestsCard';
-import { MembersCard } from '../components/detail/MembersCard';
+import { MembersAccessRestricted } from '../components/detail/MembersAccessRestricted';
+import { MyJoinRequestStatusCard } from '../components/detail/MyJoinRequestStatusCard';
+import { GroupWorkspace } from '../components/workspace/GroupWorkspace';
 import { companionGroupKeys } from '../hooks/companionGroupKeys';
 import { useApproveMember } from '../hooks/useApproveMember';
 import { useCancelJoinRequest } from '../hooks/useCancelJoinRequest';
-import { useDeleteMatchingGroup } from '../hooks/useDeleteMatchingGroup';
 import { useJoinMatchingGroup } from '../hooks/useJoinMatchingGroup';
 import { useJoinRequests } from '../hooks/useJoinRequests';
 import { useLeaveMatchingGroup } from '../hooks/useLeaveMatchingGroup';
@@ -55,7 +57,6 @@ export default function CompanionGroupDetailPage({
     : 'min-h-screen bg-background px-4 pt-24 pb-12 md:px-10 lg:px-16 text-foreground';
 
   const user = useAppStore((state) => state.user);
-  const deleteGroupMutation = useDeleteMatchingGroup();
   const leaveGroupMutation = useLeaveMatchingGroup();
   const cancelJoinRequestMutation = useCancelJoinRequest();
   const joinGroupMutation = useJoinMatchingGroup();
@@ -107,13 +108,14 @@ export default function CompanionGroupDetailPage({
 
   // Active Modals
   const [activeModal, setActiveModal] = useState<
-    'dissolve' | 'leave' | 'reject' | 'approve' | 'addBackToChat' | null
+    'leave' | 'reject' | 'approve' | 'addBackToChat' | 'join' | null
   >(null);
   const [selectedRequest, setSelectedRequest] = useState<JoinRequestAction | null>(null);
   const [selectedAddBackMember, setSelectedAddBackMember] = useState<{
     id: string;
     name: string;
   } | null>(null);
+  const [joinMessage, setJoinMessage] = useState('');
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -167,42 +169,6 @@ export default function CompanionGroupDetailPage({
         },
       }
     );
-  };
-
-  const handleDirectChat = (memberId: string, memberName: string, memberAvatar?: string) => {
-    if (!memberId) return;
-    checkConversationMutation.mutate(
-      {
-        conversationType: 'DIRECT',
-        participantIds: [memberId],
-      },
-      {
-        onSuccess: (res) => {
-          if (res?.conversationId) {
-            navigate(chatPath, { state: { conversationId: res.conversationId } });
-          } else {
-            navigate(chatPath, {
-              state: {
-                virtualConversation: {
-                  type: 'DIRECT',
-                  participantIds: [memberId],
-                  userName: memberName,
-                  avatarUrl: memberAvatar,
-                },
-              },
-            });
-          }
-        },
-        onError: (err) => {
-          showToast(err instanceof Error ? err.message : 'Lỗi khi kiểm tra phòng chat');
-        },
-      }
-    );
-  };
-
-  const handleAddMemberToChatPrompt = (memberId: string, memberName: string) => {
-    setSelectedAddBackMember({ id: memberId, name: memberName });
-    setActiveModal('addBackToChat');
   };
 
   const handleConfirmAddBackToChat = () => {
@@ -300,16 +266,26 @@ export default function CompanionGroupDetailPage({
     });
   };
 
+  // Mở modal "Gửi yêu cầu tham gia" (thu lời nhắn gửi trưởng nhóm) thay vì gửi ngay.
   const handleJoinGroup = () => {
+    setJoinMessage('');
+    setActiveModal('join');
+  };
+
+  const handleConfirmJoinGroup = () => {
     if (!groupId) return;
-    joinGroupMutation.mutate(groupId, {
-      onSuccess: () => {
-        showToast('Đã gửi yêu cầu tham gia nhóm ghép.');
-      },
-      onError: (err) => {
-        showToast(err instanceof Error ? err.message : 'Có lỗi xảy ra khi xin tham gia.');
-      },
-    });
+    joinGroupMutation.mutate(
+      { matchingGroupId: groupId, message: joinMessage.trim() || undefined },
+      {
+        onSuccess: () => {
+          setActiveModal(null);
+          showToast('Đã gửi yêu cầu tham gia nhóm ghép.');
+        },
+        onError: (err) => {
+          showToast(err instanceof Error ? err.message : 'Có lỗi xảy ra khi xin tham gia.');
+        },
+      }
+    );
   };
 
   const handleConfirmCancelJoinRequest = () => {
@@ -321,22 +297,6 @@ export default function CompanionGroupDetailPage({
       },
       onError: (err) => {
         showToast(err instanceof Error ? err.message : 'Có lỗi xảy ra khi hủy yêu cầu.');
-      },
-    });
-  };
-
-  const handleConfirmDissolveGroup = () => {
-    if (!groupId) return;
-    deleteGroupMutation.mutate(groupId, {
-      onSuccess: () => {
-        setActiveModal(null);
-        showToast('Đã giải tán nhóm thành công!');
-        setTimeout(() => {
-          navigate(backPath);
-        }, 1200);
-      },
-      onError: (err) => {
-        showToast(err instanceof Error ? err.message : 'Có lỗi xảy ra khi giải tán nhóm.');
       },
     });
   };
@@ -398,49 +358,87 @@ export default function CompanionGroupDetailPage({
       )}
 
       <div className="mx-auto max-w-6xl space-y-7">
-        <GroupDetailHero
+        <GroupOverviewHero
           groupName={groupData.groupName}
           tourName={groupData.tourName}
+          tourImageUrl={groupData.tourImageUrl}
+          location={groupData.location}
           description={groupData.description}
           status={groupData.status}
           targetDate={groupData.targetDate}
+          currentMembers={groupData.currentSize}
+          maxMembers={groupData.maxSize}
         />
 
         {/* Main Grid Content (2 Columns) */}
         <div className="grid grid-cols-1 gap-7 lg:grid-cols-12">
-          {/* Left Column: Thành viên nhóm & Duyệt yêu cầu */}
+          {/* Left Column: Workspace (đã tham gia) hoặc Tổng quan/Lộ trình/Dự toán (chưa tham gia) */}
           <div className="lg:col-span-8 space-y-7">
-            <MembersCard
-              members={groupData.members}
-              maxSize={groupData.maxSize}
-              ownerName={groupData.ownerName}
-              currentUserId={user?.id?.toString()}
-              role={currentUserRole}
-              hasConversation={groupData.hasConversation}
-              onDirectChat={handleDirectChat}
-              onAddMemberToChat={handleAddMemberToChatPrompt}
-            />
+            {currentUserRole === 'leader' || currentUserRole === 'member' ? (
+              <GroupWorkspace
+                groupId={groupData.matchingGroupId}
+                isLeader={currentUserRole === 'leader'}
+                members={groupData.members}
+                ownerId={groupData.ownerId}
+                pendingJoinRequestsCount={
+                  currentUserRole === 'leader' ? (joinRequestsData?.totalElements ?? 0) : 0
+                }
+                joinRequestsSlot={
+                  currentUserRole === 'leader' ? (
+                    <JoinRequestsCard
+                      requests={joinRequestsData?.content ?? []}
+                      isLoading={isJoinRequestsLoading}
+                      isError={isJoinRequestsError}
+                      onRetry={() => refetchJoinRequests()}
+                      onApprove={(req) => {
+                        setSelectedRequest(req);
+                        setActiveModal('approve');
+                      }}
+                      onReject={(req) => {
+                        setSelectedRequest(req);
+                        setActiveModal('reject');
+                      }}
+                      page={joinRequestsPage}
+                      totalPages={joinRequestsData?.totalPages ?? 0}
+                      totalElements={joinRequestsData?.totalElements ?? 0}
+                      isLast={joinRequestsData?.last ?? true}
+                      onPrevPage={() => setJoinRequestsPage((p) => p - 1)}
+                      onNextPage={() => setJoinRequestsPage((p) => p + 1)}
+                    />
+                  ) : undefined
+                }
+              />
+            ) : (
+              <GroupOverviewTabs
+                ownerName={groupData.ownerName}
+                ownerAvatarUrl={groupData.ownerAvatarUrl}
+                itinerary={groupData.itinerary}
+                budgetItems={groupData.budgetItems}
+                journeyIntro={groupData.journeyIntro}
+                matchPercent={groupData.matchPercent}
+                matchReasons={groupData.matchReasons}
+              />
+            )}
 
-            {currentUserRole === 'leader' && (
-              <JoinRequestsCard
-                requests={joinRequestsData?.content ?? []}
-                isLoading={isJoinRequestsLoading}
-                isError={isJoinRequestsError}
-                onRetry={() => refetchJoinRequests()}
-                onApprove={(req) => {
-                  setSelectedRequest(req);
-                  setActiveModal('approve');
-                }}
-                onReject={(req) => {
-                  setSelectedRequest(req);
-                  setActiveModal('reject');
-                }}
-                page={joinRequestsPage}
-                totalPages={joinRequestsData?.totalPages ?? 0}
-                totalElements={joinRequestsData?.totalElements ?? 0}
-                isLast={joinRequestsData?.last ?? true}
-                onPrevPage={() => setJoinRequestsPage((p) => p - 1)}
-                onNextPage={() => setJoinRequestsPage((p) => p + 1)}
+            {currentUserRole === 'pending' && (
+              <MyJoinRequestStatusCard
+                submittedAt={
+                  groupData.members.find((m) => String(m.userId) === String(user?.id))?.createdAt ??
+                  groupData.createdAt
+                }
+                message={
+                  groupData.members.find((m) => String(m.userId) === String(user?.id))?.message
+                }
+                isWithdrawing={cancelJoinRequestMutation.isPending}
+                onWithdraw={() => setActiveModal('leave')}
+              />
+            )}
+
+            {currentUserRole === 'guest' && (
+              <MembersAccessRestricted
+                isJoining={false}
+                canJoin={groupData.status === 'OPEN'}
+                onJoin={handleJoinGroup}
               />
             )}
           </div>
@@ -450,16 +448,16 @@ export default function CompanionGroupDetailPage({
             <GroupActionPanel
               role={currentUserRole}
               groupStatus={groupData.status}
-              isJoining={joinGroupMutation.isPending}
+              isJoining={false}
               onOpenChat={handleCreateGroupChat}
               onJoin={handleJoinGroup}
               onLeave={() => setActiveModal('leave')}
               onCancelRequest={() => setActiveModal('leave')}
-              onDissolve={() => setActiveModal('dissolve')}
               onCreateGroupChat={handleCreateGroupChat}
               acceptedMembersCount={groupData.members.filter((m) => m.status === 'ACCEPTED').length}
               hasConversation={groupData.hasConversation}
               isInConversation={groupData.isInConversation}
+              budgetItems={groupData.budgetItems}
             />
           </div>
         </div>
@@ -473,17 +471,19 @@ export default function CompanionGroupDetailPage({
         currentUserRole={currentUserRole}
         isApprovePending={approveMemberMutation.isPending}
         isRejectPending={rejectMemberMutation.isPending}
-        isDissolvePending={deleteGroupMutation.isPending}
         isLeaveModalPending={isLeaveModalPending}
         isAddBackPending={
           addMemberToConversationMutation.isPending || checkConversationMutation.isPending
         }
+        isJoinPending={joinGroupMutation.isPending}
+        joinMessage={joinMessage}
+        onJoinMessageChange={setJoinMessage}
         onConfirmApprove={handleConfirmApprove}
         onConfirmReject={handleConfirmReject}
-        onConfirmDissolveGroup={handleConfirmDissolveGroup}
         onConfirmLeaveGroup={handleConfirmLeaveGroup}
         onConfirmCancelJoinRequest={handleConfirmCancelJoinRequest}
         onConfirmAddBackToChat={handleConfirmAddBackToChat}
+        onConfirmJoinGroup={handleConfirmJoinGroup}
       />
     </div>
   );

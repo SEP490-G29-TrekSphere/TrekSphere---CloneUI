@@ -1,4 +1,4 @@
-import { AlertTriangle, Navigation, PhoneCall, UserCheck } from 'lucide-react';
+import { AlertTriangle, MapPin, PhoneCall, UserCheck } from 'lucide-react';
 
 interface TripPreviewProps {
   onOpenSos: () => void;
@@ -43,49 +43,51 @@ export function TripPreview({ onOpenSos }: TripPreviewProps) {
           <div className="rounded-2xl border border-border bg-card p-6 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2">
-                <Navigation className="h-5 w-5 text-emerald-600 animate-spin" />
+                <MapPin className="h-5 w-5 text-emerald-600" />
                 <h4 className="text-sm font-extrabold text-foreground">
-                  Vị trí trạm dừng hiện tại
+                  Check-in Checkpoint gần nhất
                 </h4>
               </div>
               <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">
-                Đang di chuyển: Lán 2.200m
+                Checkpoint 2/4 · 12 phút trước
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-              <div className="rounded-xl border border-border bg-background p-3.5 space-y-1">
-                <span className="text-muted-foreground text-[11px]">Độ cao hiện tại</span>
-                <p className="text-base font-black text-foreground">2.185 m</p>
-              </div>
-              <div className="rounded-xl border border-border bg-background p-3.5 space-y-1">
-                <span className="text-muted-foreground text-[11px]">Quãng đường đã đi</span>
-                <p className="text-base font-black text-emerald-600">8.4 km / 16km</p>
-              </div>
-              <div className="rounded-xl border border-border bg-background p-3.5 space-y-1">
-                <span className="text-muted-foreground text-[11px]">Điểm danh thể lực</span>
-                <p className="text-base font-black text-foreground">4/4 Tốt</p>
-              </div>
-            </div>
+            <p className="text-xs text-muted-foreground">
+              Tọa độ chỉ được lấy khi thành viên chủ động bấm check-in và đồng ý cấp quyền vị trí —
+              không có theo dõi vị trí liên tục hoặc dựng lại lộ trình tự động.
+            </p>
+
+            <button
+              type="button"
+              className="w-full inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-emerald-600 px-5 text-xs font-extrabold text-white hover:bg-emerald-700 transition"
+            >
+              <MapPin className="h-4 w-4" />
+              Check-in tại Checkpoint hiện tại
+            </button>
           </div>
 
           <div className="rounded-2xl border border-border bg-card p-6 shadow-xs space-y-4">
             <h4 className="text-sm font-extrabold text-foreground">
-              Điểm danh quân số & Sức khỏe định kỳ
+              Điểm danh thành viên (Attendance)
             </h4>
             <div className="space-y-3 text-xs">
               {[
-                { name: 'Hoàng Nam (Leader)', status: 'Khỏe mạnh', time: '10 phút trước' },
-                { name: 'Minh Anh (Co-Leader)', status: 'Khỏe mạnh', time: '12 phút trước' },
                 {
-                  name: 'Việt Dũng',
-                  status: 'Hơi mỏi chân (Đã dán Salonpas)',
-                  time: '15 phút trước',
+                  name: 'Hoàng Nam (Leader)',
+                  status: 'Đã check-in Checkpoint 2',
+                  time: '10 phút trước',
                 },
-                { name: 'Thu Trang', status: 'Khỏe mạnh', time: '20 phút trước' },
-              ].map((m, idx) => (
+                {
+                  name: 'Minh Anh (Co-Leader)',
+                  status: 'Đã check-in Checkpoint 2',
+                  time: '12 phút trước',
+                },
+                { name: 'Việt Dũng', status: 'Đã check-in Checkpoint 1', time: '35 phút trước' },
+                { name: 'Thu Trang', status: 'Đã check-in Checkpoint 2', time: '20 phút trước' },
+              ].map((m) => (
                 <div
-                  key={idx}
+                  key={m.name}
                   className="flex items-center justify-between rounded-xl border border-border bg-background p-3"
                 >
                   <div className="flex items-center gap-2">

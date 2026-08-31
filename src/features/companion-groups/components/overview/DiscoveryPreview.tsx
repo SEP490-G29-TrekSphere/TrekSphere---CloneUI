@@ -1,6 +1,7 @@
 import {
   CalendarDays,
   CheckCircle2,
+  Copy,
   HeartPulse,
   MapPinned,
   ShieldCheck,
@@ -15,6 +16,7 @@ interface DiscoveryPreviewProps {
   onOpenMatchDetails: (group: GroupRecommendation) => void;
   onOpenJoinWizard: () => void;
   onOpenLeaderVetting: () => void;
+  onOpenCreateFromVendorTour?: () => void;
 }
 
 export function DiscoveryPreview({
@@ -23,6 +25,7 @@ export function DiscoveryPreview({
   onOpenMatchDetails,
   onOpenJoinWizard,
   onOpenLeaderVetting,
+  onOpenCreateFromVendorTour,
 }: DiscoveryPreviewProps) {
   return (
     <div className="space-y-6">
@@ -44,7 +47,17 @@ export function DiscoveryPreview({
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {onOpenCreateFromVendorTour && (
+              <button
+                type="button"
+                onClick={onOpenCreateFromVendorTour}
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 text-xs font-extrabold text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 transition shadow-xs"
+              >
+                <Copy className="h-4 w-4" />
+                <span>Tạo từ Tour Vendor (Clone Plan)</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={onOpenLeaderVetting}
@@ -117,8 +130,8 @@ export function DiscoveryPreview({
                     Lý do gợi ý:
                   </span>
                   <ul className="space-y-1 text-xs text-muted-foreground">
-                    {grp.reasons.map((reason, idx) => (
-                      <li key={idx} className="flex items-center gap-1.5">
+                    {grp.reasons.map((reason) => (
+                      <li key={reason} className="flex items-center gap-1.5">
                         <CheckCircle2 className="h-3 w-3 text-emerald-600 shrink-0" />
                         <span className="truncate">{reason}</span>
                       </li>

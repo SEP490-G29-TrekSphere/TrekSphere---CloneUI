@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import type { ReviewActor } from '../../types/groupMatchingTypes';
 import { PeerReviewModal, type ReviewData } from './PeerReviewModal';
 
 export interface GroupMember {
@@ -50,7 +51,13 @@ export interface GroupMember {
   };
 }
 
-export function MembersWorkspace() {
+interface MembersWorkspaceProps {
+  actor?: ReviewActor;
+}
+
+export function MembersWorkspace({ actor = 'MEMBER' }: MembersWorkspaceProps) {
+  // BR-MED-01: chỉ Vendor Coordinator/Group Leader (ở đây là Leader/Co-Leader) được xem Medical Profile của người khác.
+  const canViewOthersMedical = actor === 'LEADER' || actor === 'CO_LEADER';
   const [members, setMembers] = useState<GroupMember[]>([
     {
       id: 'm1',
@@ -375,11 +382,11 @@ export function MembersWorkspace() {
 
                   {/* SKILL TAGS */}
                   <div className="flex flex-wrap gap-1.5 pt-1">
-                    {member.skills.map((skill, idx) => {
+                    {member.skills.map((skill) => {
                       const SkillIcon = skill.icon;
                       return (
                         <span
-                          key={idx}
+                          key={skill.name}
                           className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground border border-border"
                         >
                           <SkillIcon className="h-3 w-3 text-emerald-600" />
@@ -392,14 +399,25 @@ export function MembersWorkspace() {
 
                 {/* ACTION BUTTONS */}
                 <div className="grid grid-cols-2 gap-2 mt-3">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedMember(member)}
-                    aria-label={`Xem chi tiết y tế và khẩn cấp của ${member.name}`}
-                    className="rounded-xl border border-border bg-muted/40 py-2 text-[11px] font-bold text-foreground hover:bg-muted transition shadow-2xs text-center truncate px-1"
-                  >
-                    Xem Y Tế
-                  </button>
+                  {canViewOthersMedical ? (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedMember(member)}
+                      aria-label={`Xem chi tiết y tế và khẩn cấp của ${member.name}`}
+                      className="rounded-xl border border-border bg-muted/40 py-2 text-[11px] font-bold text-foreground hover:bg-muted transition shadow-2xs text-center truncate px-1"
+                    >
+                      Xem Y Tế
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled
+                      title="Chỉ Leader/Co-Leader được xem hồ sơ y tế của thành viên khác (BR-MED-01)"
+                      className="rounded-xl border border-border/80 bg-muted/40 py-2 text-[11px] font-semibold text-muted-foreground/60 cursor-not-allowed flex items-center justify-center gap-1 px-1"
+                    >
+                      <Lock className="h-3 w-3 shrink-0 opacity-50" />Y Tế (Khóa)
+                    </button>
+                  )}
 
                   {tripStatus === 'COMPLETED' ? (
                     <button

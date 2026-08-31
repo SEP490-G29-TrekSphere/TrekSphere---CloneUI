@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { TourCard, TourPagination, TourSearchBar, type TourSearchValues } from '@/features/tours';
+import TourCard from '@/features/tours/components/TourCard';
 import TourFilterPanel from '@/features/tours/components/TourFilterPanel';
+import TourPagination from '@/features/tours/components/TourPagination';
 import TourResultsHeader from '@/features/tours/components/TourResultsHeader';
+import TourSearchBar from '@/features/tours/components/TourSearchBar';
 import { useTourPriceRange } from '@/features/tours/hooks/useTourPriceRange';
 import { useTours } from '@/features/tours/hooks/useTours';
 import type {
@@ -10,6 +12,7 @@ import type {
   ApiSortField,
   TourFilter,
   TourListParams,
+  TourSearchValues,
 } from '@/features/tours/types';
 import { useDebounce } from '@/shared/hooks';
 import { AppButton } from '@/shared/ui';

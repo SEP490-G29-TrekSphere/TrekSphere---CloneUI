@@ -1,4 +1,15 @@
-import { Clock, Compass, Layers, MapPin, Plus, Trash2, User, X } from 'lucide-react';
+import {
+  Building2,
+  Clock,
+  Compass,
+  Copy,
+  Layers,
+  MapPin,
+  Plus,
+  Trash2,
+  User,
+  X,
+} from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -339,6 +350,37 @@ export function ItineraryWorkspace() {
 
   return (
     <div className="space-y-8">
+      {/* VENDOR TOUR INHERITANCE BANNER */}
+      <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-300">
+            <Copy className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-extrabold text-foreground text-xs">
+                Kế thừa từ Tour Vendor: Tour Tà Xùa Săn Mây 3N2Đ
+              </span>
+              <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-extrabold text-emerald-700 dark:text-emerald-400">
+                Custom Journey Active
+              </span>
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Đơn vị phát hành lộ trình mẫu:{' '}
+              <strong className="text-foreground">Hmong Travel & Experience</strong>. Trưởng nhóm và
+              thành viên có thể tự do chỉnh sửa mốc thời gian, checkpoint bên dưới.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-background px-3 py-1 text-[11px] font-bold text-amber-800 dark:text-amber-300">
+            <Building2 className="h-3.5 w-3.5 text-amber-600" />
+            B2C ➔ C2C Clone Mode
+          </span>
+        </div>
+      </div>
+
       {/* SECTION 1: WAYPOINTS STRIP */}
       <div className="rounded-2xl border border-border bg-card p-6 shadow-xs space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
@@ -699,7 +741,9 @@ export function ItineraryWorkspace() {
                   <label className="font-bold text-foreground">Buổi / Khung giờ:</label>
                   <select
                     value={actSlot}
-                    onChange={(e) => setActSlot(e.target.value as any)}
+                    onChange={(e) =>
+                      setActSlot(e.target.value as 'morning' | 'noon' | 'afternoon' | 'evening')
+                    }
                     className="w-full rounded-xl border border-border bg-background p-3 text-xs outline-none focus:ring-2 focus:ring-emerald-600"
                   >
                     {TIME_SLOTS.map((s) => (
