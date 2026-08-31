@@ -1,5 +1,8 @@
 import { Loader2, MessageSquare, ShieldCheck, WalletCards } from 'lucide-react';
-import type { MatchingGroupBudgetItem, MatchingGroupStatus } from '../../services/companionGroupService';
+import type {
+  MatchingGroupBudgetItem,
+  MatchingGroupStatus,
+} from '../../services/companionGroupService';
 import type { UserRoleInGroup } from '../../types';
 
 interface GroupActionPanelProps {
@@ -38,9 +41,7 @@ export function GroupActionPanel({
   const isMemberOrLeader = role === 'leader' || role === 'member';
 
   const budgetTotal =
-    budgetItems.length > 0
-      ? budgetItems.reduce((sum, item) => sum + item.amount, 0)
-      : 2180000;
+    budgetItems.length > 0 ? budgetItems.reduce((sum, item) => sum + item.amount, 0) : 2180000;
 
   return (
     <div className="space-y-6">
@@ -169,7 +170,8 @@ export function GroupActionPanel({
                 <h4 className="text-xs font-bold">Yêu cầu đang chờ duyệt</h4>
               </div>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Yêu cầu của bạn đã được gửi tới Trưởng nhóm. Bạn sẽ nhận thông báo ngay khi hồ sơ được duyệt.
+                Yêu cầu của bạn đã được gửi tới Trưởng nhóm. Bạn sẽ nhận thông báo ngay khi hồ sơ
+                được duyệt.
               </p>
               <button
                 type="button"
@@ -220,4 +222,3 @@ export function GroupActionPanel({
     </div>
   );
 }
-

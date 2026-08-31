@@ -76,7 +76,8 @@ export function GroupWorkspaceOverviewTab({
               </span>
             </div>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              Phát tín hiệu cảnh báo vị trí GPS tới nhóm hoặc truy cập số Hotline cứu hộ y tế & kiểm lâm địa phương.
+              Phát tín hiệu cảnh báo vị trí GPS tới nhóm hoặc truy cập số Hotline cứu hộ y tế & kiểm
+              lâm địa phương.
             </p>
           </div>
         </div>
@@ -95,7 +96,8 @@ export function GroupWorkspaceOverviewTab({
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm font-extrabold text-foreground flex items-center gap-2">
-                <Radio className="h-4 w-4 text-emerald-500 animate-pulse" /> Nhật Ký Tiến Trình Hành Trình
+                <Radio className="h-4 w-4 text-emerald-500 animate-pulse" /> Nhật Ký Tiến Trình Hành
+                Trình
               </h3>
               <p className="text-xs text-muted-foreground">
                 Cập nhật các điểm Checkpoint thực tế trên tuyến trekking.
@@ -121,8 +123,8 @@ export function GroupWorkspaceOverviewTab({
                     isDone
                       ? 'border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/20'
                       : isSkipped
-                      ? 'border-muted bg-muted/30 opacity-60'
-                      : 'border-border bg-background'
+                        ? 'border-muted bg-muted/30 opacity-60'
+                        : 'border-border bg-background'
                   )}
                 >
                   <div className="flex items-start gap-3">
@@ -132,8 +134,8 @@ export function GroupWorkspaceOverviewTab({
                         isDone
                           ? 'bg-emerald-500 text-white'
                           : isSkipped
-                          ? 'bg-muted text-muted-foreground'
-                          : 'bg-secondary text-secondary-foreground'
+                            ? 'bg-muted text-muted-foreground'
+                            : 'bg-secondary text-secondary-foreground'
                       )}
                     >
                       {idx + 1}
@@ -142,15 +144,23 @@ export function GroupWorkspaceOverviewTab({
                       <div className="flex items-center gap-2">
                         <strong className="text-xs font-bold text-foreground">{cp.name}</strong>
                         {cp.estimatedTime && (
-                          <span className="text-[10px] text-muted-foreground">({cp.estimatedTime})</span>
+                          <span className="text-[10px] text-muted-foreground">
+                            ({cp.estimatedTime})
+                          </span>
                         )}
                       </div>
                       {cp.description && (
-                        <p className="text-[11px] text-muted-foreground line-clamp-1">{cp.description}</p>
+                        <p className="text-[11px] text-muted-foreground line-clamp-1">
+                          {cp.description}
+                        </p>
                       )}
                       {cp.checkInTime && (
                         <p className="mt-1 text-[10px] font-semibold text-emerald-600">
-                          ✓ Check-in lúc: {new Date(cp.checkInTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                          ✓ Check-in lúc:{' '}
+                          {new Date(cp.checkInTime).toLocaleTimeString('vi-VN', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
                         </p>
                       )}
                     </div>
@@ -255,10 +265,10 @@ export function GroupWorkspaceOverviewTab({
                   isSos && !isResolved
                     ? 'border-2 border-destructive bg-destructive/10 shadow-md ring-2 ring-destructive/20'
                     : isSos && isResolved
-                    ? 'border-2 border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/20 ring-2 ring-emerald-500/20'
-                    : post.isAnnouncement
-                    ? 'border-secondary/40 bg-secondary/10'
-                    : 'border-border bg-card'
+                      ? 'border-2 border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/20 ring-2 ring-emerald-500/20'
+                      : post.isAnnouncement
+                        ? 'border-secondary/40 bg-secondary/10'
+                        : 'border-border bg-card'
                 )}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -280,8 +290,8 @@ export function GroupWorkspaceOverviewTab({
                           isSos && !isResolved
                             ? 'bg-destructive text-destructive-foreground font-black'
                             : isSos && isResolved
-                            ? 'bg-emerald-600 text-white font-bold'
-                            : 'bg-secondary text-secondary-foreground'
+                              ? 'bg-emerald-600 text-white font-bold'
+                              : 'bg-secondary text-secondary-foreground'
                         )}
                       >
                         {post.authorName.slice(0, 2).toUpperCase()}
@@ -295,8 +305,8 @@ export function GroupWorkspaceOverviewTab({
                             isSos && !isResolved
                               ? 'text-destructive font-black'
                               : isSos && isResolved
-                              ? 'text-emerald-700 dark:text-emerald-400 font-bold'
-                              : 'text-foreground'
+                                ? 'text-emerald-700 dark:text-emerald-400 font-bold'
+                                : 'text-foreground'
                           )}
                         >
                           {post.authorName}
@@ -307,15 +317,16 @@ export function GroupWorkspaceOverviewTab({
                             isSos && !isResolved
                               ? 'bg-destructive text-destructive-foreground'
                               : isSos && isResolved
-                              ? 'bg-emerald-600 text-white'
-                              : 'bg-muted text-muted-foreground'
+                                ? 'bg-emerald-600 text-white'
+                                : 'bg-muted text-muted-foreground'
                           )}
                         >
                           {post.authorRole}
                         </span>
                       </div>
                       <span className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
-                        <Clock className="h-3 w-3" /> {new Date(post.createdAt).toLocaleString('vi-VN')}
+                        <Clock className="h-3 w-3" />{' '}
+                        {new Date(post.createdAt).toLocaleString('vi-VN')}
                       </span>
                     </div>
                   </div>
@@ -342,8 +353,8 @@ export function GroupWorkspaceOverviewTab({
                     isSos && !isResolved
                       ? 'font-bold text-foreground bg-background/80 p-3 rounded-xl border border-destructive/30'
                       : isSos && isResolved
-                      ? 'text-foreground/90 bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/30'
-                      : 'text-foreground/90'
+                        ? 'text-foreground/90 bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/30'
+                        : 'text-foreground/90'
                   )}
                 >
                   {post.content}

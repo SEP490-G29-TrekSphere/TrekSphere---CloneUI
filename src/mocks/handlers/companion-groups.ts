@@ -102,7 +102,8 @@ export const groups: MatchingGroup[] = [
     matchingGroupId: 'mg-1',
     tourId: 'tour-fansipan-3d2n',
     tourName: 'Chinh phục Fansipan 3N2Đ — cung Trạm Tôn',
-    tourImageUrl: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=800&q=80',
+    tourImageUrl:
+      'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=800&q=80',
     location: 'Fansipan, Sa Pa, Lào Cai',
     ownerId: OTHER_TREKKERS[0].id,
     ownerName: OTHER_TREKKERS[0].fullName,

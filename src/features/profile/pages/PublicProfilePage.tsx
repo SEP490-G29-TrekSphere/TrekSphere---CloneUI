@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { PATHS, getNewsDetailPath, getTrekkerGroupDetailPath } from '@/constants/paths';
+import { getNewsDetailPath, getTrekkerGroupDetailPath, PATHS } from '@/constants/paths';
 import { useAppStore } from '@/store/useAppStore';
 import { getPublicProfileData } from '../data/publicProfileMock';
 import type { UserMoment, UserPublicProfileData } from '../types';
@@ -16,7 +17,9 @@ export const PublicProfilePage: React.FC = () => {
     targetUserId === 'me' || targetUserId === currentUser?.id || targetUserId === 'user-trekker-1';
 
   const [profileData, setProfileData] = useState<UserPublicProfileData | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'moments' | 'posts' | 'trips'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'moments' | 'posts' | 'trips'>(
+    'overview'
+  );
   const [selectedMoment, setSelectedMoment] = useState<UserMoment | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -48,7 +51,9 @@ export const PublicProfilePage: React.FC = () => {
     return (
       <div className="min-h-[60vh] flex items-center justify-center p-8">
         <div className="text-center font-mono">
-          <p className="text-gray-500 font-bold uppercase tracking-widest text-sm">[ĐANG TẢI DỮ LIỆU TRANG CÁ NHÂN...]</p>
+          <p className="text-gray-500 font-bold uppercase tracking-widest text-sm">
+            [ĐANG TẢI DỮ LIỆU TRANG CÁ NHÂN...]
+          </p>
         </div>
       </div>
     );
@@ -75,10 +80,11 @@ export const PublicProfilePage: React.FC = () => {
           className="w-full h-full object-cover opacity-85"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-gray-950/80 via-transparent to-black/20" />
-        
+
         {/* Back navigation pill */}
         <div className="absolute top-4 left-4 sm:left-8 z-10">
           <button
+            type="button"
             onClick={() => navigate(-1)}
             className="px-3 py-1.5 bg-gray-900/80 hover:bg-gray-900 text-white font-mono text-xs uppercase tracking-wider rounded border border-gray-700 transition"
           >
@@ -126,8 +132,13 @@ export const PublicProfilePage: React.FC = () => {
                 </div>
 
                 <p className="text-xs font-mono text-gray-500 flex flex-wrap gap-x-4 gap-y-1 pt-1">
-                  <span>Vị trí: <strong className="text-gray-700">{profileData.location}</strong></span>
-                  <span>Thành viên từ: <strong className="text-gray-700">{profileData.joinedDate}</strong></span>
+                  <span>
+                    Vị trí: <strong className="text-gray-700">{profileData.location}</strong>
+                  </span>
+                  <span>
+                    Thành viên từ:{' '}
+                    <strong className="text-gray-700">{profileData.joinedDate}</strong>
+                  </span>
                 </p>
               </div>
             </div>
@@ -136,6 +147,7 @@ export const PublicProfilePage: React.FC = () => {
             <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               {isOwnProfile ? (
                 <button
+                  type="button"
                   onClick={() => navigate(PATHS.EDIT_PROFILE)}
                   className="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-mono text-xs uppercase font-bold tracking-wider rounded transition shadow-sm text-center"
                 >
@@ -144,12 +156,14 @@ export const PublicProfilePage: React.FC = () => {
               ) : (
                 <>
                   <button
+                    type="button"
                     onClick={() => navigate(PATHS.TREKKER_CHAT)}
                     className="flex-1 sm:flex-initial px-4 py-2.5 bg-gray-900 hover:bg-black text-white font-mono text-xs uppercase font-bold tracking-wider rounded transition text-center"
                   >
                     Gửi tin nhắn
                   </button>
                   <button
+                    type="button"
                     onClick={handleInviteToGroup}
                     className="flex-1 sm:flex-initial px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-mono text-xs uppercase font-bold tracking-wider rounded transition text-center"
                   >
@@ -158,6 +172,7 @@ export const PublicProfilePage: React.FC = () => {
                 </>
               )}
               <button
+                type="button"
                 onClick={handleShareProfile}
                 className="px-3.5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-300 font-mono text-xs uppercase font-bold tracking-wider rounded transition text-center"
                 title="Chia sẻ trang cá nhân"
@@ -169,9 +184,7 @@ export const PublicProfilePage: React.FC = () => {
 
           {/* User Bio */}
           <div className="pt-4">
-            <p className="text-sm text-gray-700 leading-relaxed max-w-3xl">
-              {profileData.bio}
-            </p>
+            <p className="text-sm text-gray-700 leading-relaxed max-w-3xl">{profileData.bio}</p>
           </div>
 
           {/* Social Stats Grid */}
@@ -214,6 +227,7 @@ export const PublicProfilePage: React.FC = () => {
         {/* Tab Navigation Controls */}
         <div className="flex border-b border-gray-200 mb-8 overflow-x-auto no-scrollbar">
           <button
+            type="button"
             onClick={() => setActiveTab('overview')}
             className={`px-5 py-3 font-mono text-xs font-bold uppercase tracking-wider whitespace-nowrap border-b-2 transition ${
               activeTab === 'overview'
@@ -224,6 +238,7 @@ export const PublicProfilePage: React.FC = () => {
             [TỔNG QUAN HỒ SƠ]
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('moments')}
             className={`px-5 py-3 font-mono text-xs font-bold uppercase tracking-wider whitespace-nowrap border-b-2 transition ${
               activeTab === 'moments'
@@ -234,6 +249,7 @@ export const PublicProfilePage: React.FC = () => {
             [KHOẢNH KHẮC ({profileData.moments.length})]
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('posts')}
             className={`px-5 py-3 font-mono text-xs font-bold uppercase tracking-wider whitespace-nowrap border-b-2 transition ${
               activeTab === 'posts'
@@ -244,6 +260,7 @@ export const PublicProfilePage: React.FC = () => {
             [BÀI ĐĂNG ({profileData.posts.length})]
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('trips')}
             className={`px-5 py-3 font-mono text-xs font-bold uppercase tracking-wider whitespace-nowrap border-b-2 transition ${
               activeTab === 'trips'
@@ -266,7 +283,9 @@ export const PublicProfilePage: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-2">
-                  <span className="font-mono text-xs text-gray-500 uppercase font-semibold">Cấp độ thể lực</span>
+                  <span className="font-mono text-xs text-gray-500 uppercase font-semibold">
+                    Cấp độ thể lực
+                  </span>
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-sm font-bold text-gray-900 uppercase">
                       [{fitnessObj?.label || profileData.preferences?.fitnessLevel || 'Nâng cao'}]
@@ -278,7 +297,9 @@ export const PublicProfilePage: React.FC = () => {
                 </div>
 
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-2">
-                  <span className="font-mono text-xs text-gray-500 uppercase font-semibold">Tốc độ di chuyển</span>
+                  <span className="font-mono text-xs text-gray-500 uppercase font-semibold">
+                    Tốc độ di chuyển
+                  </span>
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-sm font-bold text-gray-900 uppercase">
                       [{paceObj?.label || 'Bền bỉ & Giữ khoảng cách'}]
@@ -292,7 +313,9 @@ export const PublicProfilePage: React.FC = () => {
 
               {profileData.preferences?.planningNotes && (
                 <div className="bg-emerald-50/60 border border-emerald-200 rounded-lg p-4 space-y-1.5">
-                  <span className="font-mono text-xs font-bold text-emerald-800 uppercase">[KẾ HOẠCH & ĐỀ XUẤT GHÉP NHÓM]</span>
+                  <span className="font-mono text-xs font-bold text-emerald-800 uppercase">
+                    [KẾ HOẠCH & ĐỀ XUẤT GHÉP NHÓM]
+                  </span>
                   <p className="text-xs text-gray-800 leading-relaxed font-mono">
                     "{profileData.preferences.planningNotes}"
                   </p>
@@ -308,9 +331,12 @@ export const PublicProfilePage: React.FC = () => {
 
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-xs font-mono text-gray-500 uppercase font-semibold mb-2">Kỹ năng & Trang bị sở hữu:</h3>
+                  <h3 className="text-xs font-mono text-gray-500 uppercase font-semibold mb-2">
+                    Kỹ năng & Trang bị sở hữu:
+                  </h3>
                   <div className="flex flex-wrap gap-2">
-                    {profileData.preferences?.skillsAndEquipment && profileData.preferences.skillsAndEquipment.length > 0 ? (
+                    {profileData.preferences?.skillsAndEquipment &&
+                    profileData.preferences.skillsAndEquipment.length > 0 ? (
                       profileData.preferences.skillsAndEquipment.map((skillId) => {
                         const opt = SKILL_OPTIONS.find((s) => s.id === skillId);
                         return (
@@ -329,9 +355,12 @@ export const PublicProfilePage: React.FC = () => {
                 </div>
 
                 <div className="pt-2">
-                  <h3 className="text-xs font-mono text-gray-500 uppercase font-semibold mb-2">Địa hình thường chinh phục:</h3>
+                  <h3 className="text-xs font-mono text-gray-500 uppercase font-semibold mb-2">
+                    Địa hình thường chinh phục:
+                  </h3>
                   <div className="flex flex-wrap gap-2">
-                    {profileData.preferences?.preferredTerrains && profileData.preferences.preferredTerrains.length > 0 ? (
+                    {profileData.preferences?.preferredTerrains &&
+                    profileData.preferences.preferredTerrains.length > 0 ? (
                       profileData.preferences.preferredTerrains.map((terrainId) => {
                         const opt = TERRAIN_OPTIONS.find((t) => t.id === terrainId);
                         return (
@@ -357,7 +386,10 @@ export const PublicProfilePage: React.FC = () => {
                 <span>[BẢO MẬT & DỮ LIỆU CẤP CỨU SOS]</span>
               </h3>
               <p className="text-xs text-slate-300 leading-relaxed">
-                Thông tin y tế riêng tư (Nhóm máu, Tiền sử bệnh, Dị ứng và Số điện thoại liên lạc người thân) của thành viên được mã hóa và bảo mật nghiêm ngặt. Thông tin chỉ tự động hiển thị cho Trưởng đoàn và Đội cứu hộ địa phương trong tình huống phát tín hiệu cấp cứu SOS khẩn cấp.
+                Thông tin y tế riêng tư (Nhóm máu, Tiền sử bệnh, Dị ứng và Số điện thoại liên lạc
+                người thân) của thành viên được mã hóa và bảo mật nghiêm ngặt. Thông tin chỉ tự động
+                hiển thị cho Trưởng đoàn và Đội cứu hộ địa phương trong tình huống phát tín hiệu cấp
+                cứu SOS khẩn cấp.
               </p>
             </div>
           </div>
@@ -377,10 +409,11 @@ export const PublicProfilePage: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
               {profileData.moments.map((moment) => (
-                <div
+                <button
+                  type="button"
                   key={moment.id}
                   onClick={() => setSelectedMoment(moment)}
-                  className="group cursor-pointer bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition"
+                  className="group text-left cursor-pointer bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition"
                 >
                   <div className="relative h-64 overflow-hidden bg-gray-900">
                     <img
@@ -404,7 +437,7 @@ export const PublicProfilePage: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -424,10 +457,11 @@ export const PublicProfilePage: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {profileData.posts.map((post) => (
-                <div
+                <button
+                  type="button"
                   key={post.id}
                   onClick={() => navigate(getNewsDetailPath(post.id))}
-                  className="group cursor-pointer bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between"
+                  className="group text-left cursor-pointer bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between"
                 >
                   <div>
                     <div className="relative h-48 bg-gray-100 overflow-hidden">
@@ -451,14 +485,14 @@ export const PublicProfilePage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between text-[11px] font-mono text-gray-500">
+                  <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between text-[11px] font-mono text-gray-500 w-full">
                     <span>Ngày đăng: {post.createdAt}</span>
                     <div className="flex items-center gap-3">
                       <span>👁 {post.viewCount}</span>
                       <span>💬 {post.commentsCount}</span>
                     </div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -478,10 +512,11 @@ export const PublicProfilePage: React.FC = () => {
 
             <div className="space-y-4">
               {profileData.trips.map((trip) => (
-                <div
+                <button
+                  type="button"
                   key={trip.id}
                   onClick={() => navigate(getTrekkerGroupDetailPath(trip.id))}
-                  className="group cursor-pointer bg-white border border-gray-200 rounded-xl p-4 sm:p-5 shadow-sm hover:border-emerald-400 transition flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                  className="group text-left w-full cursor-pointer bg-white border border-gray-200 rounded-xl p-4 sm:p-5 shadow-sm hover:border-emerald-400 transition flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
                 >
                   <div className="flex items-center gap-4">
                     <img
@@ -501,14 +536,16 @@ export const PublicProfilePage: React.FC = () => {
                               : 'bg-amber-50 text-amber-800 border-amber-200'
                           }`}
                         >
-                          [{trip.status === 'COMPLETED' ? 'ĐÃ HOÀN THÀNH' : 'ĐANG TUYỂN THÀNH VIÊN'}]
+                          [{trip.status === 'COMPLETED' ? 'ĐÃ HOÀN THÀNH' : 'ĐANG TUYỂN THÀNH VIÊN'}
+                          ]
                         </span>
                       </div>
                       <h3 className="text-base font-bold text-gray-900 group-hover:text-emerald-700 transition">
                         {trip.title}
                       </h3>
                       <p className="text-xs font-mono text-gray-500">
-                        Địa điểm: <strong className="text-gray-700">{trip.location}</strong> • Khởi hành: {trip.startDate}
+                        Địa điểm: <strong className="text-gray-700">{trip.location}</strong> • Khởi
+                        hành: {trip.startDate}
                       </p>
                     </div>
                   </div>
@@ -521,7 +558,7 @@ export const PublicProfilePage: React.FC = () => {
                       Xem chi tiết →
                     </span>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -539,6 +576,7 @@ export const PublicProfilePage: React.FC = () => {
                 className="max-h-full max-w-full object-contain"
               />
               <button
+                type="button"
                 onClick={() => setSelectedMoment(null)}
                 className="absolute top-4 right-4 bg-gray-900/80 hover:bg-gray-800 text-white font-mono text-sm px-3 py-1 rounded border border-gray-700"
               >
@@ -550,7 +588,8 @@ export const PublicProfilePage: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-mono text-sm font-bold text-emerald-400 uppercase">
-                    [{selectedMoment.locationName} {selectedMoment.altitude ? `- ${selectedMoment.altitude}` : ''}]
+                    [{selectedMoment.locationName}{' '}
+                    {selectedMoment.altitude ? `- ${selectedMoment.altitude}` : ''}]
                   </h3>
                   <p className="text-xs font-mono text-gray-400">
                     Chuyến đi: {selectedMoment.tripTitle} • Ngày: {selectedMoment.createdAt}
@@ -569,6 +608,7 @@ export const PublicProfilePage: React.FC = () => {
 
               <div className="flex items-center justify-between pt-4 border-t border-gray-800 text-xs font-mono text-gray-400">
                 <button
+                  type="button"
                   onClick={() => {
                     selectedMoment.likesCount += 1;
                     setSelectedMoment({ ...selectedMoment });

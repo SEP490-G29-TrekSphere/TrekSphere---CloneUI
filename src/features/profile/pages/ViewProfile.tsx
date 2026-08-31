@@ -23,7 +23,9 @@ interface InfoCellProps {
 
 function InfoCell({ label, value, subValue, highlight }: InfoCellProps) {
   return (
-    <div className={`rounded-xl p-4 transition-all ${highlight ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-muted'}`}>
+    <div
+      className={`rounded-xl p-4 transition-all ${highlight ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-muted'}`}
+    >
       <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
       <p className="mt-1.5 text-sm font-bold text-primary">{value || '—'}</p>
       {subValue && <p className="mt-1 text-xs font-medium text-muted-foreground">{subValue}</p>}
@@ -52,7 +54,9 @@ export default function ViewProfile({ editPath }: { editPath?: string }) {
     return (
       <div className="mx-auto w-full max-w-6xl space-y-6 pb-8">
         <header className="space-y-1 border-b border-border/60 pb-4">
-          <h1 className="text-2xl font-black tracking-tight text-primary md:text-3xl">HỒ SƠ CỦA TÔI</h1>
+          <h1 className="text-2xl font-black tracking-tight text-primary md:text-3xl">
+            HỒ SƠ CỦA TÔI
+          </h1>
           <p className="text-sm text-muted-foreground">Xem và quản lý thông tin cá nhân của bạn</p>
         </header>
         <div className="space-y-4 rounded-2xl bg-destructive/10 p-6 text-center border border-destructive/20">
@@ -89,7 +93,8 @@ export default function ViewProfile({ editPath }: { editPath?: string }) {
   const emergency = advProfile.emergencyMedical;
   const prefs = advProfile.preferences;
 
-  const bloodLabel = BLOOD_TYPES.find((b) => b.value === emergency.bloodType)?.label || emergency.bloodType;
+  const bloodLabel =
+    BLOOD_TYPES.find((b) => b.value === emergency.bloodType)?.label || emergency.bloodType;
   const fitnessObj = FITNESS_LEVELS.find((f) => f.value === prefs.fitnessLevel);
   const paceObj = PACE_STYLES.find((p) => p.value === prefs.paceStyle);
 
@@ -98,7 +103,9 @@ export default function ViewProfile({ editPath }: { editPath?: string }) {
       {/* Header */}
       <header className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 pb-4">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-primary md:text-3xl">HỒ SƠ CÁ NHÂN</h1>
+          <h1 className="text-2xl font-black tracking-tight text-primary md:text-3xl">
+            HỒ SƠ CÁ NHÂN
+          </h1>
           <p className="text-sm font-medium text-muted-foreground">
             Thông tin cá nhân, hồ sơ y tế khẩn cấp SOS và tiêu chí đề xuất ghép nhóm
           </p>
@@ -120,7 +127,9 @@ export default function ViewProfile({ editPath }: { editPath?: string }) {
               <h2 className="text-base font-bold uppercase tracking-wider text-primary">
                 Thông tin cá nhân cơ bản
               </h2>
-              <span className="rounded-md bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">THÔNG TIN XÁC THỰC</span>
+              <span className="rounded-md bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+                THÔNG TIN XÁC THỰC
+              </span>
             </div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <InfoCell label="Họ và tên" value={profile.name} />
@@ -136,7 +145,9 @@ export default function ViewProfile({ editPath }: { editPath?: string }) {
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-red-500/10 pb-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="rounded-md bg-red-600 px-2 py-0.5 text-[10px] font-black text-white uppercase tracking-widest">CẤP CỨU</span>
+                  <span className="rounded-md bg-red-600 px-2 py-0.5 text-[10px] font-black text-white uppercase tracking-widest">
+                    CẤP CỨU
+                  </span>
                   <h2 className="text-base font-bold text-red-950 dark:text-red-300">
                     HỒ SƠ Y TẾ & CỨU HỘ KHẨN CẤP (SOS)
                   </h2>
@@ -193,7 +204,9 @@ export default function ViewProfile({ editPath }: { editPath?: string }) {
             <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between border-b border-emerald-500/10 pb-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="rounded-md bg-emerald-700 px-2 py-0.5 text-[10px] font-black text-white uppercase tracking-widest">MATCHING</span>
+                  <span className="rounded-md bg-emerald-700 px-2 py-0.5 text-[10px] font-black text-white uppercase tracking-widest">
+                    MATCHING
+                  </span>
                   <h2 className="text-base font-bold text-emerald-950 dark:text-emerald-300">
                     HỒ SƠ GHÉP NHÓM & TIÊU CHÍ TREKKING
                   </h2>

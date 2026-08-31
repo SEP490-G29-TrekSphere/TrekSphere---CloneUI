@@ -1,7 +1,7 @@
 import { Camera } from 'lucide-react';
 import { useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { PATHS, getPublicProfilePath } from '@/constants/paths';
+import { getPublicProfilePath, PATHS } from '@/constants/paths';
 import type { UserProfile } from '@/features/auth';
 
 interface ProfileSidebarProps {
@@ -130,4 +130,3 @@ export default function ProfileSidebar({
     </aside>
   );
 }
-

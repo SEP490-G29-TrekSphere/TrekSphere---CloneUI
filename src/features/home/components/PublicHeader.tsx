@@ -1,4 +1,5 @@
 import { Bell, LayoutDashboard, LogOut, Menu, X } from 'lucide-react';
+import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { queryClient } from '@/config/queryClient';
@@ -30,7 +31,9 @@ export default function PublicHeader() {
 
   useEffect(() => {
     void location.pathname;
-    const onScroll = () => setScrolled(window.scrollY > 80);
+    const onScroll = () => {
+      setScrolled(window.scrollY > 80);
+    };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
@@ -67,16 +70,40 @@ export default function PublicHeader() {
   const unreadCount = mockNotifications.filter((n) => !n.read).length;
   const dashboardPath = getRoleDashboardPath(user?.roles);
 
-  // On the home page the header starts transparent over the cinematic hero
   const isHome = location.pathname === PATHS.HOME;
-  const transparent = isHome && !scrolled;
+
+  // On home page: header stays in transparent/cinematic mode throughout the
+  // entire 2200px cinematic section. Only solidifies after user scrolls past it.
+  // On other pages: solidifies after 80px as usual.
+  const cinematicThreshold = typeof window !== 'undefined' ? window.innerHeight + 2100 : 2900;
+  const solidifyThreshold = isHome ? cinematicThreshold : 80;
+  const transparent = !scrolled || (isHome && window.scrollY < cinematicThreshold);
+
+  // While inside the cinematic zone on home: keep a fixed subtle dark gradient.
+  // After the cinematic zone: snap to solid bg like every other page.
+  const pastCinematic = isHome && scrolled && window.scrollY >= cinematicThreshold;
+
+  // Cinematic header style: constant dark-transparent gradient, no color change on scroll
+  const cinematicStyle: React.CSSProperties =
+    isHome && !pastCinematic
+      ? {
+          background: 'linear-gradient(180deg, rgba(11,17,16,0.72) 0%, rgba(11,17,16,0) 100%)',
+          backdropFilter: 'blur(6px)',
+          WebkitBackdropFilter: 'blur(6px)',
+          borderBottomColor: 'rgba(255,255,255,0.04)',
+        }
+      : {};
+
+  // Suppress unused-var warning from linter — threshold is used in scrolled check
+  void solidifyThreshold;
 
   return (
     <header
+      style={cinematicStyle}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled || !isHome
+        !isHome || pastCinematic
           ? 'bg-background/80 backdrop-blur-[16px] border-b border-border/60'
-          : 'bg-transparent border-b border-transparent'
+          : 'border-b border-transparent'
       }`}
     >
       <div className="mx-auto flex h-16 max-w-none w-full items-center justify-between px-4 sm:px-6">

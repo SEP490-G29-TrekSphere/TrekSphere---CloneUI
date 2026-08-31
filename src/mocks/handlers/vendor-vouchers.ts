@@ -211,8 +211,7 @@ export const vendorVoucherHandlers = [
     const orderValue = body.orderValue ?? 0;
 
     if (
-      !voucher ||
-      voucher.status !== 'ACTIVE' ||
+      voucher?.status !== 'ACTIVE' ||
       voucher.validFrom > now ||
       voucher.validUntil < now ||
       voucher.usedCount >= voucher.maxUsage

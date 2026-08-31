@@ -6,8 +6,10 @@ export const DEFAULT_PUBLIC_PROFILES: Record<string, UserPublicProfileData> = {
     id: 'user-trekker-1',
     fullName: 'Nguyễn Văn Trekker',
     handle: 'nguyenvantrekker',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-    coverUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1600&q=80',
+    avatarUrl:
+      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+    coverUrl:
+      'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1600&q=80',
     role: 'TRƯỞNG NHÓM TREKKING',
     bio: 'Đam mê trekking chinh phục các đỉnh núi cao Tây Bắc. Sẵn sàng ghép nhóm, chia sẻ đồ dã ngoại và hỗ trợ đồng đội trên mọi cung đường.',
     location: 'Hà Nội, Việt Nam',
@@ -26,7 +28,8 @@ export const DEFAULT_PUBLIC_PROFILES: Record<string, UserPublicProfileData> = {
       trekkingFrequency: '2-3 chuyến/tháng',
       skillsAndEquipment: ['bivouac', 'firstaid', 'navigation', 'cooking'],
       preferredTerrains: ['mountain', 'jungle', 'stream'],
-      planningNotes: 'Tháng 10/2026 này mình đang tìm 2 bạn thể lực tốt ghép xe chạy Hà Nội -> Sapa leo Ngũ Chỉ Sơn 2N1Đ.',
+      planningNotes:
+        'Tháng 10/2026 này mình đang tìm 2 bạn thể lực tốt ghép xe chạy Hà Nội -> Sapa leo Ngũ Chỉ Sơn 2N1Đ.',
     },
     moments: [
       {
@@ -34,7 +37,8 @@ export const DEFAULT_PUBLIC_PROFILES: Record<string, UserPublicProfileData> = {
         locationName: 'Đỉnh Fansipan',
         altitude: '3.143m',
         tripTitle: 'Hành trình Săn Mây Fansipan',
-        imageUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80',
         createdAt: '15/10/2025',
         likesCount: 42,
         commentsCount: 9,
@@ -46,7 +50,8 @@ export const DEFAULT_PUBLIC_PROFILES: Record<string, UserPublicProfileData> = {
         locationName: 'Bạch Mộc Lương Tử',
         altitude: '3.046m',
         tripTitle: 'Chinh phục Đỉnh Ky Quan San',
-        imageUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
         createdAt: '02/11/2025',
         likesCount: 56,
         commentsCount: 14,
@@ -58,7 +63,8 @@ export const DEFAULT_PUBLIC_PROFILES: Record<string, UserPublicProfileData> = {
         locationName: 'Đỉnh Lảo Thần',
         altitude: '2.860m',
         tripTitle: 'Săn mây Y Tý - Lảo Thần 2N1Đ',
-        imageUrl: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=80',
         createdAt: '20/12/2025',
         likesCount: 38,
         commentsCount: 6,
@@ -70,7 +76,8 @@ export const DEFAULT_PUBLIC_PROFILES: Record<string, UserPublicProfileData> = {
         locationName: 'Tà Chì Nhù',
         altitude: '2.979m',
         tripTitle: 'Săn Hoa Chi Pâu Trạm Tấu',
-        imageUrl: 'https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?auto=format&fit=crop&w=800&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?auto=format&fit=crop&w=800&q=80',
         createdAt: '10/01/2026',
         likesCount: 64,
         commentsCount: 11,
@@ -82,7 +89,8 @@ export const DEFAULT_PUBLIC_PROFILES: Record<string, UserPublicProfileData> = {
         locationName: 'Nhìu Cồ San',
         altitude: '2.965m',
         tripTitle: 'Thám hiểm Thác Ong Bắp Cày',
-        imageUrl: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=800&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=800&q=80',
         createdAt: '18/02/2026',
         likesCount: 29,
         commentsCount: 4,
@@ -94,7 +102,8 @@ export const DEFAULT_PUBLIC_PROFILES: Record<string, UserPublicProfileData> = {
         locationName: 'Sống lưng Khủng Long Háng Đồng',
         altitude: '2.100m',
         tripTitle: 'Trekker Weekend Tà Xùa',
-        imageUrl: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=80',
         createdAt: '05/03/2026',
         likesCount: 71,
         commentsCount: 18,
@@ -106,8 +115,10 @@ export const DEFAULT_PUBLIC_PROFILES: Record<string, UserPublicProfileData> = {
       {
         id: 'p1',
         title: 'Kinh nghiệm chuẩn bị thể lực leo Bạch Mộc Lương Tử cho người mới',
-        summary: 'Tổng hợp bài tập cardio, leo cầu thang và phân bổ thể lực theo từng chặng từ Nậm Pề tới đỉnh Ky Quan San.',
-        coverImage: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
+        summary:
+          'Tổng hợp bài tập cardio, leo cầu thang và phân bổ thể lực theo từng chặng từ Nậm Pề tới đỉnh Ky Quan San.',
+        coverImage:
+          'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
         createdAt: '12/11/2025',
         viewCount: 1240,
         commentsCount: 18,
@@ -116,8 +127,10 @@ export const DEFAULT_PUBLIC_PROFILES: Record<string, UserPublicProfileData> = {
       {
         id: 'p2',
         title: 'Checklist 15 món đồ dã ngoại không thể thiếu khi trekking mùa mưa',
-        summary: 'Hướng dẫn chọn áo mưa bộ, túi chống nước cho balo, giày bám đinh và bộ sơ cứu cá nhân chuẩn y tế.',
-        coverImage: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=80',
+        summary:
+          'Hướng dẫn chọn áo mưa bộ, túi chống nước cho balo, giày bám đinh và bộ sơ cứu cá nhân chuẩn y tế.',
+        coverImage:
+          'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=80',
         createdAt: '04/01/2026',
         viewCount: 850,
         commentsCount: 12,
@@ -126,8 +139,10 @@ export const DEFAULT_PUBLIC_PROFILES: Record<string, UserPublicProfileData> = {
       {
         id: 'p3',
         title: 'Hành trình săn mây Lảo Thần 2N1Đ - Chi tiết chi phí & Lịch trình',
-        summary: 'Lịch trình di chuyển xe giường nằm Hà Nội -> Y Tý, thuê porter và kinh nghiệm cắm trại lều đêm 0 độ C.',
-        coverImage: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80',
+        summary:
+          'Lịch trình di chuyển xe giường nằm Hà Nội -> Y Tý, thuê porter và kinh nghiệm cắm trại lều đêm 0 độ C.',
+        coverImage:
+          'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80',
         createdAt: '22/02/2026',
         viewCount: 2100,
         commentsCount: 34,
@@ -142,7 +157,8 @@ export const DEFAULT_PUBLIC_PROFILES: Record<string, UserPublicProfileData> = {
         status: 'COMPLETED',
         startDate: '15/10/2025',
         membersCount: 8,
-        coverImage: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=80',
+        coverImage:
+          'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=80',
         location: 'Y Tý, Bát Xát, Lào Cai',
       },
       {
@@ -152,7 +168,8 @@ export const DEFAULT_PUBLIC_PROFILES: Record<string, UserPublicProfileData> = {
         status: 'COMPLETED',
         startDate: '20/11/2025',
         membersCount: 6,
-        coverImage: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
+        coverImage:
+          'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
         location: 'Bát Xát, Lào Cai',
       },
       {
@@ -162,7 +179,8 @@ export const DEFAULT_PUBLIC_PROFILES: Record<string, UserPublicProfileData> = {
         status: 'RECRUITING',
         startDate: '12/09/2026',
         membersCount: 4,
-        coverImage: 'https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?auto=format&fit=crop&w=800&q=80',
+        coverImage:
+          'https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?auto=format&fit=crop&w=800&q=80',
         location: 'Trạm Tấu, Yên Bái',
       },
     ],
@@ -171,13 +189,21 @@ export const DEFAULT_PUBLIC_PROFILES: Record<string, UserPublicProfileData> = {
 
 export function getPublicProfileData(
   userId: string,
-  currentLoggedUser?: { id: string; fullName?: string; name?: string; email?: string; avatarUrl?: string; avatar?: string } | null
+  currentLoggedUser?: {
+    id: string;
+    fullName?: string;
+    name?: string;
+    email?: string;
+    avatarUrl?: string;
+    avatar?: string;
+  } | null
 ): UserPublicProfileData {
   // If requesting own profile or preset user
   const preset = DEFAULT_PUBLIC_PROFILES[userId];
   const localAdv = getAdvancedProfile(userId);
 
-  const userDisplayName = currentLoggedUser?.fullName || currentLoggedUser?.name || preset?.fullName || 'Trekker';
+  const userDisplayName =
+    currentLoggedUser?.fullName || currentLoggedUser?.name || preset?.fullName || 'Trekker';
   const userAvatar = currentLoggedUser?.avatarUrl || currentLoggedUser?.avatar || preset?.avatarUrl;
 
   if (preset) {
@@ -196,10 +222,18 @@ export function getPublicProfileData(
   // Fallback for any dynamic userId
   return {
     id: userId,
-    fullName: (currentLoggedUser?.id === userId ? (currentLoggedUser.fullName || currentLoggedUser.name) : undefined) || `Trekker ${userId.slice(0, 6)}`,
+    fullName:
+      (currentLoggedUser?.id === userId
+        ? currentLoggedUser.fullName || currentLoggedUser.name
+        : undefined) || `Trekker ${userId.slice(0, 6)}`,
     handle: `user_${userId.slice(0, 8)}`,
-    avatarUrl: (currentLoggedUser?.id === userId ? (currentLoggedUser.avatarUrl || currentLoggedUser.avatar) : undefined) || `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80`,
-    coverUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1600&q=80',
+    avatarUrl:
+      (currentLoggedUser?.id === userId
+        ? currentLoggedUser.avatarUrl || currentLoggedUser.avatar
+        : undefined) ||
+      `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80`,
+    coverUrl:
+      'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1600&q=80',
     role: 'THÀNH VIÊN TREKSPHERE',
     bio: 'Yêu thiên nhiên, đam mê trải nghiệm các cung đường trekking mới và giao lưu cùng các bạn đồng hành.',
     location: 'Việt Nam',
@@ -226,7 +260,8 @@ export function getPublicProfileData(
         locationName: 'Cung đường Nhìu Cồ San',
         altitude: '2.965m',
         tripTitle: 'Chinh phục Nhìu Cồ San',
-        imageUrl: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=800&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=800&q=80',
         createdAt: '10/02/2026',
         likesCount: 24,
         commentsCount: 3,
@@ -237,7 +272,8 @@ export function getPublicProfileData(
         locationName: 'Đỉnh Lảo Thần',
         altitude: '2.860m',
         tripTitle: 'Săn mây Y Tý',
-        imageUrl: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=80',
         createdAt: '15/01/2026',
         likesCount: 31,
         commentsCount: 5,
@@ -249,7 +285,8 @@ export function getPublicProfileData(
         id: `p-dyn-1-${userId}`,
         title: 'Cảm nhận chuyến đi trekking đầu tiên cùng nhóm ghép TrekSphere',
         summary: 'Những trải nghiệm đáng nhớ và lời khuyên cho các bạn vừa mới tập leo núi.',
-        coverImage: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
+        coverImage:
+          'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
         createdAt: '20/01/2026',
         viewCount: 420,
         commentsCount: 7,
@@ -264,7 +301,8 @@ export function getPublicProfileData(
         status: 'COMPLETED',
         startDate: '12/01/2026',
         membersCount: 5,
-        coverImage: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=800&q=80',
+        coverImage:
+          'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=800&q=80',
         location: 'Bát Xát, Lào Cai',
       },
     ],

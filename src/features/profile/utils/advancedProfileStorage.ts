@@ -19,7 +19,8 @@ export const DEFAULT_ADVANCED_PROFILE: TrekkerAdvancedProfile = {
     trekkingFrequency: '1-2 lần / tháng',
     skillsAndEquipment: ['bivouac', 'firstaid', 'navigation'],
     preferredTerrains: ['mountain', 'jungle'],
-    planningNotes: 'Đang tìm kiếm nhóm ghép chinh phục Lảo Thần hoặc Tà Xùa dịp cuối tháng. Đã chuẩn bị sẵn lều 2 người và dụng cụ y tế cá nhân.',
+    planningNotes:
+      'Đang tìm kiếm nhóm ghép chinh phục Lảo Thần hoặc Tà Xùa dịp cuối tháng. Đã chuẩn bị sẵn lều 2 người và dụng cụ y tế cá nhân.',
   },
 };
 
@@ -34,7 +35,8 @@ export function getAdvancedProfile(userId: string): TrekkerAdvancedProfile {
         emergencyMedical: {
           ...DEFAULT_ADVANCED_PROFILE.emergencyMedical,
           ...em,
-          citizenId: em.citizenId || em.insuranceId || DEFAULT_ADVANCED_PROFILE.emergencyMedical.citizenId,
+          citizenId:
+            em.citizenId || em.insuranceId || DEFAULT_ADVANCED_PROFILE.emergencyMedical.citizenId,
         },
         preferences: {
           ...DEFAULT_ADVANCED_PROFILE.preferences,
