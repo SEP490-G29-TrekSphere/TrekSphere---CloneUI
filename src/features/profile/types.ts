@@ -87,8 +87,16 @@ export const FITNESS_LEVELS = [
 
 export const PACE_STYLES = [
   { value: 'leisure', label: 'Thong thả & Chụp ảnh', desc: 'Đi thong thả, ngắm cảnh và chụp hình' },
-  { value: 'steady', label: 'Tốc độ bền bỉ & Giữ khoảng cách', desc: 'Đồng hành cùng nhóm, duy trì nhịp thở' },
-  { value: 'fast', label: 'Tốc độ nhanh & Thể thao', desc: 'Tập trung thể lực, hoàn thành mốc sớm' },
+  {
+    value: 'steady',
+    label: 'Tốc độ bền bỉ & Giữ khoảng cách',
+    desc: 'Đồng hành cùng nhóm, duy trì nhịp thở',
+  },
+  {
+    value: 'fast',
+    label: 'Tốc độ nhanh & Thể thao',
+    desc: 'Tập trung thể lực, hoàn thành mốc sớm',
+  },
   { value: 'other', label: 'Khác / Tùy chỉnh', desc: 'Di chuyển linh hoạt theo tình hình thực tế' },
 ];
 
@@ -171,4 +179,3 @@ export interface UserPublicProfileData {
   posts: UserPublicPost[];
   trips: UserPublicTrip[];
 }
-

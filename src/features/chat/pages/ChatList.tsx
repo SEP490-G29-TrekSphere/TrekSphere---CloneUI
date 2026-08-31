@@ -377,7 +377,7 @@ export default function ChatList({ hideSidebar = false }: ChatListProps) {
       setSelectedId(null);
       setConversations((prev) => prev.filter((c) => c.id !== conversationId));
       queryClient.invalidateQueries({ queryKey: ['chatConversations'] });
-    } catch (error) {
+    } catch (_error) {
       toast.error('Xóa cuộc hội thoại thất bại');
     }
   };
@@ -388,7 +388,7 @@ export default function ChatList({ hideSidebar = false }: ChatListProps) {
       toast.success('Đã xóa thành viên khỏi nhóm');
       // Invalidate matching group queries so the member can be re-added from the group interface
       queryClient.invalidateQueries({ queryKey: companionGroupKeys.all });
-    } catch (error) {
+    } catch (_error) {
       toast.error('Xóa thành viên thất bại');
     }
   };

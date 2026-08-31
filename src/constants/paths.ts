@@ -188,4 +188,3 @@ export const getTrekkerGroupJoinPath = (groupId: string) =>
   PATHS.TREKKER_GROUPS_JOIN.replace(':groupId', groupId);
 export const getPublicProfilePath = (userId: string) =>
   PATHS.PUBLIC_PROFILE.replace(':userId', userId);
-

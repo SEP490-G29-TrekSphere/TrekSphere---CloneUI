@@ -1,4 +1,5 @@
-import { http, type HttpHandler } from 'msw';
+import { type HttpHandler, http } from 'msw';
+import { fail } from '../envelope';
 import { adminHandlers } from './admin';
 import { authHandlers } from './auth';
 import { chatHandlers } from './chat';
@@ -23,7 +24,6 @@ import { vendorReportHandlers } from './vendor-reports';
 import { vendorSessionHandlers } from './vendor-sessions';
 import { vendorTourHandlers } from './vendor-tours';
 import { vendorVoucherHandlers } from './vendor-vouchers';
-import { fail } from '../envelope';
 
 export const handlers: HttpHandler[] = [
   ...authHandlers,

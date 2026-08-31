@@ -499,28 +499,32 @@ export const VENDOR_TOUR_TEMPLATES: VendorTourTemplate[] = [
         category: 'Tập kết & Khởi hành',
         distanceAltitude: '300m',
         gps: '21.2464° N, 104.6465° E',
-        imageUrl: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=600&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=600&q=80',
       },
       {
         name: 'Bãi Lều Gió Tà Xùa',
         category: 'Trạm dừng chân',
         distanceAltitude: '1.500m',
         gps: '21.2612° N, 104.6291° E',
-        imageUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80',
       },
       {
         name: 'Đỉnh Đèo Gió - Cây Táo Mèo Cô Đơn',
         category: 'Điểm Check-in',
         distanceAltitude: '1.750m',
         gps: '21.2780° N, 104.6340° E',
-        imageUrl: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=600&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=600&q=80',
       },
       {
         name: 'Sống Lưng Khủng Long Háng Đồng',
         category: 'Đón biển mây',
         distanceAltitude: '1.800m',
         gps: '21.2855° N, 104.6521° E',
-        imageUrl: 'https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?auto=format&fit=crop&w=600&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?auto=format&fit=crop&w=600&q=80',
       },
     ],
     dailyItinerary: [
@@ -529,21 +533,24 @@ export const VENDOR_TOUR_TEMPLATES: VendorTourTemplate[] = [
         title: 'Hà Nội - Bắc Yên - Tà Xùa',
         desc: 'Di chuyển lên Bắc Yên, check-in homestay & săn hoàng hôn tại Bãi Lều Gió.',
         gps: '21.2612° N, 104.6291° E',
-        imageUrl: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=600&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=600&q=80',
       },
       {
         day: 'Ngày 2',
         title: 'Chinh phục Sống Lưng Khủng Long & Đỉnh Đèo Gió',
         desc: 'Trekking sớm đón bình minh biển mây Háng Đồng, ăn trưa nướng bản địa.',
         gps: '21.2855° N, 104.6521° E',
-        imageUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80',
       },
       {
         day: 'Ngày 3',
         title: 'Cây Táo Mèo Cô Đơn - Mua quà nông sản - Về Hà Nội',
         desc: 'Tham quan vườn chè cổ thụ Shan Tuyết, thưởng thức cà phê mây trước khi về.',
         gps: '21.2780° N, 104.6340° E',
-        imageUrl: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=600&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=600&q=80',
       },
     ],
     gearItems: [
@@ -580,35 +587,40 @@ export const VENDOR_TOUR_TEMPLATES: VendorTourTemplate[] = [
         category: 'Điểm bắt đầu',
         distanceAltitude: '1.800m',
         gps: '22.6150° N, 103.6210° E',
-        imageUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80',
       },
       {
         name: 'Lán nghỉ Đống Pao',
         category: 'Nghỉ đêm',
         distanceAltitude: '2.400m',
         gps: '22.6280° N, 103.6350° E',
-        imageUrl: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=600&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=600&q=80',
       },
       {
         name: 'Cây Chút Chít Khổng Lồ',
         category: 'Điểm Check-in',
         distanceAltitude: '2.600m',
         gps: '22.6320° N, 103.6380° E',
-        imageUrl: 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=600&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=600&q=80',
       },
       {
         name: 'Đỉnh Lảo Thần Peak',
         category: 'Chạm đỉnh',
         distanceAltitude: '2.860m',
         gps: '22.6390° N, 103.6420° E',
-        imageUrl: 'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?auto=format&fit=crop&w=600&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?auto=format&fit=crop&w=600&q=80',
       },
       {
         name: 'Bản Phìn Hồ (Hoàn thành)',
         category: 'Điểm kết thúc',
         distanceAltitude: '1.800m',
         gps: '22.6150° N, 103.6210° E',
-        imageUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80',
       },
     ],
     dailyItinerary: [
@@ -617,14 +629,16 @@ export const VENDOR_TOUR_TEMPLATES: VendorTourTemplate[] = [
         title: 'Sapa - Y Tý - Phìn Hồ - Lán Nghỉ 2400m',
         desc: 'Trekking xuyên qua rừng cỏ cháy và đồi trống, cắm trại săn hoàng hôn trên mây.',
         gps: '22.6280° N, 103.6350° E',
-        imageUrl: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=600&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=600&q=80',
       },
       {
         day: 'Ngày 2',
         title: 'Đón Bình Minh Đỉnh Lảo Thần - Phìn Hồ - Sapa',
         desc: 'Chạm đỉnh 2860m lúc 6:00 sáng, ngắm biển mây Y Tý 360 độ rồi xuống núi.',
         gps: '22.6390° N, 103.6420° E',
-        imageUrl: 'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?auto=format&fit=crop&w=600&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?auto=format&fit=crop&w=600&q=80',
       },
     ],
     gearItems: [
@@ -660,42 +674,48 @@ export const VENDOR_TOUR_TEMPLATES: VendorTourTemplate[] = [
         category: 'Cửa rừng',
         distanceAltitude: '1.900m',
         gps: '22.3512° N, 103.7745° E',
-        imageUrl: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=600&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=600&q=80',
       },
       {
         name: 'Điểm dừng chân ăn trưa',
         category: 'Trạm ăn trưa',
         distanceAltitude: '2.200m',
         gps: '22.3350° N, 103.7760° E',
-        imageUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80',
       },
       {
         name: 'Lán nghỉ đêm Fansipan',
         category: 'Trạm nghỉ đêm',
         distanceAltitude: '2.800m',
         gps: '22.3120° N, 103.7790° E',
-        imageUrl: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=600&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=600&q=80',
       },
       {
         name: 'Vọng Cảnh Peak',
         category: 'Điểm Check-in',
         distanceAltitude: '3.000m',
         gps: '22.3080° N, 103.7770° E',
-        imageUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80',
       },
       {
         name: 'Đỉnh Fansipan Peak',
         category: 'Nóc nhà Đông Dương',
         distanceAltitude: '3.143m',
         gps: '22.3035° N, 103.7751° E',
-        imageUrl: 'https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?auto=format&fit=crop&w=600&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?auto=format&fit=crop&w=600&q=80',
       },
       {
         name: 'Trạm Tôn (Xuống núi)',
         category: 'Hoàn thành',
         distanceAltitude: '1.900m',
         gps: '22.3512° N, 103.7745° E',
-        imageUrl: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=600&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=600&q=80',
       },
     ],
     dailyItinerary: [
@@ -704,14 +724,16 @@ export const VENDOR_TOUR_TEMPLATES: VendorTourTemplate[] = [
         title: 'Sapa - Trạm Tôn (1900m) - Lán nghỉ 2800m',
         desc: 'Xuyên rừng trúc Hoàng Liên Sơn, vượt vách đá có hỗ trợ dây cáp an toàn.',
         gps: '22.3120° N, 103.7790° E',
-        imageUrl: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=600&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=600&q=80',
       },
       {
         day: 'Ngày 2',
         title: 'Lán 2800m - Chạm đỉnh Fansipan (3143m) - Trạm Tôn',
         desc: 'Chinh phục đỉnh cao nhất Đông Dương, chụp ảnh cột mốc inox và về Sapa.',
         gps: '22.3035° N, 103.7751° E',
-        imageUrl: 'https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?auto=format&fit=crop&w=600&q=80',
+        imageUrl:
+          'https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?auto=format&fit=crop&w=600&q=80',
       },
     ],
     gearItems: [
@@ -943,10 +965,13 @@ export function CreateGroupFromVendorTourModal({
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-2">
                               {tmpl.checkpoints.map((cpItem, idx) => {
                                 const name = typeof cpItem === 'string' ? cpItem : cpItem.name;
-                                const category = typeof cpItem === 'object' ? cpItem.category : undefined;
-                                const elevation = typeof cpItem === 'object' ? cpItem.distanceAltitude : undefined;
+                                const category =
+                                  typeof cpItem === 'object' ? cpItem.category : undefined;
+                                const elevation =
+                                  typeof cpItem === 'object' ? cpItem.distanceAltitude : undefined;
                                 const gps = typeof cpItem === 'object' ? cpItem.gps : undefined;
-                                const imageUrl = typeof cpItem === 'object' ? cpItem.imageUrl : undefined;
+                                const imageUrl =
+                                  typeof cpItem === 'object' ? cpItem.imageUrl : undefined;
 
                                 return (
                                   <div
@@ -966,7 +991,9 @@ export function CreateGroupFromVendorTourModal({
                                     )}
                                     <div className="min-w-0 flex-1 space-y-0.5">
                                       <div className="flex items-center justify-between gap-1">
-                                        <span className="font-bold text-foreground truncate">{name}</span>
+                                        <span className="font-bold text-foreground truncate">
+                                          {name}
+                                        </span>
                                         {elevation && (
                                           <span className="text-[9.5px] font-semibold text-emerald-700 bg-emerald-500/10 px-1 py-0.2 rounded shrink-0">
                                             {elevation}
@@ -974,7 +1001,11 @@ export function CreateGroupFromVendorTourModal({
                                         )}
                                       </div>
                                       <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
-                                        {category && <span className="font-medium text-slate-600">{category}</span>}
+                                        {category && (
+                                          <span className="font-medium text-slate-600">
+                                            {category}
+                                          </span>
+                                        )}
                                         {gps && (
                                           <span className="inline-flex items-center gap-0.5 font-mono text-primary bg-primary/5 px-1 py-0.2 rounded text-[9px]">
                                             <MapPin className="h-2.5 w-2.5" />

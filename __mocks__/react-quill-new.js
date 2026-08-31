@@ -8,7 +8,7 @@ const ReactQuill = React.forwardRef((props, ref) => {
     ...rest,
     ref,
     value: value || '',
-    onChange: (e) => onChange && onChange(e.target.value),
+    onChange: (e) => onChange?.(e.target.value),
     'data-testid': 'react-quill-mock',
   });
 });

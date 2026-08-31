@@ -139,20 +139,26 @@ export function GroupSOSModal({
               Tín hiệu SOS đã được phát tới toàn bộ thành viên!
             </h4>
             <p className="text-xs text-muted-foreground">
-              Thông báo ghim khẩn cấp đã xuất hiện trên bảng tin nhóm. Vui lòng giữ liên lạc và bình tĩnh.
+              Thông báo ghim khẩn cấp đã xuất hiện trên bảng tin nhóm. Vui lòng giữ liên lạc và bình
+              tĩnh.
             </p>
           </div>
         ) : (
           <>
             {/* Section 1: Broadcast SOS to Group */}
-            <form onSubmit={handleBroadcastSOS} className="space-y-3.5 rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+            <form
+              onSubmit={handleBroadcastSOS}
+              className="space-y-3.5 rounded-xl border border-destructive/30 bg-destructive/5 p-4"
+            >
               <div className="flex items-center gap-2 text-destructive font-extrabold text-xs">
                 <Megaphone className="h-4 w-4" />
                 <span>1. PHÁT TÍN HIỆU SOS TỚI BẢNG TIN NHÓM</span>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-foreground">Loại sự cố đang gặp phải:</label>
+                <label className="text-[11px] font-bold text-foreground">
+                  Loại sự cố đang gặp phải:
+                </label>
                 <div className="grid grid-cols-2 gap-2">
                   {INCIDENT_TYPES.map((type) => {
                     const Icon = type.icon;
@@ -225,9 +231,13 @@ export function GroupSOSModal({
 
               {/* Leader Edit Custom Contact Form */}
               {isEditingLocalContact && (
-                <form onSubmit={handleSaveLocalContact} className="space-y-2 rounded-xl border border-primary/40 bg-primary/5 p-3 text-xs">
+                <form
+                  onSubmit={handleSaveLocalContact}
+                  className="space-y-2 rounded-xl border border-primary/40 bg-primary/5 p-3 text-xs"
+                >
                   <span className="font-extrabold text-primary text-[11px] flex items-center gap-1">
-                    <Plus className="h-3.5 w-3.5" /> Điền hotline Cứu hộ / Porter địa phương cho nhóm:
+                    <Plus className="h-3.5 w-3.5" /> Điền hotline Cứu hộ / Porter địa phương cho
+                    nhóm:
                   </span>
                   <input
                     type="text"
@@ -266,8 +276,12 @@ export function GroupSOSModal({
               {/* Leader Call */}
               <div className="flex items-center justify-between rounded-xl border border-primary/30 bg-primary/5 p-3">
                 <div>
-                  <span className="text-[10px] font-extrabold text-primary uppercase">Trưởng Nhóm Đoàn</span>
-                  <p className="text-xs font-bold text-foreground">{leaderName} • {leaderPhone}</p>
+                  <span className="text-[10px] font-extrabold text-primary uppercase">
+                    Trưởng Nhóm Đoàn
+                  </span>
+                  <p className="text-xs font-bold text-foreground">
+                    {leaderName} • {leaderPhone}
+                  </p>
                 </div>
                 <a
                   href={`tel:${leaderPhone.replace(/\./g, '')}`}
@@ -287,7 +301,9 @@ export function GroupSOSModal({
                         Leader điền
                       </span>
                     </div>
-                    <p className="text-[10.5px] text-muted-foreground">Đã bổ sung bởi Trưởng nhóm trước chuyến đi</p>
+                    <p className="text-[10.5px] text-muted-foreground">
+                      Đã bổ sung bởi Trưởng nhóm trước chuyến đi
+                    </p>
                   </div>
                   <a
                     href={`tel:${localContactPhone.replace(/\./g, '')}`}
@@ -331,9 +347,17 @@ export function GroupSOSModal({
                 <AlertTriangle className="h-3.5 w-3.5" /> Quy tắc an toàn khi gặp sự cố trên rừng:
               </span>
               <ul className="list-disc pl-4 space-y-0.5 text-muted-foreground text-[10.5px]">
-                <li><strong>Giữ nguyên vị trí:</strong> Tránh tự di chuyển tiếp nếu mất phương hướng hoặc chấn thương.</li>
-                <li><strong>Tiết kiệm pin & nước:</strong> Tắt bớt ứng dụng ngầm, giữ ấm cơ thể.</li>
-                <li><strong>Tín hiệu âm thanh:</strong> Dùng còi cứu hộ (3 tiếng ngắn liên tiếp) hoặc đèn pin nhấp nháy.</li>
+                <li>
+                  <strong>Giữ nguyên vị trí:</strong> Tránh tự di chuyển tiếp nếu mất phương hướng
+                  hoặc chấn thương.
+                </li>
+                <li>
+                  <strong>Tiết kiệm pin & nước:</strong> Tắt bớt ứng dụng ngầm, giữ ấm cơ thể.
+                </li>
+                <li>
+                  <strong>Tín hiệu âm thanh:</strong> Dùng còi cứu hộ (3 tiếng ngắn liên tiếp) hoặc
+                  đèn pin nhấp nháy.
+                </li>
               </ul>
             </div>
           </>

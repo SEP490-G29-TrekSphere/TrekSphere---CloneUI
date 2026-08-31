@@ -24,7 +24,11 @@ import {
   TERRAIN_OPTIONS,
   type TrekkingPreferences,
 } from '../types';
-import { DEFAULT_ADVANCED_PROFILE, getAdvancedProfile, saveAdvancedProfile } from '../utils/advancedProfileStorage';
+import {
+  DEFAULT_ADVANCED_PROFILE,
+  getAdvancedProfile,
+  saveAdvancedProfile,
+} from '../utils/advancedProfileStorage';
 
 /**
  * Màn hình 2: Chỉnh sửa hồ sơ.
@@ -45,8 +49,12 @@ export default function EditProfile({ returnPath }: { returnPath?: string }) {
   const { data: profile, isLoading } = useProfile();
 
   // State cho thông tin y tế khẩn cấp & ghép nhóm
-  const [emergencyMedical, setEmergencyMedical] = useState<EmergencyMedicalInfo>(DEFAULT_ADVANCED_PROFILE.emergencyMedical);
-  const [preferences, setPreferences] = useState<TrekkingPreferences>(DEFAULT_ADVANCED_PROFILE.preferences);
+  const [emergencyMedical, setEmergencyMedical] = useState<EmergencyMedicalInfo>(
+    DEFAULT_ADVANCED_PROFILE.emergencyMedical
+  );
+  const [preferences, setPreferences] = useState<TrekkingPreferences>(
+    DEFAULT_ADVANCED_PROFILE.preferences
+  );
 
   // Form — dùng empty object fallback để tránh crash khi profile đang null
   const methods = useForm<UpdateProfileFormValues>({
@@ -224,7 +232,9 @@ export default function EditProfile({ returnPath }: { returnPath?: string }) {
               {/* Phần 1: Thông tin cá nhân cơ bản */}
               <section className="rounded-2xl bg-card p-6 shadow-sm border border-border/50">
                 <h2 className="mb-5 flex items-center gap-2 text-lg font-bold text-primary">
-                  <span className="font-mono text-xs font-bold uppercase tracking-wider text-emerald-600 border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 rounded">[CƠ BẢN]</span>
+                  <span className="font-mono text-xs font-bold uppercase tracking-wider text-emerald-600 border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 rounded">
+                    [CƠ BẢN]
+                  </span>
                   Thông tin cá nhân cơ bản
                 </h2>
 
@@ -330,7 +340,9 @@ export default function EditProfile({ returnPath }: { returnPath?: string }) {
               <section className="rounded-2xl bg-red-500/5 p-6 shadow-sm border border-red-500/20">
                 <div className="mb-4 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs font-bold uppercase tracking-wider text-red-600 border border-red-500/30 bg-red-500/10 px-2 py-0.5 rounded">[CẤP CỨU]</span>
+                    <span className="font-mono text-xs font-bold uppercase tracking-wider text-red-600 border border-red-500/30 bg-red-500/10 px-2 py-0.5 rounded">
+                      [CẤP CỨU]
+                    </span>
                     <h2 className="text-lg font-bold text-red-950 dark:text-red-300">
                       Thông tin Y tế & Cứu hộ Khẩn cấp (Dùng cho SOS)
                     </h2>
@@ -340,7 +352,8 @@ export default function EditProfile({ returnPath }: { returnPath?: string }) {
                   </span>
                 </div>
                 <p className="mb-5 text-xs text-muted-foreground">
-                  Thông tin này cực kỳ quan trọng đối với Trưởng nhóm và Tổng đài cứu hộ trong các trường hợp sự cố khẩn cấp trên cung đường trekking.
+                  Thông tin này cực kỳ quan trọng đối với Trưởng nhóm và Tổng đài cứu hộ trong các
+                  trường hợp sự cố khẩn cấp trên cung đường trekking.
                 </p>
 
                 <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -370,7 +383,8 @@ export default function EditProfile({ returnPath }: { returnPath?: string }) {
                   {/* Số CCCD / CMND */}
                   <div>
                     <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Số Căn cước công dân (CCCD / Passport) <span className="text-destructive">*</span>
+                      Số Căn cước công dân (CCCD / Passport){' '}
+                      <span className="text-destructive">*</span>
                     </label>
                     <input
                       type="text"
@@ -392,7 +406,8 @@ export default function EditProfile({ returnPath }: { returnPath?: string }) {
                   {/* Họ tên người liên hệ khẩn cấp */}
                   <div>
                     <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Họ & Tên Người thân liên hệ khẩn cấp <span className="text-destructive">*</span>
+                      Họ & Tên Người thân liên hệ khẩn cấp{' '}
+                      <span className="text-destructive">*</span>
                     </label>
                     <input
                       type="text"
@@ -490,14 +505,17 @@ export default function EditProfile({ returnPath }: { returnPath?: string }) {
               <section className="rounded-2xl bg-emerald-500/5 p-6 shadow-sm border border-emerald-500/20">
                 <div className="mb-4 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs font-bold uppercase tracking-wider text-emerald-600 border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 rounded">[MATCHING]</span>
+                    <span className="font-mono text-xs font-bold uppercase tracking-wider text-emerald-600 border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 rounded">
+                      [MATCHING]
+                    </span>
                     <h2 className="text-lg font-bold text-emerald-950 dark:text-emerald-300">
                       Hồ sơ Ghép nhóm & Kế hoạch Trekking
                     </h2>
                   </div>
                 </div>
                 <p className="mb-5 text-xs text-muted-foreground">
-                  Hệ thống dùng tiêu chuẩn này để tính % độ tương thích và gợi ý các nhóm bạn đồng hành có cùng thể lực & gu trekking.
+                  Hệ thống dùng tiêu chuẩn này để tính % độ tương thích và gợi ý các nhóm bạn đồng
+                  hành có cùng thể lực & gu trekking.
                 </p>
 
                 <div className="space-y-5">
@@ -575,7 +593,9 @@ export default function EditProfile({ returnPath }: { returnPath?: string }) {
                             }`}
                           >
                             <span className="text-xs font-bold">{pace.label}</span>
-                            <span className="mt-1 text-[11px] text-muted-foreground">{pace.desc}</span>
+                            <span className="mt-1 text-[11px] text-muted-foreground">
+                              {pace.desc}
+                            </span>
                           </button>
                         );
                       })}
@@ -743,4 +763,3 @@ export default function EditProfile({ returnPath }: { returnPath?: string }) {
     </div>
   );
 }
-
