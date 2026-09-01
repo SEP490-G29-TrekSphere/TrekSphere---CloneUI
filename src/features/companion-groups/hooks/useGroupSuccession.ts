@@ -22,6 +22,19 @@ export function useCreateSuccessionRequest(groupId: string) {
   });
 }
 
+export function useAppointLeaderDirect(groupId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (nomineeId: string) =>
+      groupWorkspaceService.appointLeaderDirect(groupId, { nomineeId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: groupWorkspaceKeys.succession(groupId) });
+      // Chuyển giao ngay lập tức → invalidate cả group detail thật (ownerId đổi).
+      queryClient.invalidateQueries({ queryKey: companionGroupKeys.detail(groupId) });
+    },
+  });
+}
+
 export function useVoteSuccessionRequest(groupId: string) {
   const queryClient = useQueryClient();
   return useMutation({
