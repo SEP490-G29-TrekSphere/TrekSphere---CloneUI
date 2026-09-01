@@ -1,4 +1,4 @@
-import { type ApiResponse, ApiService } from '@/config/apiClient';
+import { type ApiResponse, ApiService, ApiUpload } from '@/config/apiClient';
 
 /**
  * Service cho "Workspace nhóm" (dành cho thành viên/trưởng nhóm đã tham gia) — tái hiện
@@ -51,6 +51,7 @@ export interface TrailCheckpointItem {
   distanceAltitude: string;
   gps: string;
   imageUrl?: string;
+  description?: string;
   status: CheckpointStatus;
   checkedInByName?: string;
   checkedInAt?: string;
@@ -74,6 +75,8 @@ export interface ItineraryActivityItem {
   title: string;
   location: string;
   assignee: string;
+  description?: string;
+  imageUrl?: string;
 }
 
 // ---------- Budget workspace ----------
@@ -94,6 +97,11 @@ export interface ActualExpenseItem {
   payerId: string;
   payerName: string;
   amount: number;
+  /** Những thành viên được chi khoản này (chia đều giữa họ) — không nhất thiết là cả nhóm. */
+  beneficiaryIds: string[];
+  beneficiaryNames: string[];
+  /** Ảnh chụp hoá đơn/biên lai, nếu có. */
+  receiptImageUrl?: string;
 }
 
 export interface DebtSettlementItem {
@@ -175,14 +183,24 @@ export interface SuccessionVote {
   vote: 'YES' | 'NO';
 }
 
+/**
+ * `DIRECT` = Trường hợp A (chỉ định trực tiếp, không cần bầu) — `POLL` = Trường hợp B (mở bình
+ * chọn 24h, cần >50% phiếu YES) theo đúng MODULE 4 — Leader Succession Protocol.
+ */
+export type SuccessionMode = 'DIRECT' | 'POLL';
+
 export interface SuccessionRequestItem {
   id: string;
+  mode: SuccessionMode;
   requestedById: string;
   reason: string;
   nomineeId: string;
   nomineeName: string;
   votes: SuccessionVote[];
-  status: 'OPEN' | 'APPROVED' | 'CANCELLED';
+  status: 'OPEN' | 'APPROVED' | 'CANCELLED' | 'EXPIRED';
+  /** Hạn 24h — chỉ có ở mode POLL (BR-LEAD: quá 24h không đủ phiếu → nhóm tự động bị huỷ). */
+  deadline?: string;
+  createdAt: string;
 }
 
 // ---------- Group dissolve (cần toàn bộ thành viên đồng thuận) ----------
@@ -267,14 +285,23 @@ export const groupWorkspaceService = {
       category: string;
       distanceAltitude: string;
       gps: string;
-      imageUrl?: string;
+      description?: string;
+      image?: File | null;
     }
   ): Promise<TrailCheckpointItem> {
+    const formData = new FormData();
+    formData.append('name', data.name);
+    formData.append('category', data.category);
+    formData.append('distanceAltitude', data.distanceAltitude);
+    formData.append('gps', data.gps);
+    if (data.description) formData.append('description', data.description);
+    if (data.image) formData.append('image', data.image);
+
     return unwrapResponse(
-      await ApiService<TrailCheckpointItem>(
+      await ApiUpload<TrailCheckpointItem>(
         `/matching-groups/${groupId}/workspace/checkpoints`,
-        'POST',
-        data
+        formData,
+        'POST'
       )
     );
   },
@@ -324,13 +351,23 @@ export const groupWorkspaceService = {
   },
   async addItineraryActivity(
     groupId: string,
-    data: Omit<ItineraryActivityItem, 'id'>
+    data: Omit<ItineraryActivityItem, 'id' | 'imageUrl'> & { image?: File | null }
   ): Promise<ItineraryActivityItem> {
+    const formData = new FormData();
+    formData.append('dayId', data.dayId);
+    formData.append('timeSlot', data.timeSlot);
+    formData.append('timeRange', data.timeRange);
+    formData.append('title', data.title);
+    formData.append('location', data.location);
+    formData.append('assignee', data.assignee);
+    if (data.description) formData.append('description', data.description);
+    if (data.image) formData.append('image', data.image);
+
     return unwrapResponse(
-      await ApiService<ItineraryActivityItem>(
+      await ApiUpload<ItineraryActivityItem>(
         `/matching-groups/${groupId}/workspace/itinerary/activities`,
-        'POST',
-        data
+        formData,
+        'POST'
       )
     );
   },
@@ -370,13 +407,33 @@ export const groupWorkspaceService = {
   },
   async saveExpense(
     groupId: string,
-    data: { id?: string; title: string; payerId: string; amount: number }
+    data: {
+      id?: string;
+      title: string;
+      payerId: string;
+      amount: number;
+      beneficiaryIds: string[];
+      receiptImage?: File | null;
+      /** true = xoá ảnh hoá đơn đã lưu trước đó (khi sửa mà không chọn ảnh mới). */
+      removeReceiptImage?: boolean;
+    }
   ): Promise<ActualExpenseItem> {
+    const formData = new FormData();
+    if (data.id) formData.append('id', data.id);
+    formData.append('title', data.title);
+    formData.append('payerId', data.payerId);
+    formData.append('amount', String(data.amount));
+    for (const beneficiaryId of data.beneficiaryIds) {
+      formData.append('beneficiaryIds', beneficiaryId);
+    }
+    if (data.receiptImage) formData.append('receiptImage', data.receiptImage);
+    if (data.removeReceiptImage) formData.append('removeReceiptImage', 'true');
+
     return unwrapResponse(
-      await ApiService<ActualExpenseItem>(
+      await ApiUpload<ActualExpenseItem>(
         `/matching-groups/${groupId}/workspace/budget/expenses`,
-        'POST',
-        data
+        formData,
+        'POST'
       )
     );
   },
@@ -457,6 +514,7 @@ export const groupWorkspaceService = {
       )
     );
   },
+  /** Trường hợp B (BR-LEAD): mở Poll bình chọn 24h — mọi thành viên bầu, cần >50% phiếu YES. */
   async createSuccessionRequest(
     groupId: string,
     data: { reason: string; nomineeId: string }
@@ -464,6 +522,19 @@ export const groupWorkspaceService = {
     return unwrapResponse(
       await ApiService<SuccessionRequestItem>(
         `/matching-groups/${groupId}/workspace/succession-request`,
+        'POST',
+        data
+      )
+    );
+  },
+  /** Trường hợp A (BR-LEAD): Leader chỉ định trực tiếp — chuyển giao ngay, không cần bầu. */
+  async appointLeaderDirect(
+    groupId: string,
+    data: { nomineeId: string }
+  ): Promise<SuccessionRequestItem> {
+    return unwrapResponse(
+      await ApiService<SuccessionRequestItem>(
+        `/matching-groups/${groupId}/workspace/succession-request/appoint`,
         'POST',
         data
       )
