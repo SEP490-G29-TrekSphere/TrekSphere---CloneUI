@@ -94,6 +94,7 @@ export const newsHandlers = [
     const authorId = url.searchParams.get('authorId');
     const pageParam = Number(url.searchParams.get('page') ?? 0);
     const size = Number(url.searchParams.get('size') ?? 10);
+    const sortBy = url.searchParams.get('sortBy') ?? 'publishedAt';
     const sortDir = url.searchParams.get('sortDir') === 'asc' ? 1 : -1;
 
     let items = mockBlogs.filter((b) => b.status === 'PUBLISHED');
@@ -106,9 +107,10 @@ export const newsHandlers = [
           b.tags.some((t) => t.toLowerCase().includes(keyword))
       );
     }
-    items = [...items].sort(
-      (a, b) => sortDir * (new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime())
-    );
+    items = [...items].sort((a, b) => {
+      if (sortBy === 'viewCount') return sortDir * (a.viewCount - b.viewCount);
+      return sortDir * (new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime());
+    });
 
     return ok(page(items.map(toListItem), pageParam, size));
   }),
