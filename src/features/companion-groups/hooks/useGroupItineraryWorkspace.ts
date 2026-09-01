@@ -24,7 +24,7 @@ export function useAddItineraryDay(groupId: string) {
 export function useAddItineraryActivity(groupId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: Omit<ItineraryActivityItem, 'id'>) =>
+    mutationFn: (data: Omit<ItineraryActivityItem, 'id' | 'imageUrl'> & { image?: File | null }) =>
       groupWorkspaceService.addItineraryActivity(groupId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: groupWorkspaceKeys.itinerary(groupId) });
