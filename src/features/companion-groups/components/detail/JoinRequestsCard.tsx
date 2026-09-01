@@ -1,6 +1,8 @@
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { useState } from 'react';
 import { AppEmptyState } from '@/shared/ui';
 import type { MatchingMemberItem } from '../../services/companionGroupService';
+import { JoinRequestProfileModal } from './JoinRequestProfileModal';
 import { MemberAvatar } from './MemberAvatar';
 
 export interface JoinRequestAction {
@@ -38,6 +40,8 @@ export function JoinRequestsCard({
   onPrevPage,
   onNextPage,
 }: JoinRequestsCardProps) {
+  const [viewingRequest, setViewingRequest] = useState<MatchingMemberItem | null>(null);
+
   return (
     <div className="rounded-2xl bg-card p-6 md:p-8 border border-border space-y-5 shadow-sm">
       <div className="flex items-center justify-between">
@@ -102,6 +106,13 @@ export function JoinRequestsCard({
               <div className="flex items-center gap-2">
                 <button
                   type="button"
+                  onClick={() => setViewingRequest(req)}
+                  className="rounded-full border border-border bg-background px-4 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+                >
+                  Xem chi tiết
+                </button>
+                <button
+                  type="button"
                   onClick={() =>
                     onApprove({
                       id: req.matchingMemberId,
@@ -162,6 +173,10 @@ export function JoinRequestsCard({
             </button>
           </div>
         </div>
+      )}
+
+      {viewingRequest && (
+        <JoinRequestProfileModal request={viewingRequest} onClose={() => setViewingRequest(null)} />
       )}
     </div>
   );
