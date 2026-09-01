@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useClickOutside } from '@/shared/hooks';
 import { toast } from '@/store/useToastStore';
 import type { ReviewActor } from '../../types/groupMatchingTypes';
 
@@ -149,6 +150,10 @@ export function BudgetWorkspace({ actor = 'MEMBER' }: BudgetWorkspaceProps) {
 
   // Modals state
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
+  const budgetModalRef = useClickOutside<HTMLDivElement>(
+    () => setIsBudgetModalOpen(false),
+    isBudgetModalOpen
+  );
   const [editingBudgetId, setEditingBudgetId] = useState<number | null>(null);
   const [budgetCategory, setBudgetCategory] = useState<BudgetItem['category']>('trans');
   const [budgetTitle, setBudgetTitle] = useState('');
@@ -156,6 +161,10 @@ export function BudgetWorkspace({ actor = 'MEMBER' }: BudgetWorkspaceProps) {
   const [budgetNote, setBudgetNote] = useState('');
 
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  const expenseModalRef = useClickOutside<HTMLDivElement>(
+    () => setIsExpenseModalOpen(false),
+    isExpenseModalOpen
+  );
   const [editingExpenseId, setEditingExpenseId] = useState<number | null>(null);
   const [expenseTitle, setExpenseTitle] = useState('');
   const [expensePayer, setExpensePayer] = useState('Minh Tuấn (Leader)');
@@ -598,7 +607,10 @@ export function BudgetWorkspace({ actor = 'MEMBER' }: BudgetWorkspaceProps) {
       {/* MODAL 1: ADD/EDIT BUDGET ITEM */}
       {isBudgetModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-2xl bg-card border border-border p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
+          <div
+            ref={budgetModalRef}
+            className="w-full max-w-md rounded-2xl bg-card border border-border p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150"
+          >
             <div className="flex items-center justify-between border-b border-border pb-3">
               <h4 className="text-sm font-extrabold text-foreground flex items-center gap-2">
                 <Calculator className="h-4 w-4 text-emerald-600" />
@@ -688,7 +700,10 @@ export function BudgetWorkspace({ actor = 'MEMBER' }: BudgetWorkspaceProps) {
       {/* MODAL 2: ADD/EDIT ACTUAL EXPENSE */}
       {isExpenseModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-2xl bg-card border border-border p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
+          <div
+            ref={expenseModalRef}
+            className="w-full max-w-md rounded-2xl bg-card border border-border p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150"
+          >
             <div className="flex items-center justify-between border-b border-border pb-3">
               <h4 className="text-sm font-extrabold text-foreground flex items-center gap-2">
                 <Receipt className="h-4 w-4 text-purple-600" />

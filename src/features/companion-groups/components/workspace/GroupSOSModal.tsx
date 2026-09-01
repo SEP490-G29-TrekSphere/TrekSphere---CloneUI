@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useClickOutside } from '@/shared/hooks';
 import { useCreateFeedPost } from '../../hooks/useGroupFeed';
 
 interface GroupSOSModalProps {
@@ -71,6 +72,8 @@ export function GroupSOSModal({
   const [inputName, setInputName] = useState(localContactName);
   const [inputPhone, setInputPhone] = useState(localContactPhone);
 
+  const modalRef = useClickOutside<HTMLDivElement>(onClose, isOpen);
+
   if (!isOpen) return null;
 
   const handleSaveLocalContact = (e: React.FormEvent) => {
@@ -104,7 +107,10 @@ export function GroupSOSModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-lg space-y-5 rounded-2xl border-2 border-destructive/80 bg-card p-6 shadow-2xl overflow-y-auto max-h-[90vh]">
+      <div
+        ref={modalRef}
+        className="w-full max-w-lg space-y-5 rounded-2xl border-2 border-destructive/80 bg-card p-6 shadow-2xl overflow-y-auto max-h-[90vh]"
+      >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border pb-3">
           <div className="flex items-center gap-2.5">

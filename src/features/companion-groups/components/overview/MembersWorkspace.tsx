@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useClickOutside } from '@/shared/hooks';
 import type { ReviewActor } from '../../types/groupMatchingTypes';
 import { PeerReviewModal, type ReviewData } from './PeerReviewModal';
 
@@ -190,6 +191,11 @@ export function MembersWorkspace({ actor = 'MEMBER' }: MembersWorkspaceProps) {
   const [peerReviewingMember, setPeerReviewingMember] = useState<GroupMember | null>(null);
   const [reviewedMembers, setReviewedMembers] = useState<Record<string, ReviewData>>({});
   const [tripStatus, setTripStatus] = useState<'ONGOING' | 'COMPLETED'>('ONGOING');
+
+  const medicalModalRef = useClickOutside<HTMLDivElement>(
+    () => setSelectedMember(null),
+    Boolean(selectedMember)
+  );
 
   const handleReviewSubmit = (memberId: string, reviewData: ReviewData) => {
     setReviewedMembers((prev) => ({ ...prev, [memberId]: reviewData }));
@@ -455,7 +461,10 @@ export function MembersWorkspace({ actor = 'MEMBER' }: MembersWorkspaceProps) {
       {/* MEDICAL & EMERGENCY DETAILS MODAL */}
       {selectedMember && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-2xl bg-card border border-border p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
+          <div
+            ref={medicalModalRef}
+            className="w-full max-w-md rounded-2xl bg-card border border-border p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150"
+          >
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-3">
                 <div

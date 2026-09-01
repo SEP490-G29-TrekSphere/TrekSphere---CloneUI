@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useClickOutside } from '@/shared/hooks';
 import type { ReviewActor } from '../../types/groupMatchingTypes';
 
 export interface EquipmentItem {
@@ -174,6 +175,7 @@ export function EquipmentWorkspace({ actor = 'MEMBER' }: EquipmentWorkspaceProps
   const [items, setItems] = useState<EquipmentItem[]>(INITIAL_EQUIPMENT);
   const [activeCategory, setActiveCategory] = useState<'all' | 'personal' | 'shared'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const modalRef = useClickOutside<HTMLDivElement>(() => setIsModalOpen(false), isModalOpen);
 
   // New item form state
   const [newItemName, setNewItemName] = useState('');
@@ -428,7 +430,10 @@ export function EquipmentWorkspace({ actor = 'MEMBER' }: EquipmentWorkspaceProps
       {/* MODAL PHÂN CÔNG ĐỒ DÙNG MỚI */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-2xl bg-card border border-border p-6 shadow-xl space-y-5 animate-in fade-in zoom-in duration-200">
+          <div
+            ref={modalRef}
+            className="w-full max-w-md rounded-2xl bg-card border border-border p-6 shadow-xl space-y-5 animate-in fade-in zoom-in duration-200"
+          >
             <div className="flex items-center justify-between border-b border-border pb-3">
               <h3 className="text-base font-extrabold text-foreground flex items-center gap-2">
                 <Plus className="h-5 w-5 text-emerald-600" />

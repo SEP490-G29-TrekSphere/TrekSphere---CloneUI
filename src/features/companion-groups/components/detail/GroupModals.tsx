@@ -1,4 +1,5 @@
 import { AlertTriangle, Loader2, LogOut, UserCheck, UserPlus, X } from 'lucide-react';
+import { useClickOutside } from '@/shared/hooks';
 import type { UserRoleInGroup } from '../../types';
 import type { JoinRequestAction } from './JoinRequestsCard';
 
@@ -51,12 +52,20 @@ export function GroupModals({
   onConfirmAddBackToChat,
   onConfirmJoinGroup,
 }: GroupModalsProps) {
+  const modalRef = useClickOutside<HTMLDivElement>(
+    () => setActiveModal(null),
+    activeModal !== null
+  );
+
   return (
     <>
       {/* 1. Modal duyệt thành viên */}
       {activeModal === 'approve' && selectedRequest && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4">
+          <div
+            ref={modalRef}
+            className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4"
+          >
             <div className="flex items-center justify-between">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-primary">
                 <UserCheck className="h-5 w-5" />
@@ -102,7 +111,10 @@ export function GroupModals({
       {/* 2. Modal từ chối yêu cầu */}
       {activeModal === 'reject' && selectedRequest && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4">
+          <div
+            ref={modalRef}
+            className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4"
+          >
             <div className="flex items-center justify-between">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
                 <AlertTriangle className="h-5 w-5" />
@@ -148,7 +160,10 @@ export function GroupModals({
       {/* 4. Modal Rời khỏi nhóm / Hủy yêu cầu */}
       {activeModal === 'leave' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4">
+          <div
+            ref={modalRef}
+            className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4"
+          >
             <div className="flex items-center justify-between">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
                 <LogOut className="h-5 w-5" />
@@ -205,7 +220,10 @@ export function GroupModals({
       {/* 5. Modal Thêm lại thành viên vào nhóm chat */}
       {activeModal === 'addBackToChat' && selectedAddBackMember && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4">
+          <div
+            ref={modalRef}
+            className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4"
+          >
             <div className="flex items-center justify-between">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-primary">
                 <UserCheck className="h-5 w-5" />
@@ -251,7 +269,10 @@ export function GroupModals({
       {/* 6. Modal Gửi yêu cầu tham gia */}
       {activeModal === 'join' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4">
+          <div
+            ref={modalRef}
+            className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4"
+          >
             <div className="flex items-center justify-between">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-primary">
                 <UserPlus className="h-5 w-5" />
