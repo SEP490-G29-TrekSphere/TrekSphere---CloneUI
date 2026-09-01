@@ -1,12 +1,20 @@
+import { findUserById } from '@/mocks/data/users';
+import { computeTrustScore } from '@/shared/utils/trustScore';
 import type { UserPublicProfileData } from '../types';
 import { getAdvancedProfile } from '../utils/advancedProfileStorage';
+
+// fullName/avatarUrl của 'user-trekker-1' PHẢI lấy từ mockUsers (nguồn tài khoản gốc) — trước
+// đây bị khai báo trùng bằng 1 chuỗi khác ở đây, khiến avatar hiện khác nhau tuỳ màn xem hồ sơ
+// công khai của chính người đó hay khi đăng nhập thật.
+const TREKKER_ACCOUNT = findUserById('user-trekker-1');
 
 export const DEFAULT_PUBLIC_PROFILES: Record<string, UserPublicProfileData> = {
   'user-trekker-1': {
     id: 'user-trekker-1',
-    fullName: 'Nguyễn Văn Trekker',
+    fullName: TREKKER_ACCOUNT?.fullName ?? 'Nguyễn Văn Trekker',
     handle: 'nguyenvantrekker',
     avatarUrl:
+      TREKKER_ACCOUNT?.avatarUrl ??
       'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
     coverUrl:
       'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1600&q=80',
@@ -15,7 +23,9 @@ export const DEFAULT_PUBLIC_PROFILES: Record<string, UserPublicProfileData> = {
     location: 'Hà Nội, Việt Nam',
     joinedDate: 'Tháng 05, 2024',
     verifiedBadge: true,
-    reputationScore: 4.9,
+    // Cùng nguồn tính với companion-groups (computeTrustScore, thang 0-100) — không dùng thang 5
+    // sao riêng cho trang cá nhân nữa, để không lệch điểm giữa 2 màn.
+    trustScore: computeTrustScore('user-trekker-1'),
     reviewCount: 28,
     stats: {
       tripsCount: 14,
@@ -239,7 +249,9 @@ export function getPublicProfileData(
     location: 'Việt Nam',
     joinedDate: 'Tháng 01, 2025',
     verifiedBadge: false,
-    reputationScore: 4.8,
+    // Cùng nguồn tính với companion-groups (computeTrustScore, thang 0-100) — không dùng hằng số
+    // cố định 4.8 cho mọi người nữa, mỗi userId ra đúng 1 điểm nhất quán ở mọi màn hình.
+    trustScore: computeTrustScore(userId),
     reviewCount: 12,
     stats: {
       tripsCount: 6,
