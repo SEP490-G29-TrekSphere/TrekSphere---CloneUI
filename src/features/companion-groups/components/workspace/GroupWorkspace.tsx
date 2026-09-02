@@ -6,8 +6,8 @@ import {
   Layers,
   Package,
   Radio,
+  UserCheck,
   UserPlus,
-  Users,
   Wallet,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -19,7 +19,6 @@ import type { GroupLifecyclePhase } from '../../services/groupWorkspaceService';
 import { GroupBudgetWorkspace } from './GroupBudgetWorkspace';
 import { GroupEquipmentWorkspace } from './GroupEquipmentWorkspace';
 import { GroupItineraryWorkspaceTab } from './GroupItineraryWorkspaceTab';
-import { GroupMembersWorkspace } from './GroupMembersWorkspace';
 import { GroupSuccessionTab } from './GroupSuccessionTab';
 import { GroupWorkspaceOverviewTab } from './GroupWorkspaceOverviewTab';
 
@@ -31,11 +30,13 @@ export type WorkspaceSubTab =
   | 'equipment'
   | 'succession';
 
-const TABS: { id: WorkspaceSubTab; label: string; icon: typeof Layers }[] = [
+/** Tab "members" chỉ còn card duyệt yêu cầu tham gia — việc leader-only nên đổi tên & icon cho
+ * đúng nội dung (bảng thành viên + trạng thái chuyến đi đã chuyển sang tab "Quản trị nhóm"). */
+const TABS: { id: WorkspaceSubTab; label: string; icon: typeof Layers; leaderOnly?: boolean }[] = [
   { id: 'overview', label: 'Tổng quan', icon: Radio },
   { id: 'itinerary', label: 'Lộ trình', icon: Layers },
   { id: 'budget', label: 'Ngân sách', icon: Wallet },
-  { id: 'members', label: 'Thành viên', icon: Users },
+  { id: 'members', label: 'Yêu cầu tham gia', icon: UserCheck, leaderOnly: true },
   { id: 'equipment', label: 'Đồ dùng', icon: Package },
   { id: 'succession', label: 'Quản trị nhóm', icon: UserPlus },
 ];
@@ -53,9 +54,9 @@ interface GroupWorkspaceProps {
   isLeader: boolean;
   members: MatchingMemberItem[];
   ownerId: string;
-  /** Card duyệt yêu cầu tham gia (leader) — chèn vào đầu tab "Thành viên" cho đúng ngữ cảnh. */
+  /** Card duyệt yêu cầu tham gia (leader) — nội dung duy nhất của tab "Yêu cầu tham gia". */
   joinRequestsSlot?: ReactNode;
-  /** Số yêu cầu tham gia đang chờ — hiện badge trên tab "Thành viên" để leader không bỏ sót. */
+  /** Số yêu cầu tham gia đang chờ — hiện badge trên tab "Yêu cầu tham gia" để leader không bỏ sót. */
   pendingJoinRequestsCount?: number;
 }
 
@@ -126,7 +127,7 @@ export function GroupWorkspace({
       <div className="scrollbar-none flex overflow-x-auto rounded-2xl border border-border bg-card p-1.5 shadow-xs">
         {TABS.map((tab) => {
           const Icon = tab.icon;
-          if (tab.id === 'succession' && !isLeader && members.length < 2) return null;
+          if (tab.leaderOnly && !isLeader) return null;
           return (
             <button
               key={tab.id}
@@ -160,14 +161,7 @@ export function GroupWorkspace({
       {activeTab === 'budget' && (
         <GroupBudgetWorkspace groupId={groupId} isLeader={isLeader} members={members} />
       )}
-      {activeTab === 'members' && (
-        <GroupMembersWorkspace
-          groupId={groupId}
-          isLeader={isLeader}
-          tripStatus={lifecycle?.tripStatus ?? 'ONGOING'}
-          topSlot={joinRequestsSlot}
-        />
-      )}
+      {activeTab === 'members' && <div className="space-y-6">{joinRequestsSlot}</div>}
       {activeTab === 'equipment' && (
         <GroupEquipmentWorkspace groupId={groupId} isLeader={isLeader} members={members} />
       )}
@@ -177,6 +171,8 @@ export function GroupWorkspace({
           isLeader={isLeader}
           members={members}
           ownerId={ownerId}
+          tripStatus={lifecycle?.tripStatus ?? 'ONGOING'}
+          phase={phase}
         />
       )}
     </div>

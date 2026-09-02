@@ -1,4 +1,4 @@
-import CinematicScrollLanding from '@/features/home/components/CinematicScrollLanding';
+import CinematicScrollLanding from '@/features/home/components/cinematic-scroll/CinematicScrollLanding';
 
 /**
  * Home — landing page cho guest (không cần đăng nhập).

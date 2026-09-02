@@ -4,9 +4,11 @@ import {
   Calculator,
   CheckCircle2,
   Coins,
+  ImagePlus,
   Pencil,
   Plus,
   Receipt,
+  Sparkles,
   Tent,
   Trash2,
   UserCheck,
@@ -14,8 +16,9 @@ import {
   Utensils,
   X,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useClickOutside } from '@/shared/hooks';
 import {
   useConfirmSettlement,
   useDeleteActualExpense,
@@ -49,6 +52,18 @@ const CATEGORY_CONFIG: Record<BudgetCategory, { label: string; icon: typeof Bus 
     icon: Coins,
   },
 };
+
+// Các khoản chi phát sinh thực tế phổ biến trong chuyến trekking — chọn nhanh thay vì gõ tay.
+const QUICK_EXPENSE_PRESETS = [
+  'Xăng xe / Thuê xe di chuyển',
+  'Ăn uống / BBQ chung',
+  'Nước uống & Đá',
+  'Vé cổng / Phí tham quan',
+  'Thuê lều trại / Dụng cụ',
+  'Đồ sơ cứu y tế',
+  'Phí gửi xe',
+  'Phát sinh khác',
+];
 
 interface GroupBudgetWorkspaceProps {
   groupId: string;
@@ -85,6 +100,28 @@ export function GroupBudgetWorkspace({ groupId, isLeader, members }: GroupBudget
   const [expenseTitle, setExpenseTitle] = useState('');
   const [expensePayerId, setExpensePayerId] = useState(members[0]?.userId ?? '');
   const [expenseAmount, setExpenseAmount] = useState('');
+  const [expenseBeneficiaryIds, setExpenseBeneficiaryIds] = useState<string[]>([]);
+  const [expenseReceiptFile, setExpenseReceiptFile] = useState<File | null>(null);
+  const [expenseReceiptPreviewUrl, setExpenseReceiptPreviewUrl] = useState<string | null>(null);
+  const [expenseRemoveReceipt, setExpenseRemoveReceipt] = useState(false);
+  const receiptInputRef = useRef<HTMLInputElement>(null);
+
+  // Ảnh mới chọn dùng object URL cục bộ để xem trước; phải revoke khi đổi/huỷ để tránh rò rỉ bộ nhớ.
+  useEffect(() => {
+    if (!expenseReceiptFile) return;
+    const objectUrl = URL.createObjectURL(expenseReceiptFile);
+    setExpenseReceiptPreviewUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [expenseReceiptFile]);
+
+  const budgetModalRef = useClickOutside<HTMLDivElement>(
+    () => setIsBudgetModalOpen(false),
+    isBudgetModalOpen
+  );
+  const expenseModalRef = useClickOutside<HTMLDivElement>(
+    () => setIsExpenseModalOpen(false),
+    isExpenseModalOpen
+  );
 
   if (isLoading || !data) {
     return <p className="text-xs text-muted-foreground">Đang tải dữ liệu ngân sách...</p>;
@@ -140,11 +177,20 @@ export function GroupBudgetWorkspace({ groupId, isLeader, members }: GroupBudget
   }
 
   // Handlers for Expense Modal
+  function resetExpenseReceiptState() {
+    setExpenseReceiptFile(null);
+    setExpenseReceiptPreviewUrl(null);
+    setExpenseRemoveReceipt(false);
+    if (receiptInputRef.current) receiptInputRef.current.value = '';
+  }
+
   function openAddExpenseModal() {
     setEditingExpenseId(null);
     setExpenseTitle('');
     setExpensePayerId(members[0]?.userId ?? '');
     setExpenseAmount('');
+    setExpenseBeneficiaryIds(members.map((m) => m.userId));
+    resetExpenseReceiptState();
     setIsExpenseModalOpen(true);
   }
 
@@ -153,13 +199,39 @@ export function GroupBudgetWorkspace({ groupId, isLeader, members }: GroupBudget
     setExpenseTitle(exp.title);
     setExpensePayerId(exp.payerId);
     setExpenseAmount(exp.amount.toString());
+    setExpenseBeneficiaryIds(
+      exp.beneficiaryIds.length > 0 ? exp.beneficiaryIds : members.map((m) => m.userId)
+    );
+    resetExpenseReceiptState();
+    setExpenseReceiptPreviewUrl(exp.receiptImageUrl ?? null);
     setIsExpenseModalOpen(true);
+  }
+
+  function toggleExpenseBeneficiary(userId: string) {
+    setExpenseBeneficiaryIds((prev) =>
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
+    );
+  }
+
+  function handleReceiptFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      setExpenseReceiptFile(file);
+      setExpenseRemoveReceipt(false);
+    }
+  }
+
+  function handleRemoveReceipt() {
+    setExpenseReceiptFile(null);
+    setExpenseReceiptPreviewUrl(null);
+    setExpenseRemoveReceipt(true);
+    if (receiptInputRef.current) receiptInputRef.current.value = '';
   }
 
   function handleSaveExpense(e: React.FormEvent) {
     e.preventDefault();
     const amountVal = parseInt(expenseAmount, 10) || 0;
-    if (!expenseTitle.trim() || !expensePayerId) return;
+    if (!expenseTitle.trim() || !expensePayerId || expenseBeneficiaryIds.length === 0) return;
 
     saveExpense.mutate(
       {
@@ -167,6 +239,9 @@ export function GroupBudgetWorkspace({ groupId, isLeader, members }: GroupBudget
         title: expenseTitle.trim(),
         payerId: expensePayerId,
         amount: amountVal,
+        beneficiaryIds: expenseBeneficiaryIds,
+        receiptImage: expenseReceiptFile,
+        removeReceiptImage: expenseRemoveReceipt,
       },
       { onSuccess: () => setIsExpenseModalOpen(false) }
     );
@@ -355,7 +430,7 @@ export function GroupBudgetWorkspace({ groupId, isLeader, members }: GroupBudget
                 <th className="p-3">Khoản Chi Phát Sinh</th>
                 <th className="p-3">Người Đã Ứng Tiền</th>
                 <th className="p-3">Số Tiền Thực Tế</th>
-                <th className="p-3">Phương Thức Phân Chia</th>
+                <th className="p-3">Người Được Chi</th>
                 <th className="p-3 text-right">Thao Tác</th>
               </tr>
             </thead>
@@ -367,43 +442,77 @@ export function GroupBudgetWorkspace({ groupId, isLeader, members }: GroupBudget
                   </td>
                 </tr>
               ) : (
-                actualExpenses.map((exp) => (
-                  <tr key={exp.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="p-3 font-bold text-foreground">{exp.title}</td>
-                    <td className="p-3">
-                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-foreground">
-                        <UserCheck className="h-3.5 w-3.5" />
-                        {exp.payerName}
-                      </span>
-                    </td>
-                    <td className="p-3 font-extrabold text-foreground whitespace-nowrap">
-                      {exp.amount.toLocaleString('vi-VN')}đ
-                    </td>
-                    <td className="p-3 text-muted-foreground whitespace-nowrap">
-                      Chia đều {memberCount} người
-                    </td>
-                    <td className="p-3 text-right whitespace-nowrap">
-                      <div className="inline-flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => openEditExpenseModal(exp)}
-                          className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition"
-                          title="Sửa"
+                actualExpenses.map((exp) => {
+                  const beneficiaryCount = exp.beneficiaryIds.length || memberCount;
+                  const isForWholeGroup = beneficiaryCount >= memberCount;
+                  return (
+                    <tr key={exp.id} className="hover:bg-muted/30 transition-colors">
+                      <td className="p-3 font-bold text-foreground">
+                        <div className="flex items-center gap-2">
+                          {exp.receiptImageUrl && (
+                            <a
+                              href={exp.receiptImageUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              title="Xem ảnh hoá đơn"
+                              className="shrink-0"
+                            >
+                              <img
+                                src={exp.receiptImageUrl}
+                                alt="Hoá đơn"
+                                className="h-8 w-8 rounded-md object-cover border border-border"
+                              />
+                            </a>
+                          )}
+                          <span>{exp.title}</span>
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-foreground">
+                          <UserCheck className="h-3.5 w-3.5" />
+                          {exp.payerName}
+                        </span>
+                      </td>
+                      <td className="p-3 font-extrabold text-foreground whitespace-nowrap">
+                        {exp.amount.toLocaleString('vi-VN')}đ
+                      </td>
+                      <td className="p-3 text-muted-foreground whitespace-nowrap">
+                        <span
+                          className="inline-flex items-center gap-1.5"
+                          title={exp.beneficiaryNames.join(', ')}
                         >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteExpense(exp.id)}
-                          className="p-1.5 text-destructive hover:text-destructive rounded-lg hover:bg-destructive/10 transition"
-                          title="Xóa"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                          <Users className="h-3.5 w-3.5" />
+                          Chia đều {beneficiaryCount}/{memberCount} người
+                          {!isForWholeGroup && (
+                            <span className="text-[10px] font-bold text-primary">
+                              ({exp.beneficiaryNames.join(', ')})
+                            </span>
+                          )}
+                        </span>
+                      </td>
+                      <td className="p-3 text-right whitespace-nowrap">
+                        <div className="inline-flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => openEditExpenseModal(exp)}
+                            className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition"
+                            title="Sửa"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteExpense(exp.id)}
+                            className="p-1.5 text-destructive hover:text-destructive rounded-lg hover:bg-destructive/10 transition"
+                            title="Xóa"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -498,7 +607,10 @@ export function GroupBudgetWorkspace({ groupId, isLeader, members }: GroupBudget
       {/* MODAL 1: ADD/EDIT BUDGET ITEM */}
       {isBudgetModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-2xl bg-card border border-border p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
+          <div
+            ref={budgetModalRef}
+            className="w-full max-w-md rounded-2xl bg-card border border-border p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150"
+          >
             <div className="flex items-center justify-between border-b border-border pb-3">
               <h4 className="text-sm font-extrabold text-foreground flex items-center gap-2">
                 <Calculator className="h-4 w-4 text-primary" />
@@ -589,7 +701,10 @@ export function GroupBudgetWorkspace({ groupId, isLeader, members }: GroupBudget
       {/* MODAL 2: ADD/EDIT ACTUAL EXPENSE */}
       {isExpenseModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-2xl bg-card border border-border p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
+          <div
+            ref={expenseModalRef}
+            className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-card border border-border p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150"
+          >
             <div className="flex items-center justify-between border-b border-border pb-3">
               <h4 className="text-sm font-extrabold text-foreground flex items-center gap-2">
                 <Receipt className="h-4 w-4 text-primary" />
@@ -605,6 +720,31 @@ export function GroupBudgetWorkspace({ groupId, isLeader, members }: GroupBudget
             </div>
 
             <form onSubmit={handleSaveExpense} className="space-y-4 text-xs">
+              {/* QUICK PRESETS */}
+              <div className="space-y-1.5">
+                <label className="font-bold text-foreground flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-primary" />
+                  Chọn Nhanh Khoản Chi Phổ Biến:
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {QUICK_EXPENSE_PRESETS.map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setExpenseTitle(preset)}
+                      className={cn(
+                        'rounded-full border px-3 py-1.5 text-[11px] font-bold transition',
+                        expenseTitle === preset
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground'
+                      )}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="space-y-1.5">
                 <label className="font-bold text-foreground">Tên Hóa Đơn / Mục Chi Tiêu:</label>
                 <input
@@ -646,6 +786,99 @@ export function GroupBudgetWorkspace({ groupId, isLeader, members }: GroupBudget
                 />
               </div>
 
+              {/* BENEFICIARIES */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-foreground">
+                    Người Được Chi (chia đều số tiền cho những người được chọn):
+                  </label>
+                  <div className="flex items-center gap-2 text-[10px] font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setExpenseBeneficiaryIds(members.map((m) => m.userId))}
+                      className="text-primary hover:underline"
+                    >
+                      Chọn cả nhóm
+                    </button>
+                    <span className="text-border">|</span>
+                    <button
+                      type="button"
+                      onClick={() => setExpenseBeneficiaryIds([])}
+                      className="text-muted-foreground hover:underline"
+                    >
+                      Bỏ chọn hết
+                    </button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto rounded-xl border border-border p-2.5">
+                  {members.map((m) => {
+                    const checked = expenseBeneficiaryIds.includes(m.userId);
+                    return (
+                      <label
+                        key={m.userId}
+                        className={cn(
+                          'flex items-center gap-2 rounded-lg border px-2.5 py-1.5 cursor-pointer transition',
+                          checked
+                            ? 'border-primary bg-primary/5'
+                            : 'border-transparent hover:bg-muted/40'
+                        )}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleExpenseBeneficiary(m.userId)}
+                          className="accent-primary"
+                        />
+                        <span className="truncate font-bold text-foreground">{m.fullName}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                {expenseBeneficiaryIds.length === 0 && (
+                  <p className="text-destructive font-bold">
+                    Cần chọn ít nhất một người được chi khoản này.
+                  </p>
+                )}
+              </div>
+
+              {/* RECEIPT IMAGE UPLOAD */}
+              <div className="space-y-1.5">
+                <label className="font-bold text-foreground">Ảnh Hóa Đơn (Tùy chọn):</label>
+                {expenseReceiptPreviewUrl ? (
+                  <div className="relative w-28">
+                    <img
+                      src={expenseReceiptPreviewUrl}
+                      alt="Xem trước hoá đơn"
+                      className="h-28 w-28 rounded-xl object-cover border border-border"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveReceipt}
+                      className="absolute -top-2 -right-2 rounded-full bg-destructive text-white p-1 shadow-xs hover:bg-destructive/90"
+                      title="Xoá ảnh"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => receiptInputRef.current?.click()}
+                    className="flex flex-col items-center justify-center gap-1.5 w-28 h-28 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition"
+                  >
+                    <ImagePlus className="h-5 w-5" />
+                    <span className="text-[10px] font-bold">Tải ảnh lên</span>
+                  </button>
+                )}
+                <input
+                  ref={receiptInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleReceiptFileChange}
+                  className="hidden"
+                />
+              </div>
+
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
                 <button
                   type="button"
@@ -656,7 +889,7 @@ export function GroupBudgetWorkspace({ groupId, isLeader, members }: GroupBudget
                 </button>
                 <button
                   type="submit"
-                  disabled={saveExpense.isPending}
+                  disabled={saveExpense.isPending || expenseBeneficiaryIds.length === 0}
                   className="rounded-xl bg-primary px-4 py-2 font-bold text-white hover:bg-primary-hover shadow-xs disabled:opacity-50"
                 >
                   Lưu Hóa Đơn

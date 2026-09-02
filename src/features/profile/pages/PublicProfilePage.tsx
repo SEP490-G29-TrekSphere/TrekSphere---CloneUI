@@ -127,7 +127,7 @@ export const PublicProfilePage: React.FC = () => {
                     [{profileData.role}]
                   </span>
                   <span className="inline-block bg-amber-50 text-amber-800 border border-amber-200 font-mono text-[11px] font-bold px-2.5 py-0.5 rounded">
-                    ★ {profileData.reputationScore} / 5 ({profileData.reviewCount} đánh giá)
+                    ★ {profileData.trustScore} / 100 ({profileData.reviewCount} đánh giá)
                   </span>
                 </div>
 
@@ -215,7 +215,8 @@ export const PublicProfilePage: React.FC = () => {
             </div>
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-center">
               <span className="block text-2xl font-black text-emerald-700 font-mono">
-                {profileData.reputationScore} ★
+                {profileData.trustScore}
+                <span className="text-sm font-bold">/100</span>
               </span>
               <span className="text-[11px] font-mono uppercase text-gray-500 font-semibold">
                 Độ uy tín

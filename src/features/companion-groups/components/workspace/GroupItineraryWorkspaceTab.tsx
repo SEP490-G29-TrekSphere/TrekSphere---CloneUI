@@ -1,6 +1,19 @@
-import { Clock, Compass, Layers, MapPin, MapPinned, Plus, Trash2, User, X } from 'lucide-react';
-import { useState } from 'react';
+import {
+  Clock,
+  Compass,
+  Eye,
+  ImagePlus,
+  Layers,
+  MapPin,
+  MapPinned,
+  Plus,
+  Trash2,
+  User,
+  X,
+} from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useClickOutside } from '@/shared/hooks';
 import {
   useAddCheckpoint,
   useDeleteCheckpoint,
@@ -12,7 +25,7 @@ import {
   useDeleteItineraryActivity,
   useGroupItineraryWorkspace,
 } from '../../hooks/useGroupItineraryWorkspace';
-import type { TimeSlot } from '../../services/groupWorkspaceService';
+import type { CheckpointStatus, TimeSlot } from '../../services/groupWorkspaceService';
 
 interface GroupItineraryWorkspaceTabProps {
   groupId: string;
@@ -47,6 +60,13 @@ const TIME_SLOTS: { id: TimeSlot; label: string; time: string }[] = [
   },
 ];
 
+const CHECKPOINT_STATUS_LABELS: Record<CheckpointStatus, string> = {
+  COMPLETED: 'Đã check-in',
+  IN_PROGRESS: 'Sẵn sàng check-in',
+  UPCOMING: 'Chưa tới',
+  SKIPPED: 'Đã bỏ qua',
+};
+
 /**
  * Tab "Lộ trình" của Workspace: nơi LÊN KẾ HOẠCH trước chuyến đi — gồm danh sách checkpoint
  * dự kiến (tái hiện "Waypoints Strip" của `ItineraryWorkspace.tsx` mockup, nối qua
@@ -74,7 +94,45 @@ export function GroupItineraryWorkspaceTab({ groupId, isLeader }: GroupItinerary
   const [cpCategory, setCpCategory] = useState('');
   const [cpDistance, setCpDistance] = useState('');
   const [cpGps, setCpGps] = useState('');
-  const [cpImageUrl, setCpImageUrl] = useState('');
+  const [cpDescription, setCpDescription] = useState('');
+  const [cpImageFile, setCpImageFile] = useState<File | null>(null);
+  const [cpImagePreviewUrl, setCpImagePreviewUrl] = useState<string | null>(null);
+  const cpImageInputRef = useRef<HTMLInputElement>(null);
+
+  // Xem chi tiết một checkpoint đã có (đọc-only, không phải form sửa).
+  const [viewingCheckpoint, setViewingCheckpoint] = useState<(typeof checkpoints)[number] | null>(
+    null
+  );
+
+  // Ảnh mới chọn dùng object URL cục bộ để xem trước; phải revoke khi đổi/huỷ để tránh rò rỉ bộ nhớ.
+  useEffect(() => {
+    if (!cpImageFile) return;
+    const objectUrl = URL.createObjectURL(cpImageFile);
+    setCpImagePreviewUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [cpImageFile]);
+
+  const resetCheckpointForm = () => {
+    setCpName('');
+    setCpCategory('');
+    setCpDistance('');
+    setCpGps('');
+    setCpDescription('');
+    setCpImageFile(null);
+    setCpImagePreviewUrl(null);
+    if (cpImageInputRef.current) cpImageInputRef.current.value = '';
+  };
+
+  const handleCpImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) setCpImageFile(file);
+  };
+
+  const handleRemoveCpImage = () => {
+    setCpImageFile(null);
+    setCpImagePreviewUrl(null);
+    if (cpImageInputRef.current) cpImageInputRef.current.value = '';
+  };
 
   const handleAddCheckpoint = (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,16 +143,13 @@ export function GroupItineraryWorkspaceTab({ groupId, isLeader }: GroupItinerary
         category: cpCategory.trim() || 'Trạm dừng chân',
         distanceAltitude: cpDistance.trim() || '—',
         gps: cpGps.trim() || '—',
-        imageUrl: cpImageUrl.trim() || undefined,
+        description: cpDescription.trim() || undefined,
+        image: cpImageFile,
       },
       {
         onSuccess: () => {
           setIsCheckpointModalOpen(false);
-          setCpName('');
-          setCpCategory('');
-          setCpDistance('');
-          setCpGps('');
-          setCpImageUrl('');
+          resetCheckpointForm();
         },
       }
     );
@@ -112,6 +167,43 @@ export function GroupItineraryWorkspaceTab({ groupId, isLeader }: GroupItinerary
   const [actTitle, setActTitle] = useState('');
   const [actLocation, setActLocation] = useState('');
   const [actAssignee, setActAssignee] = useState('');
+  const [actDescription, setActDescription] = useState('');
+  const [actImageFile, setActImageFile] = useState<File | null>(null);
+  const [actImagePreviewUrl, setActImagePreviewUrl] = useState<string | null>(null);
+  const actImageInputRef = useRef<HTMLInputElement>(null);
+
+  // Xem chi tiết một hoạt động đã có trong lịch trình (đọc-only, không phải form sửa).
+  const [viewingActivity, setViewingActivity] = useState<(typeof activities)[number] | null>(null);
+
+  // Ảnh mới chọn dùng object URL cục bộ để xem trước; phải revoke khi đổi/huỷ để tránh rò rỉ bộ nhớ.
+  useEffect(() => {
+    if (!actImageFile) return;
+    const objectUrl = URL.createObjectURL(actImageFile);
+    setActImagePreviewUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [actImageFile]);
+
+  const resetActivityForm = () => {
+    setActTitle('');
+    setActLocation('');
+    setActAssignee('');
+    setActTime('');
+    setActDescription('');
+    setActImageFile(null);
+    setActImagePreviewUrl(null);
+    if (actImageInputRef.current) actImageInputRef.current.value = '';
+  };
+
+  const handleActImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) setActImageFile(file);
+  };
+
+  const handleRemoveActImage = () => {
+    setActImageFile(null);
+    setActImagePreviewUrl(null);
+    if (actImageInputRef.current) actImageInputRef.current.value = '';
+  };
 
   const openActivityModal = () => {
     setActDayId(days[0]?.id ?? '');
@@ -131,18 +223,34 @@ export function GroupItineraryWorkspaceTab({ groupId, isLeader }: GroupItinerary
         title: actTitle,
         location: actLocation || 'Địa điểm tập trung',
         assignee: actAssignee || 'Toàn đội',
+        description: actDescription.trim() || undefined,
+        image: actImageFile,
       },
       {
         onSuccess: () => {
-          setActTitle('');
-          setActLocation('');
-          setActAssignee('');
-          setActTime('');
+          resetActivityForm();
           setIsActivityModalOpen(false);
         },
       }
     );
   };
+
+  const checkpointModalRef = useClickOutside<HTMLDivElement>(
+    () => setIsCheckpointModalOpen(false),
+    isCheckpointModalOpen
+  );
+  const activityModalRef = useClickOutside<HTMLDivElement>(
+    () => setIsActivityModalOpen(false),
+    isActivityModalOpen
+  );
+  const activityDetailRef = useClickOutside<HTMLDivElement>(
+    () => setViewingActivity(null),
+    Boolean(viewingActivity)
+  );
+  const checkpointDetailRef = useClickOutside<HTMLDivElement>(
+    () => setViewingCheckpoint(null),
+    Boolean(viewingCheckpoint)
+  );
 
   if (isLoading) {
     return (
@@ -206,17 +314,27 @@ export function GroupItineraryWorkspaceTab({ groupId, isLeader }: GroupItinerary
                     </span>
                   </div>
                 )}
-                {isLeader && (
+                <div className="absolute right-2 top-2 z-10 flex items-center gap-1">
                   <button
                     type="button"
-                    disabled={deleteCheckpoint.isPending}
-                    onClick={() => deleteCheckpoint.mutate(cp.id)}
-                    className="absolute right-2 top-2 z-10 rounded-full bg-background/80 backdrop-blur-xs p-1.5 text-muted-foreground hover:text-destructive shadow-2xs transition group-hover:block disabled:opacity-50"
-                    title="Xoá checkpoint"
+                    onClick={() => setViewingCheckpoint(cp)}
+                    className="rounded-full bg-background/80 backdrop-blur-xs p-1.5 text-muted-foreground hover:text-primary shadow-2xs transition"
+                    title="Xem chi tiết"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <Eye className="h-3.5 w-3.5" />
                   </button>
-                )}
+                  {isLeader && (
+                    <button
+                      type="button"
+                      disabled={deleteCheckpoint.isPending}
+                      onClick={() => deleteCheckpoint.mutate(cp.id)}
+                      className="rounded-full bg-background/80 backdrop-blur-xs p-1.5 text-muted-foreground hover:text-destructive shadow-2xs transition disabled:opacity-50"
+                      title="Xoá checkpoint"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
                 <div className="space-y-1">
                   {!cp.imageUrl && (
                     <span className="text-[11px] font-extrabold text-muted-foreground">
@@ -227,6 +345,11 @@ export function GroupItineraryWorkspaceTab({ groupId, isLeader }: GroupItinerary
                     {cp.name}
                   </strong>
                   <p className="text-[11px] text-muted-foreground">{cp.category}</p>
+                  {cp.description && (
+                    <p className="text-[10.5px] text-muted-foreground/90 line-clamp-2">
+                      {cp.description}
+                    </p>
+                  )}
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5 pt-2 mt-1 border-t border-border/40 text-[10.5px]">
                   {cp.distanceAltitude && cp.distanceAltitude !== '—' && (
@@ -362,15 +485,25 @@ export function GroupItineraryWorkspaceTab({ groupId, isLeader }: GroupItinerary
                                     <Clock className="h-3 w-3 shrink-0" />
                                     {act.timeRange}
                                   </span>
-                                  <button
-                                    type="button"
-                                    disabled={deleteActivity.isPending}
-                                    onClick={() => deleteActivity.mutate(act.id)}
-                                    className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition p-0.5 disabled:opacity-50"
-                                    title="Xóa hoạt động"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </button>
+                                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition">
+                                    <button
+                                      type="button"
+                                      onClick={() => setViewingActivity(act)}
+                                      className="text-muted-foreground hover:text-primary p-0.5"
+                                      title="Xem chi tiết"
+                                    >
+                                      <Eye className="h-3.5 w-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={deleteActivity.isPending}
+                                      onClick={() => deleteActivity.mutate(act.id)}
+                                      className="text-muted-foreground hover:text-destructive p-0.5 disabled:opacity-50"
+                                      title="Xóa hoạt động"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  </div>
                                 </div>
 
                                 {/* Title */}
@@ -406,7 +539,10 @@ export function GroupItineraryWorkspaceTab({ groupId, isLeader }: GroupItinerary
       {/* MODAL: ADD CHECKPOINT */}
       {isCheckpointModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-sm space-y-4 rounded-2xl border border-border bg-card p-6 shadow-2xl">
+          <div
+            ref={checkpointModalRef}
+            className="w-full max-w-md max-h-[90vh] overflow-y-auto space-y-4 rounded-2xl border border-border bg-card p-6 shadow-2xl"
+          >
             <div className="flex items-center justify-between border-b border-border pb-3">
               <h4 className="flex items-center gap-2 text-sm font-extrabold text-foreground">
                 <Compass className="h-4 w-4 text-primary" />
@@ -445,12 +581,51 @@ export function GroupItineraryWorkspaceTab({ groupId, isLeader }: GroupItinerary
                 placeholder="Toạ độ GPS (vd: 21.2612° N, 104.6291° E)"
                 className="w-full rounded-xl border border-border bg-background p-2.5 outline-none focus:ring-2 focus:ring-ring"
               />
-              <input
-                value={cpImageUrl}
-                onChange={(e) => setCpImageUrl(e.target.value)}
-                placeholder="URL hình ảnh minh hoạ (tuỳ chọn)"
-                className="w-full rounded-xl border border-border bg-background p-2.5 outline-none focus:ring-2 focus:ring-ring"
+              <textarea
+                value={cpDescription}
+                onChange={(e) => setCpDescription(e.target.value)}
+                placeholder="Mô tả chi tiết (vd: Có nguồn nước, phù hợp dựng lều nghỉ đêm...)"
+                rows={3}
+                className="w-full resize-none rounded-xl border border-border bg-background p-2.5 outline-none focus:ring-2 focus:ring-ring"
               />
+
+              <div className="space-y-1.5">
+                <label className="font-bold text-foreground">Ảnh minh hoạ (tuỳ chọn):</label>
+                {cpImagePreviewUrl ? (
+                  <div className="relative w-24">
+                    <img
+                      src={cpImagePreviewUrl}
+                      alt="Xem trước checkpoint"
+                      className="h-24 w-24 rounded-xl object-cover border border-border"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveCpImage}
+                      className="absolute -top-2 -right-2 rounded-full bg-destructive text-white p-1 shadow-xs hover:bg-destructive/90"
+                      title="Xoá ảnh"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => cpImageInputRef.current?.click()}
+                    className="flex flex-col items-center justify-center gap-1.5 w-24 h-24 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition"
+                  >
+                    <ImagePlus className="h-5 w-5" />
+                    <span className="text-[10px] font-bold">Tải ảnh lên</span>
+                  </button>
+                )}
+                <input
+                  ref={cpImageInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCpImageChange}
+                  className="hidden"
+                />
+              </div>
+
               <div className="flex gap-2 pt-1">
                 <button
                   type="button"
@@ -475,7 +650,10 @@ export function GroupItineraryWorkspaceTab({ groupId, isLeader }: GroupItinerary
       {/* MODAL: ADD ACTIVITY */}
       {isActivityModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
+          <div
+            ref={activityModalRef}
+            className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95"
+          >
             <div className="flex items-center justify-between border-b border-border pb-3">
               <h4 className="text-base font-extrabold text-foreground flex items-center gap-2">
                 <Layers className="h-5 w-5 text-primary" />
@@ -569,6 +747,54 @@ export function GroupItineraryWorkspaceTab({ groupId, isLeader }: GroupItinerary
                 />
               </div>
 
+              <div className="space-y-1.5">
+                <label className="font-bold text-foreground">Mô tả chi tiết (tuỳ chọn):</label>
+                <textarea
+                  value={actDescription}
+                  onChange={(e) => setActDescription(e.target.value)}
+                  placeholder="Ví dụ: Cả đoàn tập trung điểm danh, kiểm tra trang bị trước khi xuất phát..."
+                  rows={3}
+                  className="w-full resize-none rounded-xl border border-border bg-background p-3 text-xs outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="font-bold text-foreground">Ảnh minh hoạ (tuỳ chọn):</label>
+                {actImagePreviewUrl ? (
+                  <div className="relative w-24">
+                    <img
+                      src={actImagePreviewUrl}
+                      alt="Xem trước hoạt động"
+                      className="h-24 w-24 rounded-xl object-cover border border-border"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveActImage}
+                      className="absolute -top-2 -right-2 rounded-full bg-destructive text-white p-1 shadow-xs hover:bg-destructive/90"
+                      title="Xoá ảnh"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => actImageInputRef.current?.click()}
+                    className="flex flex-col items-center justify-center gap-1.5 w-24 h-24 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition"
+                  >
+                    <ImagePlus className="h-5 w-5" />
+                    <span className="text-[10px] font-bold">Tải ảnh lên</span>
+                  </button>
+                )}
+                <input
+                  ref={actImageInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleActImageChange}
+                  className="hidden"
+                />
+              </div>
+
               <div className="pt-3 flex justify-end gap-2">
                 <button
                   type="button"
@@ -586,6 +812,186 @@ export function GroupItineraryWorkspaceTab({ groupId, isLeader }: GroupItinerary
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: VIEW ACTIVITY DETAIL */}
+      {viewingActivity && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div
+            ref={activityDetailRef}
+            className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95"
+          >
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h4 className="text-base font-extrabold text-foreground flex items-center gap-2">
+                <Layers className="h-5 w-5 text-primary" />
+                Chi Tiết Hoạt Động
+              </h4>
+              <button
+                type="button"
+                onClick={() => setViewingActivity(null)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {viewingActivity.imageUrl && (
+              <img
+                src={viewingActivity.imageUrl}
+                alt={viewingActivity.title}
+                className="w-full h-40 rounded-xl object-cover border border-border"
+              />
+            )}
+
+            <div className="space-y-3 text-xs">
+              <h5 className="text-sm font-extrabold text-foreground">{viewingActivity.title}</h5>
+
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span
+                  className={cn(
+                    'inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-black border',
+                    TIME_SLOT_BADGE_CLASS
+                  )}
+                >
+                  {TIME_SLOTS.find((s) => s.id === viewingActivity.timeSlot)?.label ??
+                    viewingActivity.timeSlot}
+                </span>
+                <span className="inline-flex items-center gap-1 font-mono text-[11px] font-bold text-primary">
+                  <Clock className="h-3.5 w-3.5 shrink-0" />
+                  {viewingActivity.timeRange}
+                </span>
+                <span className="text-[11px] text-muted-foreground">
+                  {days.find((d) => d.id === viewingActivity.dayId)?.title ?? ''}
+                </span>
+              </div>
+
+              <div className="space-y-1.5 border-t border-border pt-3">
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <MapPin className="h-3.5 w-3.5 shrink-0" />
+                  <span>{viewingActivity.location}</span>
+                </div>
+                <div className="flex items-center gap-1.5 font-semibold text-primary">
+                  <User className="h-3.5 w-3.5 shrink-0" />
+                  <span>{viewingActivity.assignee}</span>
+                </div>
+              </div>
+
+              {viewingActivity.description && (
+                <p className="border-t border-border pt-3 text-muted-foreground leading-relaxed whitespace-pre-line">
+                  {viewingActivity.description}
+                </p>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-border">
+              <button
+                type="button"
+                onClick={() => setViewingActivity(null)}
+                className="rounded-full border border-border bg-background px-4 py-2 text-xs font-bold text-foreground hover:bg-muted"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: VIEW CHECKPOINT DETAIL */}
+      {viewingCheckpoint && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div
+            ref={checkpointDetailRef}
+            className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95"
+          >
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h4 className="text-base font-extrabold text-foreground flex items-center gap-2">
+                <Compass className="h-5 w-5 text-primary" />
+                Chi Tiết Checkpoint
+              </h4>
+              <button
+                type="button"
+                onClick={() => setViewingCheckpoint(null)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {viewingCheckpoint.imageUrl && (
+              <img
+                src={viewingCheckpoint.imageUrl}
+                alt={viewingCheckpoint.name}
+                className="w-full h-40 rounded-xl object-cover border border-border"
+              />
+            )}
+
+            <div className="space-y-3 text-xs">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <span className="text-[11px] font-extrabold text-muted-foreground">
+                    Chặng {viewingCheckpoint.order}
+                  </span>
+                  <h5 className="text-sm font-extrabold text-foreground">
+                    {viewingCheckpoint.name}
+                  </h5>
+                </div>
+                <span
+                  className={cn(
+                    'shrink-0 inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-black border',
+                    TIME_SLOT_BADGE_CLASS
+                  )}
+                >
+                  {CHECKPOINT_STATUS_LABELS[viewingCheckpoint.status]}
+                </span>
+              </div>
+
+              <p className="text-muted-foreground">{viewingCheckpoint.category}</p>
+
+              <div className="flex flex-wrap items-center gap-1.5 border-t border-border pt-3">
+                {viewingCheckpoint.distanceAltitude &&
+                  viewingCheckpoint.distanceAltitude !== '—' && (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-1.5 py-0.5 font-bold text-emerald-700 dark:text-emerald-400">
+                      <MapPinned className="h-3 w-3 shrink-0 text-emerald-600" />
+                      {viewingCheckpoint.distanceAltitude}
+                    </span>
+                  )}
+                {viewingCheckpoint.gps && viewingCheckpoint.gps !== '—' && (
+                  <span className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-1.5 py-0.5 font-mono text-[9.5px] font-bold text-primary">
+                    <Compass className="h-3 w-3 shrink-0" />
+                    {viewingCheckpoint.gps}
+                  </span>
+                )}
+              </div>
+
+              {viewingCheckpoint.description && (
+                <p className="border-t border-border pt-3 text-muted-foreground leading-relaxed whitespace-pre-line">
+                  {viewingCheckpoint.description}
+                </p>
+              )}
+
+              {viewingCheckpoint.checkedInByName && (
+                <div className="flex items-center gap-1.5 border-t border-border pt-3 font-semibold text-primary">
+                  <User className="h-3.5 w-3.5 shrink-0" />
+                  <span>
+                    Đã check-in bởi {viewingCheckpoint.checkedInByName}
+                    {viewingCheckpoint.checkedInAt &&
+                      ` · ${new Date(viewingCheckpoint.checkedInAt).toLocaleString('vi-VN')}`}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-border">
+              <button
+                type="button"
+                onClick={() => setViewingCheckpoint(null)}
+                className="rounded-full border border-border bg-background px-4 py-2 text-xs font-bold text-foreground hover:bg-muted"
+              >
+                Đóng
+              </button>
+            </div>
           </div>
         </div>
       )}

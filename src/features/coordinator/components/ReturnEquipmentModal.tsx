@@ -1,5 +1,6 @@
 import { AlertCircle, CheckCircle2, Clock, Loader2, RotateCcw, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useClickOutside } from '@/shared/hooks';
 import type { EquipmentReturnStatus, SessionEquipmentAllocation } from '../types';
 
 export interface ReturnEquipmentItemState {
@@ -58,6 +59,8 @@ export function ReturnEquipmentModal({
       })
     );
   }, [isOpen, equipments]);
+
+  const modalRef = useClickOutside<HTMLDivElement>(onClose, isOpen);
 
   if (!isOpen) return null;
 
@@ -162,7 +165,10 @@ export function ReturnEquipmentModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-      <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-3xl bg-white shadow-2xl overflow-hidden">
+      <div
+        ref={modalRef}
+        className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-3xl bg-white shadow-2xl overflow-hidden"
+      >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#E6E2D1] bg-[#F9F8F3] px-6 py-4">
           <div className="flex items-center gap-2">

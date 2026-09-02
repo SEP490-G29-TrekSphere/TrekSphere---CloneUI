@@ -17,6 +17,7 @@ import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { PATHS } from '@/constants/paths';
 import { useTours } from '@/features/tours/hooks/useTours';
+import { useClickOutside } from '@/shared/hooks';
 import { AppDatePicker } from '@/shared/ui';
 import { toast } from '@/store/useToastStore';
 import { useCreateMatchingGroup } from '../hooks/useCreateMatchingGroup';
@@ -89,6 +90,8 @@ export function CreateCompanionGroupModal({
     },
   });
 
+  const modalRef = useClickOutside<HTMLDivElement>(onClose, isOpen);
+
   if (!isOpen) return null;
 
   const onSubmit = async (data: CreateGroupFormValues) => {
@@ -124,7 +127,10 @@ export function CreateCompanionGroupModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
       {/* Modal Container */}
-      <div className="relative w-full max-w-3xl bg-card rounded-2xl shadow-xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-border">
+      <div
+        ref={modalRef}
+        className="relative w-full max-w-3xl bg-card rounded-2xl shadow-xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-border"
+      >
         {/* Close Button */}
         <button
           type="button"

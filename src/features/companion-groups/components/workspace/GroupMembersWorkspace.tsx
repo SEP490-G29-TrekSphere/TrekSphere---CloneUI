@@ -1,7 +1,5 @@
 import {
   Award,
-  CheckCircle2,
-  Clock,
   Cross,
   Crown,
   FileText,
@@ -16,10 +14,9 @@ import {
   Wrench,
   X,
 } from 'lucide-react';
-import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { useSetTripStatus } from '../../hooks/useGroupLifecycle';
+import { useClickOutside } from '@/shared/hooks';
 import {
   useGroupPeerReviews,
   useGroupWorkspaceMembers,
@@ -32,8 +29,6 @@ interface GroupMembersWorkspaceProps {
   groupId: string;
   isLeader: boolean;
   tripStatus: 'ONGOING' | 'COMPLETED';
-  /** Nội dung chèn trên đầu tab (vd: card duyệt yêu cầu tham gia) — hiện đúng ngữ cảnh quản lý thành viên. */
-  topSlot?: ReactNode;
 }
 
 /** Avatar-fallback initials circle uses a single consistent token pair (no rainbow rotation). */
@@ -51,20 +46,19 @@ function maskPhone(phone: string | undefined) {
 }
 
 /**
- * Tab "Thành viên" của Workspace: tái hiện MembersWorkspace (story-flow mockup) — lưới hồ sơ
- * thành viên (Trust Score, kỹ năng, liên hệ khẩn cấp), hồ sơ y tế gated cho Leader và luồng
- * Peer Review khi chuyến đi đã hoàn thành — nhưng nối dữ liệu thật qua
- * `useGroupMembersWorkspace.ts` và `useGroupLifecycle.ts`.
+ * Bảng danh sách thành viên trong tab "Quản trị nhóm" — tái hiện MembersWorkspace (story-flow
+ * mockup): lưới hồ sơ thành viên (Trust Score, kỹ năng, liên hệ khẩn cấp), hồ sơ y tế gated cho
+ * Leader và luồng Peer Review khi chuyến đi đã hoàn thành, nối dữ liệu thật qua
+ * `useGroupMembersWorkspace.ts`. `tripStatus` (đổi ở tab "Thành viên") quyết định Peer Review có
+ * mở hay không.
  */
 export function GroupMembersWorkspace({
   groupId,
   isLeader,
   tripStatus,
-  topSlot,
 }: GroupMembersWorkspaceProps) {
   const { data: members = [], isLoading } = useGroupWorkspaceMembers(groupId);
   const { data: myReviews = [] } = useGroupPeerReviews(groupId);
-  const setTripStatus = useSetTripStatus(groupId);
   const submitReview = useSubmitPeerReview(groupId);
 
   const [selectedMedicalMember, setSelectedMedicalMember] = useState<WorkspaceMemberItem | null>(
@@ -75,6 +69,11 @@ export function GroupMembersWorkspace({
   const reviewedIds = useMemo(
     () => new Set(myReviews.map((review) => review.revieweeId)),
     [myReviews]
+  );
+
+  const medicalModalRef = useClickOutside<HTMLDivElement>(
+    () => setSelectedMedicalMember(null),
+    Boolean(selectedMedicalMember)
   );
 
   // BR-MED-01: chỉ Leader được xem hồ sơ y tế của thành viên khác (mô hình thật không có Co-Leader).
@@ -91,26 +90,16 @@ export function GroupMembersWorkspace({
     });
   }
 
-  function openQuickReview() {
-    const firstUnreviewed = members.find((m) => !reviewedIds.has(m.userId)) ?? members[0];
-    if (firstUnreviewed) setPeerReviewingMember(firstUnreviewed);
-  }
-
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        {topSlot}
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-xs">
-          <p className="text-xs text-muted-foreground">Đang tải danh sách thành viên...</p>
-        </div>
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-xs">
+        <p className="text-xs text-muted-foreground">Đang tải danh sách thành viên...</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {topSlot}
-
       {/* MAIN CONTAINER CARD */}
       <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-sm space-y-6">
         {/* HEADER */}
@@ -118,7 +107,7 @@ export function GroupMembersWorkspace({
           <div>
             <h3 className="text-base font-extrabold text-foreground flex items-center gap-2">
               <Users className="h-5 w-5 text-primary" />
-              Danh Sách Thành Viên & Phân Công Vai Trò ({members.length})
+              Danh Sách Thành Viên ({members.length})
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5">
               Quản lý thông tin cá nhân, điểm uy tín (Trust Score), kỹ năng và liên hệ khẩn cấp
@@ -129,91 +118,6 @@ export function GroupMembersWorkspace({
             <ShieldCheck className="h-4 w-4" />
             100% Đã Xác Minh Danh Tính
           </span>
-        </div>
-
-        {/* TRIP STATUS BANNER */}
-        <div
-          className={cn(
-            'rounded-xl border p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-foreground transition-all duration-200',
-            tripStatus === 'COMPLETED'
-              ? 'border-primary/30 bg-primary/10'
-              : 'border-secondary bg-secondary/30'
-          )}
-        >
-          <div className="flex items-start sm:items-center gap-3">
-            {tripStatus === 'COMPLETED' ? (
-              <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mt-0.5 sm:mt-0" />
-            ) : (
-              <Clock className="h-5 w-5 text-secondary-foreground shrink-0 mt-0.5 sm:mt-0" />
-            )}
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-sm">
-                  {tripStatus === 'COMPLETED'
-                    ? 'Chuyến đi đã được xác thực hoàn thành!'
-                    : 'Chuyến đi đang trong giai đoạn thực hiện'}
-                </span>
-                <span
-                  className={cn(
-                    'rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider',
-                    tripStatus === 'COMPLETED'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-secondary text-secondary-foreground'
-                  )}
-                >
-                  {tripStatus === 'COMPLETED' ? 'Đã đi xong' : 'Đang diễn ra'}
-                </span>
-              </div>
-              <p className="text-[11px] text-muted-foreground mt-1">
-                {tripStatus === 'COMPLETED'
-                  ? 'Hệ thống đã mở tính năng Đánh Giá Peer Review. Bạn có thể chấm điểm uy tín Trust Score cho các đồng đội cùng đoàn.'
-                  : 'Tính năng Đánh Giá Đồng Đội (Peer Review) được bảo mật và chỉ kích hoạt sau khi nhóm hoàn thành chuyến đi & được Leader xác thực.'}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 shrink-0 border-t sm:border-t-0 border-border/40 pt-2 sm:pt-0">
-            {tripStatus === 'COMPLETED' && (
-              <button
-                type="button"
-                onClick={openQuickReview}
-                className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 font-black text-xs transition shadow-md flex items-center gap-1.5 cursor-pointer"
-              >
-                <Award className="h-4 w-4" />
-                <span>
-                  Đánh Giá Nhanh ({reviewedIds.size}/{members.length})
-                </span>
-              </button>
-            )}
-
-            {isLeader && (
-              <button
-                type="button"
-                disabled={setTripStatus.isPending}
-                onClick={() =>
-                  setTripStatus.mutate(tripStatus === 'ONGOING' ? 'COMPLETED' : 'ONGOING')
-                }
-                className={cn(
-                  'rounded-xl px-3 py-2 font-bold text-xs border transition shadow-2xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50',
-                  tripStatus === 'COMPLETED'
-                    ? 'border-border bg-background text-foreground hover:bg-muted'
-                    : 'bg-primary text-primary-foreground border-primary hover:bg-primary/90'
-                )}
-              >
-                {tripStatus === 'COMPLETED' ? (
-                  <>
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    Chuyển trạng thái: Đang đi tour
-                  </>
-                ) : (
-                  <>
-                    <Lock className="h-3.5 w-3.5" />
-                    Chuyển trạng thái: Đã đi xong (Mở Review)
-                  </>
-                )}
-              </button>
-            )}
-          </div>
         </div>
 
         {/* MEMBERS GRID */}
@@ -372,7 +276,10 @@ export function GroupMembersWorkspace({
       {/* MEDICAL & EMERGENCY DETAILS MODAL */}
       {selectedMedicalMember && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-2xl bg-card border border-border p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
+          <div
+            ref={medicalModalRef}
+            className="w-full max-w-md rounded-2xl bg-card border border-border p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150"
+          >
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-3">
                 {selectedMedicalMember.avatarUrl ? (

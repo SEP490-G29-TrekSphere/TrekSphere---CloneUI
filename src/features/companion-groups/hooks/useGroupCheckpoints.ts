@@ -18,7 +18,8 @@ export function useAddCheckpoint(groupId: string) {
       category: string;
       distanceAltitude: string;
       gps: string;
-      imageUrl?: string;
+      description?: string;
+      image?: File | null;
     }) => groupWorkspaceService.addCheckpoint(groupId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: groupWorkspaceKeys.checkpoints(groupId) });

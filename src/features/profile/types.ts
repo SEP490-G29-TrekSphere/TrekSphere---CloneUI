@@ -167,7 +167,9 @@ export interface UserPublicProfileData {
   location: string;
   joinedDate: string;
   verifiedBadge?: boolean;
-  reputationScore: number;
+  /** Điểm tin cậy 0-100 — CÙNG thang với Trust Score ở companion-groups (không dùng thang 5 sao
+   * riêng cho trang cá nhân), luôn lấy qua `computeTrustScore(userId)` từ `@/shared/utils/trustScore`. */
+  trustScore: number;
   reviewCount: number;
   stats: {
     tripsCount: number;

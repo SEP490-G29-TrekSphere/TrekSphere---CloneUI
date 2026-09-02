@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useClickOutside } from '@/shared/hooks';
 
 export interface Waypoint {
   id: string;
@@ -266,6 +267,15 @@ export function ItineraryWorkspace() {
   // Modals state
   const [isWaypointModalOpen, setIsWaypointModalOpen] = useState(false);
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
+
+  const waypointModalRef = useClickOutside<HTMLDivElement>(
+    () => setIsWaypointModalOpen(false),
+    isWaypointModalOpen
+  );
+  const activityModalRef = useClickOutside<HTMLDivElement>(
+    () => setIsActivityModalOpen(false),
+    isActivityModalOpen
+  );
 
   // Form states - Waypoint
   const [wpName, setWpName] = useState('');
@@ -609,7 +619,10 @@ export function ItineraryWorkspace() {
       {/* MODAL 1: ADD WAYPOINT */}
       {isWaypointModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
+          <div
+            ref={waypointModalRef}
+            className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95"
+          >
             <div className="flex items-center justify-between border-b border-border pb-3">
               <h4 className="text-base font-extrabold text-foreground flex items-center gap-2">
                 <Compass className="h-5 w-5 text-primary" />
@@ -705,7 +718,10 @@ export function ItineraryWorkspace() {
       {/* MODAL 2: ADD ACTIVITY */}
       {isActivityModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
+          <div
+            ref={activityModalRef}
+            className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95"
+          >
             <div className="flex items-center justify-between border-b border-border pb-3">
               <h4 className="text-base font-extrabold text-foreground flex items-center gap-2">
                 <Layers className="h-5 w-5 text-emerald-600" />

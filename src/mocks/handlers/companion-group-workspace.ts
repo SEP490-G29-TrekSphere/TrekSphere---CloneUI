@@ -1,4 +1,9 @@
 import { http } from 'msw';
+import {
+  addTrustScoreBonus,
+  computeCompletedTrips,
+  computeTrustScore,
+} from '@/shared/utils/trustScore';
 import { findUserById, mockUsers } from '../data/users';
 import { fail, ok } from '../envelope';
 import { groups, type MatchingGroup, type MatchingMemberItem } from './companion-groups';
@@ -40,6 +45,7 @@ interface TrailCheckpoint {
   distanceAltitude: string;
   gps: string;
   imageUrl?: string;
+  description?: string;
   status: CheckpointStatus;
   checkedInByName?: string;
   checkedInAt?: string;
@@ -59,6 +65,8 @@ interface ItineraryActivity {
   title: string;
   location: string;
   assignee: string;
+  description?: string;
+  imageUrl?: string;
 }
 
 interface BudgetPlanItem {
@@ -75,6 +83,9 @@ interface ActualExpense {
   payerId: string;
   payerName: string;
   amount: number;
+  beneficiaryIds: string[];
+  beneficiaryNames: string[];
+  receiptImageUrl?: string;
 }
 
 interface EquipmentItem {
@@ -97,8 +108,10 @@ interface MemberProfile {
   emergencyPhone: string;
   emergencyRelation: string;
   note: string;
-  trustScore: number;
-  completedTrips: number;
+  // KHÔNG lưu trustScore/completedTrips ở đây — luôn tính qua computeTrustScore /
+  // computeCompletedTrips (nguồn chung, xem @/shared/utils/trustScore) tại điểm trả response,
+  // để không phát sinh bản sao cục bộ có thể lệch khỏi các màn khác (bảng thành viên, hồ sơ
+  // ứng viên, trang cá nhân đều phải ra cùng 1 số cho cùng 1 userId).
 }
 
 interface PeerReview {
@@ -114,12 +127,18 @@ interface PeerReview {
 
 interface SuccessionRequest {
   id: string;
+  mode: 'DIRECT' | 'POLL';
   requestedById: string;
   reason: string;
   nomineeId: string;
   votes: { userId: string; vote: 'YES' | 'NO' }[];
-  status: 'OPEN' | 'APPROVED' | 'CANCELLED';
+  status: 'OPEN' | 'APPROVED' | 'CANCELLED' | 'EXPIRED';
+  deadline?: string;
+  createdAt: string;
 }
+
+/** Hạn Poll bình chọn Trưởng nhóm — 24h theo MODULE 4 (BR-LEAD). */
+const SUCCESSION_POLL_HOURS = 24;
 
 interface DissolveRequest {
   id: string;
@@ -154,6 +173,28 @@ const SKILL_POOL = [
   'Dựng lều',
 ];
 const EQUIPMENT_TYPES = ['Trang phục', 'Lều trại', 'Nấu nướng', 'Y tế', 'Điện tử', 'Bảo hộ'];
+
+// Toạ độ/độ cao mẫu để checkpoint dự kiến trông trực quan như dữ liệu thật thay vì "—" trống.
+const CHECKPOINT_DISTANCE_SAMPLES = [
+  '0km · 1.500m',
+  '4.2km · 2.200m',
+  '7.8km · 2.800m',
+  '11km · 3.143m',
+];
+const CHECKPOINT_GPS_SAMPLES = [
+  '22.3364° N, 103.7754° E',
+  '22.3401° N, 103.7812° E',
+  '22.3455° N, 103.7889° E',
+  '22.3512° N, 103.7940° E',
+];
+
+function inferBudgetCategory(label: string): BudgetCategory {
+  const normalized = label.toLowerCase();
+  if (/xe|trung chuyển|taxi|tàu|vé/.test(normalized)) return 'trans';
+  if (/ăn|đồ ăn|nước|bbq|thực phẩm/.test(normalized)) return 'food';
+  if (/lán|lều|túi ngủ|dụng cụ|trại/.test(normalized)) return 'gear';
+  return 'other';
+}
 
 function acceptedMembers(group: MatchingGroup): MatchingMemberItem[] {
   return group.members.filter((m) => m.status === 'ACCEPTED');
@@ -196,9 +237,13 @@ function buildDefaultWorkspace(groupId: string): WorkspaceState {
     order: idx + 1,
     name: day.title,
     category: idx === 0 ? 'Tập kết & khởi hành' : `Chặng ${idx + 1}`,
-    distanceAltitude: '—',
-    gps: '—',
-    imageUrl: group?.tourImageUrl,
+    distanceAltitude: CHECKPOINT_DISTANCE_SAMPLES[idx % CHECKPOINT_DISTANCE_SAMPLES.length],
+    gps: CHECKPOINT_GPS_SAMPLES[idx % CHECKPOINT_GPS_SAMPLES.length],
+    imageUrl:
+      idx === 0
+        ? group?.tourImageUrl
+        : `https://picsum.photos/seed/checkpoint-${groupId}-${idx}/600/400`,
+    description: day.description,
     // Checkpoint đầu tiên sẵn sàng để check-in ngay khi nhóm chuyển sang giai đoạn 4
     // (nếu không, không có checkpoint nào ở trạng thái IN_PROGRESS để bấm check-in).
     status: (idx === 0 ? 'IN_PROGRESS' : 'UPCOMING') as CheckpointStatus,
@@ -210,24 +255,81 @@ function buildDefaultWorkspace(groupId: string): WorkspaceState {
     subtitle: day.title,
   }));
 
-  const itineraryActivities: ItineraryActivity[] = (group?.itinerary ?? []).flatMap((day) => [
-    {
-      id: nextId('act'),
-      dayId: `day-${day.day}`,
-      timeSlot: 'morning' as TimeSlot,
-      timeRange: '',
-      title: day.title,
-      location: group?.location ?? '',
-      assignee: group?.ownerName ?? '',
-    },
-  ]);
+  const itineraryActivities: ItineraryActivity[] = (group?.itinerary ?? []).flatMap(
+    (day, dayIdx) => {
+      const dayId = `day-${day.day}`;
+      const isLastDay = dayIdx === (group?.itinerary.length ?? 1) - 1;
+      const morningActivity: ItineraryActivity = {
+        id: nextId('act'),
+        dayId,
+        timeSlot: 'morning',
+        timeRange: dayIdx === 0 ? '05:30 - 07:00' : '06:00 - 07:00',
+        title:
+          dayIdx === 0
+            ? 'Tập trung, kiểm tra trang bị & xuất phát'
+            : 'Ăn sáng & thu dọn hành trang',
+        location: dayIdx === 0 ? group?.location || 'Điểm tập kết' : 'Khu vực lán nghỉ',
+        assignee: group?.ownerName || 'Trưởng nhóm',
+        description:
+          dayIdx === 0
+            ? 'Cả nhóm tập trung đúng giờ, Trưởng nhóm điểm danh và kiểm tra trang bị bắt buộc (đèn pin, áo mưa, sơ cứu) trước khi khởi hành.'
+            : 'Ăn sáng nhẹ, đóng gói lều trại và chuẩn bị tiếp tục hành trình.',
+      };
+      const mainActivity: ItineraryActivity = {
+        id: nextId('act'),
+        dayId,
+        timeSlot: 'afternoon',
+        timeRange: '13:30 - 17:00',
+        title: day.title,
+        location: group?.location || 'Trên cung đường trek',
+        assignee: group?.ownerName || 'Trưởng nhóm',
+        description: day.description,
+        imageUrl: group?.tourImageUrl,
+      };
+      const eveningActivity: ItineraryActivity = {
+        id: nextId('act'),
+        dayId,
+        timeSlot: 'evening',
+        timeRange: '18:00 - 20:00',
+        title: 'Dựng lều, nấu ăn tối & sinh hoạt chung',
+        location: 'Khu vực cắm trại',
+        assignee: 'Toàn đội',
+        description:
+          'Cùng nhau dựng lều, chuẩn bị bữa tối BBQ và chia sẻ cảm nhận hành trình trong ngày quanh bếp lửa trại.',
+      };
+      return isLastDay
+        ? [morningActivity, mainActivity]
+        : [morningActivity, mainActivity, eveningActivity];
+    }
+  );
 
   const budgetPlanItems: BudgetPlanItem[] = (group?.budgetItems ?? []).map((item) => ({
     id: nextId('plan'),
-    category: 'other' as BudgetCategory,
+    category: inferBudgetCategory(item.label),
     title: item.label,
     amount: item.amount,
+    note: `Dự toán tự động từ lộ trình "${group?.tourName ?? ''}".`,
   }));
+
+  // Hoá đơn thực tế mẫu: xen kẽ "chi hộ cả nhóm" và "1 người ứng tiền chỉ cho một phần nhóm"
+  // để bảng Ngân sách trông trực quan giống nghiệp vụ thật ngay khi vào workspace demo.
+  const actualExpenses: ActualExpense[] = budgetPlanItems
+    .slice(0, Math.min(3, budgetPlanItems.length))
+    .map((item, idx) => {
+      const payer = members[idx % (members.length || 1)];
+      const partialBeneficiaries = members.slice(0, Math.max(1, Math.ceil(members.length * 0.6)));
+      const beneficiaries = idx % 2 === 0 ? members : partialBeneficiaries;
+      return {
+        id: nextId('exp'),
+        title: item.title,
+        payerId: payer?.userId ?? '',
+        payerName: payer?.fullName ?? 'Thành viên',
+        amount: item.amount,
+        beneficiaryIds: beneficiaries.map((m) => m.userId),
+        beneficiaryNames: beneficiaries.map((m) => m.fullName),
+        receiptImageUrl: `https://picsum.photos/seed/receipt-${groupId}-${idx}/600/800`,
+      };
+    });
 
   const equipment: EquipmentItem[] = [
     {
@@ -278,8 +380,6 @@ function buildDefaultWorkspace(groupId: string): WorkspaceState {
       emergencyPhone: '090xxxxxxx',
       emergencyRelation: 'Người thân',
       note: 'Chưa cập nhật ghi chú thể lực.',
-      trustScore: 85 + ((idx * 3) % 15),
-      completedTrips: idx,
     };
   });
 
@@ -291,7 +391,7 @@ function buildDefaultWorkspace(groupId: string): WorkspaceState {
     itineraryDays,
     itineraryActivities,
     budgetPlanItems,
-    actualExpenses: [],
+    actualExpenses,
     equipment,
     memberProfiles,
     peerReviews: [],
@@ -307,6 +407,29 @@ function getWorkspace(groupId: string): WorkspaceState {
     workspaceStore[groupId] = buildDefaultWorkspace(groupId);
   }
   return workspaceStore[groupId];
+}
+
+/**
+ * BR-LEAD (MODULE 4): Poll bình chọn Leader mới quá hạn 24h mà chưa đủ >50% phiếu → nhóm tự
+ * động chuyển `CANCELLED` (bị xoá khỏi danh sách nhóm ghép, giống cơ chế giải tán). Gọi hàm này
+ * lười (lazy) trước mỗi lần đọc/bầu để không cần cron job nền.
+ * @returns true nếu request vừa bị hết hạn ở lần gọi này (nhóm vừa bị huỷ).
+ */
+function expireSuccessionPollIfNeeded(groupId: string, ws: WorkspaceState): boolean {
+  const request = ws.succession;
+  if (
+    !request ||
+    request.mode !== 'POLL' ||
+    request.status !== 'OPEN' ||
+    !request.deadline ||
+    new Date(request.deadline).getTime() > Date.now()
+  ) {
+    return false;
+  }
+  request.status = 'EXPIRED';
+  const idx = groups.findIndex((g) => g.matchingGroupId === groupId);
+  if (idx !== -1) groups.splice(idx, 1);
+  return true;
 }
 
 function currentUser(request: Request) {
@@ -350,15 +473,29 @@ function computeSettlements(
   const members = group ? acceptedMembers(group) : [];
   if (members.length === 0 || actualExpenses.length === 0) return [];
 
-  const total = actualExpenses.reduce((sum, e) => sum + e.amount, 0);
-  const perPerson = total / members.length;
+  // Mỗi khoản chi chỉ chia đều cho những người thụ hưởng của chính nó (beneficiaryIds),
+  // không phải chia đều cho toàn bộ thành viên nhóm.
+  const balanceByUserId = new Map(members.map((m) => [m.userId, { balance: 0, name: m.fullName }]));
+  for (const expense of actualExpenses) {
+    const beneficiaries = expense.beneficiaryIds.length
+      ? expense.beneficiaryIds
+      : members.map((m) => m.userId);
+    const share = expense.amount / beneficiaries.length;
 
-  const balances = members.map((m) => {
-    const paid = actualExpenses
-      .filter((e) => e.payerId === m.userId)
-      .reduce((sum, e) => sum + e.amount, 0);
-    return { userId: m.userId, name: m.fullName, balance: paid - perPerson };
-  });
+    const payer = balanceByUserId.get(expense.payerId);
+    if (payer) payer.balance += expense.amount;
+
+    for (const userId of beneficiaries) {
+      const beneficiary = balanceByUserId.get(userId);
+      if (beneficiary) beneficiary.balance -= share;
+    }
+  }
+
+  const balances = members.map((m) => ({
+    userId: m.userId,
+    name: m.fullName,
+    balance: balanceByUserId.get(m.userId)?.balance ?? 0,
+  }));
 
   const debtors = balances.filter((b) => b.balance < -1).sort((a, b) => a.balance - b.balance);
   const creditors = balances.filter((b) => b.balance > 1).sort((a, b) => b.balance - a.balance);
@@ -470,22 +607,27 @@ export const companionGroupWorkspaceHandlers = [
   }),
   http.post('*/matching-groups/:groupId/workspace/checkpoints', async ({ params, request }) => {
     const ws = getWorkspace(params.groupId as string);
-    const body = (await request.json().catch(() => ({}))) as {
-      name?: string;
-      category?: string;
-      distanceAltitude?: string;
-      gps?: string;
-      imageUrl?: string;
-    };
-    if (!body.name?.trim()) return fail('Tên điểm đến không được để trống.', 400);
+    const formData = await request.formData().catch(() => null);
+    const name = (formData?.get('name') as string | null)?.trim();
+    const category = (formData?.get('category') as string | null)?.trim();
+    const distanceAltitude = (formData?.get('distanceAltitude') as string | null)?.trim();
+    const gps = (formData?.get('gps') as string | null)?.trim();
+    const description = (formData?.get('description') as string | null)?.trim();
+    const image = formData?.get('image');
+
+    if (!name) return fail('Tên điểm đến không được để trống.', 400);
     const checkpoint: TrailCheckpoint = {
       id: nextId('cp'),
       order: ws.checkpoints.length + 1,
-      name: body.name.trim(),
-      category: body.category?.trim() || 'Trạm dừng chân',
-      distanceAltitude: body.distanceAltitude?.trim() || '—',
-      gps: body.gps?.trim() || '—',
-      imageUrl: body.imageUrl,
+      name,
+      category: category || 'Trạm dừng chân',
+      distanceAltitude: distanceAltitude || '—',
+      gps: gps || '—',
+      imageUrl:
+        image instanceof File && image.size > 0
+          ? `https://picsum.photos/seed/checkpoint-${Date.now()}/600/400`
+          : undefined,
+      description: description || undefined,
       status: 'UPCOMING',
     };
     ws.checkpoints.push(checkpoint);
@@ -540,16 +682,30 @@ export const companionGroupWorkspaceHandlers = [
     '*/matching-groups/:groupId/workspace/itinerary/activities',
     async ({ params, request }) => {
       const ws = getWorkspace(params.groupId as string);
-      const body = (await request.json().catch(() => ({}))) as Partial<ItineraryActivity>;
-      if (!body.title?.trim() || !body.dayId) return fail('Thiếu thông tin hoạt động.', 400);
+      const formData = await request.formData().catch(() => null);
+      const dayId = (formData?.get('dayId') as string | null) || undefined;
+      const timeSlot = (formData?.get('timeSlot') as TimeSlot | null) || undefined;
+      const timeRange = (formData?.get('timeRange') as string | null)?.trim();
+      const title = (formData?.get('title') as string | null)?.trim();
+      const location = (formData?.get('location') as string | null)?.trim();
+      const assignee = (formData?.get('assignee') as string | null)?.trim();
+      const description = (formData?.get('description') as string | null)?.trim();
+      const image = formData?.get('image');
+
+      if (!title || !dayId) return fail('Thiếu thông tin hoạt động.', 400);
       const activity: ItineraryActivity = {
         id: nextId('act'),
-        dayId: body.dayId,
-        timeSlot: body.timeSlot ?? 'morning',
-        timeRange: body.timeRange?.trim() || '08:00 - 09:00',
-        title: body.title.trim(),
-        location: body.location?.trim() || 'Địa điểm tập trung',
-        assignee: body.assignee?.trim() || 'Toàn đội',
+        dayId,
+        timeSlot: timeSlot ?? 'morning',
+        timeRange: timeRange || '08:00 - 09:00',
+        title,
+        location: location || 'Địa điểm tập trung',
+        assignee: assignee || 'Toàn đội',
+        description: description || undefined,
+        imageUrl:
+          image instanceof File && image.size > 0
+            ? `https://picsum.photos/seed/activity-${Date.now()}/600/400`
+            : undefined,
       };
       ws.itineraryActivities.push(activity);
       return ok(activity, 'Đã thêm hoạt động.', 201);
@@ -612,32 +768,57 @@ export const companionGroupWorkspaceHandlers = [
     return ok(null, 'Đã xoá khoản dự toán.');
   }),
   http.post('*/matching-groups/:groupId/workspace/budget/expenses', async ({ params, request }) => {
-    const ws = getWorkspace(params.groupId as string);
-    const body = (await request.json().catch(() => ({}))) as {
-      id?: string;
-      title?: string;
-      payerId?: string;
-      amount?: number;
-    };
-    if (!body.title?.trim() || !body.payerId) return fail('Thiếu thông tin hoá đơn.', 400);
-    const payer = findUserById(body.payerId) ?? mockUsers.find((u) => u.id === body.payerId);
+    const groupId = params.groupId as string;
+    const ws = getWorkspace(groupId);
+    const group = groups.find((g) => g.matchingGroupId === groupId);
+    const formData = await request.formData().catch(() => null);
+    const id = (formData?.get('id') as string | null) || undefined;
+    const title = (formData?.get('title') as string | null)?.trim();
+    const payerId = (formData?.get('payerId') as string | null) || undefined;
+    const amount = Number(formData?.get('amount') ?? 0);
+    const beneficiaryIds = (formData?.getAll('beneficiaryIds') as string[]).filter(Boolean);
+    const receiptImage = formData?.get('receiptImage');
+    const removeReceiptImage = formData?.get('removeReceiptImage') === 'true';
+
+    if (!title || !payerId) return fail('Thiếu thông tin hoá đơn.', 400);
+    if (beneficiaryIds.length === 0) {
+      return fail('Cần chọn ít nhất một người được chi khoản này.', 400);
+    }
+
+    const payer = findUserById(payerId) ?? mockUsers.find((u) => u.id === payerId);
     const payerName = payer?.fullName ?? 'Thành viên';
-    if (body.id) {
-      const existing = ws.actualExpenses.find((e) => e.id === body.id);
+    const beneficiaryNames = beneficiaryIds.map((uid) => {
+      const member = group?.members.find((m) => m.userId === uid);
+      return member?.fullName ?? findUserById(uid)?.fullName ?? 'Thành viên';
+    });
+    const receiptImageUrl =
+      receiptImage instanceof File && receiptImage.size > 0
+        ? `https://picsum.photos/seed/receipt-${Date.now()}/600/800`
+        : undefined;
+
+    if (id) {
+      const existing = ws.actualExpenses.find((e) => e.id === id);
       if (existing) {
-        existing.title = body.title.trim();
-        existing.payerId = body.payerId;
+        existing.title = title;
+        existing.payerId = payerId;
         existing.payerName = payerName;
-        existing.amount = body.amount ?? existing.amount;
+        existing.amount = amount || existing.amount;
+        existing.beneficiaryIds = beneficiaryIds;
+        existing.beneficiaryNames = beneficiaryNames;
+        if (removeReceiptImage) existing.receiptImageUrl = undefined;
+        if (receiptImageUrl) existing.receiptImageUrl = receiptImageUrl;
         return ok(existing, 'Đã cập nhật hoá đơn.');
       }
     }
     const expense: ActualExpense = {
       id: nextId('exp'),
-      title: body.title.trim(),
-      payerId: body.payerId,
+      title,
+      payerId,
       payerName,
-      amount: body.amount ?? 0,
+      amount: amount || 0,
+      beneficiaryIds,
+      beneficiaryNames,
+      receiptImageUrl,
     };
     ws.actualExpenses.push(expense);
     return ok(expense, 'Đã ghi nhận hoá đơn.', 201);
@@ -696,7 +877,7 @@ export const companionGroupWorkspaceHandlers = [
     const group = groups.find((g) => g.matchingGroupId === groupId);
     if (!group) return ok([]);
     const items = acceptedMembers(group).map((m) => {
-      const profile = ws.memberProfiles[m.userId] ?? {
+      const profile: MemberProfile = ws.memberProfiles[m.userId] ?? {
         skills: [],
         bloodType: '—',
         allergies: 'Không dị ứng',
@@ -704,8 +885,6 @@ export const companionGroupWorkspaceHandlers = [
         emergencyPhone: '—',
         emergencyRelation: '—',
         note: '',
-        trustScore: 85,
-        completedTrips: 0,
       };
       return {
         userId: m.userId,
@@ -714,9 +893,11 @@ export const companionGroupWorkspaceHandlers = [
         roleLabel: roleLabel(group, m.userId),
         isLeader: group.ownerId === m.userId,
         isCoLeader: false,
-        trustScore: profile.trustScore,
-        completedTrips: profile.completedTrips,
-        skills: profile.skills.map((name) => ({ name })),
+        // Luôn tính tại đây (không đọc field lưu sẵn) để khớp đúng 1 nguồn với
+        // JoinRequestProfileModal / trang cá nhân — kể cả sau khi có Peer Review cộng bonus.
+        trustScore: computeTrustScore(m.userId),
+        completedTrips: computeCompletedTrips(m.userId),
+        skills: profile.skills.map((name: string) => ({ name })),
         medicalInfo: {
           bloodType: profile.bloodType,
           allergies: profile.allergies,
@@ -762,17 +943,24 @@ export const companionGroupWorkspaceHandlers = [
     );
     ws.peerReviews.push(review);
 
+    // Cộng bonus vào store CHUNG theo userId (addTrustScoreBonus), không mutate 1 bản sao
+    // trustScore cục bộ trong nhóm này — để bảng thành viên, hồ sơ ứng viên và trang cá nhân
+    // luôn đọc ra cùng 1 điểm tin cậy đã cộng dồn cho đúng người đó (MODULE 6: điểm Peer Review
+    // "cộng trực tiếp vào Trust Score hiển thị công khai trên Hồ sơ cá nhân").
     const avg = (review.punctualityScore + review.fitnessScore + review.financeScore) / 3;
     const bonus = avg >= 4.5 ? 2.5 : avg >= 3.5 ? 1.5 : avg >= 2.5 ? 0.5 : 0;
-    const profile = ws.memberProfiles[body.revieweeId];
-    if (profile) profile.trustScore = Math.min(100, Math.round(profile.trustScore + bonus));
+    if (bonus > 0) addTrustScoreBonus(body.revieweeId, bonus);
 
     return ok(review, 'Đã ghi nhận đánh giá.', 201);
   }),
 
-  // ---------- Leader succession ----------
+  // ---------- Leader succession (MODULE 4) ----------
+  // Trường hợp A: Leader chỉ định trực tiếp (không cần bầu). Trường hợp B: mở Poll 24h, cần
+  // >50% phiếu YES; quá 24h không đủ phiếu → nhóm tự động bị huỷ (BR-LEAD-01/02).
   http.get('*/matching-groups/:groupId/workspace/succession-request', ({ params }) => {
-    const ws = getWorkspace(params.groupId as string);
+    const groupId = params.groupId as string;
+    const ws = getWorkspace(groupId);
+    expireSuccessionPollIfNeeded(groupId, ws);
     return ok(ws.succession);
   }),
   http.post(
@@ -780,6 +968,7 @@ export const companionGroupWorkspaceHandlers = [
     async ({ params, request }) => {
       const groupId = params.groupId as string;
       const ws = getWorkspace(groupId);
+      const group = groups.find((g) => g.matchingGroupId === groupId);
       const user = currentUser(request);
       const body = (await request.json().catch(() => ({}))) as {
         reason?: string;
@@ -787,16 +976,59 @@ export const companionGroupWorkspaceHandlers = [
       };
       if (!body.reason?.trim() || !body.nomineeId)
         return fail('Thiếu lý do hoặc người đề cử.', 400);
+      if (ws.phase === 4) {
+        return fail('Không thể chuyển giao Leader khi chuyến đi đang diễn ra (IN_PROGRESS).', 400);
+      }
+      if (group && !acceptedMembers(group).some((m) => m.userId === body.nomineeId)) {
+        return fail('Người được đề cử không phải thành viên hợp lệ của nhóm.', 400);
+      }
 
+      const now = new Date();
       ws.succession = {
         id: nextId('succession'),
+        mode: 'POLL',
         requestedById: user.id,
         reason: body.reason.trim(),
         nomineeId: body.nomineeId,
         votes: [],
         status: 'OPEN',
+        deadline: new Date(now.getTime() + SUCCESSION_POLL_HOURS * 60 * 60 * 1000).toISOString(),
+        createdAt: now.toISOString(),
       };
-      return ok(ws.succession, 'Đã gửi yêu cầu chuyển giao quyền Leader.', 201);
+      return ok(ws.succession, 'Đã mở bình chọn chuyển giao quyền Leader (hạn 24h).', 201);
+    }
+  ),
+  // Trường hợp A: chỉ định trực tiếp — chuyển giao ngay, không cần bầu.
+  http.post(
+    '*/matching-groups/:groupId/workspace/succession-request/appoint',
+    async ({ params, request }) => {
+      const groupId = params.groupId as string;
+      const ws = getWorkspace(groupId);
+      const group = groups.find((g) => g.matchingGroupId === groupId);
+      const user = currentUser(request);
+      const body = (await request.json().catch(() => ({}))) as { nomineeId?: string };
+      if (!body.nomineeId) return fail('Thiếu người được chỉ định.', 400);
+      if (ws.phase === 4) {
+        return fail('Không thể chuyển giao Leader khi chuyến đi đang diễn ra (IN_PROGRESS).', 400);
+      }
+      const nominee = group?.members.find((m) => m.userId === body.nomineeId);
+      if (!group || !nominee) return fail('Người được chỉ định không hợp lệ.', 400);
+
+      group.ownerId = nominee.userId;
+      group.ownerName = nominee.fullName;
+
+      const now = new Date();
+      ws.succession = {
+        id: nextId('succession'),
+        mode: 'DIRECT',
+        requestedById: user.id,
+        reason: 'Leader chỉ định trực tiếp',
+        nomineeId: nominee.userId,
+        votes: [],
+        status: 'APPROVED',
+        createdAt: now.toISOString(),
+      };
+      return ok(ws.succession, `Đã chỉ định ${nominee.fullName} làm Trưởng nhóm mới.`);
     }
   ),
   http.post(
@@ -807,6 +1039,9 @@ export const companionGroupWorkspaceHandlers = [
       const group = groups.find((g) => g.matchingGroupId === groupId);
       const user = currentUser(request);
       const body = (await request.json().catch(() => ({}))) as { vote?: 'YES' | 'NO' };
+      if (expireSuccessionPollIfNeeded(groupId, ws)) {
+        return fail('Poll bình chọn đã hết hạn 24h — nhóm đã tự động bị huỷ.', 400);
+      }
       if (!ws.succession || ws.succession.id !== params.requestId) {
         return fail('Không tìm thấy yêu cầu chuyển giao.', 404);
       }

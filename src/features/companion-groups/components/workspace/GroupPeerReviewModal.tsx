@@ -1,6 +1,7 @@
 import { CheckCircle2, ChevronRight, ShieldCheck, Star, UserCheck, X } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useClickOutside } from '@/shared/hooks';
 import type { PeerReviewPayload, WorkspaceMemberItem } from '../../services/groupWorkspaceService';
 
 interface GroupPeerReviewModalProps {
@@ -50,6 +51,8 @@ export function GroupPeerReviewModal({
   const [fitness, setFitness] = useState(5);
   const [finance, setFinance] = useState(5);
   const [comment, setComment] = useState('');
+
+  const modalRef = useClickOutside<HTMLDivElement>(onClose);
 
   const peerList = allMembers;
   const reviewedCount = peerList.filter((m) => reviewedIds.has(m.userId)).length;
@@ -122,7 +125,10 @@ export function GroupPeerReviewModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="w-full max-w-xl rounded-2xl bg-card border border-border p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200 my-8">
+      <div
+        ref={modalRef}
+        className="w-full max-w-xl rounded-2xl bg-card border border-border p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200 my-8"
+      >
         {/* TOP BAR: PEER NAVIGATOR */}
         {peerList.length > 1 && (
           <div className="rounded-xl border border-border/80 bg-muted/30 p-3 space-y-2">

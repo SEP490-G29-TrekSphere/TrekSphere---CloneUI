@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useClickOutside } from '@/shared/hooks';
 import {
   useAddEquipmentItem,
   useGroupEquipmentWorkspace,
@@ -88,6 +89,8 @@ export function GroupEquipmentWorkspace({
 
   const sharedItems = items.filter((i) => i.category === 'shared');
   const personalItems = items.filter((i) => i.category === 'personal');
+
+  const modalRef = useClickOutside<HTMLDivElement>(() => setIsModalOpen(false), isModalOpen);
 
   if (isLoading) {
     return <p className="text-xs text-muted-foreground">Đang tải danh sách đồ dùng...</p>;
@@ -324,7 +327,10 @@ export function GroupEquipmentWorkspace({
       {/* MODAL PHÂN CÔNG ĐỒ DÙNG MỚI */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-2xl bg-card border border-border p-6 shadow-xl space-y-5 animate-in fade-in zoom-in duration-200">
+          <div
+            ref={modalRef}
+            className="w-full max-w-md rounded-2xl bg-card border border-border p-6 shadow-xl space-y-5 animate-in fade-in zoom-in duration-200"
+          >
             <div className="flex items-center justify-between border-b border-border pb-3">
               <h3 className="text-base font-extrabold text-foreground flex items-center gap-2">
                 <Plus className="h-5 w-5 text-primary" />

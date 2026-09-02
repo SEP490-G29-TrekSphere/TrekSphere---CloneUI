@@ -35,8 +35,15 @@ export function useDeleteBudgetPlanItem(groupId: string) {
 export function useSaveActualExpense(groupId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: { id?: string; title: string; payerId: string; amount: number }) =>
-      groupWorkspaceService.saveExpense(groupId, data),
+    mutationFn: (data: {
+      id?: string;
+      title: string;
+      payerId: string;
+      amount: number;
+      beneficiaryIds: string[];
+      receiptImage?: File | null;
+      removeReceiptImage?: boolean;
+    }) => groupWorkspaceService.saveExpense(groupId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: groupWorkspaceKeys.budget(groupId) });
     },
