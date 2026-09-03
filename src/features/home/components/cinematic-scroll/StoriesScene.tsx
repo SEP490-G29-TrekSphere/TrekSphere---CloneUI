@@ -19,10 +19,10 @@ export function StoriesScene({ stories, isLoading }: StoriesSceneProps) {
   return (
     <section className="pinned-scene stories-scene" aria-labelledby="journey-stories-heading">
       <div className="journey-tours-header">
-        <div>
-          <span className="journey-step-kicker">Cảm hứng từ cộng đồng</span>
-          <h2 id="journey-stories-heading">Câu chuyện hành trình</h2>
-        </div>
+        <h2 id="journey-stories-heading">Câu chuyện hành trình</h2>
+        <p className="journey-tours-subtitle">
+          Lắng nghe nhật ký hành trình và trải nghiệm thám hiểm chân thực từ các trekker
+        </p>
         <Link to={PATHS.NEWS} className="journey-see-all">
           Xem tất cả bài viết
           <span aria-hidden="true">→</span>

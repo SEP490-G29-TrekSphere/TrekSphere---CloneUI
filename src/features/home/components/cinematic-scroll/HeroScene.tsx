@@ -38,6 +38,9 @@ export function HeroScene() {
         />
         <img className="scene-img bridge-img" src={CINEMATIC_ASSETS.bridge} alt="" />
         <img className="scene-img frame-two-img" src={CINEMATIC_ASSETS.frameTwo} alt="" />
+
+        {/* Dedicated Blur & Dark Scrim Backdrop Layer for Scene 4 & Scene 5 */}
+        <div className="cards-backdrop" />
       </div>
 
       {/* Scene 1 Intro Overview */}

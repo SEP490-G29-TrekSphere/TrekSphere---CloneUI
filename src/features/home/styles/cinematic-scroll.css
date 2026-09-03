@@ -136,6 +136,8 @@
   inset: 0;
   overflow: hidden;
   background: var(--c-bg);
+  filter: blur(var(--world-blur, 0px)) brightness(var(--world-brightness, 1));
+  will-change: filter;
 }
 .scene-img {
   display: block;
@@ -266,6 +268,22 @@
     rgba(var(--blur-tint), var(--shade-mid-alpha)) 48%,
     rgba(var(--blur-tint), var(--shade-bottom-alpha)) 100%
   );
+}
+.cards-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(8, 14, 12, 0.78) 0%,
+    rgba(3, 7, 5, 0.95) 100%
+  );
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  opacity: var(--cards-shade-opacity, 0);
+  visibility: var(--cards-shade-visibility, hidden);
+  will-change: opacity, visibility;
 }
 .intro-copy {
   z-index: 9;
@@ -481,84 +499,97 @@
   opacity: var(--tours-scene-opacity);
   visibility: var(--tours-scene-visibility);
 }
-.tour-scene .journey-tours-header {
-  margin-bottom: 20px;
-}
-.tour-scene .journey-tours-header h2 {
-  text-shadow: var(--text-shadow-heading);
-}
-.tour-scene .journey-step-kicker {
-  text-shadow: var(--text-shadow-label);
-}
-.tour-scene .journey-see-all {
-  text-shadow: var(--text-shadow-label);
-}
-.tour-scene .journey-tours-grid {
-  gap: 16px;
-}
-.tour-scene .journey-tour-card {
-  background: var(--surface-on-photo);
-  box-shadow: var(--shadow-card);
-}
-.tour-scene .journey-tour-img-wrap {
-  height: 130px;
-}
-.tour-scene .journey-tour-body {
-  padding: 14px;
-  gap: 6px;
-}
-.tour-scene .journey-tour-name {
-  font-size: 0.88rem;
-}
-.tour-scene .journey-tour-price {
-  font-size: 0.98rem;
-}
-.tour-scene .journey-tour-skeleton {
-  height: 240px;
-}
-
-/* Scene 5 — "Câu chuyện hành trình", hands off from Scene 4 the same way Scene 4 took
-   over from Scene 3: same pinned full-screen layer, same fade/rise-in treatment. */
 .stories-scene {
   transform: translate3d(-50%, var(--stories-scene-y), 0);
   opacity: var(--stories-scene-opacity);
   visibility: var(--stories-scene-visibility);
 }
-.stories-scene .journey-tours-header {
-  margin-bottom: 20px;
+.journey-tours-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  margin-bottom: 26px;
+  gap: 8px;
 }
-.stories-scene .journey-tours-header h2 {
+.journey-tours-header h2 {
+  font-family: "Inter", sans-serif;
+  font-size: clamp(2rem, 3.8vw, 3.2rem);
+  font-weight: 600;
+  color: var(--paper);
+  margin: 0;
   text-shadow: var(--text-shadow-heading);
 }
-.stories-scene .journey-step-kicker {
-  text-shadow: var(--text-shadow-label);
+.journey-tours-subtitle {
+  margin: 0 auto;
+  max-width: 580px;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: clamp(0.92rem, 1.3vw, 1.08rem);
+  font-weight: 400;
+  line-height: 1.4;
+  text-shadow: var(--text-shadow-body);
 }
-.stories-scene .journey-see-all {
+.journey-see-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  color: #f3e5ab;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
   text-shadow: var(--text-shadow-label);
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
 }
+.journey-see-all:hover {
+  transform: translateX(4px);
+  opacity: 0.9;
+}
+.tour-scene .journey-tours-grid,
 .stories-scene .journey-stories-grid {
-  gap: 16px;
+  gap: 24px;
+  padding-top: 10px;
 }
+.tour-scene .journey-tour-card,
 .stories-scene .journey-story-card {
   background: var(--surface-on-photo);
   box-shadow: var(--shadow-card);
+  transition:
+    transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.3s ease;
 }
+.tour-scene .journey-tour-card:hover,
+.stories-scene .journey-story-card:hover {
+  box-shadow:
+    0 20px 48px rgba(0, 0, 0, 0.5),
+    0 0 20px rgba(243, 229, 171, 0.2);
+}
+.tour-scene .journey-tour-img-wrap,
 .stories-scene .journey-story-img-wrap {
-  height: 130px;
+  height: 140px;
 }
+.tour-scene .journey-tour-body,
 .stories-scene .journey-story-body {
-  padding: 14px;
+  padding: 14px 16px;
   gap: 6px;
 }
+.tour-scene .journey-tour-name,
 .stories-scene .journey-story-name {
-  font-size: 0.88rem;
+  font-size: 0.92rem;
+}
+.tour-scene .journey-tour-price {
+  font-size: 1rem;
 }
 .stories-scene .journey-story-excerpt {
-  font-size: 0.76rem;
+  font-size: 0.78rem;
   -webkit-line-clamp: 2;
 }
+.tour-scene .journey-tour-skeleton,
 .stories-scene .journey-story-skeleton {
-  height: 240px;
+  height: 250px;
 }
 
 /* Responsive Media Queries */
@@ -665,21 +696,6 @@
   margin-bottom: 14px;
 }
 
-.journey-tours-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 40px;
-}
-.journey-tours-header h2 {
-  /* Vietnamese heading — see .story-panel h2 for why it uses Inter, not a serif fallback */
-  font-family: "Inter", sans-serif;
-  font-size: clamp(1.9rem, 3vw, 2.6rem);
-  font-weight: 500;
-  color: var(--paper);
-  margin: 8px 0 0;
-}
 .journey-see-all {
   display: inline-flex;
   align-items: center;
@@ -729,20 +745,78 @@
 .journey-empty a:hover {
   text-decoration: underline;
 }
-.journey-tour-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 20px;
+.journey-tour-card,
+.journey-story-card {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 22px;
+  box-shadow:
+    0 20px 45px -10px rgba(0, 0, 0, 0.7),
+    0 0 20px rgba(0, 0, 0, 0.4);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   transition:
-    transform 0.25s,
-    border-color 0.25s;
+    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.35s ease,
+    box-shadow 0.35s ease;
 }
-.journey-tour-card:hover {
-  transform: translateY(-4px);
-  border-color: var(--border-hover);
+
+/* Clustered Deck to Fanning Out Grid Animations */
+.journey-tours-grid .journey-tour-card:nth-child(1) {
+  transform: translate3d(var(--tour-card1-x, 0px), var(--tour-card1-y, 0px), 0)
+    rotate(var(--tour-card1-rot, 0deg)) scale(var(--tour-card1-scale, 1));
+  opacity: var(--tour-card1-opacity, 1);
+  z-index: 3;
+  will-change: transform, opacity;
+}
+.journey-tours-grid .journey-tour-card:nth-child(2) {
+  transform: translate3d(var(--tour-card2-x, 0px), var(--tour-card2-y, 0px), 0)
+    rotate(var(--tour-card2-rot, 0deg)) scale(var(--tour-card2-scale, 1));
+  opacity: var(--tour-card2-opacity, 1);
+  z-index: 2;
+  will-change: transform, opacity;
+}
+.journey-tours-grid .journey-tour-card:nth-child(3) {
+  transform: translate3d(var(--tour-card3-x, 0px), var(--tour-card3-y, 0px), 0)
+    rotate(var(--tour-card3-rot, 0deg)) scale(var(--tour-card3-scale, 1));
+  opacity: var(--tour-card3-opacity, 1);
+  z-index: 1;
+  will-change: transform, opacity;
+}
+
+.journey-stories-grid .journey-story-card:nth-child(1) {
+  transform: translate3d(var(--story-card1-x, 0px), var(--story-card1-y, 0px), 0)
+    rotate(var(--story-card1-rot, 0deg)) scale(var(--story-card1-scale, 1));
+  opacity: var(--story-card1-opacity, 1);
+  z-index: 3;
+  will-change: transform, opacity;
+}
+.journey-stories-grid .journey-story-card:nth-child(2) {
+  transform: translate3d(var(--story-card2-x, 0px), var(--story-card2-y, 0px), 0)
+    rotate(var(--story-card2-rot, 0deg)) scale(var(--story-card2-scale, 1));
+  opacity: var(--story-card2-opacity, 1);
+  z-index: 2;
+  will-change: transform, opacity;
+}
+.journey-stories-grid .journey-story-card:nth-child(3) {
+  transform: translate3d(var(--story-card3-x, 0px), var(--story-card3-y, 0px), 0)
+    rotate(var(--story-card3-rot, 0deg)) scale(var(--story-card3-scale, 1));
+  opacity: var(--story-card3-opacity, 1);
+  z-index: 1;
+  will-change: transform, opacity;
+}
+
+.journey-tour-card:hover,
+.journey-story-card:hover {
+  transform: translate3d(0, -12px, 0) rotate(0deg) scale(1.03) !important;
+  z-index: 20 !important;
+  border-color: rgba(16, 185, 129, 0.6);
+  box-shadow:
+    0 28px 55px -10px rgba(0, 0, 0, 0.85),
+    0 0 25px rgba(16, 185, 129, 0.25);
 }
 .journey-tour-img-wrap {
   position: relative;
@@ -1027,5 +1101,173 @@
   }
   .stories-scene .journey-story-img-wrap {
     height: 96px;
+  }
+}
+
+/* ── Scene Progress Timeline Navigation ── */
+.cinema-timeline {
+  position: fixed;
+  right: 32px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  pointer-events: auto;
+}
+.timeline-track {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  background: rgba(255, 255, 255, 0.45);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.timeline-progress-bar {
+  width: 100%;
+  height: var(--timeline-progress, 0%);
+  background: linear-gradient(to bottom, #10b981, #06b6d4);
+  border-radius: 99px;
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.9);
+  transition: height 0.15s ease-out;
+}
+.timeline-dots {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  position: relative;
+  z-index: 2;
+}
+.timeline-dot-item {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  outline: none;
+  transition:
+    opacity 0.25s,
+    transform 0.25s;
+}
+.timeline-dot-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid rgba(15, 23, 42, 0.9);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.9),
+    0 2px 8px rgba(0, 0, 0, 0.8);
+  flex-shrink: 0;
+}
+.timeline-dot-label {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: #ffffff;
+  text-shadow:
+    0 1px 3px #000000,
+    0 0 10px rgba(0, 0, 0, 0.95),
+    0 0 20px rgba(0, 0, 0, 0.9);
+  opacity: 0.85;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.timeline-dot-item:hover .timeline-dot-label {
+  opacity: 1;
+  color: #34d399;
+}
+.timeline-dot-item:hover .timeline-dot-indicator {
+  background: #10b981;
+  border-color: #34d399;
+  transform: scale(1.4) !important;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.95);
+}
+
+/* Dynamic Active State per Scene Dot */
+.scene-dot-1 {
+  opacity: calc(0.75 + var(--dot-1-active, 0) * 0.25);
+}
+.scene-dot-1 .timeline-dot-indicator {
+  transform: scale(var(--dot-1-scale, 1));
+  box-shadow:
+    0 0 calc(var(--dot-1-glow, 0) * 14px) rgba(16, 185, 129, 0.95),
+    0 0 calc(var(--dot-1-glow, 0) * 6px) #10b981;
+}
+.scene-dot-1 .timeline-dot-label {
+  opacity: calc(0.7 + var(--dot-1-active, 0) * 0.3);
+}
+
+.scene-dot-2 {
+  opacity: calc(0.75 + var(--dot-2-active, 0) * 0.25);
+}
+.scene-dot-2 .timeline-dot-indicator {
+  transform: scale(var(--dot-2-scale, 1));
+  box-shadow:
+    0 0 calc(var(--dot-2-glow, 0) * 14px) rgba(16, 185, 129, 0.95),
+    0 0 calc(var(--dot-2-glow, 0) * 6px) #10b981;
+}
+.scene-dot-2 .timeline-dot-label {
+  opacity: calc(0.7 + var(--dot-2-active, 0) * 0.3);
+}
+
+.scene-dot-3 {
+  opacity: calc(0.75 + var(--dot-3-active, 0) * 0.25);
+}
+.scene-dot-3 .timeline-dot-indicator {
+  transform: scale(var(--dot-3-scale, 1));
+  box-shadow:
+    0 0 calc(var(--dot-3-glow, 0) * 14px) rgba(16, 185, 129, 0.95),
+    0 0 calc(var(--dot-3-glow, 0) * 6px) #10b981;
+}
+.scene-dot-3 .timeline-dot-label {
+  opacity: calc(0.7 + var(--dot-3-active, 0) * 0.3);
+}
+
+.scene-dot-4 {
+  opacity: calc(0.75 + var(--dot-4-active, 0) * 0.25);
+}
+.scene-dot-4 .timeline-dot-indicator {
+  transform: scale(var(--dot-4-scale, 1));
+  box-shadow:
+    0 0 calc(var(--dot-4-glow, 0) * 14px) rgba(16, 185, 129, 0.95),
+    0 0 calc(var(--dot-4-glow, 0) * 6px) #10b981;
+}
+.scene-dot-4 .timeline-dot-label {
+  opacity: calc(0.7 + var(--dot-4-active, 0) * 0.3);
+}
+
+.scene-dot-5 {
+  opacity: calc(0.75 + var(--dot-5-active, 0) * 0.25);
+}
+.scene-dot-5 .timeline-dot-indicator {
+  transform: scale(var(--dot-5-scale, 1));
+  box-shadow:
+    0 0 calc(var(--dot-5-glow, 0) * 14px) rgba(16, 185, 129, 0.95),
+    0 0 calc(var(--dot-5-glow, 0) * 6px) #10b981;
+}
+.scene-dot-5 .timeline-dot-label {
+  opacity: calc(0.7 + var(--dot-5-active, 0) * 0.3);
+}
+
+/* ── Scene 5 Dedicated Visual Layers ── */
+.stories-scene {
+  position: relative;
+}
+
+@media (max-width: 768px) {
+  .cinema-timeline {
+    right: 12px;
+  }
+  .timeline-dot-label {
+    display: none;
   }
 }

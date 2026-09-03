@@ -6,6 +6,7 @@ import { toast } from '@/store/useToastStore';
 import { useCinematicScrollEngine } from '../../hooks/useCinematicScrollEngine';
 import '../../styles/cinematic-scroll.css';
 import { HeroScene } from './HeroScene';
+import { SceneProgressTimeline } from './SceneProgressTimeline';
 import { SkipIntroButton } from './SkipIntroButton';
 import { StoriesScene } from './StoriesScene';
 import { StoryPanel } from './StoryPanel';
@@ -56,6 +57,8 @@ export default function CinematicScrollLanding() {
             <HeroScene />
 
             <SkipIntroButton onSkip={handleSkipIntro} />
+
+            <SceneProgressTimeline />
 
             <StoryPanel variant="bridge" ariaLabel="Old Bridge details">
               <h2>Mỗi cung đường là một hành trình kết nối.</h2>

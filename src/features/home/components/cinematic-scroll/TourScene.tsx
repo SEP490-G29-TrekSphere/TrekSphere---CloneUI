@@ -20,12 +20,12 @@ export function TourScene({ tours, isLoading }: TourSceneProps) {
   return (
     <section className="pinned-scene tour-scene" aria-labelledby="tour-scene-heading">
       <div className="journey-tours-header">
-        <div>
-          <span className="journey-step-kicker">Bước tiếp theo</span>
-          <h2 id="tour-scene-heading">Tour nổi bật</h2>
-        </div>
+        <h2 id="tour-scene-heading">Tour nổi bật</h2>
+        <p className="journey-tours-subtitle">
+          Khám phá những cung đường chinh phục ấn tượng nhất do cộng đồng phượt thủ bình chọn
+        </p>
         <Link to={PATHS.TOURS} className="journey-see-all">
-          Xem tất cả
+          Xem tất cả tour
           <span aria-hidden="true">→</span>
         </Link>
       </div>

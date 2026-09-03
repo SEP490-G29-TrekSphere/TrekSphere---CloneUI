@@ -1,6 +1,7 @@
 import { type RefObject, useEffect, useRef } from 'react';
 import {
   CINEMATIC_ASSETS,
+  SCENE_TARGETS,
   SCROLL_TIMELINE,
   SKIP_INTRO_SCROLL_TARGET,
 } from '../constants/cinematic-scroll';
@@ -60,6 +61,8 @@ export function useCinematicScrollEngine(sectionRef: RefObject<HTMLElement | nul
       return clamp(-rect.top, 0, sectionEl.offsetHeight - window.innerHeight);
     }
 
+    let currentSceneIndex = 0;
+
     // Vòng lặp animation chính — mọi giá trị là hàm thuần của vị trí cuộn, mỗi
     // rAF tick chỉ đọc layout 1 lần rồi ghi 1 loạt style, không có gì tiếp tục
     // animate sau khi sự kiện scroll dừng.
@@ -68,6 +71,13 @@ export function useCinematicScrollEngine(sectionRef: RefObject<HTMLElement | nul
       if (!sectionEl) return;
 
       const scroll = getScrollDistance();
+
+      if (scroll >= SCENE_TARGETS[4] - 325) currentSceneIndex = 4;
+      else if (scroll >= SCENE_TARGETS[3] - 325) currentSceneIndex = 3;
+      else if (scroll >= SCENE_TARGETS[2] - 325) currentSceneIndex = 2;
+      else if (scroll >= SCENE_TARGETS[1] - 325) currentSceneIndex = 1;
+      else currentSceneIndex = 0;
+
       // 0 khi reduced-motion — triệt tiêu mọi số hạng parallax translate/scale bên
       // dưới, còn công thức opacity/visibility (không phụ thuộc biến này) vẫn giữ
       // nguyên để nội dung tiếp tục hiện/ẩn theo scroll.
@@ -175,41 +185,168 @@ export function useCinematicScrollEngine(sectionRef: RefObject<HTMLElement | nul
       style.setProperty('--panel2-opacity', panel2Opacity.toFixed(4));
       style.setProperty(
         '--panel2-y',
-        `${(motionScale * (-frame2Exit * 86 + (1 - frame2Enter) * 58)).toFixed(2)}px`
+        `${(motionScale * (-frame2Exit * 100 + (1 - frame2Enter) * 120)).toFixed(2)}px`
       );
       style.setProperty('--panel2-visibility', panel2Opacity > 0.02 ? 'visible' : 'hidden');
 
       style.setProperty('--panel3-opacity', panel3Opacity.toFixed(4));
       style.setProperty(
         '--panel3-y',
-        `${(motionScale * (-frame3Exit * 86 + (1 - frame3Enter) * 58)).toFixed(2)}px`
+        `${(motionScale * (-frame3Exit * 100 + (1 - frame3Enter) * 120)).toFixed(2)}px`
       );
       style.setProperty('--panel3-visibility', panel3Opacity > 0.02 ? 'visible' : 'hidden');
 
       style.setProperty('--tours-scene-opacity', toursSceneOpacity.toFixed(4));
       style.setProperty(
         '--tours-scene-y',
-        `${(motionScale * (1 - toursSceneEnter) * 48).toFixed(2)}px`
+        `${(motionScale * ((1 - toursSceneEnter) * 120 - toursSceneExit * 100)).toFixed(2)}px`
       );
       style.setProperty(
         '--tours-scene-visibility',
         toursSceneOpacity > 0.02 ? 'visible' : 'hidden'
       );
 
+      // Clustered Stack -> Fanning Out Memory Stream Deck for Scene 4 (Tour Scene)
+      const tStart = SCROLL_TIMELINE.TOURS_ENTER[0];
+      const tEnd = SCROLL_TIMELINE.TOURS_ENTER[1];
+      const tSpan = tEnd - tStart;
+
+      const tourCard1Enter = smoothstep(tStart, tStart + tSpan * 0.7, scroll);
+      const tourCard2Enter = smoothstep(tStart + tSpan * 0.15, tStart + tSpan * 0.85, scroll);
+      const tourCard3Enter = smoothstep(tStart + tSpan * 0.3, tEnd, scroll);
+
+      const tourCard1Opacity = tourCard1Enter * (1 - toursSceneExit);
+      const tourCard2Opacity = tourCard2Enter * (1 - toursSceneExit);
+      const tourCard3Opacity = tourCard3Enter * (1 - toursSceneExit);
+
+      // Card 1 (Left): Starts clustered at center (+380px X) with -12deg tilt below bottom edge (+680px Y), fans left into staggered position
+      const t1Y =
+        motionScale * ((1 - tourCard1Enter) * 680 - 14 * tourCard1Enter - toursSceneExit * 70);
+      const t1X = motionScale * ((1 - tourCard1Enter) * 380 - 10 * tourCard1Enter);
+      const t1Rot = (1 - tourCard1Enter) * -12 + tourCard1Enter * -3.6;
+      const t1Scale = (1 - tourCard1Enter) * 0.8 + tourCard1Enter * 1.0;
+
+      style.setProperty('--tour-card1-opacity', tourCard1Opacity.toFixed(4));
+      style.setProperty('--tour-card1-y', `${t1Y.toFixed(2)}px`);
+      style.setProperty('--tour-card1-x', `${t1X.toFixed(2)}px`);
+      style.setProperty('--tour-card1-rot', `${t1Rot.toFixed(2)}deg`);
+      style.setProperty('--tour-card1-scale', t1Scale.toFixed(4));
+
+      // Card 2 (Center): Starts clustered at center (0px X) with +8deg tilt below bottom edge (+650px Y), fans into staggered center position
+      const t2Y =
+        motionScale * ((1 - tourCard2Enter) * 650 + 18 * tourCard2Enter - toursSceneExit * 70);
+      const t2X = motionScale * (4 * tourCard2Enter);
+      const t2Rot = (1 - tourCard2Enter) * 8 + tourCard2Enter * 3.2;
+      const t2Scale = (1 - tourCard2Enter) * 0.88 + tourCard2Enter * 1.0;
+
+      style.setProperty('--tour-card2-opacity', tourCard2Opacity.toFixed(4));
+      style.setProperty('--tour-card2-y', `${t2Y.toFixed(2)}px`);
+      style.setProperty('--tour-card2-x', `${t2X.toFixed(2)}px`);
+      style.setProperty('--tour-card2-rot', `${t2Rot.toFixed(2)}deg`);
+      style.setProperty('--tour-card2-scale', t2Scale.toFixed(4));
+
+      // Card 3 (Right): Starts clustered at center (-380px X) with -6deg tilt below bottom edge (+720px Y), fans right into staggered position
+      const t3Y =
+        motionScale * ((1 - tourCard3Enter) * 720 - 10 * tourCard3Enter - toursSceneExit * 70);
+      const t3X = motionScale * ((1 - tourCard3Enter) * -380 + 12 * tourCard3Enter);
+      const t3Rot = (1 - tourCard3Enter) * -6 + tourCard3Enter * -2.4;
+      const t3Scale = (1 - tourCard3Enter) * 0.83 + tourCard3Enter * 1.0;
+
+      style.setProperty('--tour-card3-opacity', tourCard3Opacity.toFixed(4));
+      style.setProperty('--tour-card3-y', `${t3Y.toFixed(2)}px`);
+      style.setProperty('--tour-card3-x', `${t3X.toFixed(2)}px`);
+      style.setProperty('--tour-card3-rot', `${t3Rot.toFixed(2)}deg`);
+      style.setProperty('--tour-card3-scale', t3Scale.toFixed(4));
+
       style.setProperty('--stories-scene-opacity', storiesSceneEnter.toFixed(4));
       style.setProperty(
         '--stories-scene-y',
-        `${(motionScale * (1 - storiesSceneEnter) * 48).toFixed(2)}px`
+        `${(motionScale * (1 - storiesSceneEnter) * 120).toFixed(2)}px`
       );
       style.setProperty(
         '--stories-scene-visibility',
         storiesSceneEnter > 0.02 ? 'visible' : 'hidden'
       );
 
+      // Clustered Stack -> Fanning Out Memory Stream Deck for Scene 5 (Stories Scene)
+      const sStart = SCROLL_TIMELINE.STORIES_ENTER[0];
+      const sEnd = SCROLL_TIMELINE.STORIES_ENTER[1];
+      const sSpan = sEnd - sStart;
+
+      const storyCard1Enter = smoothstep(sStart, sStart + sSpan * 0.7, scroll);
+      const storyCard2Enter = smoothstep(sStart + sSpan * 0.15, sStart + sSpan * 0.85, scroll);
+      const storyCard3Enter = smoothstep(sStart + sSpan * 0.3, sEnd, scroll);
+
+      // Story Card 1 (Left): Clustered center below bottom edge -> fans left into staggered position
+      const s1Y = motionScale * ((1 - storyCard1Enter) * 680 + 14 * storyCard1Enter);
+      const s1X = motionScale * ((1 - storyCard1Enter) * 380 - 8 * storyCard1Enter);
+      const s1Rot = (1 - storyCard1Enter) * -10 + storyCard1Enter * 3.5;
+      const s1Scale = (1 - storyCard1Enter) * 0.8 + storyCard1Enter * 1.0;
+
+      style.setProperty('--story-card1-opacity', storyCard1Enter.toFixed(4));
+      style.setProperty('--story-card1-y', `${s1Y.toFixed(2)}px`);
+      style.setProperty('--story-card1-x', `${s1X.toFixed(2)}px`);
+      style.setProperty('--story-card1-rot', `${s1Rot.toFixed(2)}deg`);
+      style.setProperty('--story-card1-scale', s1Scale.toFixed(4));
+
+      // Story Card 2 (Center): Clustered center below bottom edge -> fans into staggered center position
+      const s2Y = motionScale * ((1 - storyCard2Enter) * 650 - 16 * storyCard2Enter);
+      const s2X = 0;
+      const s2Rot = (1 - storyCard2Enter) * 7 + storyCard2Enter * -4.2;
+      const s2Scale = (1 - storyCard2Enter) * 0.87 + storyCard2Enter * 1.0;
+
+      style.setProperty('--story-card2-opacity', storyCard2Enter.toFixed(4));
+      style.setProperty('--story-card2-y', `${s2Y.toFixed(2)}px`);
+      style.setProperty('--story-card2-x', `${s2X.toFixed(2)}px`);
+      style.setProperty('--story-card2-rot', `${s2Rot.toFixed(2)}deg`);
+      style.setProperty('--story-card2-scale', s2Scale.toFixed(4));
+
+      // Story Card 3 (Right): Clustered center below bottom edge -> fans right into staggered position
+      const s3Y = motionScale * ((1 - storyCard3Enter) * 720 + 12 * storyCard3Enter);
+      const s3X = motionScale * ((1 - storyCard3Enter) * -380 + 10 * storyCard3Enter);
+      const s3Rot = (1 - storyCard3Enter) * -5 + storyCard3Enter * 2.8;
+      const s3Scale = (1 - storyCard3Enter) * 0.83 + storyCard3Enter * 1.0;
+
+      style.setProperty('--story-card3-opacity', storyCard3Enter.toFixed(4));
+      style.setProperty('--story-card3-y', `${s3Y.toFixed(2)}px`);
+      style.setProperty('--story-card3-x', `${s3X.toFixed(2)}px`);
+      style.setProperty('--story-card3-rot', `${s3Rot.toFixed(2)}deg`);
+      style.setProperty('--story-card3-scale', s3Scale.toFixed(4));
+
+      // Hiệu ứng mờ & tối hóa phông nền khi kéo đến 2 Scene dưới (Scene 4: Tour nổi bật, Scene 5: Câu chuyện hành trình)
+      const cardsSceneActive = clamp(toursSceneEnter + storiesSceneEnter);
+      const worldBlurPx = (cardsSceneActive * 16).toFixed(1);
+      const worldBrightness = (1 - cardsSceneActive * 0.45).toFixed(4);
+      const cardsShadeOpacity = (cardsSceneActive * 0.88).toFixed(4);
+
+      style.setProperty('--world-blur', `${worldBlurPx}px`);
+      style.setProperty('--world-brightness', worldBrightness);
+      style.setProperty('--cards-shade-opacity', cardsShadeOpacity);
+      style.setProperty('--cards-shade-visibility', cardsSceneActive > 0.01 ? 'visible' : 'hidden');
+
       // Nút "Bỏ qua giới thiệu": hiện xuyên suốt scene 1-3, mờ dần khi Scene 4 tiếp quản.
       const skipOpacity = clamp(1 - toursSceneEnter * 2);
       style.setProperty('--skip-opacity', skipOpacity.toFixed(4));
       style.setProperty('--skip-visibility', skipOpacity > 0.02 ? 'visible' : 'hidden');
+
+      // Timeline Progress & Active Scene indicators
+      const timelineProgress = clamp(scroll / SCROLL_TIMELINE.TOTAL_EXTRA_SCROLL);
+      style.setProperty('--timeline-progress', `${(timelineProgress * 100).toFixed(2)}%`);
+
+      let currentScene = 1;
+      if (storiesSceneEnter > 0.5) currentScene = 5;
+      else if (toursSceneOpacity > 0.4) currentScene = 4;
+      else if (panel3Opacity > 0.4) currentScene = 3;
+      else if (panel2Opacity > 0.4) currentScene = 2;
+
+      currentSceneIndex = currentScene - 1;
+
+      for (let i = 1; i <= 5; i++) {
+        const isActive = currentSceneIndex + 1 === i;
+        style.setProperty(`--dot-${i}-active`, isActive ? '1' : '0');
+        style.setProperty(`--dot-${i}-scale`, isActive ? '1.4' : '1');
+        style.setProperty(`--dot-${i}-glow`, isActive ? '1' : '0');
+      }
     }
 
     function requestTick() {
